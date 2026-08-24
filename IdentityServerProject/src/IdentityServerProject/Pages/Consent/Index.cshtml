@@ -1,0 +1,20 @@
+@page
+@model IdentityServerProject.Pages.Consent.IndexModel
+@{
+    ViewData["Title"] = "Consent";
+}
+
+<h1>@Model.ClientName is requesting access to:</h1>
+
+<ul>
+    @foreach (var scope in Model.ScopesRequested)
+    {
+        <li>@(scope.DisplayName ?? scope.Value)</li>
+    }
+</ul>
+
+<form method="post">
+    <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+    <button type="submit" name="consented" value="true">Allow</button>
+    <button type="submit" name="consented" value="false">Deny</button>
+</form>

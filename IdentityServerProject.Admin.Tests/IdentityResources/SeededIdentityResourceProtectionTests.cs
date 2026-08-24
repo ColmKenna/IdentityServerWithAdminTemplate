@@ -1,0 +1,130 @@
+using IdentityServerProject.Admin.Tests.Infrastructure;
+using System.Threading.Tasks;
+using Duende.IdentityServer.EntityFramework.DbContexts;
+using Duende.IdentityServer.EntityFramework.Entities;
+using IdentityServerProject.Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit;
+
+namespace IdentityServerProject.Admin.Tests.IdentityResources;
+
+/// <summary>
+/// Covers the seed half of the protection: <c>NonEditable</c> was previously read in five places
+/// and written in none, so it defaulted to <c>false</c> on every seeded row.
+/// </summary>
+/// <remarks>
+/// Each test gets its own factory (and therefore its own database), because these tests run the
+/// real seeder and assert on the exact contents of the identity resource table.
+/// </remarks>
+public class SeededIdentityResourceProtectionTests
+{
+    private static async Task SeedAsync(AdminWebFactory factory)
+    {
+        await factory.RunInScopeAsync(async sp =>
+        {
+            await SeedData.SeedAsync(
+                sp.GetRequiredService<ApplicationDbContext>(),
+                sp.GetRequiredService<ConfigurationDbContext>(),
+                sp.GetRequiredService<PersistedGrantDbContext>(),
+                sp.GetRequiredService<UserManager<ApplicationUser>>(),
+                sp.GetRequiredService<RoleManager<IdentityRole>>(),
+                razorClientUri: "https://localhost:5001",
+                razorClientSecret: "secret",
+                blazorClientUri: "https://localhost:5002",
+                blazorClientSecret: "secret",
+                sysAdminEmail: "admin@sales.local",
+                sysAdminPassword: "Password123!",
+                testUserPassword: "Password123!");
+        });
+    }
+
+    private static async Task<IdentityResource?> LoadAsync(AdminWebFactory factory, string name)
+    {
+        IdentityResource? resource = null;
+        await factory.RunInScopeAsync(async sp =>
+        {
+            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            resource = await configDb.IdentityResources
+                .AsNoTracking()
+                .Include(r => r.UserClaims)
+                .FirstOrDefaultAsync(r => r.Name == name);
+        });
+        return resource;
+    }
+
+    [Fact]
+    public async Task Seed_MarksTheOpenIdResourceNonEditable()
+    {
+        using var factory = new AdminWebFactory();
+        await SeedAsync(factory);
+
+        var openId = await LoadAsync(factory, "openid");
+
+        Assert.NotNull(openId);
+        Assert.True(openId!.NonEditable);
+        Assert.Contains(openId.UserClaims, c => c.Type == "sub");
+    }
+
+    [Theory]
+    [InlineData("profile")]
+    [InlineData("email")]
+    [InlineData("roles")]
+    public async Task Seed_LeavesTheOtherSeededResourcesEditable(string name)
+    {
+        // Deliberate: these are standard but not protocol-mandatory, and operators legitimately
+        // curate which claims they return. Protecting them would cost capability for no security.
+        using var factory = new AdminWebFactory();
+        await SeedAsync(factory);
+
+        var resource = await LoadAsync(factory, name);
+
+        Assert.NotNull(resource);
+        Assert.False(resource!.NonEditable);
+    }
+
+    [Fact]
+    public async Task Seed_RepairsAnOpenIdRowThatPredatesTheProtection()
+    {
+        // The realistic upgrade case. Every existing deployment has this row with NonEditable
+        // = false, and EnsureCreated leaves no migration path that would fix it (DB-001).
+        using var factory = new AdminWebFactory();
+
+        await factory.RunInScopeAsync(async sp =>
+        {
+            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            configDb.IdentityResources.Add(new IdentityResource
+            {
+                Name = "openid",
+                DisplayName = "Your user identifier",
+                Enabled = true,
+                NonEditable = false,
+                UserClaims = new List<IdentityResourceClaim> { new() { Type = "sub" } },
+            });
+            await configDb.SaveChangesAsync();
+        });
+
+        await SeedAsync(factory);
+
+        var openId = await LoadAsync(factory, "openid");
+        Assert.NotNull(openId);
+        Assert.True(openId!.NonEditable);
+    }
+
+    [Fact]
+    public async Task Seed_IsIdempotent_AndDoesNotDuplicateResources()
+    {
+        using var factory = new AdminWebFactory();
+        await SeedAsync(factory);
+        await SeedAsync(factory);
+
+        await factory.RunInScopeAsync(async sp =>
+        {
+            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            Assert.Equal(1, await configDb.IdentityResources.CountAsync(r => r.Name == "openid"));
+        });
+
+        Assert.True((await LoadAsync(factory, "openid"))!.NonEditable);
+    }
+}

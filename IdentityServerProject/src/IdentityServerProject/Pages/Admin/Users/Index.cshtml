@@ -1,0 +1,90 @@
+@page
+@model IdentityServerProject.Pages.Admin.Users.IndexModel
+@{
+    ViewData["Title"] = "Users";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Users</h1>
+        <p class="page-sub">Provisioned user accounts and access controls</p>
+    </div>
+    <a id="new-user-link" class="btn-primary" asp-page="./Create">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New user
+    </a>
+</div>
+
+<div class="panel">
+    @if (!string.IsNullOrEmpty(Model.StatusMessage))
+    {
+        <div class="alert alert-success alert-dismissible" role="alert">
+            @Model.StatusMessage
+        </div>
+    }
+    <ck-responsive-table class="users-table" mobile-breakpoint="768px">
+        <ck-responsive-thead>
+            <ck-responsive-col-head>User</ck-responsive-col-head>
+            <ck-responsive-col-head>Email</ck-responsive-col-head>
+            <ck-responsive-col-head>Status</ck-responsive-col-head>
+            <ck-responsive-col-head class="actions-cell">Actions</ck-responsive-col-head>
+        </ck-responsive-thead>
+        <ck-responsive-tbody>
+            @foreach (var userItem in Model.Users.Items)
+            {
+                <ck-responsive-row>
+                    <ck-responsive-col class="user-name">
+                        <a asp-page="./Details" asp-route-id="@userItem.Id" class="user-title-link">
+                            @(string.IsNullOrWhiteSpace(userItem.FullName) ? userItem.UserName : userItem.FullName)
+                        </a>
+                        @if (!string.IsNullOrWhiteSpace(userItem.FullName))
+                        {
+                            <span class="user-username"><code>@userItem.UserName</code></span>
+                        }
+                    </ck-responsive-col>
+                    <ck-responsive-col>@(string.IsNullOrWhiteSpace(userItem.Email) ? "—" : userItem.Email)</ck-responsive-col>
+                    <ck-responsive-col>
+                        <span class="status-badge @(userItem.IsLockedOut ? "disabled" : "enabled")">@(userItem.IsLockedOut ? "Locked Out" : "Active")</span>
+                    </ck-responsive-col>
+                    <ck-responsive-col class="actions-cell">
+                        @if (userItem.IsLockedOut)
+                        {
+                            <form method="post" asp-page-handler="Unlock" asp-route-id="@userItem.Id" class="inline-action-form">
+                                <button type="submit" class="btn-sm btn-secondary unlock-btn">Unlock</button>
+                            </form>
+                        }
+                        <a asp-page="./Details" asp-route-id="@userItem.Id" class="action-link">Manage &rarr;</a>
+                    </ck-responsive-col>
+                </ck-responsive-row>
+            }
+        </ck-responsive-tbody>
+    </ck-responsive-table>
+
+    @if (Model.Users.Items.Count == 0)
+    {
+        <div class="empty-state">No users found.</div>
+    }
+
+    <div class="pagination-footer">
+        <span class="pagination-summary">Showing @Model.Users.Items.Count of @Model.Users.TotalCount users</span>
+        <div class="pagination-controls">
+            @if (!Model.Users.HasPreviousPage)
+            {
+                <span data-pagination="previous" class="pagination-btn disabled" aria-disabled="true">&lsaquo;</span>
+            }
+            else
+            {
+                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter" asp-route-PageNumber="@(Model.Users.PageNumber - 1)">&lsaquo;</a>
+            }
+            <span class="pagination-page">Page @Model.Users.PageNumber of @Model.Users.TotalPages</span>
+            @if (!Model.Users.HasNextPage)
+            {
+                <span data-pagination="next" class="pagination-btn disabled" aria-disabled="true">&rsaquo;</span>
+            }
+            else
+            {
+                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter" asp-route-PageNumber="@(Model.Users.PageNumber + 1)">&rsaquo;</a>
+            }
+        </div>
+    </div>
+</div>

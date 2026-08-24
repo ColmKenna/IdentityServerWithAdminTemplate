@@ -1,0 +1,32 @@
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace IdentityServerProject.Services.ApiScopes;
+
+/// <summary>
+/// Retrieves and manages API scopes registered with IdentityServer for display on the Admin console.
+/// </summary>
+public interface IApiScopeListService
+{
+    /// <summary>
+    /// Returns a filtered, paged list of API scopes ordered by scope name, including
+    /// how many distinct clients currently reference each scope.
+    /// </summary>
+    /// <param name="filter">
+    /// Optional case-insensitive substring matched against scope name or display name.
+    /// A null or whitespace-only value returns all API scopes.
+    /// </param>
+    /// <param name="pageNumber">1-based page number. Values below 1 are treated as 1.</param>
+    /// <param name="pageSize">Maximum number of items to return for the page.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<ListResult<ApiScopeListItem>> GetApiScopesAsync(
+        string? filter,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes the named API scope, refusing the operation if any client still references it.
+    /// </summary>
+    Task<ApiScopeDeleteResult> DeleteApiScopeAsync(string name, CancellationToken cancellationToken = default);
+}

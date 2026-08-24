@@ -1,0 +1,117 @@
+@page
+@model IdentityServerProject.Pages.Admin.ApiScopes.IndexModel
+@{
+    ViewData["Title"] = "API Scopes";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">API Scopes</h1>
+        <p class="page-sub">Access-control scopes clients can request from IdentityServer</p>
+    </div>
+    <a asp-page="./Create" class="btn-primary">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New API scope
+    </a>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.DeleteErrorMessage))
+{
+    <div class="alert alert-error" role="alert">@Model.DeleteErrorMessage</div>
+}
+
+<div class="panel">
+    <form method="get" class="list-filter" role="search">
+        <label class="visually-hidden" for="api-scope-filter">Filter API scopes</label>
+        <input asp-for="Filter" id="api-scope-filter" class="form-control" type="search" placeholder="Filter by name or display name" />
+        <button type="submit" class="btn-secondary">Filter</button>
+    </form>
+
+    <ck-responsive-table class="api-scopes-table" mobile-breakpoint="768px">
+        <ck-responsive-thead>
+            <ck-responsive-col-head>Name</ck-responsive-col-head>
+            <ck-responsive-col-head>Display Name</ck-responsive-col-head>
+            <ck-responsive-col-head>Referenced By</ck-responsive-col-head>
+            <ck-responsive-col-head>Status</ck-responsive-col-head>
+            <ck-responsive-col-head class="actions-cell">Actions</ck-responsive-col-head>
+        </ck-responsive-thead>
+        <ck-responsive-tbody>
+            @foreach (var apiScope in Model.ApiScopes.Items)
+            {
+                <ck-responsive-row>
+                    <ck-responsive-col class="scope-name">
+                        <a asp-page="./Edit" asp-route-name="@apiScope.Name" class="resource-title-link"><code>@apiScope.Name</code></a>
+                    </ck-responsive-col>
+                    <ck-responsive-col>@(string.IsNullOrWhiteSpace(apiScope.DisplayName) ? "—" : apiScope.DisplayName)</ck-responsive-col>
+                    <ck-responsive-col><span class="badge">@apiScope.ClientReferenceCount client@(apiScope.ClientReferenceCount == 1 ? "" : "s")</span></ck-responsive-col>
+                    <ck-responsive-col>
+                        <span class="status-badge @(apiScope.Enabled ? "enabled" : "disabled")">@(apiScope.Enabled ? "Enabled" : "Disabled")</span>
+                    </ck-responsive-col>
+                    <ck-responsive-col class="actions-cell">
+                        <button
+                            type="button"
+                            class="action-link action-link-danger"
+                            data-action="delete-scope"
+                            data-delete-name="@apiScope.Name"
+                            data-reference-count="@apiScope.ClientReferenceCount">
+                            Delete
+                        </button>
+                    </ck-responsive-col>
+                </ck-responsive-row>
+            }
+        </ck-responsive-tbody>
+    </ck-responsive-table>
+
+    @if (Model.ApiScopes.Items.Count == 0)
+    {
+        <div class="empty-state">No API scopes found.</div>
+    }
+
+    <div class="pagination-footer">
+        <span class="pagination-summary">Showing @Model.ApiScopes.Items.Count of @Model.ApiScopes.TotalCount scopes</span>
+        <div class="pagination-controls">
+            @if (!Model.ApiScopes.HasPreviousPage)
+            {
+                <span data-pagination="previous" class="pagination-btn disabled" aria-disabled="true">&lsaquo;</span>
+            }
+            else
+            {
+                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter" asp-route-PageNumber="@(Model.ApiScopes.PageNumber - 1)">&lsaquo;</a>
+            }
+            <span class="pagination-page">Page @Model.ApiScopes.PageNumber of @Model.ApiScopes.TotalPages</span>
+            @if (!Model.ApiScopes.HasNextPage)
+            {
+                <span data-pagination="next" class="pagination-btn disabled" aria-disabled="true">&rsaquo;</span>
+            }
+            else
+            {
+                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter" asp-route-PageNumber="@(Model.ApiScopes.PageNumber + 1)">&rsaquo;</a>
+            }
+        </div>
+    </div>
+</div>
+
+<dialog id="delete-scope-modal" class="modal">
+    <form method="post" asp-page-handler="Delete">
+        <input type="hidden" name="name" id="delete-scope-modal-name-input" value="" />
+        <input type="hidden" name="PageNumber" value="@Model.ApiScopes.PageNumber" />
+        <input type="hidden" name="Filter" value="@Model.Filter" />
+
+        <h2 class="modal-title">Delete API scope</h2>
+
+        <p class="modal-body" id="delete-scope-modal-message" data-state="confirm">
+            Are you sure you want to delete <strong id="delete-scope-modal-name-text"></strong>? This cannot be undone.
+        </p>
+
+        <p class="modal-body modal-body-blocked" id="delete-scope-modal-blocked-message" hidden>
+            <strong id="delete-scope-modal-blocked-name-text"></strong> is currently assigned to
+            <span id="delete-scope-modal-blocked-count"></span> client(s) and cannot be deleted until those
+            clients no longer reference it.
+        </p>
+
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
+            <button type="submit" id="delete-scope-modal-confirm" class="btn-danger">Delete</button>
+        </div>
+    </form>
+</dialog>

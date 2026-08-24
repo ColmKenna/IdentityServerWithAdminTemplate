@@ -1,0 +1,86 @@
+using System.Threading;
+using System.Threading.Tasks;
+using IdentityServerProject.Services.Clients;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace IdentityServerProject.Pages.Admin.Clients;
+
+public class DetailsModel : PageModel
+{
+    private readonly IClientDetailsService _clientDetailsService;
+
+    public DetailsModel(IClientDetailsService clientDetailsService)
+    {
+        _clientDetailsService = clientDetailsService;
+    }
+
+    public ClientDetailsModel Client { get; private set; } = default!;
+
+    [TempData]
+    public string? DeleteBlockedMessage { get; set; }
+
+    [BindProperty]
+    public string? DeleteConfirmation { get; set; }
+
+    public async Task<IActionResult> OnGetAsync(string id, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return NotFound();
+        }
+
+        var client = await _clientDetailsService.GetClientDetailsAsync(id, cancellationToken);
+        if (client == null)
+        {
+            return NotFound();
+        }
+
+        Client = client;
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostToggleStatusAsync(string id, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return NotFound();
+        }
+
+        var success = await _clientDetailsService.ToggleClientStatusAsync(id, cancellationToken);
+        if (!success)
+        {
+            return NotFound();
+        }
+
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(string id, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return NotFound();
+        }
+
+        if (!string.Equals(DeleteConfirmation?.Trim(), "DELETE", System.StringComparison.Ordinal))
+        {
+            DeleteBlockedMessage = "Type DELETE exactly to confirm permanent deletion.";
+            return RedirectToPage(new { id });
+        }
+
+        var result = await _clientDetailsService.DeleteClientAsync(id, cancellationToken);
+        if (!result.Success)
+        {
+            if (result.ErrorMessage == "Client not found.")
+            {
+                return NotFound();
+            }
+
+            DeleteBlockedMessage = result.ErrorMessage;
+            return RedirectToPage(new { id });
+        }
+
+        return RedirectToPage("./Index");
+    }
+}

@@ -1,0 +1,32 @@
+@page
+@model IdentityServerProject.Pages.Admin.Roles.CreateModel
+@{
+    ViewData["Title"] = "New Role";
+    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    {
+        ("Admin", "/Admin/Index"),
+        ("Roles", "/Admin/Roles"),
+        ("New Role", null)
+    };
+}
+
+<div class="page-header">
+    <h1 class="page-title">New Role</h1>
+</div>
+
+<div class="panel" style="max-width: 600px;">
+    <form method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger" style="margin-bottom: 20px; color: var(--danger, #b3261e);"></div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label asp-for="Input.Name" class="form-label" style="display: block; font-weight: 600; margin-bottom: 8px;">Role Name</label>
+            <input asp-for="Input.Name" class="form-control" required style="width: 100%; border: 1px solid var(--border, #e6e8eb); border-radius: 8px; padding: 10px 12px; font-size: 1rem;" />
+            <span asp-validation-for="Input.Name" class="text-danger" style="color: var(--danger, #b3261e); font-size: 0.85rem; display: block; margin-top: 4px;"></span>
+        </div>
+
+        <div class="form-actions" style="display: flex; gap: 12px; margin-top: 30px;">
+            <button type="submit" class="btn-primary">Create Role</button>
+            <a asp-page="./Index" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>

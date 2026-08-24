@@ -1,0 +1,164 @@
+using IdentityServerProject.Admin.Tests.Infrastructure;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Duende.IdentityServer.EntityFramework.DbContexts;
+using Duende.IdentityServer.EntityFramework.Entities;
+using IdentityServerProject.Data;
+using IdentityServerProject.Services.AuditLogs;
+using IdentityServerProject.Services.Grants;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit;
+
+namespace IdentityServerProject.Admin.Tests.Grants;
+
+/// <summary>
+/// Verifies TASK-04 audit coverage for <see cref="GrantListService"/>, which previously
+/// had no <see cref="IAuditWriter"/> dependency at all.
+/// </summary>
+public class GrantAuditCoverageTests : IClassFixture<AdminWebFactory>
+{
+    private readonly AdminWebFactory _factory;
+
+    public GrantAuditCoverageTests(AdminWebFactory factory)
+    {
+        _factory = factory;
+    }
+
+    private static PersistedGrant MakeGrant(string key, string clientId, string subjectId)
+    {
+        return new PersistedGrant
+        {
+            Key = key,
+            Type = "user_consent",
+            ClientId = clientId,
+            SubjectId = subjectId,
+            CreationTime = DateTime.UtcNow.AddHours(-1),
+            Expiration = DateTime.UtcNow.AddDays(7),
+            Data = "{}"
+        };
+    }
+
+    private async Task<AuditLogEntry> GetSingleAuditEntryAsync(string action, string targetId)
+    {
+        AuditLogEntry? result = null;
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var db = sp.GetRequiredService<ApplicationDbContext>();
+            result = db.AuditLogEntries.Single(e => e.Category == AuditCategories.Grant && e.Action == action && e.TargetId == targetId);
+            await Task.CompletedTask;
+        });
+        return result!;
+    }
+
+    [Fact]
+    public async Task RevokeGrantAsync_ExistingGrant_WritesSucceededAuditEvent()
+    {
+        var tag = $"grant-audit-revoke-{Guid.NewGuid():N}";
+        var grantKey = $"{tag}-key";
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            sp.GetRequiredService<PersistedGrantDbContext>().PersistedGrants.Add(MakeGrant(grantKey, $"{tag}-client", $"{tag}-user"));
+            await sp.GetRequiredService<PersistedGrantDbContext>().SaveChangesAsync();
+        });
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IGrantListService>();
+            var result = await service.RevokeGrantAsync(grantKey);
+            Assert.Equal(RevokeGrantResult.Revoked, result);
+        });
+
+        var entry = await GetSingleAuditEntryAsync(AuditActions.Revoke, grantKey);
+        Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
+        Assert.Equal(AuditReasonCodes.Succeeded, entry.ReasonCode);
+    }
+
+    [Fact]
+    public async Task RevokeGrantAsync_GrantNotFound_WritesDeniedAuditEvent()
+    {
+        var tag = $"grant-audit-notfound-{Guid.NewGuid():N}";
+        var missingKey = $"{tag}-missing-key";
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IGrantListService>();
+            var result = await service.RevokeGrantAsync(missingKey);
+            Assert.Equal(RevokeGrantResult.NotFound, result);
+        });
+
+        var entry = await GetSingleAuditEntryAsync(AuditActions.Revoke, missingKey);
+        Assert.Equal(AuditOutcome.Denied, entry.Outcome);
+        Assert.Equal(AuditReasonCodes.NotFound, entry.ReasonCode);
+    }
+
+    [Fact]
+    public async Task RevokeGrantsBySubjectAsync_WritesOneBoundedSummaryEvent_RegardlessOfGrantCount()
+    {
+        var tag = $"grant-audit-bulk-{Guid.NewGuid():N}";
+        var subjectId = $"{tag}-subject";
+        var g1 = MakeGrant($"{tag}-key-1", $"{tag}-client-1", subjectId);
+        var g2 = MakeGrant($"{tag}-key-2", $"{tag}-client-2", subjectId);
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var grantDb = sp.GetRequiredService<PersistedGrantDbContext>();
+            grantDb.PersistedGrants.AddRange(g1, g2);
+            await grantDb.SaveChangesAsync();
+        });
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IGrantListService>();
+            var count = await service.RevokeGrantsBySubjectAsync(subjectId);
+            Assert.Equal(2, count);
+        });
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var db = sp.GetRequiredService<ApplicationDbContext>();
+            var entries = db.AuditLogEntries
+                .Where(e => e.Category == AuditCategories.Grant && e.Action == AuditActions.BulkRevoke && e.TargetId == subjectId)
+                .ToList();
+
+            // Exactly one bounded summary event, never one row per revoked grant.
+            var entry = Assert.Single(entries);
+            Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
+            Assert.Contains("2", entry.Details);
+        });
+    }
+
+    [Fact]
+    public async Task RevokeGrantsBySubjectAsync_ZeroGrants_StillWritesOneSucceededEvent()
+    {
+        var tag = $"grant-audit-bulk-zero-{Guid.NewGuid():N}";
+        var subjectId = $"{tag}-subject-with-no-grants";
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IGrantListService>();
+            var count = await service.RevokeGrantsBySubjectAsync(subjectId);
+            Assert.Equal(0, count);
+        });
+
+        var entry = await GetSingleAuditEntryAsync(AuditActions.BulkRevoke, subjectId);
+        Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
+    }
+
+    [Fact]
+    public async Task RevokeGrantAsync_UnexpectedPersistenceFailure_WritesFailedAuditEventAndRethrows()
+    {
+        var key = $"grant-audit-failure-{Guid.NewGuid():N}";
+
+        await Assert.ThrowsAnyAsync<Exception>(() => _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IGrantListService>();
+            await sp.GetRequiredService<PersistedGrantDbContext>().DisposeAsync();
+            await service.RevokeGrantAsync(key);
+        }));
+
+        var entry = await GetSingleAuditEntryAsync(AuditActions.Revoke, key);
+        Assert.Equal(AuditOutcome.Failed, entry.Outcome);
+        Assert.Equal(AuditReasonCodes.PersistenceFailure, entry.ReasonCode);
+    }
+}

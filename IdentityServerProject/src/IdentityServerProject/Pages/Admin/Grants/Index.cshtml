@@ -1,0 +1,149 @@
+@page
+@model IdentityServerProject.Pages.Admin.Grants.IndexModel
+@{
+    ViewData["Title"] = "Persisted Grants";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Persisted Grants</h1>
+        <p class="page-sub">Active user sessions, refresh tokens, and consent grants stored by IdentityServer</p>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+{
+    <div class="alert alert-success" role="alert">@Model.SuccessMessage</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-error" role="alert">@Model.ErrorMessage</div>
+}
+
+<div class="panel">
+    <form method="get" class="list-filter" role="search">
+        <div class="filter-grid">
+            <div>
+                <label asp-for="SubjectId">Subject ID</label>
+                <input asp-for="SubjectId" class="form-control" type="search" placeholder="Filter by user" />
+            </div>
+            <div>
+                <label asp-for="ClientId">Client ID</label>
+                <input asp-for="ClientId" class="form-control" type="search" placeholder="Filter by client" />
+            </div>
+            <div>
+                <label asp-for="TypeFilter">Grant type</label>
+                <input asp-for="TypeFilter" class="form-control" type="search" placeholder="Filter by type" />
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-secondary">Filter</button>
+            <a asp-page="./Index" class="btn-tertiary">Clear</a>
+        </div>
+    </form>
+
+    <ck-responsive-table class="grants-table" mobile-breakpoint="768px">
+        <ck-responsive-thead>
+            <ck-responsive-col-head>Grant / Type</ck-responsive-col-head>
+            <ck-responsive-col-head>Client</ck-responsive-col-head>
+            <ck-responsive-col-head>Subject</ck-responsive-col-head>
+            <ck-responsive-col-head>Created</ck-responsive-col-head>
+            <ck-responsive-col-head>Expires</ck-responsive-col-head>
+            <ck-responsive-col-head class="actions-cell">Actions</ck-responsive-col-head>
+        </ck-responsive-thead>
+        <ck-responsive-tbody>
+            @foreach (var grant in Model.Grants.Items)
+            {
+                <ck-responsive-row>
+                    <ck-responsive-col class="grant-key">
+                        <code>@grant.Key</code>
+                        <div><span class="badge">@grant.Type</span></div>
+                    </ck-responsive-col>
+                    <ck-responsive-col>
+                        <strong>@grant.ClientName</strong>
+                        @if (grant.ClientName != grant.ClientId)
+                        {
+                            <div><small class="mono">(@grant.ClientId)</small></div>
+                        }
+                    </ck-responsive-col>
+                    <ck-responsive-col>
+                        <code>@(string.IsNullOrWhiteSpace(grant.SubjectId) ? "—" : grant.SubjectId)</code>
+                    </ck-responsive-col>
+                    <ck-responsive-col>
+                        @grant.CreationTime.ToString("yyyy-MM-dd HH:mm") UTC
+                    </ck-responsive-col>
+                    <ck-responsive-col>
+                        <span class="status-badge @(grant.IsExpired ? "disabled" : "enabled")">@grant.ExpirationFormatted</span>
+                    </ck-responsive-col>
+                    <ck-responsive-col class="actions-cell">
+                        <button
+                            type="button"
+                            class="action-link action-link-danger"
+                            data-action="revoke-grant"
+                            data-grant-key="@grant.Key"
+                            data-client-name="@grant.ClientName"
+                            data-subject-id="@(grant.SubjectId ?? "N/A")">
+                            Revoke
+                        </button>
+                    </ck-responsive-col>
+                </ck-responsive-row>
+            }
+        </ck-responsive-tbody>
+    </ck-responsive-table>
+
+    @if (Model.Grants.Items.Count == 0)
+    {
+        <div class="empty-state">No persisted grants found.</div>
+    }
+
+    <div class="pagination-footer">
+        <span class="pagination-summary">Showing @Model.Grants.Items.Count of @Model.Grants.TotalCount persisted grants</span>
+        <div class="pagination-controls">
+            @if (!Model.Grants.HasPreviousPage)
+            {
+                <span data-pagination="previous" class="pagination-btn disabled" aria-disabled="true">&lsaquo;</span>
+            }
+            else
+            {
+                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-PageNumber="@(Model.Grants.PageNumber - 1)" asp-route-SubjectId="@Model.SubjectId" asp-route-ClientId="@Model.ClientId" asp-route-TypeFilter="@Model.TypeFilter">&lsaquo;</a>
+            }
+            <span class="pagination-page">Page @Model.Grants.PageNumber of @Model.Grants.TotalPages</span>
+            @if (!Model.Grants.HasNextPage)
+            {
+                <span data-pagination="next" class="pagination-btn disabled" aria-disabled="true">&rsaquo;</span>
+            }
+            else
+            {
+                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-PageNumber="@(Model.Grants.PageNumber + 1)" asp-route-SubjectId="@Model.SubjectId" asp-route-ClientId="@Model.ClientId" asp-route-TypeFilter="@Model.TypeFilter">&rsaquo;</a>
+            }
+        </div>
+    </div>
+</div>
+
+<dialog id="revoke-grant-modal" class="modal">
+    <form method="post" asp-page-handler="Revoke">
+        <input type="hidden" name="key" id="revoke-grant-modal-key-input" value="" />
+        <input type="hidden" name="PageNumber" value="@Model.Grants.PageNumber" />
+        <input type="hidden" name="SubjectId" value="@Model.SubjectId" />
+        <input type="hidden" name="ClientId" value="@Model.ClientId" />
+        <input type="hidden" name="TypeFilter" value="@Model.TypeFilter" />
+
+        <h2 class="modal-title">Revoke persisted grant</h2>
+
+        <p class="modal-body" id="revoke-grant-modal-message">
+            Are you sure you want to revoke grant <strong id="revoke-grant-modal-key-text"></strong> for client
+            <strong id="revoke-grant-modal-client-text"></strong> (User: <code id="revoke-grant-modal-subject-text"></code>)?
+            This session or token will be invalidated immediately.
+        </p>
+
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
+            <button type="submit" id="revoke-grant-modal-confirm" class="btn-danger">Revoke</button>
+        </div>
+    </form>
+</dialog>
+
+@section Scripts {
+    <script src="~/js/grant-list.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,21 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>e7ce84c8-8606-4547-9634-ff29b8d7fe63</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.SqlServer" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sales.ApiService\Sales.ApiService.csproj" />
+    <ProjectReference Include="..\Sales.WasmClient\Sales.WasmClient.csproj" />
+    <ProjectReference Include="..\IdentityServerProject\src\IdentityServerProject\IdentityServerProject.csproj" />
+  </ItemGroup>
+
+</Project>

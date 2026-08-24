@@ -1,0 +1,32 @@
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace IdentityServerProject.Services.IdentityResources;
+
+/// <summary>
+/// Retrieves and manages Identity Resources registered with IdentityServer for display on the Admin console.
+/// </summary>
+public interface IIdentityResourceListService
+{
+    /// <summary>
+    /// Returns a filtered, paged list of Identity Resources ordered by name, including
+    /// how many distinct clients currently reference each resource.
+    /// </summary>
+    /// <param name="filter">
+    /// Optional case-insensitive substring matched against resource name or display name.
+    /// A null or whitespace-only value returns all identity resources.
+    /// </param>
+    /// <param name="pageNumber">1-based page number. Values below 1 are treated as 1.</param>
+    /// <param name="pageSize">Maximum number of items to return for the page.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<ListResult<IdentityResourceListItem>> GetIdentityResourcesAsync(
+        string? filter,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes the named Identity Resource, refusing the operation if any client still references it or if it is non-editable.
+    /// </summary>
+    Task<IdentityResourceDeleteResult> DeleteIdentityResourceAsync(string name, CancellationToken cancellationToken = default);
+}

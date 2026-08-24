@@ -1,0 +1,20 @@
+{
+  "productVersion": "10.0.10",
+  "contexts": {
+    "ApplicationDbContext": {
+      "baselineMigrationId": "20260810232228_AddAuditLogEnhancements",
+      "expectedFingerprint": "B47BFC21BEAE809E7CB40E84AABA3252061DF51755E72F43AB983C18FBAC745F",
+      "expectedItemCount": 106
+    },
+    "ConfigurationDbContext": {
+      "baselineMigrationId": "20260812232901_InitialDuendeConfiguration",
+      "expectedFingerprint": "C66387366F23AAD1A5482E061F23FECA352C5D08230EB6D2F1948EFE1B972313",
+      "expectedItemCount": 429
+    },
+    "PersistedGrantDbContext": {
+      "baselineMigrationId": "20260812232913_InitialDuendeOperational",
+      "expectedFingerprint": "A79B90BFE13438069C6EEDDCDA254FC9614016628BE5F2B01BDDBB18EC3C3096",
+      "expectedItemCount": 127
+    }
+  }
+}

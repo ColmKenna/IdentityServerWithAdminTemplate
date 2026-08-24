@@ -1,0 +1,88 @@
+@page
+@model IdentityServerProject.Pages.Admin.Users.CreateModel
+@{
+    ViewData["Title"] = "New User";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">New User</h1>
+        <p class="page-sub">Provision a new user account with validated credentials.</p>
+    </div>
+    <a asp-page="./Index" class="btn-secondary">&larr; Back to Users</a>
+</div>
+
+<form method="post" id="create-user-form">
+    <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger" style="display: @(ViewData.ModelState.IsValid ? "none" : "block"); margin-bottom: 20px;"></div>
+
+    <div class="panel" style="margin-bottom: 24px; padding: 28px;">
+        <h2 class="panel-title" style="font-size: 1.25rem; margin-bottom: 20px; font-weight: 700;">Account Details</h2>
+
+        <div class="form-field">
+            <label asp-for="Input.UserName" class="form-label">Username <span class="required">*</span></label>
+            <input asp-for="Input.UserName" class="form-control" placeholder="e.g. jane.doe" required />
+            <span asp-validation-for="Input.UserName" class="text-danger field-validation-error"></span>
+        </div>
+
+        <div class="form-field">
+            <label asp-for="Input.Email" class="form-label">Email <span class="required">*</span></label>
+            <input asp-for="Input.Email" type="email" class="form-control" placeholder="e.g. jane.doe@example.com" required />
+            <span asp-validation-for="Input.Email" class="text-danger field-validation-error"></span>
+        </div>
+
+        <div class="form-field">
+            <label asp-for="Input.FullName" class="form-label">Full Name</label>
+            <input asp-for="Input.FullName" class="form-control" placeholder="Optional display name" />
+            <span asp-validation-for="Input.FullName" class="text-danger field-validation-error"></span>
+        </div>
+
+        <div class="form-field">
+            <label asp-for="Input.Password" class="form-label">Password <span class="required">*</span></label>
+            <input asp-for="Input.Password" type="password" class="form-control" required />
+            <span asp-validation-for="Input.Password" class="text-danger field-validation-error"></span>
+        </div>
+
+        <div class="form-field">
+            <label asp-for="Input.ConfirmPassword" class="form-label">Confirm Password <span class="required">*</span></label>
+            <input asp-for="Input.ConfirmPassword" type="password" class="form-control" required />
+            <span asp-validation-for="Input.ConfirmPassword" class="text-danger field-validation-error"></span>
+        </div>
+    </div>
+
+    <div class="form-actions" style="display: flex; gap: 12px; margin-top: 20px;">
+        <button type="submit" class="btn-primary">Create User</button>
+        <a asp-page="./Index" class="btn-secondary">Cancel</a>
+    </div>
+</form>
+
+<style>
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 20px;
+    }
+    .form-control {
+        width: 100%;
+        max-width: 450px;
+        border: 1px solid var(--border, #e6e8eb);
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 0.95rem;
+        background-color: #fff;
+        color: var(--ink, #17191c);
+    }
+    .form-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--ink, #17191c);
+    }
+    .required {
+        color: #c8433b;
+    }
+    .field-validation-error {
+        font-size: 0.85rem;
+        color: #c8433b;
+        margin-top: 2px;
+    }
+</style>

@@ -1,0 +1,302 @@
+@page
+@model IdentityServerProject.Pages.Admin.Apis.EditorModel
+@{
+    ViewData["Title"] = Model.Editor.IsNew ? "New API Resource" : Model.Editor.Name;
+    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    {
+        ("Admin", "/Admin/Apis/Index"),
+        ("API Resources", "/Admin/Apis/Index"),
+        (Model.Editor.IsNew ? "New API Resource" : Model.Editor.Name, null)
+    };
+    var tab = Model.Tab;
+}
+
+<div class="editor-header">
+    <div>
+        <div class="title-with-badge">
+            <h1 class="hero-title">@(Model.Editor.IsNew ? "New API resource" : Model.Editor.Name)</h1>
+            @if (!Model.Editor.IsNew)
+            {
+                <span class="status-badge @(Model.Editor.Enabled ? "enabled" : "disabled")">@(Model.Editor.Enabled ? "Enabled" : "Disabled")</span>
+            }
+        </div>
+        <p class="page-sub">@(Model.Editor.IsNew ? "Register a new secured web API." : "Manage basics, secrets, scopes, and claims for this API resource.")</p>
+    </div>
+    <a asp-page="./Index" class="back-link">
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Back to list
+    </a>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-error" role="alert">@Model.ErrorMessage</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.GeneratedSecret))
+{
+    <div class="alert alert-success" role="alert" id="generated-secret-banner">
+        <div class="alert-success-title">New secret generated — copy it now, it will not be shown again.</div>
+        <div class="alert-success-row">
+            <code id="generated-secret-value">@Model.GeneratedSecret</code>
+            <button type="button" class="btn-secondary" id="copy-secret-btn" data-copy-target="generated-secret-value">Copy</button>
+        </div>
+    </div>
+}
+
+<ck-tabs id="api-resource-editor-tabs" class="api-resource-editor-tabs" aria-label="API resource editor tabs">
+    <ck-tab label="Basics" data-tab="basics" active="@(tab == "basics" ? "active" : null)">
+    <form method="post" asp-page-handler="SaveBasics" class="editor-form">
+        <input type="hidden" name="Name" value="@Model.Editor.Name" />
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+        <div class="form-field">
+            <label class="form-label" for="basics-name">Name</label>
+            <input class="form-control" id="basics-name" asp-for="Basics.Name" />
+            <span asp-validation-for="Basics.Name" class="field-validation-error"></span>
+        </div>
+
+        <div class="form-field">
+            <label class="form-label" for="basics-display-name">Display name</label>
+            <input class="form-control" id="basics-display-name" asp-for="Basics.DisplayName" />
+        </div>
+
+        <div class="form-field">
+            <label class="form-label" for="basics-description">Description</label>
+            <textarea class="form-control" id="basics-description" rows="3" asp-for="Basics.Description"></textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Save</button>
+        </div>
+    </form>
+
+    @if (!Model.Editor.IsNew)
+    {
+        <div class="danger-zone">
+            <h2 class="section-title">Danger zone</h2>
+
+            @if (Model.Editor.Enabled)
+            {
+                <div class="danger-row">
+                    <div>
+                        <div class="danger-row-title">Disable this API resource</div>
+                        <div class="danger-row-desc">Tokens can no longer be issued for this resource until it is re-enabled.</div>
+                    </div>
+                    <button type="button" class="btn-danger-outline" data-action="open-modal" data-modal="disable-modal">Disable</button>
+                </div>
+            }
+            else
+            {
+                <form method="post" asp-page-handler="Enable" asp-route-name="@Model.Editor.Name" class="danger-row">
+                    <div>
+                        <div class="danger-row-title">Enable this API resource</div>
+                        <div class="danger-row-desc">Resume issuing tokens for this resource.</div>
+                    </div>
+                    <button type="submit" class="btn-secondary">Enable</button>
+                </form>
+            }
+
+            <div class="danger-row">
+                <div>
+                    <div class="danger-row-title">Delete this API resource</div>
+                    <div class="danger-row-desc">Permanently removes the resource, its secrets, scopes, and claims. This cannot be undone.</div>
+                </div>
+                <button type="button" class="btn-danger" data-action="open-modal" data-modal="delete-modal">Delete</button>
+            </div>
+        </div>
+    }
+    </ck-tab>
+
+    @if (!Model.Editor.IsNew)
+    {
+    <ck-tab label="Secrets" data-tab="secrets" active="@(tab == "secrets" ? "active" : null)">
+    <ck-responsive-table class="editor-secrets-table" mobile-breakpoint="768px">
+        <ck-responsive-thead>
+            <ck-responsive-col-head>Description</ck-responsive-col-head>
+            <ck-responsive-col-head>Type</ck-responsive-col-head>
+            <ck-responsive-col-head>Created</ck-responsive-col-head>
+            <ck-responsive-col-head>Expiration</ck-responsive-col-head>
+            <ck-responsive-col-head class="actions-cell">Actions</ck-responsive-col-head>
+        </ck-responsive-thead>
+        <ck-responsive-tbody>
+        @foreach (var secret in Model.Editor.Secrets)
+        {
+            <ck-responsive-row>
+                <ck-responsive-col>@(string.IsNullOrWhiteSpace(secret.Description) ? "—" : secret.Description)</ck-responsive-col>
+                <ck-responsive-col>@secret.Type</ck-responsive-col>
+                <ck-responsive-col>@secret.Created.ToString("yyyy-MM-dd")</ck-responsive-col>
+                <ck-responsive-col>@(secret.Expiration?.ToString("yyyy-MM-dd") ?? "Never")</ck-responsive-col>
+                <ck-responsive-col class="actions-cell">
+                    <button
+                        type="button"
+                        class="action-link action-link-danger"
+                        data-action="open-modal"
+                        data-modal="revoke-secret-modal"
+                        data-secret-id="@secret.Id">
+                        Revoke
+                    </button>
+                </ck-responsive-col>
+            </ck-responsive-row>
+        }
+        </ck-responsive-tbody>
+    </ck-responsive-table>
+
+    @if (Model.Editor.Secrets.Count == 0)
+    {
+        <div class="empty-state">No secrets registered.</div>
+    }
+
+    <form method="post" asp-page-handler="AddSecret" asp-route-name="@Model.Editor.Name" class="editor-form editor-subform">
+        <h3 class="section-title">Generate a new secret</h3>
+        <div class="form-field">
+            <label class="form-label" for="secret-description">Description (optional)</label>
+            <input class="form-control" id="secret-description" asp-for="Secret.Description" />
+            <span asp-validation-for="Secret.Description" class="field-validation-error"></span>
+        </div>
+        <div class="form-field">
+            <label class="form-label" for="secret-expiration">Expiration (optional)</label>
+            <input class="form-control" id="secret-expiration" type="date" asp-for="Secret.Expiration" />
+            <span asp-validation-for="Secret.Expiration" class="field-validation-error"></span>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Generate secret</button>
+        </div>
+    </form>
+    </ck-tab>
+
+    <ck-tab label="Scopes" data-tab="scopes" active="@(tab == "scopes" ? "active" : null)">
+    @if (Model.Editor.Scopes.Count > 0)
+    {
+        <div class="scope-chips-row editor-scope-list">
+            @foreach (var scope in Model.Editor.Scopes)
+            {
+                <form method="post" asp-page-handler="DetachScope" asp-route-name="@Model.Editor.Name" asp-route-scopeName="@scope" class="scope-chip-form">
+                    <code class="scope-chip">@scope</code>
+                    <button type="submit" class="action-link action-link-danger" title="Detach @scope">&times;</button>
+                </form>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">No scopes attached.</div>
+    }
+
+    @if (Model.AttachableScopeNames.Count > 0)
+    {
+        <form method="post" asp-page-handler="AttachScope" asp-route-name="@Model.Editor.Name" class="editor-form editor-subform">
+            <h3 class="section-title">Attach an existing scope</h3>
+            <div class="form-field">
+                <select class="form-control" asp-for="AttachScope.ScopeName">
+                    @foreach (var scope in Model.AttachableScopeNames)
+                    {
+                        <option value="@scope">@scope</option>
+                    }
+                </select>
+                <span asp-validation-for="AttachScope.ScopeName" class="field-validation-error"></span>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-secondary">Attach</button>
+            </div>
+        </form>
+    }
+
+    <form method="post" asp-page-handler="CreateScope" asp-route-name="@Model.Editor.Name" class="editor-form editor-subform">
+        <h3 class="section-title">Create a new scope</h3>
+        <div class="form-field">
+            <label class="form-label" for="new-scope-name">Scope name</label>
+            <input class="form-control" id="new-scope-name" asp-for="CreateScope.ScopeName" required />
+            <span asp-validation-for="CreateScope.ScopeName" class="field-validation-error"></span>
+        </div>
+        <div class="form-field">
+            <label class="form-label" for="new-scope-display-name">Display name (optional)</label>
+            <input class="form-control" id="new-scope-display-name" asp-for="CreateScope.ScopeDisplayName" />
+            <span asp-validation-for="CreateScope.ScopeDisplayName" class="field-validation-error"></span>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn-secondary">Create &amp; attach</button>
+        </div>
+    </form>
+    </ck-tab>
+
+    <ck-tab label="Claims" data-tab="claims" active="@(tab == "claims" ? "active" : null)">
+    @if (Model.Editor.Claims.Count > 0)
+    {
+        <div class="scope-chips-row editor-scope-list">
+            @foreach (var claim in Model.Editor.Claims)
+            {
+                <form method="post" asp-page-handler="RemoveClaim" asp-route-name="@Model.Editor.Name" asp-route-claimType="@claim" class="scope-chip-form">
+                    <code class="scope-chip">@claim</code>
+                    <button type="submit" class="action-link action-link-danger" title="Remove @claim">&times;</button>
+                </form>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">No claims configured.</div>
+    }
+
+    <form method="post" asp-page-handler="AddClaim" asp-route-name="@Model.Editor.Name" class="editor-form editor-subform">
+        <h3 class="section-title">Add a claim type</h3>
+        <div class="form-field">
+            <label class="form-label" for="new-claim-type">Claim type</label>
+            <input class="form-control" id="new-claim-type" asp-for="Claim.ClaimType" required />
+            <span asp-validation-for="Claim.ClaimType" class="field-validation-error"></span>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn-secondary">Add claim</button>
+        </div>
+    </form>
+    </ck-tab>
+    }
+</ck-tabs>
+
+@if (!Model.Editor.IsNew)
+{
+    <dialog id="disable-modal" class="modal">
+        <form method="post" asp-page-handler="Disable" asp-route-name="@Model.Editor.Name">
+            <h2 class="modal-title">Disable API resource</h2>
+            <p class="modal-body">Type <strong>DISABLE</strong> to confirm. Existing tokens already issued for this resource remain valid until they expire.</p>
+            <input type="text" name="confirmation" class="form-control confirm-input" data-confirm-word="DISABLE" autocomplete="off" />
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
+                <button type="submit" class="btn-danger" data-confirm-submit disabled>Disable</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="delete-modal" class="modal">
+        <form method="post" asp-page-handler="Delete" asp-route-name="@Model.Editor.Name">
+            <h2 class="modal-title">Delete API resource</h2>
+            <p class="modal-body">Type <strong>DELETE</strong> to permanently remove <strong>@Model.Editor.Name</strong>, its secrets, scopes, and claims. This cannot be undone.</p>
+            <input type="text" name="confirmation" class="form-control confirm-input" data-confirm-word="DELETE" autocomplete="off" />
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
+                <button type="submit" class="btn-danger" data-confirm-submit disabled>Delete</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="revoke-secret-modal" class="modal">
+        <form method="post" asp-page-handler="RevokeSecret" asp-route-name="@Model.Editor.Name">
+            <input type="hidden" name="secretId" id="revoke-secret-id-input" value="" />
+            <h2 class="modal-title">Revoke secret</h2>
+            <p class="modal-body">Type <strong>REVOKE</strong> to confirm. Any client using this secret will immediately fail to authenticate.</p>
+            <input type="text" name="confirmation" class="form-control confirm-input" data-confirm-word="REVOKE" autocomplete="off" />
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
+                <button type="submit" class="btn-danger" data-confirm-submit disabled>Revoke</button>
+            </div>
+        </form>
+    </dialog>
+}
+
+@section Scripts {
+    <script src="~/js/tab-query-sync.js" asp-append-version="true"></script>
+    <script src="~/js/api-resource-editor.js" asp-append-version="true"></script>
+}
