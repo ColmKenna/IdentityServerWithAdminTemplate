@@ -103,7 +103,7 @@ public class ApiResourceEditorPageModelTests
     {
         var mock = new Mock<IApiResourceEditorService>();
         mock.Setup(s => s.SaveBasicsAsync(It.IsAny<SaveApiResourceBasicsCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(AdminMutationResult.Success());
+            .ReturnsAsync(SaveApiResourceBasicsResult.SucceededResult());
 
         var model = new EditorModel(mock.Object)
         {
@@ -125,7 +125,7 @@ public class ApiResourceEditorPageModelTests
         var mock = new Mock<IApiResourceEditorService>();
         mock.Setup(s => s.GetForEditAsync("original.api", It.IsAny<CancellationToken>())).ReturnsAsync(editor);
         mock.Setup(s => s.SaveBasicsAsync(It.IsAny<SaveApiResourceBasicsCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(AdminMutationResult.ConflictResult("Basics.Name", "An API resource named 'taken.api' already exists."));
+            .ReturnsAsync(SaveApiResourceBasicsResult.ConflictResult("Basics.Name", "An API resource named 'taken.api' already exists."));
 
         var model = new EditorModel(mock.Object)
         {
@@ -145,7 +145,7 @@ public class ApiResourceEditorPageModelTests
     {
         var mock = new Mock<IApiResourceEditorService>();
         mock.Setup(s => s.SaveBasicsAsync(It.IsAny<SaveApiResourceBasicsCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(AdminMutationResult.NotFoundResult());
+            .ReturnsAsync(SaveApiResourceBasicsResult.NotFoundResult());
 
         var model = new EditorModel(mock.Object)
         {
@@ -382,7 +382,7 @@ public class ApiResourceEditorPageModelTests
         var mock = new Mock<IApiResourceEditorService>();
         mock.Setup(s => s.GetForEditAsync("sales.api", It.IsAny<CancellationToken>())).ReturnsAsync(editor);
         mock.Setup(s => s.SaveBasicsAsync(It.IsAny<SaveApiResourceBasicsCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(AdminMutationResult.ValidationFailure("Basics.Name", "The Name field is required."));
+            .ReturnsAsync(SaveApiResourceBasicsResult.ValidationFailure("Basics.Name", "The Name field is required."));
 
         var model = new EditorModel(mock.Object)
         {
@@ -396,6 +396,35 @@ public class ApiResourceEditorPageModelTests
         Assert.IsType<PageResult>(result);
         Assert.Same(editor, model.Editor);
         Assert.Equal("basics", model.Tab);
+    }
+
+    [Fact]
+    public async Task OnPostSaveBasicsAsync_StronglyTypedValidationErrors_AddsFieldErrorsToModelState()
+    {
+        var editor = MakeEditor("sales.api");
+        var validationErrors = new ApiResourceBasicsValidationErrors();
+        validationErrors.AddNameError("Name is required.");
+        validationErrors.AddDisplayNameError("Display name is invalid.");
+        validationErrors.AddDescriptionError("Description is too long.");
+
+        var mock = new Mock<IApiResourceEditorService>();
+        mock.Setup(s => s.GetForEditAsync("sales.api", It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.SaveBasicsAsync(It.IsAny<SaveApiResourceBasicsCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(SaveApiResourceBasicsResult.ValidationFailure(validationErrors));
+
+        var model = new EditorModel(mock.Object)
+        {
+            Name = "sales.api",
+            Basics = new EditorModel.BasicsInputModel { Name = string.Empty },
+        };
+
+        var result = await model.OnPostSaveBasicsAsync(cancellationToken: CancellationToken.None);
+
+        Assert.IsType<PageResult>(result);
+        Assert.False(model.ModelState.IsValid);
+        Assert.True(model.ModelState.ContainsKey("Basics.Name"));
+        Assert.True(model.ModelState.ContainsKey("Basics.DisplayName"));
+        Assert.True(model.ModelState.ContainsKey("Basics.Description"));
     }
 
     // ---------- OnPostCreateScopeAsync ----------

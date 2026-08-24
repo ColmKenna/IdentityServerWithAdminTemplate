@@ -42,7 +42,7 @@ public interface IApiResourceEditorService
     /// Creates a new API resource (when <paramref name="command.OriginalName"/> is null) or updates
     /// the Basics fields of an existing one (when it is not).
     /// </summary>
-    Task<AdminMutationResult> SaveBasicsAsync(
+    Task<SaveApiResourceBasicsResult> SaveBasicsAsync(
         SaveApiResourceBasicsCommand command,
         CancellationToken cancellationToken = default);
 

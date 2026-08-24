@@ -50,8 +50,64 @@ public class ApiResourceValidationTests : IClassFixture<AdminWebFactory>
 
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
             Assert.True(result.Errors.ContainsKey("Basics.Name"));
+            Assert.Contains(result.Errors["Basics.Name"], msg => msg.Contains($"cannot exceed {ValidationConstants.MaxNameLength} characters"));
         });
     }
+
+    [Fact]
+    public async Task SaveBasicsAsync_OverlongDisplayName_FailsValidation()
+    {
+        var overlongDisplayName = new string('a', ValidationConstants.MaxDisplayNameLength + 1);
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IApiResourceEditorService>();
+
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, "valid-name", overlongDisplayName, "Desc"));
+
+            Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
+            Assert.True(result.Errors.ContainsKey("Basics.DisplayName"));
+            Assert.Contains(result.Errors["Basics.DisplayName"], msg => msg.Contains($"cannot exceed {ValidationConstants.MaxDisplayNameLength} characters"));
+        });
+    }
+
+    [Fact]
+    public async Task SaveBasicsAsync_OverlongDescription_FailsValidation()
+    {
+        var overlongDescription = new string('a', ValidationConstants.MaxDescriptionLength + 1);
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IApiResourceEditorService>();
+
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, "valid-name", "Display", overlongDescription));
+
+            Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
+            Assert.True(result.Errors.ContainsKey("Basics.Description"));
+            Assert.Contains(result.Errors["Basics.Description"], msg => msg.Contains($"cannot exceed {ValidationConstants.MaxDescriptionLength} characters"));
+        });
+    }
+
+    [Fact]
+    public async Task SaveBasicsAsync_MultipleValidationErrors_AllErrorsReported()
+    {
+        var overlongName = new string('a', ValidationConstants.MaxNameLength + 1);
+        var overlongDisplayName = new string('b', ValidationConstants.MaxDisplayNameLength + 1);
+        var overlongDescription = new string('c', ValidationConstants.MaxDescriptionLength + 1);
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IApiResourceEditorService>();
+
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, overlongName, overlongDisplayName, overlongDescription));
+
+            Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
+            Assert.True(result.Errors.ContainsKey("Basics.Name"));
+            Assert.True(result.Errors.ContainsKey("Basics.DisplayName"));
+            Assert.True(result.Errors.ContainsKey("Basics.Description"));
+        });
+    }
+
 
     [Fact]
     public async Task AddSecretAsync_PastOrCurrentExpiration_RejectedWithTimeProvider()

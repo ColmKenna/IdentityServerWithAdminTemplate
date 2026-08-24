@@ -129,7 +129,24 @@ public class EditorModel : PageModel
 
         if (!result.Succeeded)
         {
-            return await RedisplayWithErrorsAsync(result.Errors, "basics", cancellationToken);
+            if (result.ValidationErrors != null)
+            {
+                result.ValidationErrors.AddToModelState(ModelState, "Basics");
+            }
+            else
+            {
+                foreach (var (key, messages) in result.Errors)
+                {
+                    foreach (var message in messages)
+                    {
+                        ModelState.AddModelError(key, message);
+                    }
+                }
+            }
+
+            await PopulateEditorAsync(cancellationToken);
+            Tab = "basics";
+            return Page();
         }
 
         return RedirectToPage(new { name = Basics.Name, tab = "basics" });

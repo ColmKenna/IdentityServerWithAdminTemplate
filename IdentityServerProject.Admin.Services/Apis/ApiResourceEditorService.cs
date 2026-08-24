@@ -44,7 +44,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         return entity == null ? null : MapToEditorModel(entity);
     }
 
-    public Task<AdminMutationResult> SaveBasicsAsync(
+    public Task<SaveApiResourceBasicsResult> SaveBasicsAsync(
         SaveApiResourceBasicsCommand command,
         CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
@@ -54,7 +54,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             () => SaveBasicsCoreAsync(command!, cancellationToken),
             cancellationToken);
 
-    private async Task<AdminMutationResult> SaveBasicsCoreAsync(
+    private async Task<SaveApiResourceBasicsResult> SaveBasicsCoreAsync(
         SaveApiResourceBasicsCommand command,
         CancellationToken cancellationToken = default)
     {
@@ -64,36 +64,12 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var description = NormalizeNullableString(command.Description);
         var action = originalName == null ? AuditActions.Create : AuditActions.UpdateBasics;
 
-        var errors = new Dictionary<string, string[]>();
-
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            errors["Basics.Name"] = new[] { "Name is required." };
-        }
-        else if (!ScopeValidationHelper.IsValidScopeName(name))
-        {
-            errors["Basics.Name"] = new[] { "Name contains invalid characters. Use alphanumeric characters, hyphens, dots, slashes, and colons." };
-        }
-        else if (name.Length > ValidationConstants.MaxNameLength)
-        {
-            errors["Basics.Name"] = new[] { $"Name cannot exceed {ValidationConstants.MaxNameLength} characters." };
-        }
-
-        if (displayName != null && displayName.Length > ValidationConstants.MaxDisplayNameLength)
-        {
-            errors["Basics.DisplayName"] = new[] { $"Display Name cannot exceed {ValidationConstants.MaxDisplayNameLength} characters." };
-        }
-
-        if (description != null && description.Length > ValidationConstants.MaxDescriptionLength)
-        {
-            errors["Basics.Description"] = new[] { $"Description cannot exceed {ValidationConstants.MaxDescriptionLength} characters." };
-        }
-
-        if (errors.Count > 0)
+        var validationErrors = ApiResourceBasicsValidationErrors.Validate(name, displayName, description);
+        if (validationErrors.HasErrors)
         {
             await AuditDeniedAsync(action, AuditReasonCodes.ValidationFailed, name, displayName ?? name,
                 "API Resource validation failed.", cancellationToken);
-            return AdminMutationResult.ValidationFailure(errors);
+            return SaveApiResourceBasicsResult.ValidationFailure(validationErrors);
         }
 
         var collision = await _configurationDbContext.ApiResources
@@ -103,7 +79,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         {
             await AuditDeniedAsync(action, AuditReasonCodes.NameCollision, name, displayName ?? name,
                 $"An API Resource named '{name}' already exists.", cancellationToken);
-            return AdminMutationResult.ConflictResult("Basics.Name", $"An API resource named '{name}' already exists.");
+            return SaveApiResourceBasicsResult.ConflictResult("Basics.Name", $"An API resource named '{name}' already exists.");
         }
 
         try
@@ -126,7 +102,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
                 {
                     await AuditDeniedAsync(action, AuditReasonCodes.NotFound, originalName, originalName,
                         $"API Resource '{originalName}' was not found.", cancellationToken);
-                    return AdminMutationResult.NotFoundResult();
+                    return SaveApiResourceBasicsResult.NotFoundResult();
                 }
 
                 entity.Name = name;
@@ -141,13 +117,13 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
                 TargetId: name, TargetName: displayName ?? name,
                 Details: originalName == null ? $"Created API Resource '{name}'" : $"Updated basic settings for API Resource '{name}'"), cancellationToken);
 
-            return AdminMutationResult.Success();
+            return SaveApiResourceBasicsResult.SucceededResult();
         }
         catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
         {
             await AuditDeniedAsync(action, AuditReasonCodes.NameCollision, name, displayName ?? name,
                 $"An API Resource named '{name}' already exists.", cancellationToken);
-            return AdminMutationResult.ConflictResult("Basics.Name", $"An API resource named '{name}' already exists.");
+            return SaveApiResourceBasicsResult.ConflictResult("Basics.Name", $"An API resource named '{name}' already exists.");
         }
         catch (Exception ex)
         {
