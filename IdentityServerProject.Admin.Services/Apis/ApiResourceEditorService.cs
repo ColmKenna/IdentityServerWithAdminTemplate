@@ -138,20 +138,9 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             .AsNoTracking()
             .AnyAsync(r => r.Name == name && r.Name != originalName, cancellationToken);
 
-        if (collision)
-        {
-            await AuditDeniedAsync(
-                action,
-                AuditReasonCodes.NameCollision,
-                name,
-                displayName ?? name,
-                $"An API Resource named '{name}' already exists.",
-                cancellationToken);
-
-            return SaveApiResourceBasicsResult.ConflictResult("Basics.Name", $"An API resource named '{name}' already exists.");
-        }
-
-        return null;
+        return collision
+            ? await CreateNameCollisionResultAsync(action, name, displayName, cancellationToken)
+            : null;
     }
 
     private async Task<SaveApiResourceBasicsResult?> ApplyBasicsChangesAsync(
@@ -209,37 +198,36 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         {
             await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
-            await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.ApiResource,
+            await AuditSucceededAsync(
                 action,
-                AuditOutcome.Succeeded,
-                AuditReasonCodes.Succeeded,
-                TargetId: name,
-                TargetName: displayName ?? name,
-                Details: originalName == null
-                    ? $"Created API Resource '{name}'"
-                    : $"Updated basic settings for API Resource '{name}'"),
+                name,
+                displayName ?? name,
+                originalName == null ? $"Created API Resource '{name}'" : $"Updated basic settings for API Resource '{name}'",
                 cancellationToken);
 
             return SaveApiResourceBasicsResult.SucceededResult();
         }
         catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
         {
-            await AuditDeniedAsync(
-                action,
-                AuditReasonCodes.NameCollision,
-                name,
-                displayName ?? name,
-                $"An API Resource named '{name}' already exists.",
-                cancellationToken);
+            return await CreateNameCollisionResultAsync(action, name, displayName, cancellationToken);
+        }
+    }
 
-            return SaveApiResourceBasicsResult.ConflictResult("Basics.Name", $"An API resource named '{name}' already exists.");
-        }
-        catch (Exception ex)
-        {
-            await AuditFailedAsync(action, name, displayName ?? name, ex, cancellationToken);
-            throw;
-        }
+    private async Task<SaveApiResourceBasicsResult> CreateNameCollisionResultAsync(
+        string action,
+        string name,
+        string? displayName,
+        CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(
+            action,
+            AuditReasonCodes.NameCollision,
+            name,
+            displayName ?? name,
+            $"An API Resource named '{name}' already exists.",
+            cancellationToken);
+
+        return SaveApiResourceBasicsResult.ConflictResult("Basics.Name", $"An API resource named '{name}' already exists.");
     }
 
     #endregion
@@ -815,6 +803,11 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
     private Task AuditDeniedAsync(string action, string reasonCode, string targetId, string targetName, string details, CancellationToken cancellationToken)
         => _auditWriter.WriteAsync(new AdminAuditEvent(
             AuditCategories.ApiResource, action, AuditOutcome.Denied, reasonCode,
+            TargetId: targetId, TargetName: targetName, Details: details), cancellationToken);
+
+    private Task AuditSucceededAsync(string action, string targetId, string targetName, string details, CancellationToken cancellationToken)
+        => _auditWriter.WriteAsync(new AdminAuditEvent(
+            AuditCategories.ApiResource, action, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
             TargetId: targetId, TargetName: targetName, Details: details), cancellationToken);
 
     private async Task<T> ExecuteAuditedAsync<T>(
