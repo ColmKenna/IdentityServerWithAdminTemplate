@@ -83,6 +83,24 @@ public class ApiResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
     }
 
     [Fact]
+    public async Task SaveBasicsAsync_ValidationFailed_WritesDeniedAuditEvent()
+    {
+        var invalidName = "invalid name with spaces";
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IApiResourceEditorService>();
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, invalidName, "Display", "Desc"));
+            Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
+        });
+
+        var entry = await GetSingleAuditEntryAsync(AuditActions.Create, invalidName);
+        Assert.Equal(AuditOutcome.Denied, entry.Outcome);
+        Assert.Equal(AuditReasonCodes.ValidationFailed, entry.ReasonCode);
+        Assert.Equal("API Resource validation failed.", entry.Details);
+    }
+
+    [Fact]
     public async Task SaveBasicsAsync_NameCollision_WritesDeniedAuditEvent()
     {
         var existingName = $"apires-audit-collision-existing-{Guid.NewGuid():N}";
@@ -98,6 +116,24 @@ public class ApiResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
         });
 
         var entry = await GetSingleAuditEntryAsync(AuditActions.UpdateBasics, existingName);
+        Assert.Equal(AuditOutcome.Denied, entry.Outcome);
+        Assert.Equal(AuditReasonCodes.NameCollision, entry.ReasonCode);
+    }
+
+    [Fact]
+    public async Task SaveBasicsAsync_CreateCollision_WritesDeniedAuditEvent()
+    {
+        var existingName = $"apires-audit-create-collision-{Guid.NewGuid():N}";
+        await SeedApiResourceAsync(new ApiResource { Name = existingName, Enabled = true });
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IApiResourceEditorService>();
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, existingName, "Duplicate", null));
+            Assert.Equal(AdminMutationStatus.Conflict, result.Status);
+        });
+
+        var entry = await GetSingleAuditEntryAsync(AuditActions.Create, existingName);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
         Assert.Equal(AuditReasonCodes.NameCollision, entry.ReasonCode);
     }

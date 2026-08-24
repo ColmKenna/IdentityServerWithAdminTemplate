@@ -120,6 +120,56 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
     }
 
     [Fact]
+    public async Task SaveBasicsAsync_ExistingResourceSameName_UpdatesFieldsWithoutCollision()
+    {
+        var tag = Guid.NewGuid().ToString("N");
+        var name = $"{tag}-unchanged-name";
+        await SeedApiResourceAsync(new ApiResource
+        {
+            Name = name,
+            DisplayName = "Old Display",
+            Description = "Old Desc",
+            Enabled = true,
+        });
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IApiResourceEditorService>();
+
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(name, name, "Updated Display", "Updated Desc"));
+
+            Assert.True(result.Succeeded);
+            var updated = await service.GetForEditAsync(name);
+            Assert.NotNull(updated);
+            Assert.Equal("Updated Display", updated!.DisplayName);
+            Assert.Equal("Updated Desc", updated.Description);
+        });
+    }
+
+    [Fact]
+    public async Task SaveBasicsAsync_CreateCollision_ReturnsConflict()
+    {
+        var tag = Guid.NewGuid().ToString("N");
+        var existingName = $"{tag}-existing";
+        await SeedApiResourceAsync(new ApiResource { Name = existingName, DisplayName = "Original", Enabled = true });
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IApiResourceEditorService>();
+
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, existingName, "Duplicate", "Desc"));
+
+            Assert.Equal(AdminMutationStatus.Conflict, result.Status);
+            Assert.True(result.Errors.ContainsKey("Basics.Name"));
+            Assert.Contains(result.Errors["Basics.Name"], msg => msg.Contains($"An API resource named '{existingName}' already exists."));
+
+            var editor = await service.GetForEditAsync(existingName);
+            Assert.NotNull(editor);
+            Assert.Equal("Original", editor!.DisplayName);
+        });
+    }
+
+    [Fact]
     public async Task SaveBasicsAsync_NameCollidesWithAnotherResource_ReturnsNameCollision()
     {
         var tag = Guid.NewGuid().ToString("N");
@@ -135,6 +185,8 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
             var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(otherName, existingName, null, null));
 
             Assert.Equal(AdminMutationStatus.Conflict, result.Status);
+            Assert.True(result.Errors.ContainsKey("Basics.Name"));
+            Assert.Contains(result.Errors["Basics.Name"], msg => msg.Contains($"An API resource named '{existingName}' already exists."));
         });
     }
 

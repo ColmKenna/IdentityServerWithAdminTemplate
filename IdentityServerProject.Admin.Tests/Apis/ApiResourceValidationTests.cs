@@ -108,6 +108,36 @@ public class ApiResourceValidationTests : IClassFixture<AdminWebFactory>
         });
     }
 
+    [Fact]
+    public async Task SaveBasicsAsync_ExistingResourceInvalidBasics_DoesNotPersistChanges()
+    {
+        var tag = Guid.NewGuid().ToString("N");
+        var name = $"{tag}-valid-api";
+        var originalDisplay = "Original Display";
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var db = sp.GetRequiredService<ConfigurationDbContext>();
+            db.ApiResources.Add(new ApiResource { Name = name, DisplayName = originalDisplay, Enabled = true });
+            await db.SaveChangesAsync();
+        });
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IApiResourceEditorService>();
+
+            var overlongName = new string('a', ValidationConstants.MaxNameLength + 1);
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(name, overlongName, "Updated Display", "Updated Desc"));
+
+            Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
+            Assert.True(result.Errors.ContainsKey("Basics.Name"));
+
+            var editor = await service.GetForEditAsync(name);
+            Assert.NotNull(editor);
+            Assert.Equal(originalDisplay, editor!.DisplayName);
+        });
+    }
+
 
     [Fact]
     public async Task AddSecretAsync_PastOrCurrentExpiration_RejectedWithTimeProvider()

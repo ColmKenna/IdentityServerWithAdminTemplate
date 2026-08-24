@@ -64,65 +64,175 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var description = NormalizeNullableString(command.Description);
         var action = originalName == null ? AuditActions.Create : AuditActions.UpdateBasics;
 
+        if (await ValidateBasicsAsync(
+                action,
+                name,
+                displayName,
+                description,
+                cancellationToken) is { } validationFailure)
+        {
+            return validationFailure;
+        }
+
+        if (await CheckNameCollisionAsync(
+                action,
+                originalName,
+                name,
+                displayName,
+                cancellationToken) is { } collisionFailure)
+        {
+            return collisionFailure;
+        }
+
+        if (await ApplyBasicsChangesAsync(
+                action,
+                originalName,
+                name,
+                displayName,
+                description,
+                cancellationToken) is { } mutationFailure)
+        {
+            return mutationFailure;
+        }
+
+        return await PersistBasicsAsync(
+            action,
+            originalName,
+            name,
+            displayName,
+            cancellationToken);
+    }
+
+    private async Task<SaveApiResourceBasicsResult?> ValidateBasicsAsync(
+        string action,
+        string name,
+        string? displayName,
+        string? description,
+        CancellationToken cancellationToken)
+    {
         var validationErrors = ApiResourceBasicsValidationErrors.Validate(name, displayName, description);
         if (validationErrors.HasErrors)
         {
-            await AuditDeniedAsync(action, AuditReasonCodes.ValidationFailed, name, displayName ?? name,
-                "API Resource validation failed.", cancellationToken);
+            await AuditDeniedAsync(
+                action,
+                AuditReasonCodes.ValidationFailed,
+                name,
+                displayName ?? name,
+                "API Resource validation failed.",
+                cancellationToken);
+
             return SaveApiResourceBasicsResult.ValidationFailure(validationErrors);
         }
 
+        return null;
+    }
+
+    private async Task<SaveApiResourceBasicsResult?> CheckNameCollisionAsync(
+        string action,
+        string? originalName,
+        string name,
+        string? displayName,
+        CancellationToken cancellationToken)
+    {
         var collision = await _configurationDbContext.ApiResources
             .AsNoTracking()
             .AnyAsync(r => r.Name == name && r.Name != originalName, cancellationToken);
+
         if (collision)
         {
-            await AuditDeniedAsync(action, AuditReasonCodes.NameCollision, name, displayName ?? name,
-                $"An API Resource named '{name}' already exists.", cancellationToken);
+            await AuditDeniedAsync(
+                action,
+                AuditReasonCodes.NameCollision,
+                name,
+                displayName ?? name,
+                $"An API Resource named '{name}' already exists.",
+                cancellationToken);
+
             return SaveApiResourceBasicsResult.ConflictResult("Basics.Name", $"An API resource named '{name}' already exists.");
         }
 
+        return null;
+    }
+
+    private async Task<SaveApiResourceBasicsResult?> ApplyBasicsChangesAsync(
+        string action,
+        string? originalName,
+        string name,
+        string? displayName,
+        string? description,
+        CancellationToken cancellationToken)
+    {
+        if (originalName == null)
+        {
+            _configurationDbContext.ApiResources.Add(new ApiResource
+            {
+                Name = name,
+                DisplayName = displayName,
+                Description = description,
+                Enabled = true,
+            });
+
+            return null;
+        }
+
+        var entity = await _configurationDbContext.ApiResources
+            .FirstOrDefaultAsync(r => r.Name == originalName, cancellationToken);
+
+        if (entity == null)
+        {
+            await AuditDeniedAsync(
+                action,
+                AuditReasonCodes.NotFound,
+                originalName,
+                originalName,
+                $"API Resource '{originalName}' was not found.",
+                cancellationToken);
+
+            return SaveApiResourceBasicsResult.NotFoundResult();
+        }
+
+        entity.Name = name;
+        entity.DisplayName = displayName;
+        entity.Description = description;
+
+        return null;
+    }
+
+    private async Task<SaveApiResourceBasicsResult> PersistBasicsAsync(
+        string action,
+        string? originalName,
+        string name,
+        string? displayName,
+        CancellationToken cancellationToken)
+    {
         try
         {
-            if (originalName == null)
-            {
-                _configurationDbContext.ApiResources.Add(new ApiResource
-                {
-                    Name = name,
-                    DisplayName = displayName,
-                    Description = description,
-                    Enabled = true,
-                });
-            }
-            else
-            {
-                var entity = await _configurationDbContext.ApiResources
-                    .FirstOrDefaultAsync(r => r.Name == originalName, cancellationToken);
-                if (entity == null)
-                {
-                    await AuditDeniedAsync(action, AuditReasonCodes.NotFound, originalName, originalName,
-                        $"API Resource '{originalName}' was not found.", cancellationToken);
-                    return SaveApiResourceBasicsResult.NotFoundResult();
-                }
-
-                entity.Name = name;
-                entity.DisplayName = displayName;
-                entity.Description = description;
-            }
-
             await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.ApiResource, action, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
-                TargetId: name, TargetName: displayName ?? name,
-                Details: originalName == null ? $"Created API Resource '{name}'" : $"Updated basic settings for API Resource '{name}'"), cancellationToken);
+                AuditCategories.ApiResource,
+                action,
+                AuditOutcome.Succeeded,
+                AuditReasonCodes.Succeeded,
+                TargetId: name,
+                TargetName: displayName ?? name,
+                Details: originalName == null
+                    ? $"Created API Resource '{name}'"
+                    : $"Updated basic settings for API Resource '{name}'"),
+                cancellationToken);
 
             return SaveApiResourceBasicsResult.SucceededResult();
         }
         catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
         {
-            await AuditDeniedAsync(action, AuditReasonCodes.NameCollision, name, displayName ?? name,
-                $"An API Resource named '{name}' already exists.", cancellationToken);
+            await AuditDeniedAsync(
+                action,
+                AuditReasonCodes.NameCollision,
+                name,
+                displayName ?? name,
+                $"An API Resource named '{name}' already exists.",
+                cancellationToken);
+
             return SaveApiResourceBasicsResult.ConflictResult("Basics.Name", $"An API resource named '{name}' already exists.");
         }
         catch (Exception ex)
