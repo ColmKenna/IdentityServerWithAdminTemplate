@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace IdentityServerProject.Services.Validation;
 
@@ -19,20 +20,20 @@ public sealed record AdminMutationResult(
     public string? ErrorMessage => Errors.Values.SelectMany(messages => messages).FirstOrDefault();
 
     public static AdminMutationResult Success() =>
-        new(AdminMutationStatus.Succeeded, new Dictionary<string, string[]>());
+        new(AdminMutationStatus.Succeeded, ValidationErrorDictionary.Empty);
 
     public static AdminMutationResult NotFoundResult() =>
-        new(AdminMutationStatus.NotFound, new Dictionary<string, string[]>
-        {
-            [string.Empty] = new[] { "The requested resource was not found." }
-        });
+        new(AdminMutationStatus.NotFound, new ValidationErrorDictionary().AddError(string.Empty, "The requested resource was not found."));
 
     public static AdminMutationResult ConflictResult(string field, string message) =>
-        new(AdminMutationStatus.Conflict, new Dictionary<string, string[]> { [field] = new[] { message } });
+        new(AdminMutationStatus.Conflict, new ValidationErrorDictionary().AddError(field, message));
 
     public static AdminMutationResult ValidationFailure(IReadOnlyDictionary<string, string[]> errors) =>
         new(AdminMutationStatus.ValidationFailed, errors);
 
+    public static AdminMutationResult ValidationFailure(ValidationErrorDictionary errors) =>
+        new(AdminMutationStatus.ValidationFailed, errors);
+
     public static AdminMutationResult ValidationFailure(string field, string message) =>
-        new(AdminMutationStatus.ValidationFailed, new Dictionary<string, string[]> { [field] = new[] { message } });
+        new(AdminMutationStatus.ValidationFailed, new ValidationErrorDictionary().AddError(field, message));
 }

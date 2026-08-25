@@ -260,21 +260,21 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         name = name?.Trim() ?? string.Empty;
         var description = NormalizeNullableString(rawDescription);
 
-        var errors = new Dictionary<string, string[]>();
+        var errors = new ValidationErrorDictionary();
 
         AddIdentifierError(errors, "Name", "API Resource", name);
 
         if (description != null && description.Length > ValidationConstants.MaxSecretDescriptionLength)
         {
-            errors["Secret.Description"] = new[] { $"Description cannot exceed {ValidationConstants.MaxSecretDescriptionLength} characters." };
+            errors.AddError("Secret.Description", $"Description cannot exceed {ValidationConstants.MaxSecretDescriptionLength} characters.");
         }
 
         if (expiration.HasValue && expiration.Value <= _timeProvider.GetUtcNow().UtcDateTime)
         {
-            errors["Secret.Expiration"] = new[] { "Secret expiration date must be in the future." };
+            errors.AddError("Secret.Expiration", "Secret expiration date must be in the future.");
         }
 
-        if (errors.Count > 0)
+        if (errors.HasErrors)
         {
             await AuditDeniedAsync(AuditActions.GenerateSecret, AuditReasonCodes.ValidationFailed, name, name,
                 "API Resource secret validation failed.", cancellationToken);
@@ -374,10 +374,10 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         name = name?.Trim() ?? string.Empty;
         var scopeNameStr = scopeName.Value?.Trim() ?? string.Empty;
 
-        var errors = new Dictionary<string, string[]>();
+        var errors = new ValidationErrorDictionary();
         AddIdentifierError(errors, "Name", "API Resource", name);
         AddIdentifierError(errors, "AttachScope.ScopeName", "Scope", scopeNameStr);
-        if (errors.Count > 0)
+        if (errors.HasErrors)
         {
             await AuditDeniedAsync(AuditActions.AttachScope, AuditReasonCodes.ValidationFailed, name, name,
                 "Scope attachment validation failed.", cancellationToken);
@@ -442,29 +442,29 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var scopeName = command.ScopeName?.Trim() ?? string.Empty;
         var scopeDisplayName = NormalizeNullableString(command.DisplayName);
 
-        var errors = new Dictionary<string, string[]>();
+        var errors = new ValidationErrorDictionary();
 
         AddIdentifierError(errors, "Name", "API Resource", name);
 
         if (string.IsNullOrWhiteSpace(scopeName))
         {
-            errors["CreateScope.ScopeName"] = new[] { "Scope name is required." };
+            errors.AddError("CreateScope.ScopeName", "Scope name is required.");
         }
         else if (!ScopeValidationHelper.IsValidScopeName(scopeName))
         {
-            errors["CreateScope.ScopeName"] = new[] { "Scope name contains invalid characters." };
+            errors.AddError("CreateScope.ScopeName", "Scope name contains invalid characters.");
         }
         else if (scopeName.Length > ValidationConstants.MaxScopeNameLength)
         {
-            errors["CreateScope.ScopeName"] = new[] { $"Scope name cannot exceed {ValidationConstants.MaxScopeNameLength} characters." };
+            errors.AddError("CreateScope.ScopeName", $"Scope name cannot exceed {ValidationConstants.MaxScopeNameLength} characters.");
         }
 
         if (scopeDisplayName != null && scopeDisplayName.Length > ValidationConstants.MaxDisplayNameLength)
         {
-            errors["CreateScope.DisplayName"] = new[] { $"Display name cannot exceed {ValidationConstants.MaxDisplayNameLength} characters." };
+            errors.AddError("CreateScope.DisplayName", $"Display name cannot exceed {ValidationConstants.MaxDisplayNameLength} characters.");
         }
 
-        if (errors.Count > 0)
+        if (errors.HasErrors)
         {
             await AuditDeniedAsync(AuditActions.CreateScope, AuditReasonCodes.ValidationFailed, name, name,
                 "Scope creation validation failed.", cancellationToken);
@@ -588,17 +588,17 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var name = command.ResourceName?.Trim() ?? string.Empty;
         var claimType = command.ClaimType?.Trim() ?? string.Empty;
 
-        var errors = new Dictionary<string, string[]>();
+        var errors = new ValidationErrorDictionary();
         AddIdentifierError(errors, "Name", "API Resource", name);
         if (string.IsNullOrWhiteSpace(claimType))
         {
-            errors["Claim.ClaimType"] = new[] { "Claim type is required." };
+            errors.AddError("Claim.ClaimType", "Claim type is required.");
         }
         else if (claimType.Length > ValidationConstants.MaxClaimTypeLength)
         {
-            errors["Claim.ClaimType"] = new[] { $"Claim type cannot exceed {ValidationConstants.MaxClaimTypeLength} characters." };
+            errors.AddError("Claim.ClaimType", $"Claim type cannot exceed {ValidationConstants.MaxClaimTypeLength} characters.");
         }
-        if (errors.Count > 0)
+        if (errors.HasErrors)
         {
             await AuditDeniedAsync(AuditActions.AddClaim, AuditReasonCodes.ValidationFailed, name, name,
                 "API Resource claim validation failed.", cancellationToken);

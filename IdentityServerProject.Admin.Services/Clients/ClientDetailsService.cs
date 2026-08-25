@@ -280,24 +280,24 @@ public partial class ClientDetailsService : IClientDetailsService
 
         var trimmedName = clientName?.Trim() ?? string.Empty;
         var trimmedDescription = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
-        var errors = new Dictionary<string, string[]>();
+        var errors = new ValidationErrorDictionary();
         if (clientId.Length == 0)
         {
-            errors["Id"] = new[] { "Client ID is required." };
+            errors.AddError("Id", "Client ID is required.");
         }
         if (trimmedName.Length == 0)
         {
-            errors["Input.ClientName"] = new[] { "Client Name is required." };
+            errors.AddError("Input.ClientName", "Client Name is required.");
         }
         else if (trimmedName.Length > ValidationConstants.MaxNameLength)
         {
-            errors["Input.ClientName"] = new[] { $"Client Name cannot exceed {ValidationConstants.MaxNameLength} characters." };
+            errors.AddError("Input.ClientName", $"Client Name cannot exceed {ValidationConstants.MaxNameLength} characters.");
         }
         if (trimmedDescription != null && trimmedDescription.Length > ValidationConstants.MaxDescriptionLength)
         {
-            errors["Input.Description"] = new[] { $"Description cannot exceed {ValidationConstants.MaxDescriptionLength} characters." };
+            errors.AddError("Input.Description", $"Description cannot exceed {ValidationConstants.MaxDescriptionLength} characters.");
         }
-        if (errors.Count > 0)
+        if (errors.HasErrors)
         {
             await AuditDeniedAsync(AuditActions.UpdateBasics, AuditReasonCodes.ValidationFailed, clientId, trimmedName,
                 "Client basics validation failed.", cancellationToken);
@@ -406,15 +406,15 @@ public partial class ClientDetailsService : IClientDetailsService
     private async Task<AdminMutationResult> UpdateClientAuthenticationCoreAsync(string clientId, ClientAuthenticationInputModel input, CancellationToken cancellationToken = default)
     {
         clientId = clientId?.Trim() ?? string.Empty;
-        var errors = new Dictionary<string, string[]>();
+        var errors = new ValidationErrorDictionary();
         if (clientId.Length == 0)
         {
-            errors["Id"] = new[] { "Client ID is required." };
+            errors.AddError("Id", "Client ID is required.");
         }
 
         if (input == null)
         {
-            errors["Input"] = new[] { "Authentication settings are required." };
+            errors.AddError("Input", "Authentication settings are required.");
             input = new ClientAuthenticationInputModel();
         }
 
@@ -425,11 +425,11 @@ public partial class ClientDetailsService : IClientDetailsService
             .ToList() ?? new();
         if (grantTypes.Count == 0)
         {
-            errors["Input.GrantTypes"] = new[] { "At least one grant type must be selected." };
+            errors.AddError("Input.GrantTypes", "At least one grant type must be selected.");
         }
         else if (grantTypes.Any(grantType => grantType.Length > ValidationConstants.MaxGrantTypeLength))
         {
-            errors["Input.GrantTypes"] = new[] { $"Grant types cannot exceed {ValidationConstants.MaxGrantTypeLength} characters." };
+            errors.AddError("Input.GrantTypes", $"Grant types cannot exceed {ValidationConstants.MaxGrantTypeLength} characters.");
         }
 
         var redirectUris = input.RedirectUris?
@@ -440,7 +440,7 @@ public partial class ClientDetailsService : IClientDetailsService
 
         if (redirectUris.Any(uri => !UriValidationHelper.IsValidHttpOrHttpsUri(uri, ValidationConstants.MaxClientRedirectUriLength)))
         {
-            errors["Input.RedirectUris"] = new[] { "Each Redirect URI must be an absolute HTTP or HTTPS URL within the configured length limit." };
+            errors.AddError("Input.RedirectUris", "Each Redirect URI must be an absolute HTTP or HTTPS URL within the configured length limit.");
         }
 
         var postLogoutUris = input.PostLogoutRedirectUris?
@@ -451,7 +451,7 @@ public partial class ClientDetailsService : IClientDetailsService
 
         if (postLogoutUris.Any(uri => !UriValidationHelper.IsValidHttpOrHttpsUri(uri, ValidationConstants.MaxClientPostLogoutRedirectUriLength)))
         {
-            errors["Input.PostLogoutRedirectUris"] = new[] { "Each Post-Logout Redirect URI must be an absolute HTTP or HTTPS URL within the configured length limit." };
+            errors.AddError("Input.PostLogoutRedirectUris", "Each Post-Logout Redirect URI must be an absolute HTTP or HTTPS URL within the configured length limit.");
         }
 
         var rawCorsOrigins = input.CorsOrigins?
@@ -463,7 +463,7 @@ public partial class ClientDetailsService : IClientDetailsService
         {
             if (!UriValidationHelper.TryNormalizeCorsOrigin(origin, ValidationConstants.MaxClientCorsOriginLength, out var normalizedOrigin))
             {
-                errors["Input.CorsOrigins"] = new[] { "Each CORS Origin must contain only an HTTP or HTTPS scheme, host, and optional port." };
+                errors.AddError("Input.CorsOrigins", "Each CORS Origin must contain only an HTTP or HTTPS scheme, host, and optional port.");
                 break;
             }
 
@@ -475,15 +475,15 @@ public partial class ClientDetailsService : IClientDetailsService
 
         if (!string.IsNullOrWhiteSpace(input.FrontChannelLogoutUri) && !UriValidationHelper.IsValidHttpOrHttpsUri(input.FrontChannelLogoutUri, ValidationConstants.MaxLogoutUriLength))
         {
-            errors["Input.FrontChannelLogoutUri"] = new[] { "Front-channel logout URI must be an absolute HTTP or HTTPS URL within the configured length limit." };
+            errors.AddError("Input.FrontChannelLogoutUri", "Front-channel logout URI must be an absolute HTTP or HTTPS URL within the configured length limit.");
         }
 
         if (!string.IsNullOrWhiteSpace(input.BackChannelLogoutUri) && !UriValidationHelper.IsValidHttpOrHttpsUri(input.BackChannelLogoutUri, ValidationConstants.MaxLogoutUriLength))
         {
-            errors["Input.BackChannelLogoutUri"] = new[] { "Back-channel logout URI must be an absolute HTTP or HTTPS URL within the configured length limit." };
+            errors.AddError("Input.BackChannelLogoutUri", "Back-channel logout URI must be an absolute HTTP or HTTPS URL within the configured length limit.");
         }
 
-        if (errors.Count > 0)
+        if (errors.HasErrors)
         {
             await AuditDeniedAsync(AuditActions.UpdateAuthentication, AuditReasonCodes.ValidationFailed, clientId, clientId,
                 "Client authentication validation failed.", cancellationToken);
@@ -992,30 +992,26 @@ public partial class ClientDetailsService : IClientDetailsService
     private async Task<AdminMutationResult> UpdateClientTokenSettingsCoreAsync(string clientId, ClientTokenSettingsInputModel input, CancellationToken cancellationToken = default)
     {
         clientId = clientId?.Trim() ?? string.Empty;
-        var errors = new Dictionary<string, string[]>();
+        var errors = new ValidationErrorDictionary();
         if (clientId.Length == 0)
         {
-            errors["Id"] = new[] { "Client ID is required." };
+            errors.AddError("Id", "Client ID is required.");
         }
         if (input == null)
         {
-            errors["Input"] = new[] { "Token settings are required." };
+            errors.AddError("Input", "Token settings are required.");
         }
         else
         {
             if (!input.AccessTokenLifetime.IsValidAccessToken)
             {
-                errors["Input.AccessTokenLifetime"] = new[]
-                {
-                    $"Access Token Lifetime must be between {ValidationConstants.MinAccessTokenLifetime} and {ValidationConstants.MaxAccessTokenLifetime} seconds."
-                };
+                errors.AddError("Input.AccessTokenLifetime",
+                    $"Access Token Lifetime must be between {ValidationConstants.MinAccessTokenLifetime} and {ValidationConstants.MaxAccessTokenLifetime} seconds.");
             }
             if (!input.IdentityTokenLifetime.IsValidIdentityToken)
             {
-                errors["Input.IdentityTokenLifetime"] = new[]
-                {
-                    $"Identity Token Lifetime must be between {ValidationConstants.MinIdentityTokenLifetime} and {ValidationConstants.MaxIdentityTokenLifetime} seconds."
-                };
+                errors.AddError("Input.IdentityTokenLifetime",
+                    $"Identity Token Lifetime must be between {ValidationConstants.MinIdentityTokenLifetime} and {ValidationConstants.MaxIdentityTokenLifetime} seconds.");
             }
             
             if (input.AllowOfflineAccess)
@@ -1023,30 +1019,24 @@ public partial class ClientDetailsService : IClientDetailsService
                 var refresh = input.RefreshToken ?? new RefreshTokenSettings();
                 if (!refresh.IsAbsoluteLifetimeValid)
                 {
-                    errors["Input.AbsoluteRefreshTokenLifetime"] = new[]
-                    {
-                        $"Absolute Refresh Token Lifetime must be between {ValidationConstants.MinRefreshTokenLifetime} and {ValidationConstants.MaxAbsoluteRefreshTokenLifetime} seconds."
-                    };
+                    errors.AddError("Input.AbsoluteRefreshTokenLifetime",
+                        $"Absolute Refresh Token Lifetime must be between {ValidationConstants.MinRefreshTokenLifetime} and {ValidationConstants.MaxAbsoluteRefreshTokenLifetime} seconds.");
                 }
                 
                 if (!refresh.IsSlidingLifetimeValid)
                 {
-                    errors["Input.SlidingRefreshTokenLifetime"] = new[]
-                    {
-                        $"Sliding Refresh Token Lifetime must be between {ValidationConstants.MinRefreshTokenLifetime} and {ValidationConstants.MaxSlidingRefreshTokenLifetime} seconds."
-                    };
+                    errors.AddError("Input.SlidingRefreshTokenLifetime",
+                        $"Sliding Refresh Token Lifetime must be between {ValidationConstants.MinRefreshTokenLifetime} and {ValidationConstants.MaxSlidingRefreshTokenLifetime} seconds.");
                 }
 
                 if (!refresh.IsSlidingValid)
                 {
-                    errors["Input.SlidingRefreshTokenLifetime"] = new[]
-                    {
-                        "Sliding Refresh Token Lifetime cannot exceed the Absolute Refresh Token Lifetime."
-                    };
+                    errors.AddError("Input.SlidingRefreshTokenLifetime",
+                        "Sliding Refresh Token Lifetime cannot exceed the Absolute Refresh Token Lifetime.");
                 }
             }
         }
-        if (errors.Count > 0)
+        if (errors.HasErrors)
         {
             await AuditDeniedAsync(AuditActions.UpdateTokenSettings, AuditReasonCodes.ValidationFailed, clientId, clientId,
                 "Client token settings validation failed.", cancellationToken);

@@ -221,7 +221,7 @@ public class ClientSecretGenerateResult
 {
     public bool Success { get; set; }
     public AdminMutationStatus Status { get; set; }
-    public IReadOnlyDictionary<string, string[]> Errors { get; set; } = new Dictionary<string, string[]>();
+    public IReadOnlyDictionary<string, string[]> Errors { get; set; } = ValidationErrorDictionary.Empty;
     public string? ErrorMessage { get; set; }
     public string? PlaintextSecret { get; set; }
 
@@ -233,7 +233,7 @@ public class ClientSecretGenerateResult
         {
             Success = false,
             Status = AdminMutationStatus.ValidationFailed,
-            Errors = new Dictionary<string, string[]> { [field] = new[] { errorMessage } },
+            Errors = new ValidationErrorDictionary().AddError(field, errorMessage),
             ErrorMessage = errorMessage
         };
 
@@ -244,7 +244,7 @@ public class ClientSecretGenerateResult
         {
             Success = false,
             Status = status,
-            Errors = new Dictionary<string, string[]> { [string.Empty] = new[] { errorMessage } },
+            Errors = new ValidationErrorDictionary().AddError(string.Empty, errorMessage),
             ErrorMessage = errorMessage
         };
 }

@@ -67,12 +67,12 @@ public sealed class ApiResourceBasicsValidationErrors
         }
     }
 
-    public IReadOnlyDictionary<string, string[]> ToDictionary()
+    public ValidationErrorDictionary ToDictionary()
     {
-        var dict = new Dictionary<string, string[]>();
-        if (Name.Count > 0) dict["Basics.Name"] = Name.ToArray();
-        if (DisplayName.Count > 0) dict["Basics.DisplayName"] = DisplayName.ToArray();
-        if (Description.Count > 0) dict["Basics.Description"] = Description.ToArray();
+        var dict = new ValidationErrorDictionary();
+        if (Name.Count > 0) dict.AddErrors("Basics.Name", Name);
+        if (DisplayName.Count > 0) dict.AddErrors("Basics.DisplayName", DisplayName);
+        if (Description.Count > 0) dict.AddErrors("Basics.Description", Description);
         return dict;
     }
 }

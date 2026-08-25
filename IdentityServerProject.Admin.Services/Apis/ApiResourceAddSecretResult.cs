@@ -13,7 +13,7 @@ public sealed class ApiResourceAddSecretResult
     public required AdminMutationStatus Status { get; init; }
     public required bool Success { get; init; }
     public required string? PlaintextSecret { get; init; }
-    public IReadOnlyDictionary<string, string[]> Errors { get; init; } = new Dictionary<string, string[]>();
+    public IReadOnlyDictionary<string, string[]> Errors { get; init; } = ValidationErrorDictionary.Empty;
 
     public static ApiResourceAddSecretResult NotFound { get; } = new()
     {
@@ -42,6 +42,6 @@ public sealed class ApiResourceAddSecretResult
         Status = AdminMutationStatus.ValidationFailed,
         Success = false,
         PlaintextSecret = null,
-        Errors = new Dictionary<string, string[]> { [field] = new[] { message } }
+        Errors = new ValidationErrorDictionary().AddError(field, message)
     };
 }

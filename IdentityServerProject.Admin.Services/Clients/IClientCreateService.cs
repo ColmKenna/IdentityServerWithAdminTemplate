@@ -36,13 +36,13 @@ public class ClientCreateResult
     public string? ErrorMessage { get; init; }
     public string? PlaintextSecret { get; init; }
     public string? ClientId { get; init; }
-    public IReadOnlyDictionary<string, string[]> Errors { get; init; } = new Dictionary<string, string[]>();
+    public IReadOnlyDictionary<string, string[]> Errors { get; init; } = ValidationErrorDictionary.Empty;
 
     public static ClientCreateResult Failed(string errorMessage, AdminMutationStatus status = AdminMutationStatus.ValidationFailed) =>
-        new() { Status = status, Success = false, ErrorMessage = errorMessage, Errors = new Dictionary<string, string[]> { [""] = new[] { errorMessage } } };
+        new() { Status = status, Success = false, ErrorMessage = errorMessage, Errors = new ValidationErrorDictionary().AddError(string.Empty, errorMessage) };
 
     public static ClientCreateResult Failed(string field, string errorMessage, AdminMutationStatus status = AdminMutationStatus.ValidationFailed) =>
-        new() { Status = status, Success = false, ErrorMessage = errorMessage, Errors = new Dictionary<string, string[]> { [field] = new[] { errorMessage } } };
+        new() { Status = status, Success = false, ErrorMessage = errorMessage, Errors = new ValidationErrorDictionary().AddError(field, errorMessage) };
 
     public static ClientCreateResult Failed(IReadOnlyDictionary<string, string[]> errors, AdminMutationStatus status = AdminMutationStatus.ValidationFailed) =>
         new() { Status = status, Success = false, ErrorMessage = "Validation failed.", Errors = errors };

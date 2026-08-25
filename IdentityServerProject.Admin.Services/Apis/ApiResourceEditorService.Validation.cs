@@ -11,22 +11,22 @@ public partial class ApiResourceEditorService
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static void AddIdentifierError(
-        IDictionary<string, string[]> errors,
+        ValidationErrorDictionary errors,
         string field,
         string displayName,
         string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            errors[field] = new[] { $"{displayName} name is required." };
+            errors.AddError(field, $"{displayName} name is required.");
         }
         else if (value.Length > ValidationConstants.MaxNameLength)
         {
-            errors[field] = new[] { $"{displayName} name cannot exceed {ValidationConstants.MaxNameLength} characters." };
+            errors.AddError(field, $"{displayName} name cannot exceed {ValidationConstants.MaxNameLength} characters.");
         }
         else if (!ScopeValidationHelper.IsValidScopeName(value))
         {
-            errors[field] = new[] { $"{displayName} name contains invalid characters." };
+            errors.AddError(field, $"{displayName} name contains invalid characters.");
         }
     }
 

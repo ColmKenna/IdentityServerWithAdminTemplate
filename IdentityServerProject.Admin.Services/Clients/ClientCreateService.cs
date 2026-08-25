@@ -232,32 +232,32 @@ public partial class ClientCreateService : IClientCreateService
             throw new ArgumentNullException(nameof(input));
         }
 
-        var errors = new Dictionary<string, string[]>();
+        var errors = new ValidationErrorDictionary();
 
         var clientId = input.ClientId?.Trim();
         if (string.IsNullOrWhiteSpace(clientId))
         {
-            errors["ClientId"] = new[] { "Client ID is required." };
+            errors.AddError("ClientId", "Client ID is required.");
         }
         else if (clientId.Length > ValidationConstants.MaxClientIdLength)
         {
-            errors["ClientId"] = new[] { $"Client ID cannot exceed {ValidationConstants.MaxClientIdLength} characters." };
+            errors.AddError("ClientId", $"Client ID cannot exceed {ValidationConstants.MaxClientIdLength} characters.");
         }
 
         var clientName = input.ClientName?.Trim();
         if (string.IsNullOrWhiteSpace(clientName))
         {
-            errors["ClientName"] = new[] { "Client Name is required." };
+            errors.AddError("ClientName", "Client Name is required.");
         }
         else if (clientName.Length > ValidationConstants.MaxNameLength)
         {
-            errors["ClientName"] = new[] { $"Client Name cannot exceed {ValidationConstants.MaxNameLength} characters." };
+            errors.AddError("ClientName", $"Client Name cannot exceed {ValidationConstants.MaxNameLength} characters.");
         }
 
         var description = input.Description?.Trim();
         if (description != null && description.Length > ValidationConstants.MaxDescriptionLength)
         {
-            errors["Description"] = new[] { $"Description cannot exceed {ValidationConstants.MaxDescriptionLength} characters." };
+            errors.AddError("Description", $"Description cannot exceed {ValidationConstants.MaxDescriptionLength} characters.");
         }
 
         var redirectUris = input.RedirectUris?
@@ -270,7 +270,7 @@ public partial class ClientCreateService : IClientCreateService
         {
             if (!UriValidationHelper.IsValidHttpOrHttpsUri(uri, ValidationConstants.MaxClientRedirectUriLength))
             {
-                errors["RedirectUris"] = new[] { $"Redirect URI '{uri}' must be an absolute HTTP or HTTPS URL." };
+                errors.AddError("RedirectUris", $"Redirect URI '{uri}' must be an absolute HTTP or HTTPS URL.");
                 break;
             }
         }
@@ -285,7 +285,7 @@ public partial class ClientCreateService : IClientCreateService
         {
             if (!UriValidationHelper.IsValidHttpOrHttpsUri(uri, ValidationConstants.MaxClientPostLogoutRedirectUriLength))
             {
-                errors["PostLogoutRedirectUris"] = new[] { $"Post-logout redirect URI '{uri}' must be an absolute HTTP or HTTPS URL." };
+                errors.AddError("PostLogoutRedirectUris", $"Post-logout redirect URI '{uri}' must be an absolute HTTP or HTTPS URL.");
                 break;
             }
         }
@@ -299,7 +299,7 @@ public partial class ClientCreateService : IClientCreateService
         {
             if (!UriValidationHelper.TryNormalizeCorsOrigin(origin, ValidationConstants.MaxClientCorsOriginLength, out var normalizedOrigin))
             {
-                errors["CorsOrigins"] = new[] { $"CORS origin '{origin}' must contain only an HTTP or HTTPS scheme, host, and optional port." };
+                errors.AddError("CorsOrigins", $"CORS origin '{origin}' must contain only an HTTP or HTTPS scheme, host, and optional port.");
                 break;
             }
 
@@ -316,7 +316,7 @@ public partial class ClientCreateService : IClientCreateService
             .ToList() ?? new();
         if (grantTypes.Any(grantType => grantType.Length > ValidationConstants.MaxGrantTypeLength))
         {
-            errors["GrantTypes"] = new[] { $"Grant types cannot exceed {ValidationConstants.MaxGrantTypeLength} characters." };
+            errors.AddError("GrantTypes", $"Grant types cannot exceed {ValidationConstants.MaxGrantTypeLength} characters.");
         }
 
         // Validate scopes against the durable resource sets. Never invent fallback scopes:
@@ -331,18 +331,18 @@ public partial class ClientCreateService : IClientCreateService
 
         if (scopes.Any(scope => scope.Length > ValidationConstants.MaxScopeNameLength))
         {
-            errors["AllowedScopes"] = new[] { $"Scopes cannot exceed {ValidationConstants.MaxScopeNameLength} characters." };
+            errors.AddError("AllowedScopes", $"Scopes cannot exceed {ValidationConstants.MaxScopeNameLength} characters.");
         }
         else
         {
             var unknownScope = scopes.FirstOrDefault(scope => !validSystemScopes.Contains(scope));
             if (unknownScope != null)
             {
-                errors["AllowedScopes"] = new[] { $"Scope '{unknownScope}' is not a valid API scope or identity resource." };
+                errors.AddError("AllowedScopes", $"Scope '{unknownScope}' is not a valid API scope or identity resource.");
             }
         }
 
-        if (errors.Count > 0)
+        if (errors.HasErrors)
         {
             await AuditDeniedAsync(AuditReasonCodes.ValidationFailed, clientId ?? string.Empty, clientName ?? string.Empty,
                 "Client creation validation failed.", cancellationToken);
