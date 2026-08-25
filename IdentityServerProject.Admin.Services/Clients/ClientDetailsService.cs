@@ -963,14 +963,17 @@ public partial class ClientDetailsService : IClientDetailsService
         {
             ClientId = client.ClientId,
             ClientName = string.IsNullOrWhiteSpace(client.ClientName) ? client.ClientId : client.ClientName,
-            AccessTokenLifetime = client.AccessTokenLifetime,
-            IdentityTokenLifetime = client.IdentityTokenLifetime,
+            AccessTokenLifetime = TokenLifetime.FromSeconds(client.AccessTokenLifetime),
+            IdentityTokenLifetime = TokenLifetime.FromSeconds(client.IdentityTokenLifetime),
             RequireConsent = client.RequireConsent,
             AllowOfflineAccess = client.AllowOfflineAccess,
-            RefreshTokenUsage = client.RefreshTokenUsage,
-            RefreshTokenExpiration = client.RefreshTokenExpiration,
-            AbsoluteRefreshTokenLifetime = client.AbsoluteRefreshTokenLifetime,
-            SlidingRefreshTokenLifetime = client.SlidingRefreshTokenLifetime
+            RefreshToken = new RefreshTokenSettings
+            {
+                Usage = (Duende.IdentityServer.Models.TokenUsage)client.RefreshTokenUsage,
+                Expiration = (Duende.IdentityServer.Models.TokenExpiration)client.RefreshTokenExpiration,
+                AbsoluteLifetime = TokenLifetime.FromSeconds(client.AbsoluteRefreshTokenLifetime),
+                SlidingLifetime = TokenLifetime.FromSeconds(client.SlidingRefreshTokenLifetime)
+            }
         };
     }
 
@@ -996,16 +999,14 @@ public partial class ClientDetailsService : IClientDetailsService
         }
         else
         {
-            if (input.AccessTokenLifetime < ValidationConstants.MinAccessTokenLifetime
-                || input.AccessTokenLifetime > ValidationConstants.MaxAccessTokenLifetime)
+            if (!input.AccessTokenLifetime.IsValidAccessToken)
             {
                 errors["Input.AccessTokenLifetime"] = new[]
                 {
                     $"Access Token Lifetime must be between {ValidationConstants.MinAccessTokenLifetime} and {ValidationConstants.MaxAccessTokenLifetime} seconds."
                 };
             }
-            if (input.IdentityTokenLifetime < ValidationConstants.MinIdentityTokenLifetime
-                || input.IdentityTokenLifetime > ValidationConstants.MaxIdentityTokenLifetime)
+            if (!input.IdentityTokenLifetime.IsValidIdentityToken)
             {
                 errors["Input.IdentityTokenLifetime"] = new[]
                 {
@@ -1015,8 +1016,8 @@ public partial class ClientDetailsService : IClientDetailsService
             
             if (input.AllowOfflineAccess)
             {
-                if (input.AbsoluteRefreshTokenLifetime < ValidationConstants.MinRefreshTokenLifetime
-                    || input.AbsoluteRefreshTokenLifetime > ValidationConstants.MaxAbsoluteRefreshTokenLifetime)
+                var refresh = input.RefreshToken ?? new RefreshTokenSettings();
+                if (!refresh.IsAbsoluteLifetimeValid)
                 {
                     errors["Input.AbsoluteRefreshTokenLifetime"] = new[]
                     {
@@ -1024,8 +1025,7 @@ public partial class ClientDetailsService : IClientDetailsService
                     };
                 }
                 
-                if (input.SlidingRefreshTokenLifetime < ValidationConstants.MinRefreshTokenLifetime
-                    || input.SlidingRefreshTokenLifetime > ValidationConstants.MaxSlidingRefreshTokenLifetime)
+                if (!refresh.IsSlidingLifetimeValid)
                 {
                     errors["Input.SlidingRefreshTokenLifetime"] = new[]
                     {
@@ -1033,7 +1033,7 @@ public partial class ClientDetailsService : IClientDetailsService
                     };
                 }
 
-                if (input.SlidingRefreshTokenLifetime > input.AbsoluteRefreshTokenLifetime)
+                if (!refresh.IsSlidingValid)
                 {
                     errors["Input.SlidingRefreshTokenLifetime"] = new[]
                     {
@@ -1060,17 +1060,18 @@ public partial class ClientDetailsService : IClientDetailsService
 
         try
         {
+            var refresh = input!.RefreshToken ?? new RefreshTokenSettings();
             var proposed = client.ToModel();
-            proposed.AccessTokenLifetime = input!.AccessTokenLifetime;
-            proposed.IdentityTokenLifetime = input.IdentityTokenLifetime;
+            proposed.AccessTokenLifetime = input.AccessTokenLifetime.Seconds;
+            proposed.IdentityTokenLifetime = input.IdentityTokenLifetime.Seconds;
             proposed.RequireConsent = input.RequireConsent;
             proposed.AllowOfflineAccess = input.AllowOfflineAccess;
             if (input.AllowOfflineAccess)
             {
-                proposed.RefreshTokenUsage = (Duende.IdentityServer.Models.TokenUsage)input.RefreshTokenUsage;
-                proposed.RefreshTokenExpiration = (Duende.IdentityServer.Models.TokenExpiration)input.RefreshTokenExpiration;
-                proposed.AbsoluteRefreshTokenLifetime = input.AbsoluteRefreshTokenLifetime;
-                proposed.SlidingRefreshTokenLifetime = input.SlidingRefreshTokenLifetime;
+                proposed.RefreshTokenUsage = refresh.Usage;
+                proposed.RefreshTokenExpiration = refresh.Expiration;
+                proposed.AbsoluteRefreshTokenLifetime = refresh.AbsoluteLifetime.Seconds;
+                proposed.SlidingRefreshTokenLifetime = refresh.SlidingLifetime.Seconds;
             }
             var validationError = await ValidateClientAsync(proposed, cancellationToken);
             if (validationError != null)
@@ -1083,24 +1084,27 @@ public partial class ClientDetailsService : IClientDetailsService
             var trackedClient = await _configurationDbContext.Clients
                 .FirstAsync(c => c.ClientId == clientId, cancellationToken);
             var oldValues = new ClientTokenSettingsAuditValue(
-                trackedClient.AccessTokenLifetime,
-                trackedClient.IdentityTokenLifetime,
+                TokenLifetime.FromSeconds(trackedClient.AccessTokenLifetime),
+                TokenLifetime.FromSeconds(trackedClient.IdentityTokenLifetime),
                 trackedClient.RequireConsent,
                 trackedClient.AllowOfflineAccess,
-                trackedClient.RefreshTokenUsage,
-                trackedClient.RefreshTokenExpiration,
-                trackedClient.AbsoluteRefreshTokenLifetime,
-                trackedClient.SlidingRefreshTokenLifetime);
-            trackedClient.AccessTokenLifetime = input.AccessTokenLifetime;
-            trackedClient.IdentityTokenLifetime = input.IdentityTokenLifetime;
+                new RefreshTokenSettings
+                {
+                    Usage = (Duende.IdentityServer.Models.TokenUsage)trackedClient.RefreshTokenUsage,
+                    Expiration = (Duende.IdentityServer.Models.TokenExpiration)trackedClient.RefreshTokenExpiration,
+                    AbsoluteLifetime = TokenLifetime.FromSeconds(trackedClient.AbsoluteRefreshTokenLifetime),
+                    SlidingLifetime = TokenLifetime.FromSeconds(trackedClient.SlidingRefreshTokenLifetime)
+                });
+            trackedClient.AccessTokenLifetime = input.AccessTokenLifetime.Seconds;
+            trackedClient.IdentityTokenLifetime = input.IdentityTokenLifetime.Seconds;
             trackedClient.RequireConsent = input.RequireConsent;
             trackedClient.AllowOfflineAccess = input.AllowOfflineAccess;
             if (input.AllowOfflineAccess)
             {
-                trackedClient.RefreshTokenUsage = input.RefreshTokenUsage;
-                trackedClient.RefreshTokenExpiration = input.RefreshTokenExpiration;
-                trackedClient.AbsoluteRefreshTokenLifetime = input.AbsoluteRefreshTokenLifetime;
-                trackedClient.SlidingRefreshTokenLifetime = input.SlidingRefreshTokenLifetime;
+                trackedClient.RefreshTokenUsage = (int)refresh.Usage;
+                trackedClient.RefreshTokenExpiration = (int)refresh.Expiration;
+                trackedClient.AbsoluteRefreshTokenLifetime = refresh.AbsoluteLifetime.Seconds;
+                trackedClient.SlidingRefreshTokenLifetime = refresh.SlidingLifetime.Seconds;
             }
 
             await _configurationDbContext.SaveChangesAsync(cancellationToken);
@@ -1110,14 +1114,17 @@ public partial class ClientDetailsService : IClientDetailsService
                 TargetId: clientId, TargetName: client.ClientName ?? clientId,
                 OldValues: oldValues,
                 NewValues: new ClientTokenSettingsAuditValue(
-                    trackedClient.AccessTokenLifetime,
-                    trackedClient.IdentityTokenLifetime,
+                    TokenLifetime.FromSeconds(trackedClient.AccessTokenLifetime),
+                    TokenLifetime.FromSeconds(trackedClient.IdentityTokenLifetime),
                     trackedClient.RequireConsent,
                     trackedClient.AllowOfflineAccess,
-                    trackedClient.RefreshTokenUsage,
-                    trackedClient.RefreshTokenExpiration,
-                    trackedClient.AbsoluteRefreshTokenLifetime,
-                    trackedClient.SlidingRefreshTokenLifetime
+                    new RefreshTokenSettings
+                    {
+                        Usage = (Duende.IdentityServer.Models.TokenUsage)trackedClient.RefreshTokenUsage,
+                        Expiration = (Duende.IdentityServer.Models.TokenExpiration)trackedClient.RefreshTokenExpiration,
+                        AbsoluteLifetime = TokenLifetime.FromSeconds(trackedClient.AbsoluteRefreshTokenLifetime),
+                        SlidingLifetime = TokenLifetime.FromSeconds(trackedClient.SlidingRefreshTokenLifetime)
+                    }
                 ),
                 Details: "Updated token and consent settings"), cancellationToken);
 
@@ -1218,7 +1225,7 @@ public partial class ClientDetailsService : IClientDetailsService
         await _auditWriter.WriteAsync(new AdminAuditEvent(
             AuditCategories.Client, action, AuditOutcome.Failed, AuditReasonCodes.PersistenceFailure,
             TargetId: targetId, TargetName: targetName, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
+    }
 
     #endregion
-}
 }

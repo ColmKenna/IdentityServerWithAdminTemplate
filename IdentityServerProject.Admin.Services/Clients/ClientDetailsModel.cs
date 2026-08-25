@@ -16,7 +16,7 @@ public class ClientDetailsModel
     public bool RequireClientSecret { get; set; }
     public bool RequireConsent { get; set; }
     public bool AllowOfflineAccess { get; set; }
-    public int AccessTokenLifetime { get; set; }
+    public TokenLifetime AccessTokenLifetime { get; set; }
     public required string AllowedGrantTypes { get; set; }
     public int RedirectUrisCount { get; set; }
     public int CorsOriginsCount { get; set; }
@@ -48,6 +48,32 @@ public class ClientDeleteResult
         new() { Success = false, Status = status, ReasonCode = reasonCode, ErrorMessage = errorMessage };
 }
 
+public class ClientBasicsModel
+{
+    public required string ClientId { get; set; }
+    public required string ClientName { get; set; }
+    public string? Description { get; set; }
+    public bool Enabled { get; set; }
+    public string? ClientUri { get; set; }
+    public string? LogoUri { get; set; }
+}
+
+public class ClientBasicsInputModel
+{
+    public required string ClientName { get; set; }
+    public string? Description { get; set; }
+    public bool Enabled { get; set; }
+    public string? ClientUri { get; set; }
+    public string? LogoUri { get; set; }
+}
+
+public sealed record ClientBasicsAuditValue(
+    string ClientName,
+    string? Description,
+    bool Enabled,
+    string? ClientUri,
+    string? LogoUri) : AuditLogs.IAuditValue;
+
 public class ClientAuthenticationModel
 {
     public required string ClientId { get; set; }
@@ -58,16 +84,10 @@ public class ClientAuthenticationModel
     public List<string> RedirectUris { get; set; } = new();
     public List<string> PostLogoutRedirectUris { get; set; } = new();
     public List<string> AllowedCorsOrigins { get; set; } = new();
-
     public string? FrontChannelLogoutUri { get; set; }
     public bool FrontChannelLogoutSessionRequired { get; set; }
     public string? BackChannelLogoutUri { get; set; }
     public bool BackChannelLogoutSessionRequired { get; set; }
-
-    /// <summary>
-    /// True when the client was created from a known preset and its current configuration
-    /// no longer matches that preset's canonical defaults.
-    /// </summary>
     public bool HasDrifted { get; set; }
     public string? DriftDetails { get; set; }
 }
@@ -80,24 +100,29 @@ public class ClientAuthenticationInputModel
     public List<string> RedirectUris { get; set; } = new();
     public List<string> PostLogoutRedirectUris { get; set; } = new();
     public List<string> CorsOrigins { get; set; } = new();
-
     public string? FrontChannelLogoutUri { get; set; }
     public bool FrontChannelLogoutSessionRequired { get; set; }
     public string? BackChannelLogoutUri { get; set; }
     public bool BackChannelLogoutSessionRequired { get; set; }
 }
 
+public sealed record ClientAuthenticationAuditValue(
+    bool RequirePkce,
+    bool RequireClientSecret,
+    IReadOnlyList<string> GrantTypes,
+    IReadOnlyList<string> RedirectUris,
+    IReadOnlyList<string> PostLogoutRedirectUris,
+    IReadOnlyList<string> CorsOrigins,
+    string? FrontChannelLogoutUri,
+    bool FrontChannelLogoutSessionRequired,
+    string? BackChannelLogoutUri,
+    bool BackChannelLogoutSessionRequired) : AuditLogs.IAuditValue;
+
 public class ClientPermissionsModel
 {
     public required string ClientId { get; set; }
     public required string ClientName { get; set; }
-
-    /// <summary>
-    /// False for clients whose only grant type is client_credentials (M2M) - such clients never
-    /// issue an ID token, so identity scopes are not applicable to them.
-    /// </summary>
     public bool IsInteractive { get; set; }
-
     public List<string> AllowedScopes { get; set; } = new();
     public List<string> AvailableIdentityScopes { get; set; } = new();
     public List<string> AvailableApiScopes { get; set; } = new();
@@ -176,34 +201,25 @@ public class ClientTokenSettingsModel
 {
     public required string ClientId { get; set; }
     public required string ClientName { get; set; }
-    public int AccessTokenLifetime { get; set; }
-    public int IdentityTokenLifetime { get; set; }
+    public TokenLifetime AccessTokenLifetime { get; set; }
+    public TokenLifetime IdentityTokenLifetime { get; set; }
     public bool RequireConsent { get; set; }
     public bool AllowOfflineAccess { get; set; }
-    public int RefreshTokenUsage { get; set; }
-    public int RefreshTokenExpiration { get; set; }
-    public int AbsoluteRefreshTokenLifetime { get; set; }
-    public int SlidingRefreshTokenLifetime { get; set; }
+    public RefreshTokenSettings RefreshToken { get; set; } = new();
 }
 
 public class ClientTokenSettingsInputModel
 {
-    public int AccessTokenLifetime { get; set; }
-    public int IdentityTokenLifetime { get; set; }
+    public TokenLifetime AccessTokenLifetime { get; set; }
+    public TokenLifetime IdentityTokenLifetime { get; set; }
     public bool RequireConsent { get; set; }
     public bool AllowOfflineAccess { get; set; }
-    public int RefreshTokenUsage { get; set; }
-    public int RefreshTokenExpiration { get; set; }
-    public int AbsoluteRefreshTokenLifetime { get; set; }
-    public int SlidingRefreshTokenLifetime { get; set; }
+    public RefreshTokenSettings RefreshToken { get; set; } = new();
 }
 
 public sealed record ClientTokenSettingsAuditValue(
-    int AccessTokenLifetime,
-    int IdentityTokenLifetime,
+    TokenLifetime AccessTokenLifetime,
+    TokenLifetime IdentityTokenLifetime,
     bool RequireConsent,
     bool AllowOfflineAccess,
-    int RefreshTokenUsage,
-    int RefreshTokenExpiration,
-    int AbsoluteRefreshTokenLifetime,
-    int SlidingRefreshTokenLifetime) : AuditLogs.IAuditValue;
+    RefreshTokenSettings RefreshToken) : AuditLogs.IAuditValue;

@@ -97,7 +97,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
             Assert.True(details.RequireClientSecret);
             Assert.False(details.RequireConsent);
             Assert.True(details.AllowOfflineAccess);
-            Assert.Equal(300, details.AccessTokenLifetime);
+            Assert.Equal(300, details.AccessTokenLifetime.Seconds);
             Assert.Equal("authorization_code", details.AllowedGrantTypes);
             Assert.Equal(2, details.RedirectUrisCount);
             Assert.Equal(0, details.CorsOriginsCount);

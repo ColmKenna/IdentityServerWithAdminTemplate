@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Services.Clients;
@@ -92,14 +94,17 @@ public class TokenSettingsModel : PageModel
 
         var input = new ClientTokenSettingsInputModel
         {
-            AccessTokenLifetime = Input.AccessTokenLifetime,
-            IdentityTokenLifetime = Input.IdentityTokenLifetime,
+            AccessTokenLifetime = TokenLifetime.FromSeconds(Input.AccessTokenLifetime),
+            IdentityTokenLifetime = TokenLifetime.FromSeconds(Input.IdentityTokenLifetime),
             RequireConsent = Input.RequireConsent,
             AllowOfflineAccess = Input.AllowOfflineAccess,
-            RefreshTokenUsage = Input.RefreshTokenUsage,
-            RefreshTokenExpiration = Input.RefreshTokenExpiration,
-            AbsoluteRefreshTokenLifetime = Input.AbsoluteRefreshTokenLifetime,
-            SlidingRefreshTokenLifetime = Input.SlidingRefreshTokenLifetime
+            RefreshToken = new RefreshTokenSettings
+            {
+                Usage = (Duende.IdentityServer.Models.TokenUsage)Input.RefreshTokenUsage,
+                Expiration = (Duende.IdentityServer.Models.TokenExpiration)Input.RefreshTokenExpiration,
+                AbsoluteLifetime = TokenLifetime.FromSeconds(Input.AbsoluteRefreshTokenLifetime),
+                SlidingLifetime = TokenLifetime.FromSeconds(Input.SlidingRefreshTokenLifetime)
+            }
         };
 
         var result = await _clientDetailsService.UpdateClientTokenSettingsAsync(Id, input, cancellationToken);
@@ -124,14 +129,14 @@ public class TokenSettingsModel : PageModel
     {
         ClientNameDisplay = settings.ClientName;
 
-        Input.AccessTokenLifetime = settings.AccessTokenLifetime;
-        Input.IdentityTokenLifetime = settings.IdentityTokenLifetime;
+        Input.AccessTokenLifetime = settings.AccessTokenLifetime.Seconds;
+        Input.IdentityTokenLifetime = settings.IdentityTokenLifetime.Seconds;
         Input.RequireConsent = settings.RequireConsent;
         Input.AllowOfflineAccess = settings.AllowOfflineAccess;
-        Input.RefreshTokenUsage = settings.RefreshTokenUsage;
-        Input.RefreshTokenExpiration = settings.RefreshTokenExpiration;
-        Input.AbsoluteRefreshTokenLifetime = settings.AbsoluteRefreshTokenLifetime;
-        Input.SlidingRefreshTokenLifetime = settings.SlidingRefreshTokenLifetime;
+        Input.RefreshTokenUsage = (int)settings.RefreshToken.Usage;
+        Input.RefreshTokenExpiration = (int)settings.RefreshToken.Expiration;
+        Input.AbsoluteRefreshTokenLifetime = settings.RefreshToken.AbsoluteLifetime.Seconds;
+        Input.SlidingRefreshTokenLifetime = settings.RefreshToken.SlidingLifetime.Seconds;
     }
 
     private async Task<IActionResult> ReloadPageAsync(CancellationToken cancellationToken)

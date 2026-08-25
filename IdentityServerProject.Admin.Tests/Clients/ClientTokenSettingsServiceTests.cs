@@ -64,8 +64,8 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
             var result = await service.GetClientTokenSettingsAsync(clientId);
 
             Assert.NotNull(result);
-            Assert.Equal(3600, result!.AccessTokenLifetime);
-            Assert.Equal(300, result.IdentityTokenLifetime);
+            Assert.Equal(3600, result!.AccessTokenLifetime.Seconds);
+            Assert.Equal(300, result.IdentityTokenLifetime.Seconds);
             Assert.False(result.RequireConsent);
             Assert.True(result.AllowOfflineAccess);
         });
@@ -99,14 +99,17 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
 
             var input = new ClientTokenSettingsInputModel
             {
-                AccessTokenLifetime = 7200,
-                IdentityTokenLifetime = 600,
+                AccessTokenLifetime = TokenLifetime.FromSeconds(7200),
+                IdentityTokenLifetime = TokenLifetime.FromSeconds(600),
                 RequireConsent = true,
                 AllowOfflineAccess = true,
-                RefreshTokenUsage = (int)TokenUsage.OneTimeOnly,
-                RefreshTokenExpiration = (int)TokenExpiration.Sliding,
-                AbsoluteRefreshTokenLifetime = 172800,
-                SlidingRefreshTokenLifetime = 72000
+                RefreshToken = new RefreshTokenSettings
+                {
+                    Usage = TokenUsage.OneTimeOnly,
+                    Expiration = TokenExpiration.Sliding,
+                    AbsoluteLifetime = TokenLifetime.FromSeconds(172800),
+                    SlidingLifetime = TokenLifetime.FromSeconds(72000)
+                }
             };
 
             var updateResult = await service.UpdateClientTokenSettingsAsync(clientId, input);
@@ -114,21 +117,21 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
 
             var result = await service.GetClientTokenSettingsAsync(clientId);
             Assert.NotNull(result);
-            Assert.Equal(7200, result!.AccessTokenLifetime);
-            Assert.Equal(600, result.IdentityTokenLifetime);
+            Assert.Equal(7200, result!.AccessTokenLifetime.Seconds);
+            Assert.Equal(600, result.IdentityTokenLifetime.Seconds);
             Assert.True(result.RequireConsent);
             Assert.True(result.AllowOfflineAccess);
-            Assert.Equal((int)TokenUsage.OneTimeOnly, result.RefreshTokenUsage);
-            Assert.Equal((int)TokenExpiration.Sliding, result.RefreshTokenExpiration);
-            Assert.Equal(172800, result.AbsoluteRefreshTokenLifetime);
-            Assert.Equal(72000, result.SlidingRefreshTokenLifetime);
+            Assert.Equal(TokenUsage.OneTimeOnly, result.RefreshToken.Usage);
+            Assert.Equal(TokenExpiration.Sliding, result.RefreshToken.Expiration);
+            Assert.Equal(172800, result.RefreshToken.AbsoluteLifetime.Seconds);
+            Assert.Equal(72000, result.RefreshToken.SlidingLifetime.Seconds);
 
             var audit = await sp.GetRequiredService<ApplicationDbContext>().AuditLogEntries
                 .SingleAsync(entry => entry.Category == AuditCategories.Client
                     && entry.Action == AuditActions.UpdateTokenSettings
                     && entry.TargetId == clientId);
             Assert.Contains("AccessTokenLifetime", audit.OldValuesJson);
-            Assert.Contains("SlidingRefreshTokenLifetime", audit.NewValuesJson);
+            Assert.Contains("SlidingLifetime", audit.NewValuesJson);
             Assert.DoesNotContain("Secret", audit.NewValuesJson, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("Password", audit.NewValuesJson, StringComparison.OrdinalIgnoreCase);
         });
@@ -158,23 +161,26 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
             var service = sp.GetRequiredService<IClientDetailsService>();
             var result = await service.UpdateClientTokenSettingsAsync(clientId, new ClientTokenSettingsInputModel
             {
-                AccessTokenLifetime = 3600,
-                IdentityTokenLifetime = 300,
+                AccessTokenLifetime = TokenLifetime.FromSeconds(3600),
+                IdentityTokenLifetime = TokenLifetime.FromSeconds(300),
                 AllowOfflineAccess = false,
-                RefreshTokenUsage = (int)TokenUsage.ReUse,
-                RefreshTokenExpiration = (int)TokenExpiration.Absolute,
-                AbsoluteRefreshTokenLifetime = 60,
-                SlidingRefreshTokenLifetime = 60
+                RefreshToken = new RefreshTokenSettings
+                {
+                    Usage = TokenUsage.ReUse,
+                    Expiration = TokenExpiration.Absolute,
+                    AbsoluteLifetime = TokenLifetime.FromSeconds(60),
+                    SlidingLifetime = TokenLifetime.FromSeconds(60)
+                }
             });
 
             Assert.True(result.Succeeded, result.ErrorMessage);
             var saved = await service.GetClientTokenSettingsAsync(clientId);
             Assert.NotNull(saved);
             Assert.False(saved!.AllowOfflineAccess);
-            Assert.Equal((int)TokenUsage.OneTimeOnly, saved.RefreshTokenUsage);
-            Assert.Equal((int)TokenExpiration.Sliding, saved.RefreshTokenExpiration);
-            Assert.Equal(172800, saved.AbsoluteRefreshTokenLifetime);
-            Assert.Equal(72000, saved.SlidingRefreshTokenLifetime);
+            Assert.Equal(TokenUsage.OneTimeOnly, saved.RefreshToken.Usage);
+            Assert.Equal(TokenExpiration.Sliding, saved.RefreshToken.Expiration);
+            Assert.Equal(172800, saved.RefreshToken.AbsoluteLifetime.Seconds);
+            Assert.Equal(72000, saved.RefreshToken.SlidingLifetime.Seconds);
         });
     }
 
@@ -186,8 +192,8 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
             var service = sp.GetRequiredService<IClientDetailsService>();
             var result = await service.UpdateClientTokenSettingsAsync("non-existent-client-id-abc", new ClientTokenSettingsInputModel
             {
-                AccessTokenLifetime = 3600,
-                IdentityTokenLifetime = 300
+                AccessTokenLifetime = TokenLifetime.FromSeconds(3600),
+                IdentityTokenLifetime = TokenLifetime.FromSeconds(300)
             });
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
@@ -219,8 +225,8 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
             var service = sp.GetRequiredService<IClientDetailsService>();
             var result = await service.UpdateClientTokenSettingsAsync(clientId, new ClientTokenSettingsInputModel
             {
-                AccessTokenLifetime = accessLifetime,
-                IdentityTokenLifetime = identityLifetime
+                AccessTokenLifetime = TokenLifetime.FromSeconds(accessLifetime),
+                IdentityTokenLifetime = TokenLifetime.FromSeconds(identityLifetime)
             });
 
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);

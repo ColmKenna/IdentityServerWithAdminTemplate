@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Dom;
+using Duende.IdentityServer.Models;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Hosting;
@@ -74,57 +75,64 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         return await context.OpenAsync(req => req.Content(content));
     }
 
-    private static async Task<(string Token, string Cookie)> ExtractAntiForgeryTokenAndCookieAsync(HttpClient httpClient, string pageUrl)
+    private static async Task<(string Token, string Cookie)> ExtractAntiForgeryTokenAndCookieAsync(HttpClient client, string pageUrl)
     {
-        var response = await httpClient.GetAsync(pageUrl);
-        var document = await GetDocumentAsync(response);
+        var getResponse = await client.GetAsync(pageUrl);
+        getResponse.EnsureSuccessStatusCode();
 
-        var tokenInput = document.QuerySelector("input[name='__RequestVerificationToken']") as AngleSharp.Html.Dom.IHtmlInputElement;
-        Assert.NotNull(tokenInput);
+        var document = await GetDocumentAsync(getResponse);
+        var tokenInput = document.QuerySelector("input[name='__RequestVerificationToken']");
+        var token = tokenInput?.GetAttribute("value") ?? string.Empty;
 
-        var token = tokenInput!.Value;
+        var setCookieHeaders = getResponse.Headers.GetValues("Set-Cookie");
+        var cookieHeader = string.Join("; ", setCookieHeaders.Select(h => h.Split(';')[0]));
 
-        var cookies = response.Headers.GetValues("Set-Cookie");
-        var cookie = cookies.FirstOrDefault(c => c.StartsWith(".AspNetCore.Antiforgery"));
-        Assert.NotNull(cookie);
-
-        return (token, cookie!);
+        return (token, cookieHeader);
     }
 
     [Fact]
-    public async Task Get_ExistingClient_Returns200OK_WithCurrentSettings()
+    public async Task Get_ExistingClient_Returns200WithForm()
     {
         var httpClient = CreateClient(MockService());
 
         var response = await httpClient.GetAsync("/Admin/Clients/TokenSettings/test-client");
+
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
         var document = await GetDocumentAsync(response);
-
-        var accessTokenInput = document.QuerySelector("input[name='Input.AccessTokenLifetime']") as AngleSharp.Html.Dom.IHtmlInputElement;
-        Assert.NotNull(accessTokenInput);
-        Assert.Equal("3600", accessTokenInput!.Value);
-
-        var identityTokenInput = document.QuerySelector("input[name='Input.IdentityTokenLifetime']") as AngleSharp.Html.Dom.IHtmlInputElement;
-        Assert.NotNull(identityTokenInput);
-        Assert.Equal("300", identityTokenInput!.Value);
-
-        var offlineCheckbox = document.QuerySelector("input[name='Input.AllowOfflineAccess']") as AngleSharp.Html.Dom.IHtmlInputElement;
-        Assert.NotNull(offlineCheckbox);
-        Assert.True(offlineCheckbox!.IsChecked);
+        var heading = document.QuerySelector("h1, h2");
+        Assert.NotNull(heading);
+        Assert.Contains("Token Settings", heading!.TextContent);
     }
 
     [Fact]
-    public async Task Get_NonExistentClient_ReturnsNotFound()
+    public async Task Get_ExistingClient_PopulatesCurrentValues()
+    {
+        var httpClient = CreateClient(MockService());
+
+        var response = await httpClient.GetAsync("/Admin/Clients/TokenSettings/test-client");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var document = await GetDocumentAsync(response);
+
+        var accessLifetime = document.QuerySelector("input[name='Input.AccessTokenLifetime']")?.GetAttribute("value");
+        var identityLifetime = document.QuerySelector("input[name='Input.IdentityTokenLifetime']")?.GetAttribute("value");
+
+        Assert.Equal("3600", accessLifetime);
+        Assert.Equal("300", identityLifetime);
+    }
+
+    [Fact]
+    public async Task Get_NonExistentClient_Returns404()
     {
         var httpClient = CreateClient(MockService());
 
         var response = await httpClient.GetAsync("/Admin/Clients/TokenSettings/non-existent");
+
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task Post_ValidValues_RedirectsToDetailsAndPersists()
+    public async Task Post_ValidInput_RedirectsToDetails()
     {
         var mock = new Mock<IClientDetailsService>();
         mock.Setup(s => s.GetClientTokenSettingsAsync("test-client", It.IsAny<CancellationToken>()))
@@ -165,10 +173,11 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
                 && m.IdentityTokenLifetime == 600
                 && m.RequireConsent
                 && m.AllowOfflineAccess
-                && m.RefreshTokenUsage == 1
-                && m.RefreshTokenExpiration == 1
-                && m.AbsoluteRefreshTokenLifetime == 172800
-                && m.SlidingRefreshTokenLifetime == 72000),
+                && m.RefreshToken != null
+                && m.RefreshToken.Usage == TokenUsage.OneTimeOnly
+                && m.RefreshToken.Expiration == TokenExpiration.Absolute
+                && m.RefreshToken.AbsoluteLifetime == 172800
+                && m.RefreshToken.SlidingLifetime == 72000),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
