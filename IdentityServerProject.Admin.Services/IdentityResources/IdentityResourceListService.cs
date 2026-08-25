@@ -58,12 +58,12 @@ public class IdentityResourceListService : IIdentityResourceListService
             })
             .ToListAsync(cancellationToken);
 
-        var scopeNames = items.Select(i => i.Name);
+        var scopeNames = ScopeSet.FromStrings(items.Select(i => i.Name));
         var referenceCounts = await _scopeUsageService.GetClientReferenceCountsAsync(scopeNames, cancellationToken);
 
         foreach (var item in items)
         {
-            item.ClientReferenceCount = referenceCounts[item.Name];
+            item.ClientReferenceCount = referenceCounts[ScopeName.Create(item.Name)];
         }
 
         return new ListResult<IdentityResourceListItem>
@@ -110,8 +110,9 @@ public class IdentityResourceListService : IIdentityResourceListService
                 return IdentityResourceDeleteResult.Blocked;
             }
 
-            var referenceCounts = await _scopeUsageService.GetClientReferenceCountsAsync(new[] { name }, cancellationToken);
-            if (referenceCounts.GetValueOrDefault(name) > 0)
+            var referenceCounts = await _scopeUsageService.GetClientReferenceCountsAsync(
+                ScopeSet.FromStrings(new[] { name }), cancellationToken);
+            if (referenceCounts[ScopeName.Create(name)] > 0)
             {
                 await transaction.RollbackAsync(cancellationToken);
                 await _auditWriter.WriteAsync(new AdminAuditEvent(

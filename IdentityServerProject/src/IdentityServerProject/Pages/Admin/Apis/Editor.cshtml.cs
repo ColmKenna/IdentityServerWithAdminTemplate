@@ -487,7 +487,7 @@ public class EditorModel : PageModel
         public Task<SecretRevealConsumeResult> ConsumeAsync(
             SecretRevealPurpose purpose,
             string targetId,
-            string handle,
+            SecretRevealHandle handle,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(SecretRevealConsumeResult.Unavailable());
     }

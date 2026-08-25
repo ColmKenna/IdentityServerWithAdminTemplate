@@ -7,6 +7,7 @@ using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using IdentityServerProject.Services.Clients;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -162,7 +163,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
 
-            var updateResult = await service.UpdateClientPermissionsAsync(clientId, new List<string> { $"{tag}.read" });
+            var updateResult = await service.UpdateClientPermissionsAsync(clientId, ScopeSet.FromStrings(new[] { $"{tag}.read" }));
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
             var result = await service.GetClientPermissionsAsync(clientId);
@@ -190,7 +191,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
 
-            var updateResult = await service.UpdateClientPermissionsAsync(clientId, new List<string> { "openid", "profile", $"{tag}.write" });
+            var updateResult = await service.UpdateClientPermissionsAsync(clientId, ScopeSet.FromStrings(new[] { "openid", "profile", $"{tag}.write" }));
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
             var result = await service.GetClientPermissionsAsync(clientId);
@@ -220,7 +221,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
 
-            var updateResult = await service.UpdateClientPermissionsAsync(clientId, new List<string> { "openid", $"{tag}.write" });
+            var updateResult = await service.UpdateClientPermissionsAsync(clientId, ScopeSet.FromStrings(new[] { "openid", $"{tag}.write" }));
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
             var result = await service.GetClientPermissionsAsync(clientId);
@@ -236,7 +237,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientPermissionsAsync("non-existent-client-id-xyz", new List<string> { "openid" });
+            var result = await service.UpdateClientPermissionsAsync("non-existent-client-id-xyz", ScopeSet.FromStrings(new[] { "openid" }));
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
     }
@@ -260,7 +261,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
             var service = sp.GetRequiredService<IClientDetailsService>();
             var result = await service.UpdateClientPermissionsAsync(
                 clientId,
-                new List<string> { "openid", "scope.that.is.not.configured" });
+                ScopeSet.FromStrings(new[] { "openid", "scope.that.is.not.configured" }));
 
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
             Assert.True(result.Errors.ContainsKey("Input.AllowedScopes"));

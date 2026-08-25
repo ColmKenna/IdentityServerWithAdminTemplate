@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Dom;
 using IdentityServerProject.Services.Clients;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -67,8 +68,8 @@ public class ClientsPermissionsIntegrationTests : IDisposable
         var mock = new Mock<IClientDetailsService>();
         mock.Setup(s => s.GetClientPermissionsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string id, CancellationToken _) => id == "non-existent" ? null : (details ?? SampleInteractivePermissions(id)));
-        mock.Setup(s => s.UpdateClientPermissionsAsync(It.IsAny<ClientId>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ClientId id, List<string> _, CancellationToken _) =>
+        mock.Setup(s => s.UpdateClientPermissionsAsync(It.IsAny<ClientId>(), It.IsAny<ScopeSet>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, ScopeSet _, CancellationToken _) =>
                 id.Value == "non-existent"
                     ? AdminMutationResult.NotFoundResult()
                     : updateSuccess
@@ -159,7 +160,7 @@ public class ClientsPermissionsIntegrationTests : IDisposable
         var mock = new Mock<IClientDetailsService>();
         mock.Setup(s => s.GetClientPermissionsAsync("test-client", It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleInteractivePermissions());
-        mock.Setup(s => s.UpdateClientPermissionsAsync("test-client", It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.UpdateClientPermissionsAsync("test-client", It.IsAny<ScopeSet>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
         var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
@@ -183,7 +184,7 @@ public class ClientsPermissionsIntegrationTests : IDisposable
 
         mock.Verify(s => s.UpdateClientPermissionsAsync(
             "test-client",
-            It.Is<List<string>>(l => l.Contains("coop.market.admin") && !l.Contains("coop.market.api")),
+            It.Is<ScopeSet>(scopes => scopes.Contains("coop.market.admin") && !scopes.Contains("coop.market.api")),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

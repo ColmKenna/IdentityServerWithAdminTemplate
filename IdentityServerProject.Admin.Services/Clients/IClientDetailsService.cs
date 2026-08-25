@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Services.Secrets;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 
 namespace IdentityServerProject.Services.Clients;
@@ -61,7 +62,7 @@ public interface IClientDetailsService
     /// identity scopes are stripped since they do not apply. Returns true if the client was found
     /// and updated, false if not found.
     /// </summary>
-    Task<AdminMutationResult> UpdateClientPermissionsAsync(ClientId clientId, List<string> allowedScopes, CancellationToken cancellationToken = default);
+    Task<AdminMutationResult> UpdateClientPermissionsAsync(ClientId clientId, ScopeSet allowedScopes, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns the client secrets (metadata only, never plaintext or hash values) for a client.

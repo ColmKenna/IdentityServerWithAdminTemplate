@@ -100,7 +100,7 @@ public sealed class SecretRevealService : ISecretRevealService
                 await AuditAsync(AuditActions.Issue, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
                     normalizedTarget, $"Issued {purpose} secret reveal.", cancellationToken);
                 await TryCleanupExpiredAsync(now, cancellationToken);
-                return new SecretRevealTicket(handle, expiresUtc);
+                return new SecretRevealTicket(SecretRevealHandle.Create(handle), expiresUtc);
             }
 
             // Digest collision: loop around with a freshly generated handle.
@@ -115,7 +115,7 @@ public sealed class SecretRevealService : ISecretRevealService
     public async Task<SecretRevealConsumeResult> ConsumeAsync(
         SecretRevealPurpose purpose,
         string targetId,
-        string handle,
+        SecretRevealHandle handle,
         CancellationToken cancellationToken = default)
     {
         var normalizedTarget = NormalizeTarget(targetId);
@@ -123,7 +123,7 @@ public sealed class SecretRevealService : ISecretRevealService
         if (!Enum.IsDefined(purpose)
             || normalizedTarget.Length == 0
             || actorSubjectId.IsEmpty
-            || !TryDigestHandle(handle, out var digest))
+            || !TryDigestHandle(handle.Value, out var digest))
         {
             await AuditAsync(AuditActions.Consume, AuditOutcome.Denied, AuditReasonCodes.WrongContext,
                 normalizedTarget, "Secret reveal is unavailable.", cancellationToken);

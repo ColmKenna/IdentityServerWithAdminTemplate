@@ -16,9 +16,9 @@ public class ScopeUsageService : IScopeUsageService
         _configurationDbContext = configurationDbContext;
     }
 
-    public async Task<Dictionary<string, int>> GetClientReferenceCountsAsync(IEnumerable<string> scopeNames, CancellationToken cancellationToken = default)
+    public async Task<ScopeUsageCounts> GetClientReferenceCountsAsync(ScopeSet scopeNames, CancellationToken cancellationToken = default)
     {
-        var names = scopeNames.ToList();
+        var names = scopeNames.ToValues();
         
         var counts = await _configurationDbContext.Clients
             .SelectMany(c => c.AllowedScopes)
@@ -27,7 +27,8 @@ public class ScopeUsageService : IScopeUsageService
             .Select(g => new { Scope = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Scope, x => x.Count, cancellationToken);
 
-        return names.ToDictionary(n => n, n => counts.GetValueOrDefault(n, 0));
+        return new ScopeUsageCounts(names.Select(name =>
+            new KeyValuePair<ScopeName, int>(ScopeName.Create(name), counts.GetValueOrDefault(name, 0))));
     }
 
 }

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Services.Clients;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -58,7 +59,8 @@ public class PermissionsModel : PageModel
             return NotFound();
         }
 
-        var result = await _clientDetailsService.UpdateClientPermissionsAsync(ClientId.Create(Id), Input.AllowedScopes, cancellationToken);
+        var result = await _clientDetailsService.UpdateClientPermissionsAsync(
+            ClientId.Create(Id), ScopeSet.FromStrings(Input.AllowedScopes), cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
         {
             return NotFound();

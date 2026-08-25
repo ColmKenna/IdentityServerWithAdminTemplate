@@ -12,6 +12,7 @@ using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Validation;
 using IdentityServerProject.Services.AuditLogs;
 using IdentityServerProject.Services.Secrets;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 using Microsoft.EntityFrameworkCore;
 using static Duende.IdentityServer.Models.HashExtensions;
@@ -612,15 +613,15 @@ public partial class ClientDetailsService : IClientDetailsService
         };
     }
 
-    public Task<AdminMutationResult> UpdateClientPermissionsAsync(ClientId clientId, List<string> allowedScopes, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> UpdateClientPermissionsAsync(ClientId clientId, ScopeSet allowedScopes, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.UpdatePermissions,
             clientId.Value,
             clientId.Value,
-            () => UpdateClientPermissionsCoreAsync(clientId.Value, allowedScopes ?? new List<string>(), cancellationToken),
+            () => UpdateClientPermissionsCoreAsync(clientId.Value, allowedScopes ?? ScopeSet.Empty, cancellationToken),
             cancellationToken);
 
-    private async Task<AdminMutationResult> UpdateClientPermissionsCoreAsync(string clientId, List<string> allowedScopes, CancellationToken cancellationToken = default)
+    private async Task<AdminMutationResult> UpdateClientPermissionsCoreAsync(string clientId, ScopeSet allowedScopes, CancellationToken cancellationToken = default)
     {
         clientId = clientId?.Trim() ?? string.Empty;
         if (clientId.Length == 0)
@@ -630,11 +631,7 @@ public partial class ClientDetailsService : IClientDetailsService
             return AdminMutationResult.ValidationFailure("Id", "Client ID is required.");
         }
 
-        var requestedScopes = (allowedScopes ?? new List<string>())
-            .Where(scope => !string.IsNullOrWhiteSpace(scope))
-            .Select(scope => scope.Trim())
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
+        var requestedScopes = allowedScopes.ToValues();
         if (requestedScopes.Any(scope => scope.Length > ValidationConstants.MaxScopeNameLength))
         {
             await AuditDeniedAsync(AuditActions.UpdatePermissions, AuditReasonCodes.ValidationFailed, clientId, clientId,
