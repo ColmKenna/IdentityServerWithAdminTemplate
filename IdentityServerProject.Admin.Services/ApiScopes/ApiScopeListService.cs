@@ -30,11 +30,10 @@ public class ApiScopeListService : IApiScopeListService
 
     public async Task<ListResult<ApiScopeListItem>> GetApiScopesAsync(
         string? filter,
-        int pageNumber,
-        int pageSize,
+        Pagination pagination = default,
         CancellationToken cancellationToken = default)
     {
-        var pagination = Pagination.Normalize(pageNumber, pageSize);
+        pagination = pagination.Normalize();
 
         var query = ApplyFilter(_configurationDbContext.ApiScopes.AsNoTracking(), filter);
 

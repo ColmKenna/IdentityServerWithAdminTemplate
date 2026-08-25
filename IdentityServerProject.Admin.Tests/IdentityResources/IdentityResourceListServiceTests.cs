@@ -1,11 +1,11 @@
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
 using IdentityServerProject.Data;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.AuditLogs;
 using IdentityServerProject.Services.IdentityResources;
 using Microsoft.EntityFrameworkCore;
@@ -23,25 +23,20 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
         _factory = factory;
     }
 
-    private static IdentityResource MakeIdentityResource(string tag, string suffix, bool enabled = true, int claimsCount = 1, bool nonEditable = false)
+    private static IdentityResource MakeIdentityResource(string tag, string suffix) => new()
     {
-        var resource = new IdentityResource
+        Name = $"{tag}-idres-{suffix}",
+        DisplayName = $"{tag} IdentityResource {suffix}",
+        Description = $"Description for {suffix}",
+        Enabled = true,
+        Required = true,
+        Emphasize = false,
+        ShowInDiscoveryDocument = true,
+        UserClaims = new List<IdentityResourceClaim>
         {
-            Name = $"{tag}-idres-{suffix}",
-            DisplayName = $"{tag} Identity Resource {suffix}",
-            Description = $"Description for {suffix}",
-            Enabled = enabled,
-            NonEditable = nonEditable,
-            UserClaims = new List<IdentityResourceClaim>()
-        };
-
-        for (var i = 1; i <= claimsCount; i++)
-        {
-            resource.UserClaims.Add(new IdentityResourceClaim { Type = $"{tag}-claim-{i}" });
+            new IdentityResourceClaim { Type = "sub" }
         }
-
-        return resource;
-    }
+    };
 
     private async Task SeedAsync(IEnumerable<IdentityResource>? resources = null, IEnumerable<Client>? clients = null)
     {
@@ -50,9 +45,9 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
             var configDb = sp.GetRequiredService<ConfigurationDbContext>();
             if (resources != null)
             {
-                foreach (var resource in resources)
+                foreach (var res in resources)
                 {
-                    configDb.IdentityResources.Add(resource);
+                    configDb.IdentityResources.Add(res);
                 }
             }
             if (clients != null)
@@ -77,7 +72,7 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IIdentityResourceListService>();
-            var result = await service.GetIdentityResourcesAsync(tag, pageNumber: 1, pageSize: 10);
+            var result = await service.GetIdentityResourcesAsync(tag, pagination: Pagination.From(1, 10));
 
             Assert.Equal(2, result.TotalCount);
             Assert.Contains(result.Items, item => item.Name == r1.Name);
@@ -105,7 +100,7 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IIdentityResourceListService>();
-            var result = await service.GetIdentityResourcesAsync(tag, pageNumber: 1, pageSize: 10);
+            var result = await service.GetIdentityResourcesAsync(tag, pagination: Pagination.From(1, 10));
 
             var item = Assert.Single(result.Items);
             Assert.Equal(1, item.ClientReferenceCount);
@@ -182,5 +177,3 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
         });
     }
 }
-
-

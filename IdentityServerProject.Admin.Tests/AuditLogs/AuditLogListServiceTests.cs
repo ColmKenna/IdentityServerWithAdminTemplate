@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using IdentityServerProject.Data;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.AuditLogs;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -22,22 +23,21 @@ public class AuditLogListServiceTests : IClassFixture<AdminWebFactory>
     private static AuditLogEntry MakeEntry(
         string actorSubjectId,
         string action,
-        string? targetId = null,
-        string category = "Test",
+        string targetId = "target-1",
+        string category = "Client",
         AuditOutcome outcome = AuditOutcome.Succeeded,
         string? correlationId = null,
         DateTime? timestamp = null) => new()
     {
-        ActorName = $"{actorSubjectId}-name",
         ActorSubjectId = actorSubjectId,
-        Category = category,
-        Outcome = outcome,
-        ReasonCode = AuditReasonCodes.Succeeded,
-        IsSuccess = outcome == AuditOutcome.Succeeded,
-        Action = action,
-        TargetName = targetId,
+        ActorName = $"{actorSubjectId}@sales.local",
         TargetId = targetId,
-        CorrelationId = correlationId ?? string.Empty,
+        TargetName = targetId,
+        Category = category,
+        Action = action,
+        Outcome = outcome,
+        IsSuccess = outcome == AuditOutcome.Succeeded,
+        CorrelationId = correlationId ?? $"corr-{Guid.NewGuid():N}",
         Timestamp = timestamp ?? DateTime.UtcNow,
     };
 
@@ -64,7 +64,7 @@ public class AuditLogListServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IAuditLogListService>();
-            var result = await service.GetAuditLogEntriesAsync(new AuditLogFilter { ActorSubjectId = tag }, 1, 10);
+            var result = await service.GetAuditLogEntriesAsync(new AuditLogFilter { ActorSubjectId = tag }, Pagination.From(1, 10));
 
             Assert.Equal(new[] { $"{tag}-newer", $"{tag}-older" }, result.Items.Select(item => item.Action));
         });
@@ -90,7 +90,7 @@ public class AuditLogListServiceTests : IClassFixture<AdminWebFactory>
                 Action = "Update",
                 Outcome = AuditOutcome.Denied,
                 CorrelationId = $"{tag}-correlation",
-            }, 1, 10);
+            }, Pagination.From(1, 10));
 
             Assert.Single(result.Items);
             Assert.Equal(matching.CorrelationId, result.Items[0].CorrelationId);
@@ -114,7 +114,7 @@ public class AuditLogListServiceTests : IClassFixture<AdminWebFactory>
             {
                 ActorSubjectId = "alice-admin",
                 TargetId = "target-123",
-            }, 1, 10);
+            }, Pagination.From(1, 10));
 
             Assert.Single(result.Items);
         });
@@ -129,7 +129,7 @@ public class AuditLogListServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IAuditLogListService>();
-            var result = await service.GetAuditLogEntriesAsync(new AuditLogFilter { Category = $"{tag}-no-match" }, 1, 10);
+            var result = await service.GetAuditLogEntriesAsync(new AuditLogFilter { Category = $"{tag}-no-match" }, Pagination.From(1, 10));
 
             Assert.Empty(result.Items);
             Assert.Equal(0, result.TotalCount);
@@ -147,8 +147,8 @@ public class AuditLogListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IAuditLogListService>();
             var filter = new AuditLogFilter { ActorSubjectId = tag };
-            var page1 = await service.GetAuditLogEntriesAsync(filter, 1, 2);
-            var page3 = await service.GetAuditLogEntriesAsync(filter, 3, 2);
+            var page1 = await service.GetAuditLogEntriesAsync(filter, Pagination.From(1, 2));
+            var page3 = await service.GetAuditLogEntriesAsync(filter, Pagination.From(3, 2));
 
             Assert.Equal(2, page1.Items.Count);
             Assert.Equal(5, page1.TotalCount);

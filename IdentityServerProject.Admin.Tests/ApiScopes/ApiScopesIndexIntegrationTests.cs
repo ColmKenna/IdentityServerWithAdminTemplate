@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Dom;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.ApiScopes;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,7 +66,7 @@ public class ApiScopesIndexIntegrationTests : IDisposable
     private static Mock<IApiScopeListService> MockService(ListResult<ApiScopeListItem> result)
     {
         var mock = new Mock<IApiScopeListService>();
-        mock.Setup(s => s.GetApiScopesAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiScopesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock;
     }
@@ -328,5 +329,3 @@ public class ApiScopesIndexIntegrationTests : IDisposable
         }
     }
 }
-
-

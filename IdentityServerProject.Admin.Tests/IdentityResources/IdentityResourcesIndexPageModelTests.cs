@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.IdentityResources;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.IdentityResources;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -13,6 +14,8 @@ namespace IdentityServerProject.Admin.Tests.IdentityResources;
 
 public class IdentityResourcesIndexPageModelTests
 {
+    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
+
     [Fact]
     public async Task OnGetAsync_PopulatesIdentityResourcesFromService()
     {
@@ -41,7 +44,7 @@ public class IdentityResourcesIndexPageModelTests
         };
 
         mockService
-            .Setup(s => s.GetIdentityResourcesAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetIdentityResourcesAsync(null, DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole);
@@ -56,13 +59,13 @@ public class IdentityResourcesIndexPageModelTests
     {
         var mockService = new Mock<IIdentityResourceListService>();
         mockService
-            .Setup(s => s.GetIdentityResourcesAsync("profile", 1, TestOptions.PageSize, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetIdentityResourcesAsync("profile", DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ListResult<IdentityResourceListItem>.Empty(1, TestOptions.PageSize));
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole) { Filter = "profile" };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mockService.Verify(s => s.GetIdentityResourcesAsync("profile", 1, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.GetIdentityResourcesAsync("profile", DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -97,5 +100,3 @@ public class IdentityResourcesIndexPageModelTests
         Assert.IsType<NotFoundResult>(result);
     }
 }
-
-

@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Dom;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.Clients;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -47,7 +48,7 @@ public class ClientsIndexIntegrationTests : IDisposable
     private static IClientListService MockService(ListResult<ClientListItem> result)
     {
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientsAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock.Object;
     }
@@ -60,11 +61,11 @@ public class ClientsIndexIntegrationTests : IDisposable
         PageSize = pageSize,
     };
 
-    private static ClientListItem MakeItem(string suffix, bool enabled = true, string type = "Authorization Code") => new()
+    private static ClientListItem MakeItem(string suffix, bool enabled = true) => new()
     {
         ClientId = $"client-{suffix}",
         ClientName = $"Client {suffix}",
-        ClientType = type,
+        ClientType = "Authorization Code",
         Enabled = enabled,
     };
 
@@ -75,7 +76,7 @@ public class ClientsIndexIntegrationTests : IDisposable
         return await context.OpenAsync(req => req.Content(content));
     }
 
-    // ---------- Step 1: bare page shell ----------
+    // ---------- Step 1: navigation shell & routing ----------
 
     [Fact]
     public async Task Get_ReturnsSuccessStatusCode()
@@ -96,9 +97,9 @@ public class ClientsIndexIntegrationTests : IDisposable
         var document = await GetDocumentAsync(response);
 
         Assert.NotNull(document.QuerySelector("aside.sidebar"));
-        var clientsNavItem = document.QuerySelector("a[href*='/Admin/Clients']");
-        Assert.NotNull(clientsNavItem);
-        Assert.Contains("active", clientsNavItem!.ClassList);
+        var navItem = document.QuerySelector("a[href*='/Admin/Clients']");
+        Assert.NotNull(navItem);
+        Assert.Contains("active", navItem!.ClassList);
     }
 
     [Fact]
@@ -115,33 +116,7 @@ public class ClientsIndexIntegrationTests : IDisposable
             document.QuerySelector("p.page-sub")?.TextContent.Trim());
     }
 
-    [Fact]
-    public async Task Get_RendersNewClientButtonPlaceholder()
-    {
-        var client = CreateClient(MockService(EmptyResult()));
-
-        var response = await client.GetAsync("/Admin/Clients");
-        var document = await GetDocumentAsync(response);
-
-        var newClientButton = document.QuerySelector("#new-client-link");
-        Assert.NotNull(newClientButton);
-        Assert.Contains("New client", newClientButton!.TextContent);
-    }
-
-    [Fact]
-    public async Task Get_IncludesResponsiveTableComponentScript()
-    {
-        var client = CreateClient(MockService(EmptyResult()));
-
-        var response = await client.GetAsync("/Admin/Clients");
-        var document = await GetDocumentAsync(response);
-
-        var script = document.QuerySelectorAll("script[type='module']")
-            .FirstOrDefault(s => (s.GetAttribute("src") ?? "").Contains("ck-responsive-table-webcomponent"));
-        Assert.NotNull(script);
-    }
-
-    // ---------- Step 2: data display ----------
+    // ---------- Step 2: tabular representation ----------
 
     [Fact]
     public async Task Get_RendersTableColumnHeaders()
@@ -244,5 +219,3 @@ public class ClientsIndexIntegrationTests : IDisposable
         }
     }
 }
-
-

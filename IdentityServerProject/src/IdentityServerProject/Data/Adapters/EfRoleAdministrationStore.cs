@@ -24,9 +24,12 @@ public sealed class EfRoleAdministrationStore : IRoleAdministrationStore
         _roleManager = roleManager;
     }
 
-    public async Task<ListResult<RoleListItem>> GetRolesAsync(string? filter, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<ListResult<RoleListItem>> GetRolesAsync(
+        string? filter,
+        Pagination pagination = default,
+        CancellationToken cancellationToken = default)
     {
-        var pagination = Pagination.Normalize(pageNumber, pageSize);
+        pagination = pagination.Normalize();
 
         var query = ApplyFilter(_dbContext.Roles.AsNoTracking(), filter);
 

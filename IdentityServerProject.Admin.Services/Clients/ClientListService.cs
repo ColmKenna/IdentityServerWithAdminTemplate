@@ -25,11 +25,10 @@ public class ClientListService : IClientListService
 
     public async Task<ListResult<ClientListItem>> GetClientsAsync(
         string? filter,
-        int pageNumber,
-        int pageSize,
+        Pagination pagination = default,
         CancellationToken cancellationToken = default)
     {
-        var pagination = Pagination.Normalize(pageNumber, pageSize);
+        pagination = pagination.Normalize();
 
         var query = ApplyFilter(_configurationDbContext.Clients.AsNoTracking(), filter);
 

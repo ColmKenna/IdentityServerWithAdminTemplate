@@ -2,6 +2,7 @@ using IdentityServerProject.Admin.Tests.Infrastructure;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.Apis;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.Apis;
 using Moq;
 using Xunit;
@@ -25,18 +26,20 @@ public class ApisIndexPageModelTests
         PageSize = pageSize,
     };
 
+    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
+
     [Fact]
     public async Task OnGetAsync_NoQueryParameters_CallsServiceWithNullFilterAndFirstPage()
     {
         var mock = new Mock<IApiResourceListService>();
-        mock.Setup(s => s.GetApiResourcesAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiResourcesAsync(null, DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiResourcesAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiResourcesAsync(null, DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -44,7 +47,7 @@ public class ApisIndexPageModelTests
     {
         var expected = MakeResult();
         var mock = new Mock<IApiResourceListService>();
-        mock.Setup(s => s.GetApiResourcesAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiResourcesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
@@ -58,41 +61,42 @@ public class ApisIndexPageModelTests
     public async Task OnGetAsync_FilterSpecified_PassesFilterToService()
     {
         var mock = new Mock<IApiResourceListService>();
-        mock.Setup(s => s.GetApiResourcesAsync("sales", 1, TestOptions.PageSize, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiResourcesAsync("sales", DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { Filter = "sales" };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiResourcesAsync("sales", 1, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiResourcesAsync("sales", DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task OnGetAsync_PageNumberSet_PassesPageNumberToService()
     {
+        var page3 = Pagination.From(3, TestOptions.PageSize);
         var mock = new Mock<IApiResourceListService>();
-        mock.Setup(s => s.GetApiResourcesAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiResourcesAsync(It.IsAny<string?>(), page3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult(pageNumber: 3));
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { PageNumber = 3 };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiResourcesAsync(null, 3, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiResourcesAsync(null, page3, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task OnGetAsync_PageNumberBelowOne_NormalizesToFirstPageBeforeCallingService()
     {
         var mock = new Mock<IApiResourceListService>();
-        mock.Setup(s => s.GetApiResourcesAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiResourcesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { PageNumber = 0 };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiResourcesAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiResourcesAsync(null, DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

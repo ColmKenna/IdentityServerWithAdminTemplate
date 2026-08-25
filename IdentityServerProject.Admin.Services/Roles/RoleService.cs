@@ -22,9 +22,12 @@ public class RoleService : IRoleService
         _auditWriter = auditWriter;
     }
 
-    public Task<ListResult<RoleListItem>> GetRolesAsync(string? filter, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    public Task<ListResult<RoleListItem>> GetRolesAsync(
+        string? filter,
+        Pagination pagination = default,
+        CancellationToken cancellationToken = default)
     {
-        return _store.GetRolesAsync(filter, pageNumber, pageSize, cancellationToken);
+        return _store.GetRolesAsync(filter, pagination, cancellationToken);
     }
 
     public Task<RoleDetailsModel?> GetRoleAsync(string roleId, CancellationToken cancellationToken = default)

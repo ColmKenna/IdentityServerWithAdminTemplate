@@ -36,7 +36,6 @@ public interface IAdminAuditStore
 
     Task<ListResult<AuditLogListItem>> GetEntriesAsync(
         AuditLogFilter filter,
-        int pageNumber,
-        int pageSize,
+        Pagination pagination = default,
         CancellationToken cancellationToken = default);
 }

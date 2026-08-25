@@ -28,7 +28,9 @@ public class RoleDeleteResult
 public interface IRoleService
 {
     Task<ListResult<RoleListItem>> GetRolesAsync(
-        string? filter, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
+        string? filter,
+        Pagination pagination = default,
+        CancellationToken cancellationToken = default);
 
     Task<RoleDetailsModel?> GetRoleAsync(
         string roleId, CancellationToken cancellationToken = default);

@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.IdentityResources;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,7 +40,7 @@ public class IdentityResourcesIndexIntegrationTests : IDisposable
     private static IIdentityResourceListService MockService(ListResult<IdentityResourceListItem> result)
     {
         var mock = new Mock<IIdentityResourceListService>();
-        mock.Setup(s => s.GetIdentityResourcesAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetIdentityResourcesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock.Object;
     }
@@ -142,5 +143,3 @@ public class IdentityResourcesIndexIntegrationTests : IDisposable
         Assert.NotNull(document.QuerySelector("#delete-resource-modal"));
     }
 }
-
-

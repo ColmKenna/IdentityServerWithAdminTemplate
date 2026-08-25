@@ -69,7 +69,7 @@ public class RolesIndexIntegrationTests : IDisposable
     public async Task Get_RolesIndex_RendersRolesTable()
     {
         var mock = new Mock<IRoleService>();
-        mock.Setup(s => s.GetRolesAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetRolesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ListResult<RoleListItem>
             {
                 Items = new List<RoleListItem>
@@ -134,7 +134,7 @@ public class RolesIndexIntegrationTests : IDisposable
     public async Task Post_RolesDelete_ValidRole_RedirectsWithStatus()
     {
         var mock = new Mock<IRoleService>();
-        mock.Setup(s => s.GetRolesAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetRolesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ListResult<RoleListItem>
             {
                 Items = new List<RoleListItem>

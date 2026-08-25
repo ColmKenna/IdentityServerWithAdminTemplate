@@ -2,6 +2,7 @@ using IdentityServerProject.Admin.Tests.Infrastructure;
 using System;
 using System.Threading.Tasks;
 using IdentityServerProject.Data;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,10 +11,8 @@ using Xunit;
 namespace IdentityServerProject.Admin.Tests.Users;
 
 /// <summary>
-/// Exercises <see cref="UserListService"/> against a real (SQLite in-memory)
-/// <see cref="ApplicationDbContext"/> resolved from the shared <see cref="AdminWebFactory"/> DI container.
-/// Every test seeds users with a unique tag embedded in the user properties so
-/// assertions are unaffected by data left behind by other tests sharing the same connection.
+/// Integration tests for <see cref="UserListService"/> exercised against the
+/// shared SQLite in-memory database provided by <see cref="AdminWebFactory"/>.
 /// </summary>
 public class UserListServiceTests : IClassFixture<AdminWebFactory>
 {
@@ -24,28 +23,27 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
         _factory = factory;
     }
 
-    private static ApplicationUser MakeUser(string tag, string suffix, bool lockedOut = false)
+    private static ApplicationUser MakeUser(string tag, string suffix, bool lockedOut = false) => new()
     {
-        return new ApplicationUser
-        {
-            Id = $"{tag}-user-{suffix}",
-            UserName = $"{tag}-username-{suffix}",
-            Email = $"{tag}-email-{suffix}@sales.local",
-            FullName = $"{tag} User {suffix}",
-            LockoutEnabled = true,
-            LockoutEnd = lockedOut ? DateTimeOffset.UtcNow.AddDays(7) : null,
-        };
-    }
+        Id = $"{tag}-user-{suffix}",
+        UserName = $"{tag}-username-{suffix}",
+        NormalizedUserName = $"{tag}-username-{suffix}".ToUpperInvariant(),
+        Email = $"{tag}-email-{suffix}@sales.local",
+        NormalizedEmail = $"{tag}-email-{suffix}@sales.local".ToUpperInvariant(),
+        FullName = $"Full Name {suffix}",
+        EmailConfirmed = true,
+        LockoutEnabled = true,
+        LockoutEnd = lockedOut ? DateTimeOffset.UtcNow.AddDays(1) : null,
+        SecurityStamp = Guid.NewGuid().ToString("D"),
+    };
 
     private async Task SeedAsync(params ApplicationUser[] users)
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
-            foreach (var user in users)
-            {
-                await userManager.CreateAsync(user, "Password123!");
-            }
+            var db = sp.GetRequiredService<ApplicationDbContext>();
+            db.Users.AddRange(users);
+            await db.SaveChangesAsync();
         });
     }
 
@@ -59,7 +57,7 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync($"{tag}-username-alpha", pageNumber: 1, pageSize: 10);
+            var result = await service.GetUsersAsync($"{tag}-username-alpha", pagination: Pagination.From(1, 10));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-user-alpha", item.Id);
@@ -76,7 +74,7 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync($"{tag}-email-delta", pageNumber: 1, pageSize: 10);
+            var result = await service.GetUsersAsync($"{tag}-email-delta", pagination: Pagination.From(1, 10));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-user-delta", item.Id);
@@ -95,7 +93,7 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync(filter: tag, pageNumber: 2, pageSize: 2);
+            var result = await service.GetUsersAsync(filter: tag, pagination: Pagination.From(2, 2));
 
             Assert.Equal(2, result.Items.Count);
             Assert.Equal(5, result.TotalCount);
@@ -113,7 +111,7 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync(filter: tag, pageNumber: 99, pageSize: 10);
+            var result = await service.GetUsersAsync(filter: tag, pagination: Pagination.From(99, 10));
 
             Assert.Empty(result.Items);
             Assert.Equal(2, result.TotalCount);
@@ -131,7 +129,7 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync(filter: tag, pageNumber: 1, pageSize: 10);
+            var result = await service.GetUsersAsync(filter: tag, pagination: Pagination.From(1, 10));
 
             Assert.True(Assert.Single(result.Items).IsLockedOut);
         });
@@ -152,9 +150,8 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
 
             Assert.Equal(UserUnlockStatus.Succeeded, result.Status);
 
-            var listResult = await service.GetUsersAsync(filter: tag, pageNumber: 1, pageSize: 10);
+            var listResult = await service.GetUsersAsync(filter: tag, pagination: Pagination.From(1, 10));
             Assert.False(Assert.Single(listResult.Items).IsLockedOut);
         });
     }
-
 }

@@ -42,7 +42,9 @@ public enum RoleDeleteOutcome
 public interface IRoleAdministrationStore
 {
     Task<ListResult<RoleListItem>> GetRolesAsync(
-        string? filter, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
+        string? filter,
+        Pagination pagination = default,
+        CancellationToken cancellationToken = default);
 
     Task<RoleDetailsModel?> FindRoleAsync(
         string roleId, CancellationToken cancellationToken = default);

@@ -2,6 +2,7 @@ using IdentityServerProject.Admin.Tests.Infrastructure;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.Clients;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.Clients;
 using Moq;
 using Xunit;
@@ -25,18 +26,20 @@ public class ClientsIndexPageModelTests
         PageSize = pageSize,
     };
 
+    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
+
     [Fact]
     public async Task OnGetAsync_NoQueryParameters_CallsServiceWithNullFilterAndFirstPage()
     {
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientsAsync(null, DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetClientsAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetClientsAsync(null, DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -44,7 +47,7 @@ public class ClientsIndexPageModelTests
     {
         var expected = MakeResult();
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientsAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
@@ -58,43 +61,41 @@ public class ClientsIndexPageModelTests
     public async Task OnGetAsync_FilterSet_PassesFilterToService()
     {
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync("portal", 1, TestOptions.PageSize, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientsAsync("portal", DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { Filter = "portal" };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetClientsAsync("portal", 1, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetClientsAsync("portal", DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
     }
-
 
     [Fact]
     public async Task OnGetAsync_PageNumberSet_PassesPageNumberToService()
     {
+        var page3 = Pagination.From(3, TestOptions.PageSize);
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientsAsync(It.IsAny<string?>(), page3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult(pageNumber: 3));
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { PageNumber = 3 };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetClientsAsync(null, 3, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetClientsAsync(null, page3, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task OnGetAsync_PageNumberBelowOne_NormalizesToFirstPageBeforeCallingService()
     {
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientsAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { PageNumber = 0 };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetClientsAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetClientsAsync(null, DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
     }
 }
-
-

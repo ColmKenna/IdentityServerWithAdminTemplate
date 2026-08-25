@@ -17,4 +17,12 @@ public readonly record struct Pagination(int PageNumber, int PageSize, int Skip)
         var skip = (normalizedPageNumber - 1) * normalizedPageSize;
         return new Pagination(normalizedPageNumber, normalizedPageSize, skip);
     }
+
+    public static Pagination Normalize(Pagination pagination) =>
+        Normalize(pagination.PageNumber, pagination.PageSize);
+
+    public static Pagination From(int pageNumber, int pageSize) =>
+        Normalize(pageNumber, pageSize);
+
+    public Pagination Normalize() => Normalize(PageNumber, PageSize);
 }

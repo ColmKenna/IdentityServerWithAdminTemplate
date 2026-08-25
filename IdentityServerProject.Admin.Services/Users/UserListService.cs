@@ -17,10 +17,9 @@ public class UserListService : IUserListService
 
     public Task<ListResult<UserListItem>> GetUsersAsync(
         string? filter,
-        int pageNumber,
-        int pageSize,
+        Pagination pagination = default,
         CancellationToken cancellationToken = default) =>
-        _store.GetUsersAsync(filter, pageNumber, pageSize, cancellationToken);
+        _store.GetUsersAsync(filter, pagination, cancellationToken);
 
     public async Task<UserUnlockResult> UnlockUserAsync(
         string userId,

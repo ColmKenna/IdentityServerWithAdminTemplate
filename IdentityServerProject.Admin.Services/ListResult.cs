@@ -23,11 +23,18 @@ public class ListResult<T>
 
     public bool HasNextPage => PageNumber < TotalPages;
 
-    public static ListResult<T> Empty(int pageNumber, int pageSize) => new()
+    public static ListResult<T> Empty(Pagination pagination)
     {
-        Items = Array.Empty<T>(),
-        TotalCount = 0,
-        PageNumber = pageNumber,
-        PageSize = pageSize,
-    };
+        var normalized = pagination.Normalize();
+        return new()
+        {
+            Items = Array.Empty<T>(),
+            TotalCount = 0,
+            PageNumber = normalized.PageNumber,
+            PageSize = normalized.PageSize,
+        };
+    }
+
+    public static ListResult<T> Empty(int pageNumber = 1, int pageSize = 10) =>
+        Empty(Pagination.Normalize(pageNumber, pageSize));
 }

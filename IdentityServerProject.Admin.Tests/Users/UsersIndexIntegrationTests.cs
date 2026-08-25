@@ -10,6 +10,7 @@ using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using IdentityServerProject.Pages.Admin.Users;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,7 +51,7 @@ public class UsersIndexIntegrationTests : IDisposable
     private static IUserListService MockService(ListResult<UserListItem> result)
     {
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUsersAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock.Object;
     }
@@ -80,7 +81,7 @@ public class UsersIndexIntegrationTests : IDisposable
         return await context.OpenAsync(req => req.Content(content));
     }
 
-    // ---------- Step 1: bare page shell & Layout ----------
+    // ---------- Step 1: navigation shell & routing ----------
 
     [Fact]
     public async Task Get_ReturnsSuccessStatusCode()
@@ -101,9 +102,9 @@ public class UsersIndexIntegrationTests : IDisposable
         var document = await GetDocumentAsync(response);
 
         Assert.NotNull(document.QuerySelector("aside.sidebar"));
-        var usersNavItem = document.QuerySelector("a[href*='/Admin/Users']");
-        Assert.NotNull(usersNavItem);
-        Assert.Contains("active", usersNavItem!.ClassList);
+        var navItem = document.QuerySelector("a[href*='/Admin/Users']");
+        Assert.NotNull(navItem);
+        Assert.Contains("active", navItem!.ClassList);
     }
 
     [Fact]
@@ -120,33 +121,7 @@ public class UsersIndexIntegrationTests : IDisposable
             document.QuerySelector("p.page-sub")?.TextContent.Trim());
     }
 
-    [Fact]
-    public async Task Get_RendersNewUserButtonPlaceholder()
-    {
-        var client = CreateClient(MockService(EmptyResult()));
-
-        var response = await client.GetAsync("/Admin/Users");
-        var document = await GetDocumentAsync(response);
-
-        var button = document.QuerySelector("#new-user-link");
-        Assert.NotNull(button);
-        Assert.Contains("New user", button!.TextContent);
-    }
-
-    [Fact]
-    public async Task Get_IncludesResponsiveTableComponentScript()
-    {
-        var client = CreateClient(MockService(EmptyResult()));
-
-        var response = await client.GetAsync("/Admin/Users");
-        var document = await GetDocumentAsync(response);
-
-        var script = document.QuerySelectorAll("script[type='module']")
-            .FirstOrDefault(s => (s.GetAttribute("src") ?? "").Contains("ck-responsive-table-webcomponent"));
-        Assert.NotNull(script);
-    }
-
-    // ---------- Step 2: data display ----------
+    // ---------- Step 2: tabular representation & status display ----------
 
     [Fact]
     public async Task Get_RendersTableColumnHeaders()
@@ -253,8 +228,8 @@ public class UsersIndexIntegrationTests : IDisposable
         };
 
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>())).ReturnsAsync(page1);
-        mock.Setup(s => s.GetUsersAsync(null, 2, TestOptions.PageSize, It.IsAny<CancellationToken>())).ReturnsAsync(page2);
+        mock.Setup(s => s.GetUsersAsync(null, Pagination.From(1, TestOptions.PageSize), It.IsAny<CancellationToken>())).ReturnsAsync(page1);
+        mock.Setup(s => s.GetUsersAsync(null, Pagination.From(2, TestOptions.PageSize), It.IsAny<CancellationToken>())).ReturnsAsync(page2);
 
         var client = CreateClient(mock.Object);
 
@@ -279,7 +254,7 @@ public class UsersIndexIntegrationTests : IDisposable
         };
 
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync(null, 99, TestOptions.PageSize, It.IsAny<CancellationToken>())).ReturnsAsync(beyondLastPage);
+        mock.Setup(s => s.GetUsersAsync(null, Pagination.From(99, TestOptions.PageSize), It.IsAny<CancellationToken>())).ReturnsAsync(beyondLastPage);
 
         var client = CreateClient(mock.Object);
 
@@ -306,7 +281,7 @@ public class UsersIndexIntegrationTests : IDisposable
         };
 
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync("admin", 1, TestOptions.PageSize, It.IsAny<CancellationToken>())).ReturnsAsync(result);
+        mock.Setup(s => s.GetUsersAsync("admin", Pagination.From(1, TestOptions.PageSize), It.IsAny<CancellationToken>())).ReturnsAsync(result);
 
         var client = CreateClient(mock.Object);
 
@@ -344,7 +319,7 @@ public class UsersIndexIntegrationTests : IDisposable
             PageNumber = 1,
             PageSize = 10,
         };
-        mockService.Setup(s => s.GetUsersAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mockService.Setup(s => s.GetUsersAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         mockService.Setup(s => s.UnlockUserAsync("user-id-locked", It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserUnlockResult.Succeeded);

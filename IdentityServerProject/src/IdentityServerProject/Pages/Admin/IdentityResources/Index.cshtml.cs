@@ -33,9 +33,10 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        PageNumber = System.Math.Max(1, PageNumber);
+        var pagination = Pagination.From(PageNumber, _options.DefaultPageSize);
+        PageNumber = pagination.PageNumber;
 
-        IdentityResources = await _identityResourceListService.GetIdentityResourcesAsync(Filter, PageNumber, _options.DefaultPageSize, cancellationToken);
+        IdentityResources = await _identityResourceListService.GetIdentityResourcesAsync(Filter, pagination, cancellationToken);
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(string name, CancellationToken cancellationToken)

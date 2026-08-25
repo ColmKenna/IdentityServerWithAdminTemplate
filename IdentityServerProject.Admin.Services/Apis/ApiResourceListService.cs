@@ -19,11 +19,10 @@ public class ApiResourceListService : IApiResourceListService
 
     public async Task<ListResult<ApiResourceListItem>> GetApiResourcesAsync(
         string? filter,
-        int pageNumber,
-        int pageSize,
+        Pagination pagination = default,
         CancellationToken cancellationToken = default)
     {
-        var pagination = Pagination.Normalize(pageNumber, pageSize);
+        pagination = pagination.Normalize();
 
         var query = ApplyFilter(_configurationDbContext.ApiResources.AsNoTracking(), filter);
 

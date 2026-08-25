@@ -14,15 +14,13 @@ public interface IGrantListService
     /// <param name="subjectId">Optional filter for subject ID.</param>
     /// <param name="clientId">Optional filter for client ID.</param>
     /// <param name="typeFilter">Optional filter for grant type.</param>
-    /// <param name="pageNumber">1-based page number.</param>
-    /// <param name="pageSize">Maximum items per page.</param>
+    /// <param name="pagination">Pagination settings (page number and page size).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task<ListResult<GrantListItem>> GetGrantsAsync(
         string? subjectId,
         string? clientId,
         string? typeFilter,
-        int pageNumber,
-        int pageSize,
+        Pagination pagination = default,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -31,7 +29,6 @@ public interface IGrantListService
     Task<RevokeGrantResult> RevokeGrantAsync(string key, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Revokes (deletes) all persisted grants for a specified subject ID.
-    /// </summary>
+    /// Revokes (deletes) all persisted grants for a specified subject ID.</summary>
     Task<int> RevokeGrantsBySubjectAsync(string subjectId, CancellationToken cancellationToken = default);
 }

@@ -15,11 +15,10 @@ public interface IClientListService
     /// Optional case-insensitive substring matched against client name or client id.
     /// A null or whitespace-only value returns all clients.
     /// </param>
-    /// <param name="pageNumber">1-based page number. Values below 1 are treated as 1.</param>
-    /// <param name="pageSize">Maximum number of items to return for the page.</param>
+    /// <param name="pagination">Pagination settings (page number and page size).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     Task<ListResult<ClientListItem>> GetClientsAsync(
         string? filter,
-        int pageNumber,
-        int pageSize,
+        Pagination pagination = default,
         CancellationToken cancellationToken = default);
 }

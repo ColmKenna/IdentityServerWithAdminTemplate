@@ -36,7 +36,10 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        Roles = await _roleService.GetRolesAsync(Filter, PageNumber, _options.DefaultPageSize, cancellationToken);
+        var pagination = Pagination.From(PageNumber, _options.DefaultPageSize);
+        PageNumber = pagination.PageNumber;
+
+        Roles = await _roleService.GetRolesAsync(Filter, pagination, cancellationToken);
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(string id, CancellationToken cancellationToken)

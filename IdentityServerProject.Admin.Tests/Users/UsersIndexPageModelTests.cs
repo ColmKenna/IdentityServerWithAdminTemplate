@@ -2,6 +2,7 @@ using IdentityServerProject.Admin.Tests.Infrastructure;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.Users;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -27,32 +28,34 @@ public class UsersIndexPageModelTests
         PageSize = pageSize,
     };
 
+    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
+
     [Fact]
     public async Task OnGetAsync_NoQueryParameters_CallsServiceWithNullFilterAndFirstPage()
     {
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUsersAsync(null, DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetUsersAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetUsersAsync(null, DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task OnGetAsync_FilterSpecified_PassesFilterToService()
     {
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync("admin", 1, TestOptions.PageSize, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUsersAsync("admin", DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { Filter = "admin" };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetUsersAsync("admin", 1, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetUsersAsync("admin", DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -60,7 +63,7 @@ public class UsersIndexPageModelTests
     {
         var expected = MakeResult();
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUsersAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
@@ -117,5 +120,3 @@ public class UsersIndexPageModelTests
         Assert.Contains("could not be updated", model.StatusMessage);
     }
 }
-
-

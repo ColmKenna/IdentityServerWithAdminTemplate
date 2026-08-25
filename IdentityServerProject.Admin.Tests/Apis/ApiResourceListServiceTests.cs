@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.Apis;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -12,10 +13,8 @@ using Xunit;
 namespace IdentityServerProject.Admin.Tests.Apis;
 
 /// <summary>
-/// Exercises <see cref="ApiResourceListService"/> against a real (SQLite in-memory)
-/// <see cref="ConfigurationDbContext"/> resolved from the shared <see cref="AdminWebFactory"/> DI container.
-/// Every test seeds API resources with a unique tag embedded in the resource name so
-/// assertions are unaffected by data left behind by other tests sharing the same connection.
+/// Integration tests for <see cref="ApiResourceListService"/> exercised against the
+/// shared SQLite in-memory database provided by <see cref="AdminWebFactory"/>.
 /// </summary>
 public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
 {
@@ -26,19 +25,24 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         _factory = factory;
     }
 
-    private static ApiResource MakeApiResource(string tag, string suffix, bool enabled = true, int scopeCount = 1)
+    private static ApiResource MakeApiResource(string tag, string suffix, bool enabled = true, int scopeCount = 0)
     {
         var resource = new ApiResource
         {
             Name = $"{tag}-api-{suffix}",
             DisplayName = $"{tag} API {suffix}",
+            Description = $"Description for {suffix}",
             Enabled = enabled,
+            ShowInDiscoveryDocument = true,
             Scopes = new List<ApiResourceScope>()
         };
 
         for (var i = 1; i <= scopeCount; i++)
         {
-            resource.Scopes.Add(new ApiResourceScope { Scope = $"{tag}-scope-{i}" });
+            resource.Scopes.Add(new ApiResourceScope
+            {
+                Scope = $"{tag}-scope-{i}"
+            });
         }
 
         return resource;
@@ -48,12 +52,9 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
-            foreach (var resource in resources)
-            {
-                configDb.ApiResources.Add(resource);
-            }
-            await configDb.SaveChangesAsync();
+            var db = sp.GetRequiredService<ConfigurationDbContext>();
+            db.ApiResources.AddRange(resources);
+            await db.SaveChangesAsync();
         });
     }
 
@@ -67,7 +68,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync($"{tag}-api-alpha", pageNumber: 1, pageSize: 10);
+            var result = await service.GetApiResourcesAsync($"{tag}-api-alpha", pagination: Pagination.From(1, 10));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-api-alpha", item.Name);
@@ -84,7 +85,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync($"{tag} API delta", pageNumber: 1, pageSize: 10);
+            var result = await service.GetApiResourcesAsync($"{tag} API delta", pagination: Pagination.From(1, 10));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-api-delta", item.Name);
@@ -101,7 +102,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync($"{tag} API EPSILON".ToUpperInvariant(), pageNumber: 1, pageSize: 10);
+            var result = await service.GetApiResourcesAsync($"{tag} API EPSILON".ToUpperInvariant(), pagination: Pagination.From(1, 10));
 
             Assert.Single(result.Items);
         });
@@ -117,7 +118,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync(filter: tag, pageNumber: 1, pageSize: 10);
+            var result = await service.GetApiResourcesAsync(filter: tag, pagination: Pagination.From(1, 10));
 
             Assert.Equal(2, result.Items.Count);
             Assert.True(string.Compare(result.Items[0].Name, result.Items[1].Name, StringComparison.Ordinal) <= 0);
@@ -136,7 +137,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync(filter: tag, pageNumber: 2, pageSize: 2);
+            var result = await service.GetApiResourcesAsync(filter: tag, pagination: Pagination.From(2, 2));
 
             Assert.Equal(2, result.Items.Count);
             Assert.Equal(5, result.TotalCount);
@@ -154,7 +155,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync(filter: tag, pageNumber: 99, pageSize: 10);
+            var result = await service.GetApiResourcesAsync(filter: tag, pagination: Pagination.From(99, 10));
 
             Assert.Empty(result.Items);
             Assert.Equal(2, result.TotalCount);
@@ -172,7 +173,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync(filter: tag, pageNumber: 1, pageSize: 10);
+            var result = await service.GetApiResourcesAsync(filter: tag, pagination: Pagination.From(1, 10));
 
             Assert.False(Assert.Single(result.Items).Enabled);
         });
@@ -188,7 +189,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync(filter: tag, pageNumber: 1, pageSize: 10);
+            var result = await service.GetApiResourcesAsync(filter: tag, pagination: Pagination.From(1, 10));
 
             Assert.Equal(3, Assert.Single(result.Items).ScopeCount);
         });
@@ -203,12 +204,10 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync(filter: tag, pageNumber: 1, pageSize: 10);
+            var result = await service.GetApiResourcesAsync(filter: tag, pagination: Pagination.From(1, 10));
 
             Assert.Empty(result.Items);
             Assert.Equal(0, result.TotalCount);
         });
     }
 }
-
-

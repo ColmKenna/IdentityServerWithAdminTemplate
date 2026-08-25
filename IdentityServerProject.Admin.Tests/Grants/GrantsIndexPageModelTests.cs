@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.Grants;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.Grants;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -13,6 +14,8 @@ namespace IdentityServerProject.Admin.Tests.Grants;
 
 public class GrantsIndexPageModelTests
 {
+    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
+
     [Fact]
     public async Task OnGetAsync_PopulatesGrantsFromService()
     {
@@ -42,7 +45,7 @@ public class GrantsIndexPageModelTests
         };
 
         mockService
-            .Setup(s => s.GetGrantsAsync(null, null, null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetGrantsAsync(null, null, null, DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole);
@@ -55,9 +58,10 @@ public class GrantsIndexPageModelTests
     [Fact]
     public async Task OnGetAsync_PassesBoundFiltersToService()
     {
+        var page2 = Pagination.From(2, TestOptions.PageSize);
         var mockService = new Mock<IGrantListService>();
         mockService
-            .Setup(s => s.GetGrantsAsync("user-456", "client-app", "refresh_token", 2, TestOptions.PageSize, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetGrantsAsync("user-456", "client-app", "refresh_token", page2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ListResult<GrantListItem>.Empty(2, TestOptions.PageSize));
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole)
@@ -70,7 +74,7 @@ public class GrantsIndexPageModelTests
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mockService.Verify(s => s.GetGrantsAsync("user-456", "client-app", "refresh_token", 2, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.GetGrantsAsync("user-456", "client-app", "refresh_token", page2, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -115,5 +119,3 @@ public class GrantsIndexPageModelTests
         Assert.IsType<NotFoundResult>(result);
     }
 }
-
-

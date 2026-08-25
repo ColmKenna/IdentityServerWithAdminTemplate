@@ -48,11 +48,10 @@ public sealed class EfAdminAuditStore : IAdminAuditStore
 
     public async Task<ListResult<AuditLogListItem>> GetEntriesAsync(
         AuditLogFilter filter,
-        int pageNumber,
-        int pageSize,
+        Pagination pagination = default,
         CancellationToken cancellationToken = default)
     {
-        var pagination = Pagination.Normalize(pageNumber, pageSize);
+        pagination = pagination.Normalize();
 
         var query = ApplyFilter(_dbContext.AuditLogEntries.AsNoTracking(), filter);
 

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace IdentityServerProject.Services.AuditLogs;
 
-public class AuditLogListService : IAuditLogListService
+public sealed class AuditLogListService : IAuditLogListService
 {
     private readonly IAdminAuditStore _store;
 
@@ -14,8 +14,7 @@ public class AuditLogListService : IAuditLogListService
 
     public Task<ListResult<AuditLogListItem>> GetAuditLogEntriesAsync(
         AuditLogFilter filter,
-        int pageNumber,
-        int pageSize,
+        Pagination pagination = default,
         CancellationToken cancellationToken = default) =>
-        _store.GetEntriesAsync(filter, pageNumber, pageSize, cancellationToken);
+        _store.GetEntriesAsync(filter, pagination, cancellationToken);
 }

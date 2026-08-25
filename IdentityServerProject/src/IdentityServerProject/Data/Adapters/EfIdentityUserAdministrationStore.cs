@@ -35,9 +35,11 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<ListResult<UserListItem>> GetUsersAsync(
-        string? filter, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+        string? filter,
+        Pagination pagination = default,
+        CancellationToken cancellationToken = default)
     {
-        var pagination = Pagination.Normalize(pageNumber, pageSize);
+        pagination = pagination.Normalize();
 
         var query = ApplyFilter(_dbContext.Users.AsNoTracking(), filter);
 

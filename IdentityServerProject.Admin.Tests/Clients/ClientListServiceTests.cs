@@ -1,10 +1,11 @@
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
-using Duende.IdentityServer.EntityFramework.Mappers;
-using Duende.IdentityServer.Models;
+using Duende.IdentityServer.EntityFramework.Entities;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.Clients;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -12,10 +13,8 @@ using Xunit;
 namespace IdentityServerProject.Admin.Tests.Clients;
 
 /// <summary>
-/// Exercises <see cref="ClientListService"/> against a real (SQLite in-memory)
-/// <see cref="ConfigurationDbContext"/> resolved from the shared <see cref="AdminWebFactory"/> DI container.
-/// Every test seeds clients with a unique tag embedded in the client name/id so
-/// assertions are unaffected by data left behind by other tests sharing the same connection.
+/// Integration tests for <see cref="ClientListService"/> exercised against the
+/// shared SQLite in-memory database provided by <see cref="AdminWebFactory"/>.
 /// </summary>
 public class ClientListServiceTests : IClassFixture<AdminWebFactory>
 {
@@ -26,27 +25,25 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         _factory = factory;
     }
 
-    private static Client MakeClient(string tag, string suffix, string grantType = "authorization_code", bool enabled = true)
+    private static Client MakeClient(string tag, string suffix, bool enabled = true, string grantType = "authorization_code") => new()
     {
-        return new Client
+        ClientId = $"{tag}-client-{suffix}",
+        ClientName = $"{tag} Client {suffix}",
+        Description = $"Description for {suffix}",
+        Enabled = enabled,
+        ProtocolType = "oidc",
+        AllowedGrantTypes = new List<ClientGrantType>
         {
-            ClientId = $"{tag}-client-{suffix}",
-            ClientName = $"{tag} Client {suffix}",
-            Enabled = enabled,
-            AllowedGrantTypes = new[] { grantType },
-            RequirePkce = false,
-        };
-    }
+            new ClientGrantType { GrantType = grantType }
+        }
+    };
 
     private async Task SeedAsync(params Client[] clients)
     {
         await _factory.RunInScopeAsync(async sp =>
         {
             var configDb = sp.GetRequiredService<ConfigurationDbContext>();
-            foreach (var client in clients)
-            {
-                configDb.Clients.Add(client.ToEntity());
-            }
+            configDb.Clients.AddRange(clients);
             await configDb.SaveChangesAsync();
         });
     }
@@ -61,7 +58,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync($"{tag} Client alpha", pageNumber: 1, pageSize: 10);
+            var result = await service.GetClientsAsync($"{tag} Client alpha", pagination: Pagination.From(1, 10));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-client-alpha", item.ClientId);
@@ -78,7 +75,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync($"{tag}-client-delta", pageNumber: 1, pageSize: 10);
+            var result = await service.GetClientsAsync($"{tag}-client-delta", pagination: Pagination.From(1, 10));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-client-delta", item.ClientId);
@@ -95,7 +92,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync($"{tag} CLIENT EPSILON".ToUpperInvariant(), pageNumber: 1, pageSize: 10);
+            var result = await service.GetClientsAsync($"{tag} CLIENT EPSILON".ToUpperInvariant(), pagination: Pagination.From(1, 10));
 
             Assert.Single(result.Items);
         });
@@ -111,7 +108,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(filter: tag, pageNumber: 1, pageSize: 10);
+            var result = await service.GetClientsAsync(filter: tag, pagination: Pagination.From(1, 10));
 
             Assert.Equal(2, result.Items.Count);
             Assert.True(string.Compare(result.Items[0].ClientName, result.Items[1].ClientName, StringComparison.Ordinal) <= 0);
@@ -130,7 +127,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(filter: tag, pageNumber: 2, pageSize: 2);
+            var result = await service.GetClientsAsync(filter: tag, pagination: Pagination.From(2, 2));
 
             Assert.Equal(2, result.Items.Count);
             Assert.Equal(5, result.TotalCount);
@@ -148,7 +145,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(filter: tag, pageNumber: 1, pageSize: 10);
+            var result = await service.GetClientsAsync(filter: tag, pagination: Pagination.From(1, 10));
 
             Assert.False(Assert.Single(result.Items).Enabled);
         });
@@ -168,7 +165,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(filter: tag, pageNumber: 1, pageSize: 10);
+            var result = await service.GetClientsAsync(filter: tag, pagination: Pagination.From(1, 10));
 
             Assert.Equal(expectedType, Assert.Single(result.Items).ClientType);
         });
@@ -183,12 +180,10 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(filter: tag, pageNumber: 1, pageSize: 10);
+            var result = await service.GetClientsAsync(filter: tag, pagination: Pagination.From(1, 10));
 
             Assert.Empty(result.Items);
             Assert.Equal(0, result.TotalCount);
         });
     }
 }
-
-

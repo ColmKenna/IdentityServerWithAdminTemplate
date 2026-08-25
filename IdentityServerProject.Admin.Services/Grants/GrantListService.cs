@@ -32,11 +32,10 @@ public class GrantListService : IGrantListService
         string? subjectId,
         string? clientId,
         string? typeFilter,
-        int pageNumber,
-        int pageSize,
+        Pagination pagination = default,
         CancellationToken cancellationToken = default)
     {
-        var pagination = Pagination.Normalize(pageNumber, pageSize);
+        pagination = pagination.Normalize();
 
         var query = _persistedGrantDbContext.PersistedGrants.AsNoTracking();
 

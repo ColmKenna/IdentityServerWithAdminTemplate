@@ -12,12 +12,10 @@ public interface IAuditLogListService
     /// Returns a filtered, paged list of audit log entries ordered by timestamp descending.
     /// </summary>
     /// <param name="filter">Optional structured audit filters.</param>
-    /// <param name="pageNumber">1-based page number.</param>
-    /// <param name="pageSize">Maximum items per page.</param>
+    /// <param name="pagination">Pagination settings (page number and page size).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task<ListResult<AuditLogListItem>> GetAuditLogEntriesAsync(
         AuditLogFilter filter,
-        int pageNumber,
-        int pageSize,
+        Pagination pagination = default,
         CancellationToken cancellationToken = default);
 }

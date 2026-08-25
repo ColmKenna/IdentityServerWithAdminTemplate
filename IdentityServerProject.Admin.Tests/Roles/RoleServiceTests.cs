@@ -36,13 +36,13 @@ public class RoleServiceTests
             PageSize = 10
         };
 
-        _storeMock.Setup(s => s.GetRolesAsync("edit", 1, 10, It.IsAny<CancellationToken>()))
+        _storeMock.Setup(s => s.GetRolesAsync("edit", Pagination.From(1, 10), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
-        var result = await _sut.GetRolesAsync("edit", 1, 10);
+        var result = await _sut.GetRolesAsync("edit", Pagination.From(1, 10));
 
         Assert.Same(expected, result);
-        _storeMock.Verify(s => s.GetRolesAsync("edit", 1, 10, It.IsAny<CancellationToken>()), Times.Once);
+        _storeMock.Verify(s => s.GetRolesAsync("edit", Pagination.From(1, 10), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

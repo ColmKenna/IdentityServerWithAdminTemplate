@@ -30,8 +30,9 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        PageNumber = System.Math.Max(1, PageNumber);
+        var pagination = Pagination.From(PageNumber, _options.DefaultPageSize);
+        PageNumber = pagination.PageNumber;
 
-        Clients = await _clientListService.GetClientsAsync(Filter, PageNumber, _options.DefaultPageSize, cancellationToken);
+        Clients = await _clientListService.GetClientsAsync(Filter, pagination, cancellationToken);
     }
 }

@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp;
 using IdentityServerProject.Data;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.AuditLogs;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,7 +40,7 @@ public class AuditLogsIndexIntegrationTests : IDisposable
     private static IAuditLogListService MockService(ListResult<AuditLogListItem> result)
     {
         var mock = new Mock<IAuditLogListService>();
-        mock.Setup(s => s.GetAuditLogEntriesAsync(It.IsAny<AuditLogFilter>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetAuditLogEntriesAsync(It.IsAny<AuditLogFilter>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock.Object;
     }

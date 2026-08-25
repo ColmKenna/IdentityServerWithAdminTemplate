@@ -16,13 +16,11 @@ public interface IApiScopeListService
     /// Optional case-insensitive substring matched against scope name or display name.
     /// A null or whitespace-only value returns all API scopes.
     /// </param>
-    /// <param name="pageNumber">1-based page number. Values below 1 are treated as 1.</param>
-    /// <param name="pageSize">Maximum number of items to return for the page.</param>
+    /// <param name="pagination">Pagination settings (page number and page size).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task<ListResult<ApiScopeListItem>> GetApiScopesAsync(
         string? filter,
-        int pageNumber,
-        int pageSize,
+        Pagination pagination = default,
         CancellationToken cancellationToken = default);
 
     /// <summary>

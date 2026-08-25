@@ -50,7 +50,7 @@ public class RolesPageModelTests
             PageSize = 10
         };
 
-        _roleServiceMock.Setup(s => s.GetRolesAsync("test", 2, 10, It.IsAny<CancellationToken>()))
+        _roleServiceMock.Setup(s => s.GetRolesAsync("test", Pagination.From(2, 10), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var (pageContext, tempData) = CreatePageContext();

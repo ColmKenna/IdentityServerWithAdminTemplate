@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.Grants;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,7 +39,7 @@ public class GrantsIndexIntegrationTests : IDisposable
     private static IGrantListService MockService(ListResult<GrantListItem> result)
     {
         var mock = new Mock<IGrantListService>();
-        mock.Setup(s => s.GetGrantsAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetGrantsAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock.Object;
     }
@@ -163,5 +164,3 @@ public class GrantsIndexIntegrationTests : IDisposable
         Assert.Equal("refresh_token", document.QuerySelector("#revoke-grant-modal input[name=TypeFilter]")?.GetAttribute("value"));
     }
 }
-
-

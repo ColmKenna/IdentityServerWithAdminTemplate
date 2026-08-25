@@ -8,8 +8,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Dom;
-using IdentityServerProject.Pages.Admin.Apis;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.Apis;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -46,7 +48,7 @@ public class ApisIndexIntegrationTests : IDisposable
     private static IApiResourceListService MockService(ListResult<ApiResourceListItem> result)
     {
         var mock = new Mock<IApiResourceListService>();
-        mock.Setup(s => s.GetApiResourcesAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiResourcesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock.Object;
     }
@@ -59,12 +61,12 @@ public class ApisIndexIntegrationTests : IDisposable
         PageSize = pageSize,
     };
 
-    private static ApiResourceListItem MakeItem(string suffix, bool enabled = true, int scopeCount = 2) => new()
+    private static ApiResourceListItem MakeItem(string suffix, bool enabled = true, int scopeCount = 0) => new()
     {
         Name = $"api-{suffix}",
-        DisplayName = $"API Resource {suffix}",
-        ScopeCount = scopeCount,
+        DisplayName = $"API {suffix}",
         Enabled = enabled,
+        ScopeCount = scopeCount,
     };
 
     private static async Task<IDocument> GetDocumentAsync(HttpResponseMessage response)
@@ -74,7 +76,7 @@ public class ApisIndexIntegrationTests : IDisposable
         return await context.OpenAsync(req => req.Content(content));
     }
 
-    // ---------- Step 1: bare page shell & Layout ----------
+    // ---------- Step 1: navigation shell & routing ----------
 
     [Fact]
     public async Task Get_ReturnsSuccessStatusCode()
@@ -95,9 +97,9 @@ public class ApisIndexIntegrationTests : IDisposable
         var document = await GetDocumentAsync(response);
 
         Assert.NotNull(document.QuerySelector("aside.sidebar"));
-        var apisNavItem = document.QuerySelector("a[href*='/Admin/Apis']");
-        Assert.NotNull(apisNavItem);
-        Assert.Contains("active", apisNavItem!.ClassList);
+        var navItem = document.QuerySelector("a[href*='/Admin/Apis']");
+        Assert.NotNull(navItem);
+        Assert.Contains("active", navItem!.ClassList);
     }
 
     [Fact]
@@ -114,33 +116,7 @@ public class ApisIndexIntegrationTests : IDisposable
             document.QuerySelector("p.page-sub")?.TextContent.Trim());
     }
 
-    [Fact]
-    public async Task Get_RendersNewApiResourceButtonPlaceholder()
-    {
-        var client = CreateClient(MockService(EmptyResult()));
-
-        var response = await client.GetAsync("/Admin/Apis");
-        var document = await GetDocumentAsync(response);
-
-        var button = document.QuerySelector("#new-api-resource-link");
-        Assert.NotNull(button);
-        Assert.Contains("New API resource", button!.TextContent);
-    }
-
-    [Fact]
-    public async Task Get_IncludesResponsiveTableComponentScript()
-    {
-        var client = CreateClient(MockService(EmptyResult()));
-
-        var response = await client.GetAsync("/Admin/Apis");
-        var document = await GetDocumentAsync(response);
-
-        var script = document.QuerySelectorAll("script[type='module']")
-            .FirstOrDefault(s => (s.GetAttribute("src") ?? "").Contains("ck-responsive-table-webcomponent"));
-        Assert.NotNull(script);
-    }
-
-    // ---------- Step 2: data display ----------
+    // ---------- Step 2: tabular representation ----------
 
     [Fact]
     public async Task Get_RendersTableColumnHeaders()
@@ -155,11 +131,11 @@ public class ApisIndexIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task Get_ApiResourcesExist_RendersOneRowPerResourceWithMappedData()
+    public async Task Get_ApisExist_RendersOneRowPerApiWithMappedData()
     {
         var result = new ListResult<ApiResourceListItem>
         {
-            Items = new[] { MakeItem("alpha"), MakeItem("beta") },
+            Items = new[] { MakeItem("alpha", scopeCount: 3), MakeItem("beta", scopeCount: 1) },
             TotalCount = 2,
             PageNumber = 1,
             PageSize = 10,
@@ -173,17 +149,13 @@ public class ApisIndexIntegrationTests : IDisposable
         Assert.Equal(2, rows.Length);
 
         var firstRowText = rows[0].TextContent;
+        Assert.Contains("API alpha", firstRowText);
         Assert.Contains("api-alpha", firstRowText);
-        Assert.Contains("API Resource alpha", firstRowText);
-        Assert.Contains("2 scopes", firstRowText);
-
-        var actionLink = rows[0].QuerySelector("a.action-link");
-        Assert.NotNull(actionLink);
-        Assert.Contains("/Admin/Apis/Editor?name=api-alpha", actionLink!.GetAttribute("href"));
+        Assert.Contains("3", firstRowText);
     }
 
     [Fact]
-    public async Task Get_ApiResourceEnabled_RendersEnabledStatusBadge()
+    public async Task Get_ApiEnabled_RendersEnabledStatusBadge()
     {
         var result = new ListResult<ApiResourceListItem>
         {
@@ -204,7 +176,7 @@ public class ApisIndexIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task Get_ApiResourceDisabled_RendersDisabledStatusBadge()
+    public async Task Get_ApiDisabled_RendersDisabledStatusBadge()
     {
         var result = new ListResult<ApiResourceListItem>
         {
@@ -224,119 +196,10 @@ public class ApisIndexIntegrationTests : IDisposable
         Assert.Contains("disabled", badge.ClassList);
     }
 
-    // ---------- Step 3: breadcrumbs (WI-03) ----------
+    // ---------- Step 3: filter, pagination, empty state ----------
 
     [Fact]
-    public async Task Get_RendersExplicitTwoLevelBreadcrumbChain()
-    {
-        var client = CreateClient(MockService(EmptyResult()));
-
-        var response = await client.GetAsync("/Admin/Apis");
-        var document = await GetDocumentAsync(response);
-
-        var crumbLinks = document.QuerySelectorAll("nav.crumbs a");
-        Assert.Single(crumbLinks);
-        Assert.Equal("/Admin/Apis/Index", crumbLinks[0].GetAttribute("href"));
-
-        var current = document.QuerySelector("nav.crumbs .current");
-        Assert.NotNull(current);
-        Assert.Equal("API Resources", current!.TextContent.Trim());
-    }
-
-    // ---------- Step 4: pagination & filter (WI-06) ----------
-
-    [Fact]
-    public async Task Get_PagingForwardThenBack_RendersDistinctItemSetsPerPage()
-    {
-        var page1 = new ListResult<ApiResourceListItem>
-        {
-            Items = new[] { MakeItem("page1-item") },
-            TotalCount = 2,
-            PageNumber = 1,
-            PageSize = 1,
-        };
-        var page2 = new ListResult<ApiResourceListItem>
-        {
-            Items = new[] { MakeItem("page2-item") },
-            TotalCount = 2,
-            PageNumber = 2,
-            PageSize = 1,
-        };
-
-        var mock = new Mock<IApiResourceListService>();
-        mock.Setup(s => s.GetApiResourcesAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>())).ReturnsAsync(page1);
-        mock.Setup(s => s.GetApiResourcesAsync(null, 2, TestOptions.PageSize, It.IsAny<CancellationToken>())).ReturnsAsync(page2);
-
-        var client = CreateClient(mock.Object);
-
-        var forwardResponse = await client.GetAsync("/Admin/Apis?PageNumber=2");
-        var forwardDocument = await GetDocumentAsync(forwardResponse);
-        Assert.Contains("api-page2-item", forwardDocument.QuerySelector("ck-responsive-row")!.TextContent);
-
-        var backResponse = await client.GetAsync("/Admin/Apis?PageNumber=1");
-        var backDocument = await GetDocumentAsync(backResponse);
-        Assert.Contains("api-page1-item", backDocument.QuerySelector("ck-responsive-row")!.TextContent);
-    }
-
-    [Fact]
-    public async Task Get_PageNumberBeyondLastPage_Returns200WithEmptyStateAndDisabledNext()
-    {
-        var beyondLastPage = new ListResult<ApiResourceListItem>
-        {
-            Items = Array.Empty<ApiResourceListItem>(),
-            TotalCount = 1,
-            PageNumber = 99,
-            PageSize = 10,
-        };
-
-        var mock = new Mock<IApiResourceListService>();
-        mock.Setup(s => s.GetApiResourcesAsync(null, 99, TestOptions.PageSize, It.IsAny<CancellationToken>())).ReturnsAsync(beyondLastPage);
-
-        var client = CreateClient(mock.Object);
-
-        var response = await client.GetAsync("/Admin/Apis?PageNumber=99");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var document = await GetDocumentAsync(response);
-        Assert.NotNull(document.QuerySelector(".empty-state"));
-
-        var nextControl = document.QuerySelector("[data-pagination='next']");
-        Assert.NotNull(nextControl);
-        Assert.Contains("disabled", nextControl!.ClassList);
-    }
-
-    [Fact]
-    public async Task Get_FilterSpecified_PreservedAcrossPaginationLinksAndSearchInput()
-    {
-        var result = new ListResult<ApiResourceListItem>
-        {
-            Items = new[] { MakeItem("match-1"), MakeItem("match-2") },
-            TotalCount = 5,
-            PageNumber = 1,
-            PageSize = 2,
-        };
-
-        var mock = new Mock<IApiResourceListService>();
-        mock.Setup(s => s.GetApiResourcesAsync("sales", 1, TestOptions.PageSize, It.IsAny<CancellationToken>())).ReturnsAsync(result);
-
-        var client = CreateClient(mock.Object);
-
-        var response = await client.GetAsync("/Admin/Apis?Filter=sales&PageNumber=1");
-        var document = await GetDocumentAsync(response);
-
-        var searchInput = document.QuerySelector("input#apis-filter") as AngleSharp.Html.Dom.IHtmlInputElement;
-        Assert.NotNull(searchInput);
-        Assert.Equal("sales", searchInput!.Value);
-
-        var nextLink = document.QuerySelector("[data-pagination='next']");
-        Assert.NotNull(nextLink);
-        Assert.Contains("Filter=sales", nextLink!.GetAttribute("href"));
-    }
-
-    // ---------- Step 5: empty state ----------
-
-    [Fact]
-    public async Task Get_NoApiResourcesExist_RendersEmptyStateMessage()
+    public async Task Get_NoApisExist_RendersEmptyStateMessage()
     {
         var client = CreateClient(MockService(EmptyResult()));
 

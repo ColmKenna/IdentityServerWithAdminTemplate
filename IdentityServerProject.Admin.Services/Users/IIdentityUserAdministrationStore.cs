@@ -83,7 +83,9 @@ public sealed record PasswordResetOutcome(PasswordResetStatus Status, string Tar
 public interface IIdentityUserAdministrationStore
 {
     Task<ListResult<UserListItem>> GetUsersAsync(
-        string? filter, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
+        string? filter,
+        Pagination pagination = default,
+        CancellationToken cancellationToken = default);
 
     Task<(UserUnlockResult Result, string TargetName)> UnlockUserAsync(
         string userId, CancellationToken cancellationToken = default);

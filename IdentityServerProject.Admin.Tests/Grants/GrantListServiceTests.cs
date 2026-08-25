@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.Grants;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -81,7 +82,7 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IGrantListService>();
-            var result = await service.GetGrantsAsync(subjectId: null, clientId: clientId, typeFilter: null, pageNumber: 1, pageSize: 10);
+            var result = await service.GetGrantsAsync(subjectId: null, clientId: clientId, typeFilter: null, pagination: Pagination.From(1, 10));
 
             var item = Assert.Single(result.Items);
             Assert.Equal(clientName, item.ClientName);
@@ -101,7 +102,7 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IGrantListService>();
-            var result = await service.GetGrantsAsync(subjectId: $"{tag}-target-user", clientId: null, typeFilter: null, pageNumber: 1, pageSize: 10);
+            var result = await service.GetGrantsAsync(subjectId: $"{tag}-target-user", clientId: null, typeFilter: null, pagination: Pagination.From(1, 10));
 
             var item = Assert.Single(result.Items);
             Assert.Equal(g1.Key, item.Key);
@@ -165,7 +166,12 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
 
             Assert.Equal(2, count);
         });
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var grantDb = sp.GetRequiredService<PersistedGrantDbContext>();
+            var existing = grantDb.PersistedGrants.Where(g => g.SubjectId == subjectId).ToList();
+            Assert.Empty(existing);
+        });
     }
 }
-
-

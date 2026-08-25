@@ -2,6 +2,7 @@ using IdentityServerProject.Admin.Tests.Infrastructure;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.ApiScopes;
+using IdentityServerProject.Services;
 using IdentityServerProject.Services.ApiScopes;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -26,18 +27,20 @@ public class ApiScopesIndexPageModelTests
         PageSize = pageSize,
     };
 
+    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
+
     [Fact]
     public async Task OnGetAsync_NoQueryParameters_CallsServiceWithNullFilterAndFirstPage()
     {
         var mock = new Mock<IApiScopeListService>();
-        mock.Setup(s => s.GetApiScopesAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiScopesAsync(null, DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiScopesAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiScopesAsync(null, DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -45,7 +48,7 @@ public class ApiScopesIndexPageModelTests
     {
         var expected = MakeResult();
         var mock = new Mock<IApiScopeListService>();
-        mock.Setup(s => s.GetApiScopesAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiScopesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
@@ -59,27 +62,27 @@ public class ApiScopesIndexPageModelTests
     public async Task OnGetAsync_FilterSet_PassesFilterToService()
     {
         var mock = new Mock<IApiScopeListService>();
-        mock.Setup(s => s.GetApiScopesAsync("sales", 1, TestOptions.PageSize, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiScopesAsync("sales", DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { Filter = "sales" };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiScopesAsync("sales", 1, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiScopesAsync("sales", DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task OnGetAsync_PageNumberBelowOne_NormalizesToFirstPageBeforeCallingService()
     {
         var mock = new Mock<IApiScopeListService>();
-        mock.Setup(s => s.GetApiScopesAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiScopesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { PageNumber = 0 };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiScopesAsync(null, 1, TestOptions.PageSize, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiScopesAsync(null, DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -138,5 +141,3 @@ public class ApiScopesIndexPageModelTests
         mock.Verify(s => s.DeleteApiScopeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
-
-
