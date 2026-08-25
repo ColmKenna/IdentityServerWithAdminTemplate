@@ -11,6 +11,7 @@ using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Validation;
 using IdentityServerProject.Services.AuditLogs;
+using IdentityServerProject.Services.Secrets;
 using IdentityServerProject.Services.Validation;
 using Microsoft.EntityFrameworkCore;
 using static Duende.IdentityServer.Models.HashExtensions;
@@ -771,6 +772,9 @@ public partial class ClientDetailsService : IClientDetailsService
                 .ToList()
         };
     }
+
+    public Task<ClientSecretGenerateResult> GenerateClientSecretAsync(CreateSecretCommand command, CancellationToken cancellationToken = default) =>
+        GenerateClientSecretAsync(command.TargetId, command.Description, command.ExpirationUtc, cancellationToken);
 
     public Task<ClientSecretGenerateResult> GenerateClientSecretAsync(string clientId, string? description, DateTime? expiration = null, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(

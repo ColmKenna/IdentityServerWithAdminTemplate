@@ -8,6 +8,7 @@ using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
 using IdentityServerProject.Services.AuditLogs;
 using IdentityServerProject.Services.Scopes;
+using IdentityServerProject.Services.Secrets;
 using IdentityServerProject.Services.Validation;
 using Microsoft.EntityFrameworkCore;
 using static Duende.IdentityServer.Models.HashExtensions;
@@ -236,22 +237,28 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
     #region Secrets
 
     public Task<ApiResourceAddSecretResult> AddSecretAsync(
-        AddApiResourceSecretCommand command,
+        CreateSecretCommand command,
         CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.GenerateSecret,
-            command?.ResourceName ?? string.Empty,
-            command?.ResourceName ?? string.Empty,
-            () => AddSecretCoreAsync(command!, cancellationToken),
+            command?.TargetId ?? string.Empty,
+            command?.TargetId ?? string.Empty,
+            () => AddSecretCoreAsync(command?.TargetId ?? string.Empty, command?.Description, command?.ExpirationUtc, cancellationToken),
             cancellationToken);
 
-    private async Task<ApiResourceAddSecretResult> AddSecretCoreAsync(
+    public Task<ApiResourceAddSecretResult> AddSecretAsync(
         AddApiResourceSecretCommand command,
+        CancellationToken cancellationToken = default) =>
+        AddSecretAsync(command?.ToCreateSecretCommand()!, cancellationToken);
+
+    private async Task<ApiResourceAddSecretResult> AddSecretCoreAsync(
+        string name,
+        string? rawDescription,
+        DateTime? expiration,
         CancellationToken cancellationToken = default)
     {
-        var name = command.ResourceName?.Trim() ?? string.Empty;
-        var description = NormalizeNullableString(command.Description);
-        var expiration = command.ExpirationUtc;
+        name = name?.Trim() ?? string.Empty;
+        var description = NormalizeNullableString(rawDescription);
 
         var errors = new Dictionary<string, string[]>();
 

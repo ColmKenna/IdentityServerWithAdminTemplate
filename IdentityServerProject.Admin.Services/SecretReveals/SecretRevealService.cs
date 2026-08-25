@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Services.AuditLogs;
+using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
@@ -63,16 +64,17 @@ public sealed class SecretRevealService : ISecretRevealService
         }
 
         var actorSubjectId = ResolveActorSubjectId();
-        if (actorSubjectId.Length == 0)
+        if (actorSubjectId.IsEmpty)
         {
             await AuditAsync(AuditActions.Issue, AuditOutcome.Denied, AuditReasonCodes.WrongContext,
                 normalizedTarget, "Secret reveal issuance requires an authenticated subject.", cancellationToken);
             throw new InvalidOperationException("An authenticated subject is required to issue a secret reveal.");
         }
 
+        var securityContext = SecretSecurityContext.Create(actorSubjectId, purpose, normalizedTarget);
         var now = _timeProvider.GetUtcNow();
         var expiresUtc = now.Add(Lifetime);
-        var protectedPayload = BindingProtector(actorSubjectId, purpose, normalizedTarget).Protect(plaintext);
+        var protectedPayload = BindingProtector(actorSubjectId.Value, purpose, normalizedTarget).Protect(plaintext);
 
         for (var attempt = 1; attempt <= HandleGenerationAttempts; attempt++)
         {
@@ -84,8 +86,7 @@ public sealed class SecretRevealService : ISecretRevealService
             try
             {
                 insertStatus = await _store.TryInsertAsync(
-                    digest, actorSubjectId, purpose.ToString(), normalizedTarget, protectedPayload, now, expiresUtc,
-                    cancellationToken);
+                    digest, securityContext, protectedPayload, now, expiresUtc, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -121,7 +122,7 @@ public sealed class SecretRevealService : ISecretRevealService
         var actorSubjectId = ResolveActorSubjectId();
         if (!Enum.IsDefined(purpose)
             || normalizedTarget.Length == 0
-            || actorSubjectId.Length == 0
+            || actorSubjectId.IsEmpty
             || !TryDigestHandle(handle, out var digest))
         {
             await AuditAsync(AuditActions.Consume, AuditOutcome.Denied, AuditReasonCodes.WrongContext,
@@ -129,12 +130,12 @@ public sealed class SecretRevealService : ISecretRevealService
             return SecretRevealConsumeResult.Unavailable();
         }
 
+        var securityContext = SecretSecurityContext.Create(actorSubjectId, purpose, normalizedTarget);
         SecretRevealLookup lookup;
         try
         {
             lookup = await _store.ConsumeAsync(
-                digest, actorSubjectId, purpose.ToString(), normalizedTarget, _timeProvider.GetUtcNow(),
-                cancellationToken);
+                digest, securityContext, _timeProvider.GetUtcNow(), cancellationToken);
         }
         catch (Exception ex)
         {
@@ -158,7 +159,7 @@ public sealed class SecretRevealService : ISecretRevealService
 
         try
         {
-            var plaintext = BindingProtector(actorSubjectId, purpose, normalizedTarget).Unprotect(lookup.ProtectedPayload!);
+            var plaintext = BindingProtector(actorSubjectId.Value, purpose, normalizedTarget).Unprotect(lookup.ProtectedPayload!);
             await AuditAsync(AuditActions.Consume, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
                 normalizedTarget, $"Consumed {purpose} secret reveal.", cancellationToken);
             return SecretRevealConsumeResult.Revealed(plaintext);
@@ -192,8 +193,8 @@ public sealed class SecretRevealService : ISecretRevealService
         string targetId) =>
         _protector.CreateProtector(actorSubjectId, purpose.ToString(), targetId);
 
-    private string ResolveActorSubjectId() =>
-        AuditActorResolver.Resolve(_httpContextAccessor.HttpContext?.User).SubjectId.Trim();
+    private UserId ResolveActorSubjectId() =>
+        UserId.Create(AuditActorResolver.Resolve(_httpContextAccessor.HttpContext?.User).SubjectId.Trim());
 
     private static string NormalizeTarget(string? targetId) => targetId?.Trim() ?? string.Empty;
 

@@ -44,25 +44,21 @@ public interface ISecretRevealStore
 {
     Task<SecretRevealInsertStatus> TryInsertAsync(
         byte[] handleDigest,
-        UserId actorSubjectId,
-        string purpose,
-        string targetId,
+        SecretSecurityContext securityContext,
         string protectedPayload,
         DateTimeOffset createdUtc,
         DateTimeOffset expiresUtc,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Atomically loads, validates, and deletes the record for <paramref name="handleDigest"/> so a
+    /// Atomically loads, validates, and deletes the record for <paramref name=\"handleDigest\"/> so a
     /// handle can be consumed exactly once even under concurrent callers. A record whose actor,
-    /// purpose, or target does not match is reported as <see cref="SecretRevealLookupStatus.WrongContext"/>
+    /// purpose, or target does not match is reported as <see cref=\"SecretRevealLookupStatus.WrongContext\"/>
     /// without being deleted, so a legitimate holder can still consume it.
     /// </summary>
     Task<SecretRevealLookup> ConsumeAsync(
         byte[] handleDigest,
-        UserId actorSubjectId,
-        string purpose,
-        string targetId,
+        SecretSecurityContext securityContext,
         DateTimeOffset now,
         CancellationToken cancellationToken = default);
 

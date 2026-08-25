@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Services.Scopes;
+using IdentityServerProject.Services.Secrets;
 using IdentityServerProject.Services.Validation;
 
 namespace IdentityServerProject.Services.Apis;
@@ -16,7 +17,10 @@ public sealed record SaveApiResourceBasicsCommand(
 public sealed record AddApiResourceSecretCommand(
     string ResourceName,
     string? Description,
-    DateTime? ExpirationUtc);
+    DateTime? ExpirationUtc)
+{
+    public CreateSecretCommand ToCreateSecretCommand() => new(ResourceName, Description, ExpirationUtc);
+}
 
 public sealed record CreateApiResourceScopeCommand(
     string ResourceName,
@@ -34,17 +38,25 @@ public sealed record AddApiResourceClaimCommand(
 public interface IApiResourceEditorService
 {
     /// <summary>
-    /// Loads a single API resource by name for editing. Returns null if <paramref name="name"/>
+    /// Loads a single API resource by name for editing. Returns null if <paramref name=\"name\"/>
     /// does not resolve to an existing API resource.
     /// </summary>
     Task<ApiResourceEditorModel?> GetForEditAsync(string name, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Creates a new API resource (when <paramref name="command.OriginalName"/> is null) or updates
+    /// Creates a new API resource (when <paramref name=\"command.OriginalName\"/> is null) or updates
     /// the Basics fields of an existing one (when it is not).
     /// </summary>
     Task<SaveApiResourceBasicsResult> SaveBasicsAsync(
         SaveApiResourceBasicsCommand command,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Generates a new secret for the target API resource, storing only its SHA-256 hash.
+    /// The plaintext value is returned once and is never persisted or retrievable again.
+    /// </summary>
+    Task<ApiResourceAddSecretResult> AddSecretAsync(
+        CreateSecretCommand command,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -63,8 +75,7 @@ public interface IApiResourceEditorService
 
     /// <summary>
     /// Creates a new system-wide <c>ApiScope</c> and attaches it to the resource in one step.
-    /// Returns conflict if the scope name already exists as either an API scope or an identity resource.
-    /// </summary>
+    /// Returns conflict if the scope name already exists as either an API scope or an identity resource.</summary>
     Task<AdminMutationResult> CreateScopeAsync(
         CreateApiResourceScopeCommand command,
         CancellationToken cancellationToken = default);

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace IdentityServerProject.Data.Adapters;
 
 /// <summary>
-/// EF-backed <see cref="ISecretRevealStore"/> adapter against <see cref="ApplicationDbContext"/>.
+/// EF-backed <see cref=\"ISecretRevealStore\"/> adapter against <see cref=\"ApplicationDbContext\"/>.
 /// Owns every SQL-Server-specific concern moved out of the (now host-agnostic) library service:
 /// digest-collision detection on insert, and locked, serializable-isolation match-and-consume.
 /// </summary>
@@ -26,21 +26,19 @@ public sealed class EfSecretRevealStore : ISecretRevealStore
 
     public async Task<SecretRevealInsertStatus> TryInsertAsync(
         byte[] handleDigest,
-        UserId actorSubjectId,
-        string purpose,
-        string targetId,
+        SecretSecurityContext securityContext,
         string protectedPayload,
         DateTimeOffset createdUtc,
         DateTimeOffset expiresUtc,
         CancellationToken cancellationToken = default)
     {
-        var actorSubjectIdStr = actorSubjectId.Value ?? string.Empty;
+        var actorSubjectIdStr = securityContext.ActorSubjectId.Value ?? string.Empty;
         _dbContext.SecretRevealRecords.Add(new SecretRevealRecord
         {
             HandleDigest = handleDigest,
             ActorSubjectId = actorSubjectIdStr,
-            Purpose = purpose,
-            TargetId = targetId,
+            Purpose = securityContext.Purpose.ToString(),
+            TargetId = securityContext.TargetId,
             ProtectedPayload = protectedPayload,
             CreatedUtc = createdUtc,
             ExpiresUtc = expiresUtc
@@ -60,13 +58,13 @@ public sealed class EfSecretRevealStore : ISecretRevealStore
 
     public async Task<SecretRevealLookup> ConsumeAsync(
         byte[] handleDigest,
-        UserId actorSubjectId,
-        string purpose,
-        string targetId,
+        SecretSecurityContext securityContext,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
-        var actorSubjectIdStr = actorSubjectId.Value ?? string.Empty;
+        var actorSubjectIdStr = securityContext.ActorSubjectId.Value ?? string.Empty;
+        var purposeStr = securityContext.Purpose.ToString();
+        var targetId = securityContext.TargetId;
         var lookup = SecretRevealLookup.NotFound();
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
@@ -86,7 +84,7 @@ public sealed class EfSecretRevealStore : ISecretRevealStore
             }
 
             if (!string.Equals(record.ActorSubjectId, actorSubjectIdStr, StringComparison.Ordinal)
-                || !string.Equals(record.Purpose, purpose, StringComparison.Ordinal)
+                || !string.Equals(record.Purpose, purposeStr, StringComparison.Ordinal)
                 || !string.Equals(record.TargetId, targetId, StringComparison.Ordinal))
             {
                 lookup = SecretRevealLookup.WrongContext();

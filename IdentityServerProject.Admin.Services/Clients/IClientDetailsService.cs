@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using IdentityServerProject.Services.Secrets;
 using IdentityServerProject.Services.Validation;
 
 namespace IdentityServerProject.Services.Clients;
@@ -66,6 +68,12 @@ public interface IClientDetailsService
     /// Returns null if no matching client is found.
     /// </summary>
     Task<ClientSecretsModel?> GetClientSecretsAsync(string clientId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Generates and persists a new client secret (SHA-256 hashed at rest), returning the plaintext
+    /// value exactly once. Returns Success = false when the client cannot be found.
+    /// </summary>
+    Task<ClientSecretGenerateResult> GenerateClientSecretAsync(CreateSecretCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Generates and persists a new client secret (SHA-256 hashed at rest), returning the plaintext
