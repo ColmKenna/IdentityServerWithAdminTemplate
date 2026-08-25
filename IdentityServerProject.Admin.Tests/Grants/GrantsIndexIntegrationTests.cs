@@ -41,7 +41,7 @@ public class GrantsIndexIntegrationTests : IDisposable
     private static IGrantListService MockService(ListResult<GrantListItem> result)
     {
         var mock = new Mock<IGrantListService>();
-        mock.Setup(s => s.GetGrantsAsync(It.IsAny<UserId?>(), It.IsAny<ClientId?>(), It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetGrantsAsync(It.IsAny<GrantFilter?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock.Object;
     }

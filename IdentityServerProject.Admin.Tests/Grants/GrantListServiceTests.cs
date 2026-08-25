@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
 using IdentityServerProject.Services;
+using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Grants;
+using IdentityServerProject.Services.Users;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -82,7 +84,9 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IGrantListService>();
-            var result = await service.GetGrantsAsync(subjectId: null, clientId: clientId, typeFilter: null, pagination: Pagination.From(1, 10));
+            var result = await service.GetGrantsAsync(
+                new GrantFilter(ClientId: ClientId.Create(clientId)),
+                pagination: Pagination.From(1, 10));
 
             var item = Assert.Single(result.Items);
             Assert.Equal(clientName, item.ClientName);
@@ -102,7 +106,9 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IGrantListService>();
-            var result = await service.GetGrantsAsync(subjectId: $"{tag}-target-user", clientId: null, typeFilter: null, pagination: Pagination.From(1, 10));
+            var result = await service.GetGrantsAsync(
+                new GrantFilter(SubjectId: UserId.Create($"{tag}-target-user")),
+                pagination: Pagination.From(1, 10));
 
             var item = Assert.Single(result.Items);
             Assert.Equal(g1.Key, item.Key);

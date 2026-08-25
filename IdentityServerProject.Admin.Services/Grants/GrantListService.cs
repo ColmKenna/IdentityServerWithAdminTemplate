@@ -31,9 +31,7 @@ public class GrantListService : IGrantListService
     #region Listing
 
     public async Task<ListResult<GrantListItem>> GetGrantsAsync(
-        UserId? subjectId,
-        ClientId? clientId,
-        string? typeFilter,
+        GrantFilter? filter = null,
         Pagination pagination = default,
         CancellationToken cancellationToken = default)
     {
@@ -41,23 +39,23 @@ public class GrantListService : IGrantListService
 
         var query = _persistedGrantDbContext.PersistedGrants.AsNoTracking();
 
-        var subjectIdStr = subjectId?.Value;
+        var subjectIdStr = filter?.SubjectId?.Value;
         if (!string.IsNullOrWhiteSpace(subjectIdStr))
         {
             var escapedSubjectId = LikeExtensions.EscapeLikePattern(subjectIdStr.Trim());
             query = query.Where(g => g.SubjectId != null && EF.Functions.Like(g.SubjectId, $"%{escapedSubjectId}%"));
         }
 
-        var clientIdStr = clientId?.Value;
+        var clientIdStr = filter?.ClientId?.Value;
         if (!string.IsNullOrWhiteSpace(clientIdStr))
         {
             var escapedClientId = LikeExtensions.EscapeLikePattern(clientIdStr.Trim());
             query = query.Where(g => EF.Functions.Like(g.ClientId, $"%{escapedClientId}%"));
         }
 
-        if (!string.IsNullOrWhiteSpace(typeFilter))
+        if (!string.IsNullOrWhiteSpace(filter?.TypeFilter))
         {
-            var escapedGrantType = LikeExtensions.EscapeLikePattern(typeFilter.Trim());
+            var escapedGrantType = LikeExtensions.EscapeLikePattern(filter.TypeFilter.Trim());
             query = query.Where(g => EF.Functions.Like(g.Type, $"%{escapedGrantType}%"));
         }
 

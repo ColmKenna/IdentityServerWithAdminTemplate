@@ -13,15 +13,11 @@ public interface IGrantListService
     /// <summary>
     /// Returns a filtered, paged list of active persisted grants ordered by creation time descending.
     /// </summary>
-    /// <param name="subjectId">Optional filter for subject ID.</param>
-    /// <param name="clientId">Optional filter for client ID.</param>
-    /// <param name="typeFilter">Optional filter for grant type.</param>
+    /// <param name="filter">Optional filter criteria for subject ID, client ID, and grant type.</param>
     /// <param name="pagination">Pagination settings (page number and page size).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task<ListResult<GrantListItem>> GetGrantsAsync(
-        UserId? subjectId,
-        ClientId? clientId,
-        string? typeFilter,
+        GrantFilter? filter = null,
         Pagination pagination = default,
         CancellationToken cancellationToken = default);
 

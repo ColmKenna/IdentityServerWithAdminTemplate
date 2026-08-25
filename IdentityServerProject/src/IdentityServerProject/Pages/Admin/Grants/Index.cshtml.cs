@@ -47,10 +47,9 @@ public class IndexModel : PageModel
         var pagination = Pagination.From(PageNumber, _options.DefaultPageSize);
         PageNumber = pagination.PageNumber;
 
+        var filter = GrantFilter.Create(SubjectId, ClientId, TypeFilter);
         Grants = await _grantListService.GetGrantsAsync(
-            string.IsNullOrWhiteSpace(SubjectId) ? null : UserId.Create(SubjectId),
-            string.IsNullOrWhiteSpace(ClientId) ? null : Services.Clients.ClientId.Create(ClientId),
-            TypeFilter,
+            filter,
             pagination,
             cancellationToken);
     }

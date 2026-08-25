@@ -47,7 +47,7 @@ public class GrantsIndexPageModelTests
         };
 
         mockService
-            .Setup(s => s.GetGrantsAsync(It.IsAny<UserId?>(), It.IsAny<ClientId?>(), null, DefaultPagination, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetGrantsAsync(It.IsAny<GrantFilter?>(), DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole);
@@ -61,9 +61,10 @@ public class GrantsIndexPageModelTests
     public async Task OnGetAsync_PassesBoundFiltersToService()
     {
         var page2 = Pagination.From(2, TestOptions.PageSize);
+        var expectedFilter = new GrantFilter(UserId.Create("user-456"), ClientId.Create("client-app"), "refresh_token");
         var mockService = new Mock<IGrantListService>();
         mockService
-            .Setup(s => s.GetGrantsAsync(UserId.Create("user-456"), ClientId.Create("client-app"), "refresh_token", page2, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetGrantsAsync(expectedFilter, page2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ListResult<GrantListItem>.Empty(2, TestOptions.PageSize));
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole)
@@ -76,7 +77,7 @@ public class GrantsIndexPageModelTests
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mockService.Verify(s => s.GetGrantsAsync(UserId.Create("user-456"), ClientId.Create("client-app"), "refresh_token", page2, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.GetGrantsAsync(expectedFilter, page2, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
