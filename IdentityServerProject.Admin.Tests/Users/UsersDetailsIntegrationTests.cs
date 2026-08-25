@@ -68,9 +68,9 @@ public class UsersDetailsIntegrationTests : IDisposable
             .ReturnsAsync(roleResult ?? RoleChangeResult.Succeeded());
         mock.Setup(s => s.RemoveRoleAsync(It.IsAny<UserId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(roleResult ?? RoleChangeResult.Succeeded());
-        mock.Setup(s => s.AddClaimAsync(It.IsAny<UserId>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.AddClaimAsync(It.IsAny<UserId>(), It.IsAny<UserClaim>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(claimResult ?? ClaimChangeResult.Succeeded());
-        mock.Setup(s => s.RemoveClaimAsync(It.IsAny<UserId>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.RemoveClaimAsync(It.IsAny<UserId>(), It.IsAny<UserClaim>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(claimResult ?? ClaimChangeResult.Succeeded());
         mock.Setup(s => s.RevokeUserAccessAsync(It.IsAny<UserId>(), It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(accessResult ?? UserAccessRevokeResult.Succeeded(2));
@@ -360,7 +360,7 @@ public class UsersDetailsIntegrationTests : IDisposable
         var mock = new Mock<IUserDetailsService>();
         mock.Setup(s => s.GetUserDetailsAsync("test-user", It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleUser());
-        mock.Setup(s => s.AddClaimAsync("test-user", "team", "platform", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.AddClaimAsync("test-user", new UserClaim("team", "platform"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ClaimChangeResult.Succeeded());
 
         var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
@@ -379,7 +379,7 @@ public class UsersDetailsIntegrationTests : IDisposable
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Contains("tab=claims", response.Headers.Location?.OriginalString);
-        mock.Verify(s => s.AddClaimAsync("test-user", "team", "platform", It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.AddClaimAsync("test-user", new UserClaim("team", "platform"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -388,7 +388,7 @@ public class UsersDetailsIntegrationTests : IDisposable
         var mock = new Mock<IUserDetailsService>();
         mock.Setup(s => s.GetUserDetailsAsync("test-user", It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleUser());
-        mock.Setup(s => s.RemoveClaimAsync("test-user", "dept", "Engineering", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.RemoveClaimAsync("test-user", new UserClaim("dept", "Engineering"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ClaimChangeResult.Succeeded());
 
         var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
@@ -406,7 +406,7 @@ public class UsersDetailsIntegrationTests : IDisposable
         var response = await httpClient.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        mock.Verify(s => s.RemoveClaimAsync("test-user", "dept", "Engineering", It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.RemoveClaimAsync("test-user", new UserClaim("dept", "Engineering"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

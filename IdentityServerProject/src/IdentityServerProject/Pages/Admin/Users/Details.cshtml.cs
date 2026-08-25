@@ -146,7 +146,7 @@ public class DetailsModel : PageModel
             return NotFound();
         }
 
-        var result = await _userDetailsService.AddClaimAsync(TargetUserId, claimType, claimValue, cancellationToken);
+        var result = await _userDetailsService.AddClaimAsync(TargetUserId, new UserClaim(claimType, claimValue), cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage == "User not found.")
@@ -171,7 +171,7 @@ public class DetailsModel : PageModel
             return NotFound();
         }
 
-        var result = await _userDetailsService.RemoveClaimAsync(TargetUserId, claimType, claimValue, cancellationToken);
+        var result = await _userDetailsService.RemoveClaimAsync(TargetUserId, new UserClaim(claimType, claimValue), cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage == "User not found.")

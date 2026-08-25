@@ -198,11 +198,11 @@ public partial class UserDetailsService : IUserDetailsService
 
     #region Claims
 
-    public Task<ClaimChangeResult> AddClaimAsync(UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default) =>
+    public Task<ClaimChangeResult> AddClaimAsync(UserId userId, UserClaim claim, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.AddClaim,
             userId.Value,
-            () => AddClaimCoreAsync(userId.Value, claimType ?? string.Empty, claimValue ?? string.Empty, cancellationToken),
+            () => AddClaimCoreAsync(userId.Value, claim.Type ?? string.Empty, claim.Value ?? string.Empty, cancellationToken),
             cancellationToken);
 
     private async Task<ClaimChangeResult> AddClaimCoreAsync(string userId, string claimType, string claimValue, CancellationToken cancellationToken)
@@ -282,11 +282,11 @@ public partial class UserDetailsService : IUserDetailsService
         return ClaimChangeResult.Succeeded();
     }
 
-    public Task<ClaimChangeResult> RemoveClaimAsync(UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default) =>
+    public Task<ClaimChangeResult> RemoveClaimAsync(UserId userId, UserClaim claim, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.RemoveClaim,
             userId.Value,
-            () => RemoveClaimCoreAsync(userId.Value, claimType ?? string.Empty, claimValue ?? string.Empty, cancellationToken),
+            () => RemoveClaimCoreAsync(userId.Value, claim.Type ?? string.Empty, claim.Value ?? string.Empty, cancellationToken),
             cancellationToken);
 
     private async Task<ClaimChangeResult> RemoveClaimCoreAsync(string userId, string claimType, string claimValue, CancellationToken cancellationToken)

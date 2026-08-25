@@ -111,13 +111,13 @@ public interface IUserDetailsService
     /// one the framework treats as an identity or authorization claim — see
     /// <see cref="ReservedClaimTypePolicy"/>.
     /// </summary>
-    Task<ClaimChangeResult> AddClaimAsync(UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default);
+    Task<ClaimChangeResult> AddClaimAsync(UserId userId, UserClaim claim, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes a matching claim (type/value pair) from a user. Reserved types may be removed —
     /// removal only de-escalates, and pre-existing reserved claims need a cleanup path.
     /// </summary>
-    Task<ClaimChangeResult> RemoveClaimAsync(UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default);
+    Task<ClaimChangeResult> RemoveClaimAsync(UserId userId, UserClaim claim, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Revokes a user's current access by rotating the security stamp, deleting persisted grants,
