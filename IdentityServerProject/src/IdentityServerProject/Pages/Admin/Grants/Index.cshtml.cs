@@ -2,7 +2,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Configuration;
 using IdentityServerProject.Services;
+using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Grants;
+using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
@@ -46,28 +48,33 @@ public class IndexModel : PageModel
         PageNumber = pagination.PageNumber;
 
         Grants = await _grantListService.GetGrantsAsync(
-            SubjectId,
-            ClientId,
+            string.IsNullOrWhiteSpace(SubjectId) ? null : UserId.Create(SubjectId),
+            string.IsNullOrWhiteSpace(ClientId) ? null : Services.Clients.ClientId.Create(ClientId),
             TypeFilter,
             pagination,
             cancellationToken);
     }
 
-    public async Task<IActionResult> OnPostRevokeAsync(string key, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnPostRevokeAsync(GrantKey key, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(key))
+        if (key.IsEmpty)
         {
             return NotFound();
         }
 
         var result = await _grantListService.RevokeGrantAsync(key, cancellationToken);
-
         if (result == RevokeGrantResult.NotFound)
         {
             return NotFound();
         }
 
         SuccessMessage = "Grant revoked successfully.";
-        return RedirectToPage(new { PageNumber, SubjectId, ClientId, TypeFilter });
+        return RedirectToPage(new
+        {
+            PageNumber,
+            SubjectId,
+            ClientId,
+            TypeFilter
+        });
     }
 }

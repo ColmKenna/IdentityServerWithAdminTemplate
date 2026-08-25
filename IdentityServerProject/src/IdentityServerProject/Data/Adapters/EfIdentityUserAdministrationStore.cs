@@ -53,7 +53,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             .Take(pagination.PageSize)
             .Select(u => new UserListItem
             {
-                Id = u.Id,
+                Id = UserId.Create(u.Id),
                 UserName = u.UserName ?? u.Id,
                 Email = u.Email,
                 FullName = u.FullName,
@@ -72,12 +72,13 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<(UserUnlockResult Result, string TargetName)> UnlockUserAsync(
-        string userId, CancellationToken cancellationToken = default)
+        UserId userId, CancellationToken cancellationToken = default)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+        var userIdStr = userId.Value ?? string.Empty;
+        var user = await _userManager.FindByIdAsync(userIdStr);
         if (user == null)
         {
-            return (UserUnlockResult.NotFound, userId);
+            return (UserUnlockResult.NotFound, userIdStr);
         }
 
         var targetName = user.UserName ?? user.Id;
@@ -121,9 +122,10 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
         return (UserCreateResult.Succeeded(user.Id), AuditReasonCodes.Succeeded);
     }
 
-    public async Task<UserAccountDetails?> FindUserDetailsAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<UserAccountDetails?> FindUserDetailsAsync(UserId userId, CancellationToken cancellationToken = default)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+        var userIdStr = userId.Value ?? string.Empty;
+        var user = await _userManager.FindByIdAsync(userIdStr);
         if (user == null)
         {
             return null;
@@ -136,7 +138,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             .ToList();
 
         return new UserAccountDetails(
-            user.Id,
+            UserId.Create(user.Id),
             user.UserName ?? user.Id,
             user.Email,
             user.FullName,
@@ -147,17 +149,18 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             claims);
     }
 
-    public async Task<RoleAdditionOutcome> AddRoleAsync(string userId, string role, CancellationToken cancellationToken = default)
+    public async Task<RoleAdditionOutcome> AddRoleAsync(UserId userId, string role, CancellationToken cancellationToken = default)
     {
-        var outcome = new RoleAdditionOutcome(RoleAdditionStatus.UserNotFound, userId, null);
+        var userIdStr = userId.Value ?? string.Empty;
+        var outcome = new RoleAdditionOutcome(RoleAdditionStatus.UserNotFound, userIdStr, null);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             _dbContext.ChangeTracker.Clear();
-            outcome = new RoleAdditionOutcome(RoleAdditionStatus.UserNotFound, userId, null);
+            outcome = new RoleAdditionOutcome(RoleAdditionStatus.UserNotFound, userIdStr, null);
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userIdStr);
             if (user == null)
             {
                 return;
@@ -198,25 +201,27 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<RoleRemovalOutcome> RemoveRoleAsync(
-        string userId,
+        UserId userId,
         string role,
         string protectedRoleName,
-        string? actingUserId,
+        UserId? actingUserId,
         CancellationToken cancellationToken = default)
     {
-        var outcome = new RoleRemovalOutcome(RoleRemovalStatus.UserNotFound, userId, false, null);
+        var userIdStr = userId.Value ?? string.Empty;
+        var actingUserIdStr = actingUserId?.Value;
+        var outcome = new RoleRemovalOutcome(RoleRemovalStatus.UserNotFound, userIdStr, false, null);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             // A retry must not reuse entities or membership state from the failed attempt.
             _dbContext.ChangeTracker.Clear();
-            outcome = new RoleRemovalOutcome(RoleRemovalStatus.UserNotFound, userId, false, null);
+            outcome = new RoleRemovalOutcome(RoleRemovalStatus.UserNotFound, userIdStr, false, null);
 
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable, cancellationToken);
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userIdStr);
             if (user == null)
             {
                 await transaction.RollbackAsync(cancellationToken);
@@ -242,8 +247,8 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             }
 
             var isProtectedRole = string.Equals(roleEntity.Name, protectedRoleName, StringComparison.OrdinalIgnoreCase);
-            if (isProtectedRole && !string.IsNullOrWhiteSpace(actingUserId)
-                && string.Equals(actingUserId, user.Id, StringComparison.Ordinal))
+            if (isProtectedRole && !string.IsNullOrWhiteSpace(actingUserIdStr)
+                && string.Equals(actingUserIdStr, user.Id, StringComparison.Ordinal))
             {
                 outcome = new RoleRemovalOutcome(RoleRemovalStatus.SelfDemotionBlocked, targetName, false, null);
                 await transaction.RollbackAsync(cancellationToken);
@@ -280,17 +285,18 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<ClaimMutationOutcome> AddClaimAsync(
-        string userId, string claimType, string claimValue, CancellationToken cancellationToken = default)
+        UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default)
     {
-        var outcome = new ClaimMutationOutcome(ClaimMutationStatus.UserNotFound, userId, null);
+        var userIdStr = userId.Value ?? string.Empty;
+        var outcome = new ClaimMutationOutcome(ClaimMutationStatus.UserNotFound, userIdStr, null);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             _dbContext.ChangeTracker.Clear();
-            outcome = new ClaimMutationOutcome(ClaimMutationStatus.UserNotFound, userId, null);
+            outcome = new ClaimMutationOutcome(ClaimMutationStatus.UserNotFound, userIdStr, null);
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userIdStr);
             if (user == null)
             {
                 return;
@@ -303,7 +309,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
                 cancellationToken);
 
             var alreadyExists = await _dbContext.UserClaims.AnyAsync(
-                claim => claim.UserId == userId
+                claim => claim.UserId == userIdStr
                     && claim.ClaimType == claimType
                     && claim.ClaimValue == claimValue,
                 cancellationToken);
@@ -333,17 +339,18 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<ClaimMutationOutcome> RemoveClaimAsync(
-        string userId, string claimType, string claimValue, CancellationToken cancellationToken = default)
+        UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default)
     {
-        var outcome = new ClaimMutationOutcome(ClaimMutationStatus.UserNotFound, userId, null);
+        var userIdStr = userId.Value ?? string.Empty;
+        var outcome = new ClaimMutationOutcome(ClaimMutationStatus.UserNotFound, userIdStr, null);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             _dbContext.ChangeTracker.Clear();
-            outcome = new ClaimMutationOutcome(ClaimMutationStatus.UserNotFound, userId, null);
+            outcome = new ClaimMutationOutcome(ClaimMutationStatus.UserNotFound, userIdStr, null);
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userIdStr);
             if (user == null)
             {
                 return;
@@ -372,18 +379,20 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<SecurityStampRotationOutcome> RotateSecurityStampAsync(
-        string userId, string? actingUserId, CancellationToken cancellationToken = default)
+        UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default)
     {
-        var outcome = new SecurityStampRotationOutcome(SecurityStampRotationStatus.UserNotFound, userId);
+        var userIdStr = userId.Value ?? string.Empty;
+        var actingUserIdStr = actingUserId?.Value;
+        var outcome = new SecurityStampRotationOutcome(SecurityStampRotationStatus.UserNotFound, userIdStr);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             _dbContext.ChangeTracker.Clear();
-            outcome = new SecurityStampRotationOutcome(SecurityStampRotationStatus.UserNotFound, userId);
+            outcome = new SecurityStampRotationOutcome(SecurityStampRotationStatus.UserNotFound, userIdStr);
 
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userIdStr);
             if (user == null)
             {
                 await transaction.RollbackAsync(cancellationToken);
@@ -391,7 +400,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             }
 
             var targetName = user.UserName ?? user.Id;
-            if (!string.IsNullOrWhiteSpace(actingUserId) && string.Equals(actingUserId, user.Id, StringComparison.Ordinal))
+            if (!string.IsNullOrWhiteSpace(actingUserIdStr) && string.Equals(actingUserIdStr, user.Id, StringComparison.Ordinal))
             {
                 outcome = new SecurityStampRotationOutcome(SecurityStampRotationStatus.SelfActionBlocked, targetName);
                 await transaction.RollbackAsync(cancellationToken);
@@ -412,17 +421,18 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<PasswordResetOutcome> ResetPasswordAsync(
-        string userId, string newPassword, CancellationToken cancellationToken = default)
+        UserId userId, string newPassword, CancellationToken cancellationToken = default)
     {
-        var outcome = new PasswordResetOutcome(PasswordResetStatus.UserNotFound, userId, null);
+        var userIdStr = userId.Value ?? string.Empty;
+        var outcome = new PasswordResetOutcome(PasswordResetStatus.UserNotFound, userIdStr, null);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             _dbContext.ChangeTracker.Clear();
-            outcome = new PasswordResetOutcome(PasswordResetStatus.UserNotFound, userId, null);
+            outcome = new PasswordResetOutcome(PasswordResetStatus.UserNotFound, userIdStr, null);
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userIdStr);
             if (user == null)
             {
                 return;
@@ -453,17 +463,19 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<(UserSuspendOutcome Status, string TargetName)> SuspendUserAsync(
-        string userId, string? actingUserId, CancellationToken cancellationToken = default)
+        UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default)
     {
-        var outcome = (Status: UserSuspendOutcome.UserNotFound, TargetName: userId);
+        var userIdStr = userId.Value ?? string.Empty;
+        var actingUserIdStr = actingUserId?.Value;
+        var outcome = (Status: UserSuspendOutcome.UserNotFound, TargetName: userIdStr);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             _dbContext.ChangeTracker.Clear();
-            outcome = (UserSuspendOutcome.UserNotFound, userId);
+            outcome = (UserSuspendOutcome.UserNotFound, userIdStr);
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userIdStr);
             if (user == null)
             {
                 return;
@@ -471,7 +483,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
 
             var targetName = user.UserName ?? user.Id;
 
-            if (!string.IsNullOrWhiteSpace(actingUserId) && string.Equals(actingUserId, user.Id, StringComparison.Ordinal))
+            if (!string.IsNullOrWhiteSpace(actingUserIdStr) && string.Equals(actingUserIdStr, user.Id, StringComparison.Ordinal))
             {
                 outcome = (UserSuspendOutcome.SelfActionBlocked, targetName);
                 return;
@@ -497,17 +509,19 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<(UserDeleteOutcome Status, string TargetName)> DeleteUserAsync(
-        string userId, string? actingUserId, CancellationToken cancellationToken = default)
+        UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default)
     {
-        var outcome = (Status: UserDeleteOutcome.UserNotFound, TargetName: userId);
+        var userIdStr = userId.Value ?? string.Empty;
+        var actingUserIdStr = actingUserId?.Value;
+        var outcome = (Status: UserDeleteOutcome.UserNotFound, TargetName: userIdStr);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             _dbContext.ChangeTracker.Clear();
-            outcome = (UserDeleteOutcome.UserNotFound, userId);
+            outcome = (UserDeleteOutcome.UserNotFound, userIdStr);
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userIdStr);
             if (user == null)
             {
                 return;
@@ -515,7 +529,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
 
             var targetName = user.UserName ?? user.Id;
 
-            if (!string.IsNullOrWhiteSpace(actingUserId) && string.Equals(actingUserId, user.Id, StringComparison.Ordinal))
+            if (!string.IsNullOrWhiteSpace(actingUserIdStr) && string.Equals(actingUserIdStr, user.Id, StringComparison.Ordinal))
             {
                 outcome = (UserDeleteOutcome.SelfActionBlocked, targetName);
                 return;

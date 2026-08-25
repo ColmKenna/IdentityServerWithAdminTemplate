@@ -7,7 +7,7 @@ namespace IdentityServerProject.Services.Clients;
 
 public class ClientDetailsModel
 {
-    public required string ClientId { get; set; }
+    public required ClientId ClientId { get; set; }
     public required string ClientName { get; set; }
     public string? Description { get; set; }
     public required string ClientType { get; set; }
@@ -50,7 +50,7 @@ public class ClientDeleteResult
 
 public class ClientBasicsModel
 {
-    public required string ClientId { get; set; }
+    public required ClientId ClientId { get; set; }
     public required string ClientName { get; set; }
     public string? Description { get; set; }
     public bool Enabled { get; set; }
@@ -76,7 +76,7 @@ public sealed record ClientBasicsAuditValue(
 
 public class ClientAuthenticationModel
 {
-    public required string ClientId { get; set; }
+    public required ClientId ClientId { get; set; }
     public required string ClientName { get; set; }
     public bool RequirePkce { get; set; }
     public bool RequireClientSecret { get; set; }
@@ -120,7 +120,7 @@ public sealed record ClientAuthenticationAuditValue(
 
 public class ClientPermissionsModel
 {
-    public required string ClientId { get; set; }
+    public required ClientId ClientId { get; set; }
     public required string ClientName { get; set; }
     public bool IsInteractive { get; set; }
     public List<string> AllowedScopes { get; set; } = new();
@@ -138,7 +138,7 @@ public class ClientSecretSummary
 
 public class ClientSecretsModel
 {
-    public required string ClientId { get; set; }
+    public required ClientId ClientId { get; set; }
     public required string ClientName { get; set; }
     public bool RequireClientSecret { get; set; }
     public List<ClientSecretSummary> Secrets { get; set; } = new();
@@ -199,7 +199,7 @@ public class ClientSecretRevokeResult
 
 public class ClientTokenSettingsModel
 {
-    public required string ClientId { get; set; }
+    public required ClientId ClientId { get; set; }
     public required string ClientName { get; set; }
     public TokenLifetime AccessTokenLifetime { get; set; }
     public TokenLifetime IdentityTokenLifetime { get; set; }

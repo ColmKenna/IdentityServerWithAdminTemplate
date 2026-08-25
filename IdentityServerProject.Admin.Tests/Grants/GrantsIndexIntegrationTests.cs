@@ -7,7 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp;
 using IdentityServerProject.Services;
+using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Grants;
+using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -39,7 +41,7 @@ public class GrantsIndexIntegrationTests : IDisposable
     private static IGrantListService MockService(ListResult<GrantListItem> result)
     {
         var mock = new Mock<IGrantListService>();
-        mock.Setup(s => s.GetGrantsAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetGrantsAsync(It.IsAny<UserId?>(), It.IsAny<ClientId?>(), It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock.Object;
     }
@@ -54,11 +56,11 @@ public class GrantsIndexIntegrationTests : IDisposable
 
     private static GrantListItem MakeItem(string key, string clientId, string clientName, string subjectId) => new()
     {
-        Key = key,
+        Key = GrantKey.Create(key),
         Type = "user_consent",
-        SubjectId = subjectId,
+        SubjectId = UserId.Create(subjectId),
         SessionId = "session-1",
-        ClientId = clientId,
+        ClientId = ClientId.Create(clientId),
         ClientName = clientName,
         Description = "Consent grant",
         CreationTime = DateTime.UtcNow.AddDays(-1),

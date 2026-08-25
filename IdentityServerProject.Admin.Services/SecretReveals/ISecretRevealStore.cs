@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using IdentityServerProject.Services.Users;
 
 namespace IdentityServerProject.Services.SecretReveals;
 
@@ -43,7 +44,7 @@ public interface ISecretRevealStore
 {
     Task<SecretRevealInsertStatus> TryInsertAsync(
         byte[] handleDigest,
-        string actorSubjectId,
+        UserId actorSubjectId,
         string purpose,
         string targetId,
         string protectedPayload,
@@ -59,7 +60,7 @@ public interface ISecretRevealStore
     /// </summary>
     Task<SecretRevealLookup> ConsumeAsync(
         byte[] handleDigest,
-        string actorSubjectId,
+        UserId actorSubjectId,
         string purpose,
         string targetId,
         DateTimeOffset now,

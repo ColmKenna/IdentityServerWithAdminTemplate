@@ -1,5 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
+using IdentityServerProject.Services.Clients;
+using IdentityServerProject.Services.Users;
 
 namespace IdentityServerProject.Services.Grants;
 
@@ -17,8 +19,8 @@ public interface IGrantListService
     /// <param name="pagination">Pagination settings (page number and page size).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task<ListResult<GrantListItem>> GetGrantsAsync(
-        string? subjectId,
-        string? clientId,
+        UserId? subjectId,
+        ClientId? clientId,
         string? typeFilter,
         Pagination pagination = default,
         CancellationToken cancellationToken = default);
@@ -26,9 +28,9 @@ public interface IGrantListService
     /// <summary>
     /// Revokes (deletes) a specific persisted grant by key.
     /// </summary>
-    Task<RevokeGrantResult> RevokeGrantAsync(string key, CancellationToken cancellationToken = default);
+    Task<RevokeGrantResult> RevokeGrantAsync(GrantKey key, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Revokes (deletes) all persisted grants for a specified subject ID.</summary>
-    Task<int> RevokeGrantsBySubjectAsync(string subjectId, CancellationToken cancellationToken = default);
+    Task<int> RevokeGrantsBySubjectAsync(UserId subjectId, CancellationToken cancellationToken = default);
 }

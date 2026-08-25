@@ -7,6 +7,7 @@ using Duende.IdentityModel;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
 using IdentityServerProject.Services.AuditLogs;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 using Microsoft.EntityFrameworkCore;
 using static Duende.IdentityServer.Models.HashExtensions;
@@ -353,22 +354,22 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
 
     #region Scopes
 
-    public Task<AdminMutationResult> AttachScopeAsync(string name, string scopeName, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> AttachScopeAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.AttachScope,
             name ?? string.Empty,
             name ?? string.Empty,
-            () => AttachScopeCoreAsync(name ?? string.Empty, scopeName ?? string.Empty, cancellationToken),
+            () => AttachScopeCoreAsync(name ?? string.Empty, scopeName, cancellationToken),
             cancellationToken);
 
-    private async Task<AdminMutationResult> AttachScopeCoreAsync(string name, string scopeName, CancellationToken cancellationToken = default)
+    private async Task<AdminMutationResult> AttachScopeCoreAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default)
     {
         name = name?.Trim() ?? string.Empty;
-        scopeName = scopeName?.Trim() ?? string.Empty;
+        var scopeNameStr = scopeName.Value?.Trim() ?? string.Empty;
 
         var errors = new Dictionary<string, string[]>();
         AddIdentifierError(errors, "Name", "API Resource", name);
-        AddIdentifierError(errors, "AttachScope.ScopeName", "Scope", scopeName);
+        AddIdentifierError(errors, "AttachScope.ScopeName", "Scope", scopeNameStr);
         if (errors.Count > 0)
         {
             await AuditDeniedAsync(AuditActions.AttachScope, AuditReasonCodes.ValidationFailed, name, name,
@@ -386,25 +387,25 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
 
         var scopeExists = await _configurationDbContext.ApiScopes
             .AsNoTracking()
-            .AnyAsync(s => s.Name == scopeName, cancellationToken);
+            .AnyAsync(s => s.Name == scopeNameStr, cancellationToken);
         if (!scopeExists)
         {
             await AuditDeniedAsync(AuditActions.AttachScope, AuditReasonCodes.NotFound, name, name,
-                $"API Scope '{scopeName}' was not found.", cancellationToken);
+                $"API Scope '{scopeNameStr}' was not found.", cancellationToken);
             return AdminMutationResult.NotFoundResult();
         }
 
-        if (entity.Scopes.All(s => s.Scope != scopeName))
+        if (entity.Scopes.All(s => s.Scope != scopeNameStr))
         {
             try
             {
-                entity.Scopes.Add(new ApiResourceScope { Scope = scopeName });
+                entity.Scopes.Add(new ApiResourceScope { Scope = scopeNameStr });
                 await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
                 await _auditWriter.WriteAsync(new AdminAuditEvent(
                     AuditCategories.ApiResource, AuditActions.AttachScope, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
                     TargetId: name, TargetName: name,
-                    Details: $"Attached scope '{scopeName}' to API Resource"), cancellationToken);
+                    Details: $"Attached scope '{scopeNameStr}' to API Resource"), cancellationToken);
             }
             catch (Exception ex)
             {
@@ -522,25 +523,25 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         });
     }
 
-    public Task<AdminMutationResult> DetachScopeAsync(string name, string scopeName, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> DetachScopeAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.DetachScope,
             name ?? string.Empty,
             name ?? string.Empty,
-            () => DetachScopeCoreAsync(name ?? string.Empty, scopeName ?? string.Empty, cancellationToken),
+            () => DetachScopeCoreAsync(name ?? string.Empty, scopeName, cancellationToken),
             cancellationToken);
 
-    private async Task<AdminMutationResult> DetachScopeCoreAsync(string name, string scopeName, CancellationToken cancellationToken = default)
+    private async Task<AdminMutationResult> DetachScopeCoreAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default)
     {
         name = name?.Trim() ?? string.Empty;
-        scopeName = scopeName?.Trim() ?? string.Empty;
+        var scopeNameStr = scopeName.Value?.Trim() ?? string.Empty;
 
         var entity = await LoadResourceAsync(name, asNoTracking: false, cancellationToken);
-        var scope = entity?.Scopes.FirstOrDefault(s => s.Scope == scopeName);
+        var scope = entity?.Scopes.FirstOrDefault(s => s.Scope == scopeNameStr);
         if (entity == null || scope == null)
         {
             await AuditDeniedAsync(AuditActions.DetachScope, AuditReasonCodes.NotFound, name, name,
-                $"API Resource '{name}' or scope '{scopeName}' was not found.", cancellationToken);
+                $"API Resource '{name}' or scope '{scopeNameStr}' was not found.", cancellationToken);
             return AdminMutationResult.NotFoundResult();
         }
 
@@ -552,7 +553,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategories.ApiResource, AuditActions.DetachScope, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
                 TargetId: name, TargetName: name,
-                Details: $"Detached scope '{scopeName}' from API Resource"), cancellationToken);
+                Details: $"Detached scope '{scopeNameStr}' from API Resource"), cancellationToken);
 
             return AdminMutationResult.Success();
         }
@@ -840,7 +841,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         await _auditWriter.WriteAsync(new AdminAuditEvent(
             AuditCategories.ApiResource, action, AuditOutcome.Failed, AuditReasonCodes.PersistenceFailure,
             TargetId: targetId, TargetName: targetName, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
+    }
 
     #endregion
-}
 }

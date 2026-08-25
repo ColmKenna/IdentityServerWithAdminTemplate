@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
 using IdentityServerProject.Services.AuditLogs;
+using IdentityServerProject.Services.Clients;
+using IdentityServerProject.Services.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace IdentityServerProject.Services.Grants;
@@ -29,8 +31,8 @@ public class GrantListService : IGrantListService
     #region Listing
 
     public async Task<ListResult<GrantListItem>> GetGrantsAsync(
-        string? subjectId,
-        string? clientId,
+        UserId? subjectId,
+        ClientId? clientId,
         string? typeFilter,
         Pagination pagination = default,
         CancellationToken cancellationToken = default)
@@ -39,15 +41,17 @@ public class GrantListService : IGrantListService
 
         var query = _persistedGrantDbContext.PersistedGrants.AsNoTracking();
 
-        if (!string.IsNullOrWhiteSpace(subjectId))
+        var subjectIdStr = subjectId?.Value;
+        if (!string.IsNullOrWhiteSpace(subjectIdStr))
         {
-            var escapedSubjectId = LikeExtensions.EscapeLikePattern(subjectId.Trim());
+            var escapedSubjectId = LikeExtensions.EscapeLikePattern(subjectIdStr.Trim());
             query = query.Where(g => g.SubjectId != null && EF.Functions.Like(g.SubjectId, $"%{escapedSubjectId}%"));
         }
 
-        if (!string.IsNullOrWhiteSpace(clientId))
+        var clientIdStr = clientId?.Value;
+        if (!string.IsNullOrWhiteSpace(clientIdStr))
         {
-            var escapedClientId = LikeExtensions.EscapeLikePattern(clientId.Trim());
+            var escapedClientId = LikeExtensions.EscapeLikePattern(clientIdStr.Trim());
             query = query.Where(g => EF.Functions.Like(g.ClientId, $"%{escapedClientId}%"));
         }
 
@@ -84,11 +88,11 @@ public class GrantListService : IGrantListService
 
         var items = grantsOnPage.Select(g => new GrantListItem
         {
-            Key = g.Key,
+            Key = GrantKey.Create(g.Key),
             Type = g.Type,
-            SubjectId = g.SubjectId,
+            SubjectId = g.SubjectId != null ? UserId.Create(g.SubjectId) : null,
             SessionId = g.SessionId,
-            ClientId = g.ClientId,
+            ClientId = ClientId.Create(g.ClientId),
             ClientName = (clientNames.TryGetValue(g.ClientId, out var name) && !string.IsNullOrWhiteSpace(name))
                 ? name
                 : g.ClientId,
@@ -112,24 +116,25 @@ public class GrantListService : IGrantListService
 
     #region Revocation
 
-    public Task<RevokeGrantResult> RevokeGrantAsync(string key, CancellationToken cancellationToken = default) =>
+    public Task<RevokeGrantResult> RevokeGrantAsync(GrantKey key, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.Revoke,
-            key ?? string.Empty,
-            key ?? string.Empty,
-            () => RevokeGrantCoreAsync(key ?? string.Empty, cancellationToken),
+            key.Value ?? string.Empty,
+            key.Value ?? string.Empty,
+            () => RevokeGrantCoreAsync(key, cancellationToken),
             cancellationToken);
 
-    private async Task<RevokeGrantResult> RevokeGrantCoreAsync(string key, CancellationToken cancellationToken = default)
+    private async Task<RevokeGrantResult> RevokeGrantCoreAsync(GrantKey key, CancellationToken cancellationToken = default)
     {
+        var keyStr = key.Value ?? string.Empty;
         var grant = await _persistedGrantDbContext.PersistedGrants
-            .FirstOrDefaultAsync(g => g.Key == key, cancellationToken);
+            .FirstOrDefaultAsync(g => g.Key == keyStr, cancellationToken);
 
         if (grant == null)
         {
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategories.Grant, AuditActions.Revoke, AuditOutcome.Denied, AuditReasonCodes.NotFound,
-                TargetId: key, TargetName: key, Details: "Grant not found."), cancellationToken);
+                TargetId: keyStr, TargetName: keyStr, Details: "Grant not found."), cancellationToken);
             return RevokeGrantResult.NotFound;
         }
 
@@ -140,29 +145,30 @@ public class GrantListService : IGrantListService
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategories.Grant, AuditActions.Revoke, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
-                TargetId: key, TargetName: grant.SubjectId ?? key,
+                TargetId: keyStr, TargetName: grant.SubjectId ?? keyStr,
                 Details: $"Revoked grant for client '{grant.ClientId}'"), cancellationToken);
 
             return RevokeGrantResult.Revoked;
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.Revoke, key, key, ex, cancellationToken);
+            await AuditFailedAsync(AuditActions.Revoke, keyStr, keyStr, ex, cancellationToken);
             throw;
         }
     }
 
-    public Task<int> RevokeGrantsBySubjectAsync(string subjectId, CancellationToken cancellationToken = default) =>
+    public Task<int> RevokeGrantsBySubjectAsync(UserId subjectId, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.BulkRevoke,
-            subjectId ?? string.Empty,
-            subjectId ?? string.Empty,
-            () => RevokeGrantsBySubjectCoreAsync(subjectId ?? string.Empty, cancellationToken),
+            subjectId.Value ?? string.Empty,
+            subjectId.Value ?? string.Empty,
+            () => RevokeGrantsBySubjectCoreAsync(subjectId, cancellationToken),
             cancellationToken);
 
-    private async Task<int> RevokeGrantsBySubjectCoreAsync(string subjectId, CancellationToken cancellationToken = default)
+    private async Task<int> RevokeGrantsBySubjectCoreAsync(UserId subjectId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(subjectId))
+        var subjectIdStr = subjectId.Value ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(subjectIdStr))
         {
             // Internal misuse guard, not a real admin action attempt - nothing to audit.
             return 0;
@@ -171,7 +177,7 @@ public class GrantListService : IGrantListService
         try
         {
             var grants = await _persistedGrantDbContext.PersistedGrants
-                .Where(g => g.SubjectId == subjectId)
+                .Where(g => g.SubjectId == subjectIdStr)
                 .ToListAsync(cancellationToken);
 
             var revokedCount = 0;
@@ -183,14 +189,14 @@ public class GrantListService : IGrantListService
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategories.Grant, AuditActions.BulkRevoke, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
-                TargetId: subjectId, TargetName: subjectId,
-                Details: $"Revoked {revokedCount} persisted grant(s) for subject '{subjectId}'"), cancellationToken);
+                TargetId: subjectIdStr, TargetName: subjectIdStr,
+                Details: $"Revoked {revokedCount} persisted grant(s) for subject '{subjectIdStr}'"), cancellationToken);
 
             return revokedCount;
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.BulkRevoke, subjectId, subjectId, ex, cancellationToken);
+            await AuditFailedAsync(AuditActions.BulkRevoke, subjectIdStr, subjectIdStr, ex, cancellationToken);
             throw;
         }
     }

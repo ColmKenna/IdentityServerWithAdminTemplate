@@ -5,7 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.Grants;
 using IdentityServerProject.Services;
+using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Grants;
+using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
@@ -26,11 +28,11 @@ public class GrantsIndexPageModelTests
             {
                 new GrantListItem
                 {
-                    Key = "grant-123",
+                    Key = GrantKey.Create("grant-123"),
                     Type = "user_consent",
-                    SubjectId = "user-456",
+                    SubjectId = UserId.Create("user-456"),
                     SessionId = "session-789",
-                    ClientId = "client-app",
+                    ClientId = ClientId.Create("client-app"),
                     ClientName = "Client App",
                     Description = "Consent grant",
                     CreationTime = DateTime.UtcNow,
@@ -45,7 +47,7 @@ public class GrantsIndexPageModelTests
         };
 
         mockService
-            .Setup(s => s.GetGrantsAsync(null, null, null, DefaultPagination, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetGrantsAsync(It.IsAny<UserId?>(), It.IsAny<ClientId?>(), null, DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole);
@@ -61,7 +63,7 @@ public class GrantsIndexPageModelTests
         var page2 = Pagination.From(2, TestOptions.PageSize);
         var mockService = new Mock<IGrantListService>();
         mockService
-            .Setup(s => s.GetGrantsAsync("user-456", "client-app", "refresh_token", page2, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetGrantsAsync(UserId.Create("user-456"), ClientId.Create("client-app"), "refresh_token", page2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ListResult<GrantListItem>.Empty(2, TestOptions.PageSize));
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole)
@@ -74,7 +76,7 @@ public class GrantsIndexPageModelTests
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mockService.Verify(s => s.GetGrantsAsync("user-456", "client-app", "refresh_token", page2, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.GetGrantsAsync(UserId.Create("user-456"), ClientId.Create("client-app"), "refresh_token", page2, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -82,7 +84,7 @@ public class GrantsIndexPageModelTests
     {
         var mockService = new Mock<IGrantListService>();
         mockService
-            .Setup(s => s.RevokeGrantAsync("grant-123", It.IsAny<CancellationToken>()))
+            .Setup(s => s.RevokeGrantAsync(GrantKey.Create("grant-123"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(RevokeGrantResult.Revoked);
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole)
@@ -93,7 +95,7 @@ public class GrantsIndexPageModelTests
             TypeFilter = "refresh_token",
         };
 
-        var result = await model.OnPostRevokeAsync("grant-123", CancellationToken.None);
+        var result = await model.OnPostRevokeAsync(GrantKey.Create("grant-123"), CancellationToken.None);
 
         var redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.NotNull(model.SuccessMessage);
@@ -109,12 +111,12 @@ public class GrantsIndexPageModelTests
     {
         var mockService = new Mock<IGrantListService>();
         mockService
-            .Setup(s => s.RevokeGrantAsync("nonexistent", It.IsAny<CancellationToken>()))
+            .Setup(s => s.RevokeGrantAsync(GrantKey.Create("nonexistent"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(RevokeGrantResult.NotFound);
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole);
 
-        var result = await model.OnPostRevokeAsync("nonexistent", CancellationToken.None);
+        var result = await model.OnPostRevokeAsync(GrantKey.Create("nonexistent"), CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Services.SecretReveals;
+using IdentityServerProject.Services.Users;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,7 +26,7 @@ public sealed class EfSecretRevealStore : ISecretRevealStore
 
     public async Task<SecretRevealInsertStatus> TryInsertAsync(
         byte[] handleDigest,
-        string actorSubjectId,
+        UserId actorSubjectId,
         string purpose,
         string targetId,
         string protectedPayload,
@@ -33,10 +34,11 @@ public sealed class EfSecretRevealStore : ISecretRevealStore
         DateTimeOffset expiresUtc,
         CancellationToken cancellationToken = default)
     {
+        var actorSubjectIdStr = actorSubjectId.Value ?? string.Empty;
         _dbContext.SecretRevealRecords.Add(new SecretRevealRecord
         {
             HandleDigest = handleDigest,
-            ActorSubjectId = actorSubjectId,
+            ActorSubjectId = actorSubjectIdStr,
             Purpose = purpose,
             TargetId = targetId,
             ProtectedPayload = protectedPayload,
@@ -58,12 +60,13 @@ public sealed class EfSecretRevealStore : ISecretRevealStore
 
     public async Task<SecretRevealLookup> ConsumeAsync(
         byte[] handleDigest,
-        string actorSubjectId,
+        UserId actorSubjectId,
         string purpose,
         string targetId,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
+        var actorSubjectIdStr = actorSubjectId.Value ?? string.Empty;
         var lookup = SecretRevealLookup.NotFound();
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
@@ -82,7 +85,7 @@ public sealed class EfSecretRevealStore : ISecretRevealStore
                 return;
             }
 
-            if (!string.Equals(record.ActorSubjectId, actorSubjectId, StringComparison.Ordinal)
+            if (!string.Equals(record.ActorSubjectId, actorSubjectIdStr, StringComparison.Ordinal)
                 || !string.Equals(record.Purpose, purpose, StringComparison.Ordinal)
                 || !string.Equals(record.TargetId, targetId, StringComparison.Ordinal))
             {
@@ -111,38 +114,54 @@ public sealed class EfSecretRevealStore : ISecretRevealStore
 
     public async Task CleanupExpiredAsync(DateTimeOffset now, int batchSize, CancellationToken cancellationToken = default)
     {
+        if (batchSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(batchSize), "Batch size must be positive.");
+        }
+
+        // Deleting in bounded chunks limits log-flush and locking pressure on SQL Server.
         var expiredIds = await _dbContext.SecretRevealRecords
-            .Where(record => record.ExpiresUtc <= now)
-            .OrderBy(record => record.Id)
-            .Select(record => record.Id)
+            .Where(r => r.ExpiresUtc <= now)
+            .OrderBy(r => r.ExpiresUtc)
+            .Select(r => r.Id)
             .Take(batchSize)
             .ToListAsync(cancellationToken);
 
-        if (expiredIds.Count > 0)
+        if (expiredIds.Count == 0)
         {
-            await _dbContext.SecretRevealRecords
-                .Where(record => expiredIds.Contains(record.Id))
-                .ExecuteDeleteAsync(cancellationToken);
+            return;
         }
+
+        await _dbContext.SecretRevealRecords
+            .Where(r => expiredIds.Contains(r.Id))
+            .ExecuteDeleteAsync(cancellationToken);
     }
 
-    private async Task<SecretRevealRecord?> LoadForConsumeAsync(byte[] digest, CancellationToken cancellationToken)
+    private async Task<SecretRevealRecord?> LoadForConsumeAsync(byte[] handleDigest, CancellationToken cancellationToken)
     {
+        // On SQL Server, take an exclusive row-level lock so concurrent consumers serialize behind
+        // the first transaction. On SQLite/in-memory test providers, fall back to standard LINQ.
         if (_dbContext.Database.IsSqlServer())
         {
             return await _dbContext.SecretRevealRecords
-                .FromSqlInterpolated($"""
-                    SELECT TOP(1) *
-                    FROM [SecretRevealRecords] WITH (UPDLOCK, HOLDLOCK)
-                    WHERE [HandleDigest] = {digest}
-                    """)
+                .FromSqlInterpolated($"SELECT * FROM dbo.SecretRevealRecords WITH (UPDLOCK, ROWLOCK) WHERE HandleDigest = {handleDigest}")
                 .SingleOrDefaultAsync(cancellationToken);
         }
 
         return await _dbContext.SecretRevealRecords
-            .SingleOrDefaultAsync(record => record.HandleDigest == digest, cancellationToken);
+            .SingleOrDefaultAsync(r => r.HandleDigest == handleDigest, cancellationToken);
     }
 
-    private static bool IsDigestCollision(DbUpdateException exception) =>
-        exception.InnerException is SqlException { Number: 2601 or 2627 };
+    private static bool IsDigestCollision(DbUpdateException ex)
+    {
+        if (ex.InnerException is SqlException sqlEx && (sqlEx.Number == 2627 || sqlEx.Number == 2601))
+        {
+            return true;
+        }
+
+        // SQLite unique constraint error code
+        var message = ex.InnerException?.Message ?? ex.Message;
+        return message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("DuplicateKeyException", StringComparison.OrdinalIgnoreCase);
+    }
 }

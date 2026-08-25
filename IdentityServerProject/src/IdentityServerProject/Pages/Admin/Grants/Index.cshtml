@@ -62,13 +62,13 @@
                     </ck-responsive-col>
                     <ck-responsive-col>
                         <strong>@grant.ClientName</strong>
-                        @if (grant.ClientName != grant.ClientId)
+                        @if (grant.ClientName != grant.ClientId.Value)
                         {
                             <div><small class="mono">(@grant.ClientId)</small></div>
                         }
                     </ck-responsive-col>
                     <ck-responsive-col>
-                        <code>@(string.IsNullOrWhiteSpace(grant.SubjectId) ? "—" : grant.SubjectId)</code>
+                        <code>@(grant.SubjectId.HasValue && !grant.SubjectId.Value.IsEmpty ? grant.SubjectId.Value.Value : "—")</code>
                     </ck-responsive-col>
                     <ck-responsive-col>
                         @grant.CreationTime.ToString("yyyy-MM-dd HH:mm") UTC
@@ -83,7 +83,7 @@
                             data-action="revoke-grant"
                             data-grant-key="@grant.Key"
                             data-client-name="@grant.ClientName"
-                            data-subject-id="@(grant.SubjectId ?? "N/A")">
+                            data-subject-id="@(grant.SubjectId?.Value ?? "N/A")">
                             Revoke
                         </button>
                     </ck-responsive-col>

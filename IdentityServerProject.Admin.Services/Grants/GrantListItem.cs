@@ -1,4 +1,6 @@
 using System;
+using IdentityServerProject.Services.Clients;
+using IdentityServerProject.Services.Users;
 
 namespace IdentityServerProject.Services.Grants;
 
@@ -7,15 +9,15 @@ namespace IdentityServerProject.Services.Grants;
 /// </summary>
 public sealed class GrantListItem
 {
-    public required string Key { get; init; }
+    public required GrantKey Key { get; init; }
 
     public required string Type { get; init; }
 
-    public required string? SubjectId { get; init; }
+    public required UserId? SubjectId { get; init; }
 
     public required string? SessionId { get; init; }
 
-    public required string ClientId { get; init; }
+    public required ClientId ClientId { get; init; }
 
     public required string ClientName { get; init; }
 

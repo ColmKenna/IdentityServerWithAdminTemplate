@@ -7,7 +7,7 @@ namespace IdentityServerProject.Services.Users;
 /// </summary>
 public sealed class UserListItem
 {
-    public required string Id { get; init; }
+    public required UserId Id { get; init; }
 
     public required string UserName { get; init; }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 
 namespace IdentityServerProject.Services.Apis;
@@ -58,7 +59,7 @@ public interface IApiResourceEditorService
     Task<AdminMutationResult> RevokeSecretAsync(string name, int secretId, CancellationToken cancellationToken = default);
 
     /// <summary>Attaches an existing system-wide API scope to the resource.</summary>
-    Task<AdminMutationResult> AttachScopeAsync(string name, string scopeName, CancellationToken cancellationToken = default);
+    Task<AdminMutationResult> AttachScopeAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates a new system-wide <c>ApiScope</c> and attaches it to the resource in one step.
@@ -69,7 +70,7 @@ public interface IApiResourceEditorService
         CancellationToken cancellationToken = default);
 
     /// <summary>Detaches a scope from the resource. The system-wide ApiScope itself is not deleted.</summary>
-    Task<AdminMutationResult> DetachScopeAsync(string name, string scopeName, CancellationToken cancellationToken = default);
+    Task<AdminMutationResult> DetachScopeAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default);
 
     /// <summary>Adds a user claim type to the resource.</summary>
     Task<AdminMutationResult> AddClaimAsync(AddApiResourceClaimCommand command, CancellationToken cancellationToken = default);

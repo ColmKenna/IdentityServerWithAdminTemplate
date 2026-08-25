@@ -11,7 +11,7 @@ namespace IdentityServerProject.Services.Users;
 /// which the library already reaches directly.
 /// </summary>
 public sealed record UserAccountDetails(
-    string Id,
+    UserId Id,
     string UserName,
     string? Email,
     string? FullName,
@@ -88,39 +88,39 @@ public interface IIdentityUserAdministrationStore
         CancellationToken cancellationToken = default);
 
     Task<(UserUnlockResult Result, string TargetName)> UnlockUserAsync(
-        string userId, CancellationToken cancellationToken = default);
+        UserId userId, CancellationToken cancellationToken = default);
 
     Task<(UserCreateResult Result, string ReasonCode)> CreateUserAsync(
         UserCreateInputModel input, CancellationToken cancellationToken = default);
 
-    Task<UserAccountDetails?> FindUserDetailsAsync(string userId, CancellationToken cancellationToken = default);
+    Task<UserAccountDetails?> FindUserDetailsAsync(UserId userId, CancellationToken cancellationToken = default);
 
-    Task<RoleAdditionOutcome> AddRoleAsync(string userId, string role, CancellationToken cancellationToken = default);
+    Task<RoleAdditionOutcome> AddRoleAsync(UserId userId, string role, CancellationToken cancellationToken = default);
 
     Task<RoleRemovalOutcome> RemoveRoleAsync(
-        string userId,
+        UserId userId,
         string role,
         string protectedRoleName,
-        string? actingUserId,
+        UserId? actingUserId,
         CancellationToken cancellationToken = default);
 
     Task<ClaimMutationOutcome> AddClaimAsync(
-        string userId, string claimType, string claimValue, CancellationToken cancellationToken = default);
+        UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default);
 
     Task<ClaimMutationOutcome> RemoveClaimAsync(
-        string userId, string claimType, string claimValue, CancellationToken cancellationToken = default);
+        UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default);
 
     Task<SecurityStampRotationOutcome> RotateSecurityStampAsync(
-        string userId, string? actingUserId, CancellationToken cancellationToken = default);
+        UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default);
 
     Task<PasswordResetOutcome> ResetPasswordAsync(
-        string userId, string newPassword, CancellationToken cancellationToken = default);
+        UserId userId, string newPassword, CancellationToken cancellationToken = default);
 
     Task<(UserSuspendOutcome Status, string TargetName)> SuspendUserAsync(
-        string userId, string? actingUserId, CancellationToken cancellationToken = default);
+        UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default);
 
     Task<(UserDeleteOutcome Status, string TargetName)> DeleteUserAsync(
-        string userId, string? actingUserId, CancellationToken cancellationToken = default);
+        UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default);
 }
 
 public enum UserSuspendOutcome
