@@ -81,13 +81,50 @@ public class ClientAuthenticationModel
     public bool RequirePkce { get; set; }
     public bool RequireClientSecret { get; set; }
     public List<string> GrantTypes { get; set; } = new();
-    public List<string> RedirectUris { get; set; } = new();
-    public List<string> PostLogoutRedirectUris { get; set; } = new();
-    public List<string> AllowedCorsOrigins { get; set; } = new();
-    public string? FrontChannelLogoutUri { get; set; }
-    public bool FrontChannelLogoutSessionRequired { get; set; }
-    public string? BackChannelLogoutUri { get; set; }
-    public bool BackChannelLogoutSessionRequired { get; set; }
+    public ClientEndpoints Endpoints { get; set; } = new();
+
+    public List<string> RedirectUris
+    {
+        get => Endpoints.RedirectUris;
+        set => Endpoints = Endpoints with { RedirectUris = value };
+    }
+
+    public List<string> PostLogoutRedirectUris
+    {
+        get => Endpoints.PostLogoutRedirectUris;
+        set => Endpoints = Endpoints with { PostLogoutRedirectUris = value };
+    }
+
+    public List<string> AllowedCorsOrigins
+    {
+        get => Endpoints.AllowedCorsOrigins;
+        set => Endpoints = Endpoints with { AllowedCorsOrigins = value };
+    }
+
+    public string? FrontChannelLogoutUri
+    {
+        get => Endpoints.FrontChannelLogoutUri;
+        set => Endpoints = Endpoints with { FrontChannelLogoutUri = value };
+    }
+
+    public bool FrontChannelLogoutSessionRequired
+    {
+        get => Endpoints.FrontChannelLogoutSessionRequired;
+        set => Endpoints = Endpoints with { FrontChannelLogoutSessionRequired = value };
+    }
+
+    public string? BackChannelLogoutUri
+    {
+        get => Endpoints.BackChannelLogoutUri;
+        set => Endpoints = Endpoints with { BackChannelLogoutUri = value };
+    }
+
+    public bool BackChannelLogoutSessionRequired
+    {
+        get => Endpoints.BackChannelLogoutSessionRequired;
+        set => Endpoints = Endpoints with { BackChannelLogoutSessionRequired = value };
+    }
+
     public bool HasDrifted { get; set; }
     public string? DriftDetails { get; set; }
 }
@@ -97,13 +134,49 @@ public class ClientAuthenticationInputModel
     public bool RequirePkce { get; set; }
     public bool RequireClientSecret { get; set; }
     public List<string> GrantTypes { get; set; } = new();
-    public List<string> RedirectUris { get; set; } = new();
-    public List<string> PostLogoutRedirectUris { get; set; } = new();
-    public List<string> CorsOrigins { get; set; } = new();
-    public string? FrontChannelLogoutUri { get; set; }
-    public bool FrontChannelLogoutSessionRequired { get; set; }
-    public string? BackChannelLogoutUri { get; set; }
-    public bool BackChannelLogoutSessionRequired { get; set; }
+    public ClientEndpoints Endpoints { get; set; } = new();
+
+    public List<string> RedirectUris
+    {
+        get => Endpoints.RedirectUris;
+        set => Endpoints = Endpoints with { RedirectUris = value };
+    }
+
+    public List<string> PostLogoutRedirectUris
+    {
+        get => Endpoints.PostLogoutRedirectUris;
+        set => Endpoints = Endpoints with { PostLogoutRedirectUris = value };
+    }
+
+    public List<string> CorsOrigins
+    {
+        get => Endpoints.AllowedCorsOrigins;
+        set => Endpoints = Endpoints with { AllowedCorsOrigins = value };
+    }
+
+    public string? FrontChannelLogoutUri
+    {
+        get => Endpoints.FrontChannelLogoutUri;
+        set => Endpoints = Endpoints with { FrontChannelLogoutUri = value };
+    }
+
+    public bool FrontChannelLogoutSessionRequired
+    {
+        get => Endpoints.FrontChannelLogoutSessionRequired;
+        set => Endpoints = Endpoints with { FrontChannelLogoutSessionRequired = value };
+    }
+
+    public string? BackChannelLogoutUri
+    {
+        get => Endpoints.BackChannelLogoutUri;
+        set => Endpoints = Endpoints with { BackChannelLogoutUri = value };
+    }
+
+    public bool BackChannelLogoutSessionRequired
+    {
+        get => Endpoints.BackChannelLogoutSessionRequired;
+        set => Endpoints = Endpoints with { BackChannelLogoutSessionRequired = value };
+    }
 }
 
 public sealed record ClientAuthenticationAuditValue(
