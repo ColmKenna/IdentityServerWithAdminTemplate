@@ -22,7 +22,10 @@ public class UserCreateService : IUserCreateService
 
         try
         {
-            var (result, reasonCode) = await _store.CreateUserAsync(input, cancellationToken);
+            var outcome = await _store.CreateUserAsync(input, cancellationToken);
+            var result = outcome.Result;
+            var reasonCode = outcome.ReasonCode;
+
             if (!result.Success)
             {
                 await _auditWriter.WriteAsync(new AdminAuditEvent(

@@ -71,14 +71,14 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
         };
     }
 
-    public async Task<(UserUnlockResult Result, string TargetName)> UnlockUserAsync(
+    public async Task<UserUnlockOutcome> UnlockUserAsync(
         UserId userId, CancellationToken cancellationToken = default)
     {
         var userIdStr = userId.Value ?? string.Empty;
         var user = await _userManager.FindByIdAsync(userIdStr);
         if (user == null)
         {
-            return (UserUnlockResult.NotFound, userIdStr);
+            return new UserUnlockOutcome(UserUnlockResult.NotFound, userIdStr);
         }
 
         var targetName = user.UserName ?? user.Id;
@@ -86,19 +86,19 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
         var lockoutResult = await _userManager.SetLockoutEndDateAsync(user, null);
         if (!lockoutResult.Succeeded)
         {
-            return (UserUnlockResult.Failed(lockoutResult), targetName);
+            return new UserUnlockOutcome(UserUnlockResult.Failed(lockoutResult), targetName);
         }
 
         var resetResult = await _userManager.ResetAccessFailedCountAsync(user);
         if (!resetResult.Succeeded)
         {
-            return (UserUnlockResult.Failed(resetResult), targetName);
+            return new UserUnlockOutcome(UserUnlockResult.Failed(resetResult), targetName);
         }
 
-        return (UserUnlockResult.Succeeded, targetName);
+        return new UserUnlockOutcome(UserUnlockResult.Succeeded, targetName);
     }
 
-    public async Task<(UserCreateResult Result, string ReasonCode)> CreateUserAsync(
+    public async Task<UserCreateOutcome> CreateUserAsync(
         UserCreateInputModel input, CancellationToken cancellationToken = default)
     {
         var userName = input.UserName?.Trim() ?? string.Empty;
@@ -116,10 +116,10 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             var reasonCode = result.Errors.Any(e => e.Code.StartsWith("Duplicate", StringComparison.Ordinal))
                 ? AuditReasonCodes.NameCollision
                 : AuditReasonCodes.ValidationFailed;
-            return (UserCreateResult.Failed(result.Errors.Select(e => e.Description).ToList()), reasonCode);
+            return new UserCreateOutcome(UserCreateResult.Failed(result.Errors.Select(e => e.Description).ToList()), reasonCode);
         }
 
-        return (UserCreateResult.Succeeded(user.Id), AuditReasonCodes.Succeeded);
+        return new UserCreateOutcome(UserCreateResult.Succeeded(user.Id), AuditReasonCodes.Succeeded);
     }
 
     public async Task<UserAccountDetails?> FindUserDetailsAsync(UserId userId, CancellationToken cancellationToken = default)
@@ -134,7 +134,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
         var assignedRoles = (await _userManager.GetRolesAsync(user)).OrderBy(r => r).ToList();
         var allRoles = await _roleManager.Roles.Select(r => r.Name!).OrderBy(r => r).ToListAsync(cancellationToken);
         var claims = (await _userManager.GetClaimsAsync(user))
-            .Select(c => (c.Type, c.Value))
+            .Select(c => new UserClaim(c.Type, c.Value))
             .ToList();
 
         return new UserAccountDetails(
@@ -462,18 +462,18 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
         return outcome;
     }
 
-    public async Task<(UserSuspendOutcome Status, string TargetName)> SuspendUserAsync(
+    public async Task<UserSuspendOutcome> SuspendUserAsync(
         UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default)
     {
         var userIdStr = userId.Value ?? string.Empty;
         var actingUserIdStr = actingUserId?.Value;
-        var outcome = (Status: UserSuspendOutcome.UserNotFound, TargetName: userIdStr);
+        var outcome = new UserSuspendOutcome(UserSuspendStatus.UserNotFound, userIdStr);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             _dbContext.ChangeTracker.Clear();
-            outcome = (UserSuspendOutcome.UserNotFound, userIdStr);
+            outcome = new UserSuspendOutcome(UserSuspendStatus.UserNotFound, userIdStr);
 
             var user = await _userManager.FindByIdAsync(userIdStr);
             if (user == null)
@@ -485,7 +485,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
 
             if (!string.IsNullOrWhiteSpace(actingUserIdStr) && string.Equals(actingUserIdStr, user.Id, StringComparison.Ordinal))
             {
-                outcome = (UserSuspendOutcome.SelfActionBlocked, targetName);
+                outcome = new UserSuspendOutcome(UserSuspendStatus.SelfActionBlocked, targetName);
                 return;
             }
 
@@ -495,31 +495,31 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             if (!result.Succeeded)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                outcome = (UserSuspendOutcome.ValidationFailed, targetName);
+                outcome = new UserSuspendOutcome(UserSuspendStatus.ValidationFailed, targetName);
                 return;
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
-            outcome = (UserSuspendOutcome.Succeeded, targetName);
+            outcome = new UserSuspendOutcome(UserSuspendStatus.Succeeded, targetName);
         });
 
         return outcome;
     }
 
-    public async Task<(UserDeleteOutcome Status, string TargetName)> DeleteUserAsync(
+    public async Task<UserDeleteOutcome> DeleteUserAsync(
         UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default)
     {
         var userIdStr = userId.Value ?? string.Empty;
         var actingUserIdStr = actingUserId?.Value;
-        var outcome = (Status: UserDeleteOutcome.UserNotFound, TargetName: userIdStr);
+        var outcome = new UserDeleteOutcome(UserDeleteStatus.UserNotFound, userIdStr);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             _dbContext.ChangeTracker.Clear();
-            outcome = (UserDeleteOutcome.UserNotFound, userIdStr);
+            outcome = new UserDeleteOutcome(UserDeleteStatus.UserNotFound, userIdStr);
 
             var user = await _userManager.FindByIdAsync(userIdStr);
             if (user == null)
@@ -531,7 +531,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
 
             if (!string.IsNullOrWhiteSpace(actingUserIdStr) && string.Equals(actingUserIdStr, user.Id, StringComparison.Ordinal))
             {
-                outcome = (UserDeleteOutcome.SelfActionBlocked, targetName);
+                outcome = new UserDeleteOutcome(UserDeleteStatus.SelfActionBlocked, targetName);
                 return;
             }
 
@@ -541,7 +541,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             if (!result.Succeeded)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                outcome = (UserDeleteOutcome.ValidationFailed, targetName);
+                outcome = new UserDeleteOutcome(UserDeleteStatus.ValidationFailed, targetName);
                 return;
             }
 
@@ -550,7 +550,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
-            outcome = (UserDeleteOutcome.Succeeded, targetName);
+            outcome = new UserDeleteOutcome(UserDeleteStatus.Succeeded, targetName);
         });
 
         return outcome;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using IdentityServerProject.Services.AuditLogs;
 
 namespace IdentityServerProject.Services.Users;
 
@@ -19,7 +20,7 @@ public sealed record UserAccountDetails(
     DateTimeOffset? LockoutEnd,
     IReadOnlyList<string> AssignedRoles,
     IReadOnlyList<string> AllRoles,
-    IReadOnlyList<(string Type, string Value)> Claims);
+    IReadOnlyList<UserClaim> Claims);
 
 public enum RoleAdditionStatus
 {
@@ -73,6 +74,30 @@ public enum PasswordResetStatus
 
 public sealed record PasswordResetOutcome(PasswordResetStatus Status, string TargetName, string? ErrorMessage);
 
+public sealed record UserUnlockOutcome(UserUnlockResult Result, string TargetName);
+
+public sealed record UserCreateOutcome(UserCreateResult Result, AuditReasonCode ReasonCode);
+
+public enum UserSuspendStatus
+{
+    Succeeded,
+    UserNotFound,
+    SelfActionBlocked,
+    ValidationFailed
+}
+
+public sealed record UserSuspendOutcome(UserSuspendStatus Status, string TargetName, string? ErrorMessage = null);
+
+public enum UserDeleteStatus
+{
+    Succeeded,
+    UserNotFound,
+    SelfActionBlocked,
+    ValidationFailed
+}
+
+public sealed record UserDeleteOutcome(UserDeleteStatus Status, string TargetName, string? ErrorMessage = null);
+
 /// <summary>
 /// Host-owned persistence for Identity user administration: listing, unlock, creation, role and
 /// claim mutation (including the protected-admin invariants — self-demotion and last-administrator
@@ -87,10 +112,10 @@ public interface IIdentityUserAdministrationStore
         Pagination pagination = default,
         CancellationToken cancellationToken = default);
 
-    Task<(UserUnlockResult Result, string TargetName)> UnlockUserAsync(
+    Task<UserUnlockOutcome> UnlockUserAsync(
         UserId userId, CancellationToken cancellationToken = default);
 
-    Task<(UserCreateResult Result, string ReasonCode)> CreateUserAsync(
+    Task<UserCreateOutcome> CreateUserAsync(
         UserCreateInputModel input, CancellationToken cancellationToken = default);
 
     Task<UserAccountDetails?> FindUserDetailsAsync(UserId userId, CancellationToken cancellationToken = default);
@@ -116,25 +141,9 @@ public interface IIdentityUserAdministrationStore
     Task<PasswordResetOutcome> ResetPasswordAsync(
         UserId userId, string newPassword, CancellationToken cancellationToken = default);
 
-    Task<(UserSuspendOutcome Status, string TargetName)> SuspendUserAsync(
+    Task<UserSuspendOutcome> SuspendUserAsync(
         UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default);
 
-    Task<(UserDeleteOutcome Status, string TargetName)> DeleteUserAsync(
+    Task<UserDeleteOutcome> DeleteUserAsync(
         UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default);
-}
-
-public enum UserSuspendOutcome
-{
-    Succeeded,
-    UserNotFound,
-    SelfActionBlocked,
-    ValidationFailed
-}
-
-public enum UserDeleteOutcome
-{
-    Succeeded,
-    UserNotFound,
-    SelfActionBlocked,
-    ValidationFailed
 }

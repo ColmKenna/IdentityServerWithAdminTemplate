@@ -54,11 +54,11 @@ public class EfIdentityUserAdministrationStoreTests : IClassFixture<AdminWebFact
                 userManager.Object,
                 sp.GetRequiredService<RoleManager<IdentityRole>>());
 
-            var (result, targetName) = await store.UnlockUserAsync(user.Id);
+            var outcome = await store.UnlockUserAsync(user.Id);
 
-            Assert.Equal(UserUnlockStatus.Failed, result.Status);
-            Assert.Equal("Lockout state update failed.", Assert.Single(result.Errors));
-            Assert.Equal(user.UserName, targetName);
+            Assert.Equal(UserUnlockStatus.Failed, outcome.Result.Status);
+            Assert.Equal("Lockout state update failed.", Assert.Single(outcome.Result.Errors));
+            Assert.Equal(user.UserName, outcome.TargetName);
             userManager.Verify(manager => manager.ResetAccessFailedCountAsync(It.IsAny<ApplicationUser>()), Times.Never);
         });
     }
@@ -83,10 +83,10 @@ public class EfIdentityUserAdministrationStoreTests : IClassFixture<AdminWebFact
                 userManager.Object,
                 sp.GetRequiredService<RoleManager<IdentityRole>>());
 
-            var (result, _) = await store.UnlockUserAsync(user.Id);
+            var outcome = await store.UnlockUserAsync(user.Id);
 
-            Assert.Equal(UserUnlockStatus.Failed, result.Status);
-            Assert.Equal("Access-failure reset failed.", Assert.Single(result.Errors));
+            Assert.Equal(UserUnlockStatus.Failed, outcome.Result.Status);
+            Assert.Equal("Access-failure reset failed.", Assert.Single(outcome.Result.Errors));
         });
     }
 
@@ -103,10 +103,10 @@ public class EfIdentityUserAdministrationStoreTests : IClassFixture<AdminWebFact
                 userManager.Object,
                 sp.GetRequiredService<RoleManager<IdentityRole>>());
 
-            var (result, targetName) = await store.UnlockUserAsync("missing-user");
+            var outcome = await store.UnlockUserAsync("missing-user");
 
-            Assert.Equal(UserUnlockStatus.NotFound, result.Status);
-            Assert.Equal("missing-user", targetName);
+            Assert.Equal(UserUnlockStatus.NotFound, outcome.Result.Status);
+            Assert.Equal("missing-user", outcome.TargetName);
         });
     }
 

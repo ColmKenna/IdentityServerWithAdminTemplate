@@ -469,17 +469,17 @@ public partial class UserDetailsService : IUserDetailsService
         var outcome = await _store.SuspendUserAsync(userId, currentUserId, cancellationToken);
         switch (outcome.Status)
         {
-            case UserSuspendOutcome.UserNotFound:
+            case UserSuspendStatus.UserNotFound:
                 await AuditDeniedAsync(AuditActions.SuspendUser, AuditReasonCodes.NotFound, userId, outcome.TargetName,
                     "User not found.", cancellationToken);
                 return UserSuspendResult.Failed("User not found.");
 
-            case UserSuspendOutcome.SelfActionBlocked:
+            case UserSuspendStatus.SelfActionBlocked:
                 await AuditDeniedAsync(AuditActions.SuspendUser, AuditReasonCodes.SelfAction, userId, outcome.TargetName,
                     "Cannot suspend your own account.", cancellationToken);
                 return UserSuspendResult.Failed("You cannot suspend your own account.");
 
-            case UserSuspendOutcome.ValidationFailed:
+            case UserSuspendStatus.ValidationFailed:
                 await AuditDeniedAsync(AuditActions.SuspendUser, AuditReasonCodes.ValidationFailed, userId, outcome.TargetName,
                     "Failed to suspend user.", cancellationToken);
                 return UserSuspendResult.Failed("Failed to suspend user.");
@@ -497,7 +497,9 @@ public partial class UserDetailsService : IUserDetailsService
     {
         try
         {
-            var (result, targetName) = await _store.UnlockUserAsync(userId, cancellationToken);
+            var outcome = await _store.UnlockUserAsync(userId, cancellationToken);
+            var result = outcome.Result;
+            var targetName = outcome.TargetName;
 
             switch (result.Status)
             {
@@ -544,17 +546,17 @@ public partial class UserDetailsService : IUserDetailsService
         var outcome = await _store.DeleteUserAsync(userId, currentUserId, cancellationToken);
         switch (outcome.Status)
         {
-            case UserDeleteOutcome.UserNotFound:
+            case UserDeleteStatus.UserNotFound:
                 await AuditDeniedAsync(AuditActions.DeleteUser, AuditReasonCodes.NotFound, userId, outcome.TargetName,
                     "User not found.", cancellationToken);
                 return UserDeleteResult.Failed("User not found.");
 
-            case UserDeleteOutcome.SelfActionBlocked:
+            case UserDeleteStatus.SelfActionBlocked:
                 await AuditDeniedAsync(AuditActions.DeleteUser, AuditReasonCodes.SelfAction, userId, outcome.TargetName,
                     "Cannot delete your own account.", cancellationToken);
                 return UserDeleteResult.Failed("You cannot delete your own account.");
 
-            case UserDeleteOutcome.ValidationFailed:
+            case UserDeleteStatus.ValidationFailed:
                 await AuditDeniedAsync(AuditActions.DeleteUser, AuditReasonCodes.ValidationFailed, userId, outcome.TargetName,
                     "Failed to delete user.", cancellationToken);
                 return UserDeleteResult.Failed("Failed to delete user.");
