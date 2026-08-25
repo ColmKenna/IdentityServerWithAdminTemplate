@@ -100,7 +100,7 @@ public class CloneModel : PageModel
 
     private async Task<ClientDetailsModel?> LoadSourceClientAsync(CancellationToken cancellationToken)
     {
-        var sourceClient = await _clientDetailsService.GetClientDetailsAsync(SourceClientId, cancellationToken);
+        var sourceClient = await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(SourceClientId), cancellationToken);
         if (sourceClient != null)
         {
             SourceClientName = sourceClient.ClientName ?? SourceClientId;

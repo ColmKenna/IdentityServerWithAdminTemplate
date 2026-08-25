@@ -69,12 +69,12 @@ public class ClientsDetailsIntegrationTests : IDisposable
         ClientDeleteResult? deleteResult = null)
     {
         var mock = new Mock<IClientDetailsService>();
-        mock.Setup(s => s.GetClientDetailsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, CancellationToken _) => id == "non-existent" ? null : (details ?? SampleClientDetails(id)));
-        mock.Setup(s => s.ToggleClientStatusAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientDetailsAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, CancellationToken _) => id.Value == "non-existent" ? null : (details ?? SampleClientDetails(id.Value)));
+        mock.Setup(s => s.ToggleClientStatusAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(toggleSuccess);
-        mock.Setup(s => s.DeleteClientAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, CancellationToken _) => id == "non-existent"
+        mock.Setup(s => s.DeleteClientAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, CancellationToken _) => id.Value == "non-existent"
                 ? ClientDeleteResult.Failed("Client not found.")
                 : (deleteResult ?? ClientDeleteResult.Failed("Client must be disabled before it can be deleted.")));
         return mock.Object;

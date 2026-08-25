@@ -65,7 +65,7 @@ public class TokenSettingsModel : PageModel
             return NotFound();
         }
 
-        var settings = await _clientDetailsService.GetClientTokenSettingsAsync(Id, cancellationToken);
+        var settings = await _clientDetailsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
         if (settings == null)
         {
             return NotFound();
@@ -107,7 +107,7 @@ public class TokenSettingsModel : PageModel
             }
         };
 
-        var result = await _clientDetailsService.UpdateClientTokenSettingsAsync(Id, input, cancellationToken);
+        var result = await _clientDetailsService.UpdateClientTokenSettingsAsync(ClientId.Create(Id), input, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
         {
             return NotFound();
@@ -141,7 +141,7 @@ public class TokenSettingsModel : PageModel
 
     private async Task<IActionResult> ReloadPageAsync(CancellationToken cancellationToken)
     {
-        var settings = await _clientDetailsService.GetClientTokenSettingsAsync(Id, cancellationToken);
+        var settings = await _clientDetailsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
         if (settings == null)
         {
             return NotFound();

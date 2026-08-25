@@ -67,9 +67,9 @@ public class ClientsPermissionsIntegrationTests : IDisposable
         var mock = new Mock<IClientDetailsService>();
         mock.Setup(s => s.GetClientPermissionsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string id, CancellationToken _) => id == "non-existent" ? null : (details ?? SampleInteractivePermissions(id)));
-        mock.Setup(s => s.UpdateClientPermissionsAsync(It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, List<string> _, CancellationToken _) =>
-                id == "non-existent"
+        mock.Setup(s => s.UpdateClientPermissionsAsync(It.IsAny<ClientId>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, List<string> _, CancellationToken _) =>
+                id.Value == "non-existent"
                     ? AdminMutationResult.NotFoundResult()
                     : updateSuccess
                         ? AdminMutationResult.Success()

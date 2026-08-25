@@ -58,7 +58,7 @@ public class PermissionsModel : PageModel
             return NotFound();
         }
 
-        var result = await _clientDetailsService.UpdateClientPermissionsAsync(Id, Input.AllowedScopes, cancellationToken);
+        var result = await _clientDetailsService.UpdateClientPermissionsAsync(ClientId.Create(Id), Input.AllowedScopes, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
         {
             return NotFound();

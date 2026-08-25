@@ -50,9 +50,9 @@ public partial class ClientDetailsService : IClientDetailsService
 
     #region Overview and lifecycle
 
-    public async Task<ClientDetailsModel?> GetClientDetailsAsync(string clientId, CancellationToken cancellationToken = default)
+    public async Task<ClientDetailsModel?> GetClientDetailsAsync(ClientId clientId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(clientId))
+        if (clientId.IsEmpty)
         {
             return null;
         }
@@ -66,7 +66,7 @@ public partial class ClientDetailsService : IClientDetailsService
             .Include(c => c.ClientSecrets)
             .Include(c => c.AllowedScopes)
             .Include(c => c.Properties)
-            .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
+            .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
         if (client == null)
         {
@@ -100,12 +100,12 @@ public partial class ClientDetailsService : IClientDetailsService
         };
     }
 
-    public Task<bool> ToggleClientStatusAsync(string clientId, CancellationToken cancellationToken = default) =>
+    public Task<bool> ToggleClientStatusAsync(ClientId clientId, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.SetEnabled,
-            clientId ?? string.Empty,
-            clientId ?? string.Empty,
-            () => ToggleClientStatusCoreAsync(clientId ?? string.Empty, cancellationToken),
+            clientId.Value,
+            clientId.Value,
+            () => ToggleClientStatusCoreAsync(clientId.Value, cancellationToken),
             cancellationToken);
 
     private async Task<bool> ToggleClientStatusCoreAsync(string clientId, CancellationToken cancellationToken = default)
@@ -185,12 +185,12 @@ public partial class ClientDetailsService : IClientDetailsService
         }
     }
 
-    public Task<ClientDeleteResult> DeleteClientAsync(string clientId, CancellationToken cancellationToken = default) =>
+    public Task<ClientDeleteResult> DeleteClientAsync(ClientId clientId, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.Delete,
-            clientId ?? string.Empty,
-            clientId ?? string.Empty,
-            () => DeleteClientCoreAsync(clientId ?? string.Empty, cancellationToken),
+            clientId.Value,
+            clientId.Value,
+            () => DeleteClientCoreAsync(clientId.Value, cancellationToken),
             cancellationToken);
 
     private async Task<ClientDeleteResult> DeleteClientCoreAsync(string clientId, CancellationToken cancellationToken = default)
@@ -266,12 +266,12 @@ public partial class ClientDetailsService : IClientDetailsService
         }
     }
 
-    public Task<AdminMutationResult> UpdateClientBasicsAsync(string clientId, string clientName, string? description, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> UpdateClientBasicsAsync(ClientId clientId, string clientName, string? description, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.UpdateBasics,
-            clientId ?? string.Empty,
-            clientName ?? clientId ?? string.Empty,
-            () => UpdateClientBasicsCoreAsync(clientId ?? string.Empty, clientName ?? string.Empty, description, cancellationToken),
+            clientId.Value,
+            clientName ?? clientId.Value,
+            () => UpdateClientBasicsCoreAsync(clientId.Value, clientName ?? string.Empty, description, cancellationToken),
             cancellationToken);
 
     private async Task<AdminMutationResult> UpdateClientBasicsCoreAsync(string clientId, string clientName, string? description, CancellationToken cancellationToken = default)
@@ -351,9 +351,9 @@ public partial class ClientDetailsService : IClientDetailsService
 
     #region Authentication
 
-    public async Task<ClientAuthenticationModel?> GetClientAuthenticationAsync(string clientId, CancellationToken cancellationToken = default)
+    public async Task<ClientAuthenticationModel?> GetClientAuthenticationAsync(ClientId clientId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(clientId))
+        if (clientId.IsEmpty)
         {
             return null;
         }
@@ -366,7 +366,7 @@ public partial class ClientDetailsService : IClientDetailsService
             .Include(c => c.PostLogoutRedirectUris)
             .Include(c => c.AllowedCorsOrigins)
             .Include(c => c.Properties)
-            .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
+            .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
         if (client == null)
         {
@@ -395,12 +395,12 @@ public partial class ClientDetailsService : IClientDetailsService
         };
     }
 
-    public Task<AdminMutationResult> UpdateClientAuthenticationAsync(string clientId, ClientAuthenticationInputModel input, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> UpdateClientAuthenticationAsync(ClientId clientId, ClientAuthenticationInputModel input, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.UpdateAuthentication,
-            clientId ?? string.Empty,
-            clientId ?? string.Empty,
-            () => UpdateClientAuthenticationCoreAsync(clientId ?? string.Empty, input, cancellationToken),
+            clientId.Value,
+            clientId.Value,
+            () => UpdateClientAuthenticationCoreAsync(clientId.Value, input, cancellationToken),
             cancellationToken);
 
     private async Task<AdminMutationResult> UpdateClientAuthenticationCoreAsync(string clientId, ClientAuthenticationInputModel input, CancellationToken cancellationToken = default)
@@ -612,12 +612,12 @@ public partial class ClientDetailsService : IClientDetailsService
         };
     }
 
-    public Task<AdminMutationResult> UpdateClientPermissionsAsync(string clientId, List<string> allowedScopes, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> UpdateClientPermissionsAsync(ClientId clientId, List<string> allowedScopes, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.UpdatePermissions,
-            clientId ?? string.Empty,
-            clientId ?? string.Empty,
-            () => UpdateClientPermissionsCoreAsync(clientId ?? string.Empty, allowedScopes ?? new List<string>(), cancellationToken),
+            clientId.Value,
+            clientId.Value,
+            () => UpdateClientPermissionsCoreAsync(clientId.Value, allowedScopes ?? new List<string>(), cancellationToken),
             cancellationToken);
 
     private async Task<AdminMutationResult> UpdateClientPermissionsCoreAsync(string clientId, List<string> allowedScopes, CancellationToken cancellationToken = default)
@@ -738,9 +738,9 @@ public partial class ClientDetailsService : IClientDetailsService
 
     #region Secrets
 
-    public async Task<ClientSecretsModel?> GetClientSecretsAsync(string clientId, CancellationToken cancellationToken = default)
+    public async Task<ClientSecretsModel?> GetClientSecretsAsync(ClientId clientId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(clientId))
+        if (clientId.IsEmpty)
         {
             return null;
         }
@@ -748,7 +748,7 @@ public partial class ClientDetailsService : IClientDetailsService
         var client = await _configurationDbContext.Clients
             .AsNoTracking()
             .Include(c => c.ClientSecrets)
-            .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
+            .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
         if (client == null)
         {
@@ -774,14 +774,14 @@ public partial class ClientDetailsService : IClientDetailsService
     }
 
     public Task<ClientSecretGenerateResult> GenerateClientSecretAsync(CreateSecretCommand command, CancellationToken cancellationToken = default) =>
-        GenerateClientSecretAsync(command.TargetId, command.Description, command.ExpirationUtc, cancellationToken);
+        GenerateClientSecretAsync(ClientId.Create(command.TargetId), command.Description, command.ExpirationUtc, cancellationToken);
 
-    public Task<ClientSecretGenerateResult> GenerateClientSecretAsync(string clientId, string? description, DateTime? expiration = null, CancellationToken cancellationToken = default) =>
+    public Task<ClientSecretGenerateResult> GenerateClientSecretAsync(ClientId clientId, string? description, DateTime? expiration = null, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.GenerateSecret,
-            clientId ?? string.Empty,
-            clientId ?? string.Empty,
-            () => GenerateClientSecretCoreAsync(clientId ?? string.Empty, description, expiration, cancellationToken),
+            clientId.Value,
+            clientId.Value,
+            () => GenerateClientSecretCoreAsync(clientId.Value, description, expiration, cancellationToken),
             cancellationToken);
 
     private async Task<ClientSecretGenerateResult> GenerateClientSecretCoreAsync(string clientId, string? description, DateTime? expiration = null, CancellationToken cancellationToken = default)
@@ -853,12 +853,12 @@ public partial class ClientDetailsService : IClientDetailsService
         }
     }
 
-    public Task<ClientSecretRevokeResult> RevokeClientSecretAsync(string clientId, int secretId, CancellationToken cancellationToken = default) =>
+    public Task<ClientSecretRevokeResult> RevokeClientSecretAsync(ClientId clientId, int secretId, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.RevokeSecret,
-            clientId ?? string.Empty,
-            clientId ?? string.Empty,
-            () => RevokeClientSecretCoreAsync(clientId ?? string.Empty, secretId, cancellationToken),
+            clientId.Value,
+            clientId.Value,
+            () => RevokeClientSecretCoreAsync(clientId.Value, secretId, cancellationToken),
             cancellationToken);
 
     private async Task<ClientSecretRevokeResult> RevokeClientSecretCoreAsync(string clientId, int secretId, CancellationToken cancellationToken = default)
@@ -947,16 +947,16 @@ public partial class ClientDetailsService : IClientDetailsService
 
     #region Token settings
 
-    public async Task<ClientTokenSettingsModel?> GetClientTokenSettingsAsync(string clientId, CancellationToken cancellationToken = default)
+    public async Task<ClientTokenSettingsModel?> GetClientTokenSettingsAsync(ClientId clientId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(clientId))
+        if (clientId.IsEmpty)
         {
             return null;
         }
 
         var client = await _configurationDbContext.Clients
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
+            .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
         if (client == null)
         {
@@ -981,12 +981,12 @@ public partial class ClientDetailsService : IClientDetailsService
         };
     }
 
-    public Task<AdminMutationResult> UpdateClientTokenSettingsAsync(string clientId, ClientTokenSettingsInputModel input, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> UpdateClientTokenSettingsAsync(ClientId clientId, ClientTokenSettingsInputModel input, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.UpdateTokenSettings,
-            clientId ?? string.Empty,
-            clientId ?? string.Empty,
-            () => UpdateClientTokenSettingsCoreAsync(clientId ?? string.Empty, input, cancellationToken),
+            clientId.Value,
+            clientId.Value,
+            () => UpdateClientTokenSettingsCoreAsync(clientId.Value, input, cancellationToken),
             cancellationToken);
 
     private async Task<AdminMutationResult> UpdateClientTokenSettingsCoreAsync(string clientId, ClientTokenSettingsInputModel input, CancellationToken cancellationToken = default)

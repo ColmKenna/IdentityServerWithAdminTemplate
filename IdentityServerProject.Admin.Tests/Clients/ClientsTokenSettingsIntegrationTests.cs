@@ -56,11 +56,11 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
     private static IClientDetailsService MockService(ClientTokenSettingsModel? details = null, bool updateSuccess = true)
     {
         var mock = new Mock<IClientDetailsService>();
-        mock.Setup(s => s.GetClientTokenSettingsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, CancellationToken _) => id == "non-existent" ? null : (details ?? SampleSettings(id)));
-        mock.Setup(s => s.UpdateClientTokenSettingsAsync(It.IsAny<string>(), It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, ClientTokenSettingsInputModel _, CancellationToken _) =>
-                id == "non-existent"
+        mock.Setup(s => s.GetClientTokenSettingsAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, CancellationToken _) => id.Value == "non-existent" ? null : (details ?? SampleSettings(id.Value)));
+        mock.Setup(s => s.UpdateClientTokenSettingsAsync(It.IsAny<ClientId>(), It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, ClientTokenSettingsInputModel _, CancellationToken _) =>
+                id.Value == "non-existent"
                     ? AdminMutationResult.NotFoundResult()
                     : updateSuccess
                         ? AdminMutationResult.Success()
@@ -211,7 +211,7 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         var summary = document.QuerySelector(".validation-summary");
         Assert.NotNull(summary);
 
-        mock.Verify(s => s.UpdateClientTokenSettingsAsync(It.IsAny<string>(), It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()), Times.Never);
+        mock.Verify(s => s.UpdateClientTokenSettingsAsync(It.IsAny<ClientId>(), It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -244,7 +244,7 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         var summary = document.QuerySelector(".validation-summary");
         Assert.NotNull(summary);
 
-        mock.Verify(s => s.UpdateClientTokenSettingsAsync(It.IsAny<string>(), It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()), Times.Never);
+        mock.Verify(s => s.UpdateClientTokenSettingsAsync(It.IsAny<ClientId>(), It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

@@ -66,7 +66,7 @@ public class AuthenticationModel : PageModel
             return NotFound();
         }
 
-        var authentication = await _clientDetailsService.GetClientAuthenticationAsync(Id, cancellationToken);
+        var authentication = await _clientDetailsService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
         if (authentication == null)
         {
             return NotFound();
@@ -113,7 +113,7 @@ public class AuthenticationModel : PageModel
             BackChannelLogoutSessionRequired = Input.BackChannelLogoutSessionRequired
         };
 
-        var result = await _clientDetailsService.UpdateClientAuthenticationAsync(Id, input, cancellationToken);
+        var result = await _clientDetailsService.UpdateClientAuthenticationAsync(ClientId.Create(Id), input, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
         {
             return NotFound();
@@ -201,7 +201,7 @@ public class AuthenticationModel : PageModel
 
     private async Task<IActionResult> ReloadPageAsync(CancellationToken cancellationToken)
     {
-        var authentication = await _clientDetailsService.GetClientAuthenticationAsync(Id, cancellationToken);
+        var authentication = await _clientDetailsService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
         if (authentication == null)
         {
             return NotFound();

@@ -30,7 +30,7 @@ public class DetailsModel : PageModel
             return NotFound();
         }
 
-        var client = await _clientDetailsService.GetClientDetailsAsync(id, cancellationToken);
+        var client = await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(id), cancellationToken);
         if (client == null)
         {
             return NotFound();
@@ -47,7 +47,7 @@ public class DetailsModel : PageModel
             return NotFound();
         }
 
-        var success = await _clientDetailsService.ToggleClientStatusAsync(id, cancellationToken);
+        var success = await _clientDetailsService.ToggleClientStatusAsync(ClientId.Create(id), cancellationToken);
         if (!success)
         {
             return NotFound();
@@ -69,7 +69,7 @@ public class DetailsModel : PageModel
             return RedirectToPage(new { id });
         }
 
-        var result = await _clientDetailsService.DeleteClientAsync(id, cancellationToken);
+        var result = await _clientDetailsService.DeleteClientAsync(ClientId.Create(id), cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage == "Client not found.")

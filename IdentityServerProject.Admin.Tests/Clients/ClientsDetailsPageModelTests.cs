@@ -112,7 +112,7 @@ public class ClientsDetailsPageModelTests
 
         Assert.IsType<NotFoundResult>(result);
         mockService.Verify(
-            s => s.DeleteClientAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            s => s.DeleteClientAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -186,8 +186,7 @@ public class ClientsDetailsPageModelTests
         Assert.Equal("coop.market.razor", redirect.RouteValues?["id"]);
         Assert.Equal("Type DELETE exactly to confirm permanent deletion.", pageModel.DeleteBlockedMessage);
         mockService.Verify(
-            s => s.DeleteClientAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            s => s.DeleteClientAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }
-

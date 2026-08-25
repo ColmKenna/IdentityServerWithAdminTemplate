@@ -44,7 +44,7 @@ public class BasicsModel : PageModel
             return NotFound();
         }
 
-        var client = await _clientDetailsService.GetClientDetailsAsync(Id, cancellationToken);
+        var client = await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
         if (client == null)
         {
             return NotFound();
@@ -66,7 +66,7 @@ public class BasicsModel : PageModel
 
         if (!ModelState.IsValid)
         {
-            var client = await _clientDetailsService.GetClientDetailsAsync(Id, cancellationToken);
+            var client = await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
             if (client == null)
             {
                 return NotFound();
@@ -75,7 +75,7 @@ public class BasicsModel : PageModel
             return Page();
         }
 
-        var result = await _clientDetailsService.UpdateClientBasicsAsync(Id, Input.ClientName, Input.Description, cancellationToken);
+        var result = await _clientDetailsService.UpdateClientBasicsAsync(ClientId.Create(Id), Input.ClientName, Input.Description, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
         {
             return NotFound();

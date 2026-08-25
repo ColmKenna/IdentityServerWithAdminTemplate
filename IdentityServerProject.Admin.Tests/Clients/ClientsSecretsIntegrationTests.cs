@@ -58,14 +58,14 @@ public class ClientsSecretsIntegrationTests : IDisposable
         ClientSecretRevokeResult? revokeResult = null)
     {
         var mock = new Mock<IClientDetailsService>();
-        mock.Setup(s => s.GetClientSecretsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, CancellationToken _) => id == "non-existent" ? null : (details ?? SampleSecrets(id)));
-        mock.Setup(s => s.GenerateClientSecretAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, string? _, DateTime? _, CancellationToken _) => id == "non-existent"
+        mock.Setup(s => s.GetClientSecretsAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, CancellationToken _) => id.Value == "non-existent" ? null : (details ?? SampleSecrets(id.Value)));
+        mock.Setup(s => s.GenerateClientSecretAsync(It.IsAny<ClientId>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, string? _, DateTime? _, CancellationToken _) => id.Value == "non-existent"
                 ? ClientSecretGenerateResult.Failed("Client not found.")
                 : (generateResult ?? ClientSecretGenerateResult.Succeeded("plaintext-secret-value")));
-        mock.Setup(s => s.RevokeClientSecretAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, int _, CancellationToken _) => id == "non-existent"
+        mock.Setup(s => s.RevokeClientSecretAsync(It.IsAny<ClientId>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, int _, CancellationToken _) => id.Value == "non-existent"
                 ? ClientSecretRevokeResult.Failed("Client not found.")
                 : (revokeResult ?? ClientSecretRevokeResult.Succeeded()));
         return mock.Object;
@@ -256,7 +256,7 @@ public class ClientsSecretsIntegrationTests : IDisposable
         Assert.NotNull(error);
         Assert.Contains(ValidationConstants.MaxClientSecretDescriptionLength.ToString(), error!.TextContent);
         mock.Verify(
-            s => s.GenerateClientSecretAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()),
+            s => s.GenerateClientSecretAsync(It.IsAny<ClientId>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 

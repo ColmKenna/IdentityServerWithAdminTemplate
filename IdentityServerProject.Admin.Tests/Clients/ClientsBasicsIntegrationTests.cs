@@ -65,9 +65,9 @@ public class ClientsBasicsIntegrationTests : IDisposable
     private static IClientDetailsService MockService(ClientDetailsModel? details = null, bool updateSuccess = true)
     {
         var mock = new Mock<IClientDetailsService>();
-        mock.Setup(s => s.GetClientDetailsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, CancellationToken _) => id == "non-existent" ? null : (details ?? SampleClientDetails(id)));
-        mock.Setup(s => s.UpdateClientBasicsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientDetailsAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, CancellationToken _) => id.Value == "non-existent" ? null : (details ?? SampleClientDetails(id.Value)));
+        mock.Setup(s => s.UpdateClientBasicsAsync(It.IsAny<ClientId>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(updateSuccess
                 ? AdminMutationResult.Success()
                 : AdminMutationResult.ValidationFailure("Input.ClientName", "Update failed."));

@@ -58,11 +58,11 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
     private static IClientDetailsService MockService(ClientAuthenticationModel? details = null, bool updateSuccess = true)
     {
         var mock = new Mock<IClientDetailsService>();
-        mock.Setup(s => s.GetClientAuthenticationAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, CancellationToken _) => id == "non-existent" ? null : (details ?? SampleAuthentication(id)));
-        mock.Setup(s => s.UpdateClientAuthenticationAsync(It.IsAny<string>(), It.IsAny<ClientAuthenticationInputModel>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, ClientAuthenticationInputModel _, CancellationToken _) =>
-                id == "non-existent"
+        mock.Setup(s => s.GetClientAuthenticationAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, CancellationToken _) => id.Value == "non-existent" ? null : (details ?? SampleAuthentication(id.Value)));
+        mock.Setup(s => s.UpdateClientAuthenticationAsync(It.IsAny<ClientId>(), It.IsAny<ClientAuthenticationInputModel>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, ClientAuthenticationInputModel _, CancellationToken _) =>
+                id.Value == "non-existent"
                     ? AdminMutationResult.NotFoundResult()
                     : updateSuccess
                         ? AdminMutationResult.Success()
@@ -351,7 +351,7 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
         Assert.Equal("Redirect & CORS URIs", activeTab?.GetAttribute("label"));
         mock.Verify(
             service => service.UpdateClientAuthenticationAsync(
-                It.IsAny<string>(), It.IsAny<ClientAuthenticationInputModel>(), It.IsAny<CancellationToken>()),
+                It.IsAny<ClientId>(), It.IsAny<ClientAuthenticationInputModel>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 

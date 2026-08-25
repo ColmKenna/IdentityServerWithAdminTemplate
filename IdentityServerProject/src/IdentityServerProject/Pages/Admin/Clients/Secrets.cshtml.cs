@@ -63,7 +63,7 @@ public class SecretsModel : PageModel
             }
         }
 
-        var secrets = await _clientDetailsService.GetClientSecretsAsync(Id, cancellationToken);
+        var secrets = await _clientDetailsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
         if (secrets == null)
         {
             return NotFound();
@@ -85,7 +85,7 @@ public class SecretsModel : PageModel
             return await LoadPageAsync(cancellationToken);
         }
 
-        var result = await _clientDetailsService.GenerateClientSecretAsync(Id, Description, Expiration, cancellationToken);
+        var result = await _clientDetailsService.GenerateClientSecretAsync(ClientId.Create(Id), Description, Expiration, cancellationToken);
         if (!result.Success)
         {
             if (result.Status == AdminMutationStatus.NotFound)
@@ -119,7 +119,7 @@ public class SecretsModel : PageModel
 
     private async Task<IActionResult> LoadPageAsync(CancellationToken cancellationToken)
     {
-        var secrets = await _clientDetailsService.GetClientSecretsAsync(Id, cancellationToken);
+        var secrets = await _clientDetailsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
         if (secrets == null)
         {
             return NotFound();
@@ -136,7 +136,7 @@ public class SecretsModel : PageModel
             return NotFound();
         }
 
-        var result = await _clientDetailsService.RevokeClientSecretAsync(Id, secretId, cancellationToken);
+        var result = await _clientDetailsService.RevokeClientSecretAsync(ClientId.Create(Id), secretId, cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage is "Client not found." or "Secret not found.")
