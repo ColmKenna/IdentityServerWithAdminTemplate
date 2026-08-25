@@ -30,10 +30,10 @@ public sealed class EfAdminAuditStore : IAdminAuditStore
             ActorSubjectId = record.ActorSubjectId,
             ActorName = record.ActorName,
             IpAddress = record.IpAddress,
-            Category = record.Category,
-            Action = record.Action,
+            Category = record.Category.Value,
+            Action = record.Action.Value,
             Outcome = record.Outcome,
-            ReasonCode = record.ReasonCode,
+            ReasonCode = record.ReasonCode.Value,
             IsSuccess = record.IsSuccess,
             TargetId = record.TargetId,
             TargetName = record.TargetName,
@@ -90,15 +90,15 @@ public sealed class EfAdminAuditStore : IAdminAuditStore
             query = query.Where(e => e.TargetId != null && EF.Functions.Like(e.TargetId, $"%{targetId}%"));
         }
 
-        if (!string.IsNullOrWhiteSpace(filter.Category))
+        if (filter.Category.HasValue && !filter.Category.Value.IsEmpty)
         {
-            var category = filter.Category.Trim();
+            var category = filter.Category.Value.Value.Trim();
             query = query.Where(e => e.Category == category);
         }
 
-        if (!string.IsNullOrWhiteSpace(filter.Action))
+        if (filter.Action.HasValue && !filter.Action.Value.IsEmpty)
         {
-            var action = filter.Action.Trim();
+            var action = filter.Action.Value.Value.Trim();
             query = query.Where(e => e.Action == action);
         }
 
@@ -122,11 +122,11 @@ public sealed class EfAdminAuditStore : IAdminAuditStore
         Timestamp = entity.Timestamp,
         ActorName = entity.ActorName,
         ActorSubjectId = entity.ActorSubjectId,
-        Category = entity.Category,
-        Action = entity.Action,
+        Category = AuditCategory.Create(entity.Category),
+        Action = AuditAction.From(entity.Action),
         Outcome = entity.Outcome,
         IsSuccess = entity.IsSuccess,
-        ReasonCode = entity.ReasonCode,
+        ReasonCode = string.IsNullOrWhiteSpace(entity.ReasonCode) ? null : AuditReasonCode.From(entity.ReasonCode),
         CorrelationId = entity.CorrelationId,
         IpAddress = entity.IpAddress,
         TargetId = entity.TargetId,

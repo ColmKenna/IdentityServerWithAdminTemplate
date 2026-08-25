@@ -1,10 +1,10 @@
 namespace IdentityServerProject.Services.AuditLogs;
 
 public sealed record AdminAuditEvent(
-    string Category,
-    string Action,
+    AuditCategory Category,
+    AuditAction Action,
     AuditOutcome Outcome,
-    string ReasonCode,
+    AuditReasonCode ReasonCode,
     string? TargetId = null,
     string? TargetName = null,
     object? OldValues = null,

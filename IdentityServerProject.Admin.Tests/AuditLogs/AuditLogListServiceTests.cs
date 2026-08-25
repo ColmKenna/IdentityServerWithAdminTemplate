@@ -66,7 +66,7 @@ public class AuditLogListServiceTests : IClassFixture<AdminWebFactory>
             var service = sp.GetRequiredService<IAuditLogListService>();
             var result = await service.GetAuditLogEntriesAsync(new AuditLogFilter { ActorSubjectId = tag }, Pagination.From(1, 10));
 
-            Assert.Equal(new[] { $"{tag}-newer", $"{tag}-older" }, result.Items.Select(item => item.Action));
+            Assert.Equal(new[] { $"{tag}-newer", $"{tag}-older" }, result.Items.Select(item => item.Action.Value));
         });
     }
 
@@ -86,8 +86,8 @@ public class AuditLogListServiceTests : IClassFixture<AdminWebFactory>
             {
                 ActorSubjectId = tag[..^2],
                 TargetId = "target",
-                Category = "Client",
-                Action = "Update",
+                Category = AuditCategory.Client,
+                Action = AuditAction.Update,
                 Outcome = AuditOutcome.Denied,
                 CorrelationId = $"{tag}-correlation",
             }, Pagination.From(1, 10));
@@ -129,7 +129,7 @@ public class AuditLogListServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IAuditLogListService>();
-            var result = await service.GetAuditLogEntriesAsync(new AuditLogFilter { Category = $"{tag}-no-match" }, Pagination.From(1, 10));
+            var result = await service.GetAuditLogEntriesAsync(new AuditLogFilter { Category = AuditCategory.Create($"{tag}-no-match") }, Pagination.From(1, 10));
 
             Assert.Empty(result.Items);
             Assert.Equal(0, result.TotalCount);

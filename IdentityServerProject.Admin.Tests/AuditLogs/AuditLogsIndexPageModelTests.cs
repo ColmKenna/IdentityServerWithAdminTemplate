@@ -28,8 +28,8 @@ public class AuditLogsIndexPageModelTests
                     Id = 1,
                     Timestamp = DateTime.UtcNow,
                     ActorName = "admin@sales.local",
-                    Category = "Client",
-                    Action = "ClientDeleted",
+                    Category = AuditCategory.Client,
+                    Action = AuditAction.From("ClientDeleted"),
                     TargetName = "client-123",
                     Outcome = AuditOutcome.Succeeded,
                     IsSuccess = true,
@@ -61,8 +61,8 @@ public class AuditLogsIndexPageModelTests
             .Setup(s => s.GetAuditLogEntriesAsync(It.Is<AuditLogFilter>(filter =>
                 filter.ActorSubjectId == "admin-123" &&
                 filter.TargetId == "client-123" &&
-                filter.Category == "Client" &&
-                filter.Action == "Update" &&
+                filter.Category == AuditCategory.Client &&
+                filter.Action == AuditAction.Update &&
                 filter.Outcome == AuditOutcome.Succeeded &&
                 filter.CorrelationId == "correlation-123"), page2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ListResult<AuditLogListItem>.Empty(2, TestOptions.PageSize));
@@ -73,8 +73,8 @@ public class AuditLogsIndexPageModelTests
             {
                 ActorSubjectId = "admin-123",
                 TargetId = "client-123",
-                Category = "Client",
-                Action = "Update",
+                Category = AuditCategory.Client,
+                Action = AuditAction.Update,
                 Outcome = AuditOutcome.Succeeded,
                 CorrelationId = "correlation-123",
             },

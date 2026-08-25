@@ -86,7 +86,7 @@
                             <summary>Metadata</summary>
                             <dl>
                                 <dt>Outcome</dt><dd>@entry.Outcome</dd>
-                                <dt>Reason</dt><dd>@(entry.ReasonCode ?? "—")</dd>
+                                <dt>Reason</dt><dd>@(entry.ReasonCode?.Value ?? "—")</dd>
                                 <dt>Actor subject</dt><dd>@(entry.ActorSubjectId ?? "—")</dd>
                                 <dt>Target ID</dt><dd>@(entry.TargetId ?? "—")</dd>
                                 <dt>Correlation ID</dt><dd>@(entry.CorrelationId ?? "—")</dd>
@@ -124,7 +124,7 @@
             }
             else
             {
-                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter.ActorSubjectId="@Model.Filter.ActorSubjectId" asp-route-Filter.TargetId="@Model.Filter.TargetId" asp-route-Filter.Category="@Model.Filter.Category" asp-route-Filter.Action="@Model.Filter.Action" asp-route-Filter.Outcome="@Model.Filter.Outcome" asp-route-Filter.CorrelationId="@Model.Filter.CorrelationId" asp-route-PageNumber="@(Model.AuditLogEntries.PageNumber - 1)">&lsaquo;</a>
+                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter.ActorSubjectId="@Model.Filter.ActorSubjectId" asp-route-Filter.TargetId="@Model.Filter.TargetId" asp-route-Filter.Category="@Model.Filter.Category?.Value" asp-route-Filter.Action="@Model.Filter.Action?.Value" asp-route-Filter.Outcome="@Model.Filter.Outcome" asp-route-Filter.CorrelationId="@Model.Filter.CorrelationId" asp-route-PageNumber="@(Model.AuditLogEntries.PageNumber - 1)">&lsaquo;</a>
             }
             <span class="pagination-page">Page @Model.AuditLogEntries.PageNumber of @Model.AuditLogEntries.TotalPages</span>
             @if (!Model.AuditLogEntries.HasNextPage)
@@ -133,7 +133,7 @@
             }
             else
             {
-                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter.ActorSubjectId="@Model.Filter.ActorSubjectId" asp-route-Filter.TargetId="@Model.Filter.TargetId" asp-route-Filter.Category="@Model.Filter.Category" asp-route-Filter.Action="@Model.Filter.Action" asp-route-Filter.Outcome="@Model.Filter.Outcome" asp-route-Filter.CorrelationId="@Model.Filter.CorrelationId" asp-route-PageNumber="@(Model.AuditLogEntries.PageNumber + 1)">&rsaquo;</a>
+                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter.ActorSubjectId="@Model.Filter.ActorSubjectId" asp-route-Filter.TargetId="@Model.Filter.TargetId" asp-route-Filter.Category="@Model.Filter.Category?.Value" asp-route-Filter.Action="@Model.Filter.Action?.Value" asp-route-Filter.Outcome="@Model.Filter.Outcome" asp-route-Filter.CorrelationId="@Model.Filter.CorrelationId" asp-route-PageNumber="@(Model.AuditLogEntries.PageNumber + 1)">&rsaquo;</a>
             }
         </div>
     </div>

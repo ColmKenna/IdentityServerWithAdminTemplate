@@ -9,9 +9,9 @@ public sealed class AuditLogFilter
 
     public string? TargetId { get; set; }
 
-    public string? Category { get; set; }
+    public AuditCategory? Category { get; set; }
 
-    public string? Action { get; set; }
+    public AuditAction? Action { get; set; }
 
     public AuditOutcome? Outcome { get; set; }
 
