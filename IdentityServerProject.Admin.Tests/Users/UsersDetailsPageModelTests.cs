@@ -99,6 +99,6 @@ public class UsersDetailsPageModelTests
         var redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("danger", redirect.RouteValues!["tab"]);
         Assert.Equal("Type DELETE exactly to confirm permanent deletion.", model.ErrorMessage);
-        service.Verify(s => s.DeleteUserAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        service.Verify(s => s.DeleteUserAsync(It.IsAny<UserId>(), It.IsAny<UserId?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

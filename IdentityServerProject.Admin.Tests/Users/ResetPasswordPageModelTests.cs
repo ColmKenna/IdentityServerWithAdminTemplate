@@ -52,7 +52,7 @@ public class ResetPasswordPageModelTests
 
         Assert.IsType<PageResult>(result);
         Assert.Equal("Ada Admin", model.UserNameDisplay);
-        service.Verify(s => s.ResetPasswordAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        service.Verify(s => s.ResetPasswordAsync(It.IsAny<UserId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

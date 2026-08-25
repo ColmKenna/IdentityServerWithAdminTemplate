@@ -62,17 +62,17 @@ public class UsersDetailsIntegrationTests : IDisposable
         UserAccessRevokeResult? accessResult = null)
     {
         var mock = new Mock<IUserDetailsService>();
-        mock.Setup(s => s.GetUserDetailsAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, string? _, CancellationToken __) => id == "non-existent" ? null : (details ?? SampleUser(id)));
-        mock.Setup(s => s.AddRoleAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUserDetailsAsync(It.IsAny<UserId>(), It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserId id, UserId? _, CancellationToken __) => id.Value == "non-existent" ? null : (details ?? SampleUser(id.Value)));
+        mock.Setup(s => s.AddRoleAsync(It.IsAny<UserId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(roleResult ?? RoleChangeResult.Succeeded());
-        mock.Setup(s => s.RemoveRoleAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.RemoveRoleAsync(It.IsAny<UserId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(roleResult ?? RoleChangeResult.Succeeded());
-        mock.Setup(s => s.AddClaimAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.AddClaimAsync(It.IsAny<UserId>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(claimResult ?? ClaimChangeResult.Succeeded());
-        mock.Setup(s => s.RemoveClaimAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.RemoveClaimAsync(It.IsAny<UserId>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(claimResult ?? ClaimChangeResult.Succeeded());
-        mock.Setup(s => s.RevokeUserAccessAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.RevokeUserAccessAsync(It.IsAny<UserId>(), It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(accessResult ?? UserAccessRevokeResult.Succeeded(2));
         return mock.Object;
     }
@@ -305,7 +305,7 @@ public class UsersDetailsIntegrationTests : IDisposable
     public async Task PostAddRole_Succeeds_RedirectsToRolesTab()
     {
         var mock = new Mock<IUserDetailsService>();
-        mock.Setup(s => s.GetUserDetailsAsync("test-user", It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUserDetailsAsync("test-user", It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleUser());
         mock.Setup(s => s.AddRoleAsync("test-user", "Support", It.IsAny<CancellationToken>()))
             .ReturnsAsync(RoleChangeResult.Succeeded());
@@ -358,7 +358,7 @@ public class UsersDetailsIntegrationTests : IDisposable
     public async Task PostAddClaim_Succeeds_RedirectsToClaimsTab()
     {
         var mock = new Mock<IUserDetailsService>();
-        mock.Setup(s => s.GetUserDetailsAsync("test-user", It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUserDetailsAsync("test-user", It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleUser());
         mock.Setup(s => s.AddClaimAsync("test-user", "team", "platform", It.IsAny<CancellationToken>()))
             .ReturnsAsync(ClaimChangeResult.Succeeded());
@@ -386,7 +386,7 @@ public class UsersDetailsIntegrationTests : IDisposable
     public async Task PostRemoveClaim_Succeeds_RedirectsToClaimsTab()
     {
         var mock = new Mock<IUserDetailsService>();
-        mock.Setup(s => s.GetUserDetailsAsync("test-user", It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUserDetailsAsync("test-user", It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleUser());
         mock.Setup(s => s.RemoveClaimAsync("test-user", "dept", "Engineering", It.IsAny<CancellationToken>()))
             .ReturnsAsync(ClaimChangeResult.Succeeded());
@@ -484,9 +484,9 @@ public class UsersDetailsIntegrationTests : IDisposable
     public async Task PostRevokeUserAccess_NonExistentUser_ReturnsNotFound()
     {
         var mock = new Mock<IUserDetailsService>();
-        mock.Setup(s => s.GetUserDetailsAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, string? _, CancellationToken __) => id == "non-existent" ? null : SampleUser(id));
-        mock.Setup(s => s.RevokeUserAccessAsync("non-existent", It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUserDetailsAsync(It.IsAny<UserId>(), It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserId id, UserId? _, CancellationToken __) => id.Value == "non-existent" ? null : SampleUser(id.Value));
+        mock.Setup(s => s.RevokeUserAccessAsync("non-existent", It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserAccessRevokeResult.Failed("User not found."));
 
         var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
@@ -508,9 +508,9 @@ public class UsersDetailsIntegrationTests : IDisposable
     public async Task PostSuspendUser_ValidTarget_SuspendsAndRedirectsToDangerTab()
     {
         var mock = new Mock<IUserDetailsService>();
-        mock.Setup(s => s.GetUserDetailsAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, string? _, CancellationToken __) => SampleUser(id));
-        mock.Setup(s => s.SuspendUserAsync("target-user", It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUserDetailsAsync(It.IsAny<UserId>(), It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserId id, UserId? _, CancellationToken __) => SampleUser(id.Value));
+        mock.Setup(s => s.SuspendUserAsync("target-user", It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserSuspendResult.Succeeded());
 
         var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
@@ -533,8 +533,8 @@ public class UsersDetailsIntegrationTests : IDisposable
     public async Task PostUnlockUser_ValidTarget_UnlocksAndRedirectsToOverviewTab()
     {
         var mock = new Mock<IUserDetailsService>();
-        mock.Setup(s => s.GetUserDetailsAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, string? _, CancellationToken __) => SampleUser(id));
+        mock.Setup(s => s.GetUserDetailsAsync(It.IsAny<UserId>(), It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserId id, UserId? _, CancellationToken __) => SampleUser(id.Value));
         mock.Setup(s => s.UnlockUserAsync("target-user", It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserUnlockResult.Succeeded);
 
@@ -558,8 +558,8 @@ public class UsersDetailsIntegrationTests : IDisposable
     public async Task PostDeleteUser_WithoutConfirmation_FailsAndRedirectsToDangerTab()
     {
         var mock = new Mock<IUserDetailsService>();
-        mock.Setup(s => s.GetUserDetailsAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, string? _, CancellationToken __) => SampleUser(id));
+        mock.Setup(s => s.GetUserDetailsAsync(It.IsAny<UserId>(), It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserId id, UserId? _, CancellationToken __) => SampleUser(id.Value));
 
         var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
         var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Users/Details?id=target-user&tab=danger");
@@ -575,16 +575,16 @@ public class UsersDetailsIntegrationTests : IDisposable
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Contains("tab=danger", response.Headers.Location?.ToString());
-        mock.Verify(s => s.DeleteUserAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        mock.Verify(s => s.DeleteUserAsync(It.IsAny<UserId>(), It.IsAny<UserId?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task PostDeleteUser_ValidConfirmation_DeletesAndRedirectsToIndex()
     {
         var mock = new Mock<IUserDetailsService>();
-        mock.Setup(s => s.GetUserDetailsAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, string? _, CancellationToken __) => SampleUser(id));
-        mock.Setup(s => s.DeleteUserAsync("target-user", It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUserDetailsAsync(It.IsAny<UserId>(), It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserId id, UserId? _, CancellationToken __) => SampleUser(id.Value));
+        mock.Setup(s => s.DeleteUserAsync("target-user", It.IsAny<UserId?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserDeleteResult.Succeeded());
 
         var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
@@ -602,7 +602,7 @@ public class UsersDetailsIntegrationTests : IDisposable
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal("/Admin/Users", response.Headers.Location?.ToString());
-        mock.Verify(s => s.DeleteUserAsync("target-user", It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.DeleteUserAsync("target-user", It.IsAny<UserId?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     public void Dispose()

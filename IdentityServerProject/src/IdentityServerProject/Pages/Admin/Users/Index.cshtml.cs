@@ -46,7 +46,7 @@ public class IndexModel : PageModel
             return NotFound();
         }
 
-        var result = await _userListService.UnlockUserAsync(id, cancellationToken);
+        var result = await _userListService.UnlockUserAsync(UserId.Create(id), cancellationToken);
         if (result.Status == UserUnlockStatus.NotFound)
         {
             return NotFound();

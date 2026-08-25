@@ -22,7 +22,7 @@ public class UserListService : IUserListService
         _store.GetUsersAsync(filter, pagination, cancellationToken);
 
     public async Task<UserUnlockResult> UnlockUserAsync(
-        string userId,
+        UserId userId,
         CancellationToken cancellationToken = default)
     {
         try
@@ -34,20 +34,20 @@ public class UserListService : IUserListService
                 case UserUnlockStatus.NotFound:
                     await _auditWriter.WriteAsync(new AdminAuditEvent(
                         AuditCategories.User, AuditActions.Unlock, AuditOutcome.Denied, AuditReasonCodes.NotFound,
-                        TargetId: userId, TargetName: targetName, Details: "User not found."), cancellationToken);
+                        TargetId: userId.Value, TargetName: targetName, Details: "User not found."), cancellationToken);
                     return result;
 
                 case UserUnlockStatus.Failed:
                     await _auditWriter.WriteAsync(new AdminAuditEvent(
                         AuditCategories.User, AuditActions.Unlock, AuditOutcome.Denied, AuditReasonCodes.ValidationFailed,
-                        TargetId: userId, TargetName: targetName,
+                        TargetId: userId.Value, TargetName: targetName,
                         Details: string.Join(" ", result.Errors)), cancellationToken);
                     return result;
             }
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategories.User, AuditActions.Unlock, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
-                TargetId: userId, TargetName: targetName,
+                TargetId: userId.Value, TargetName: targetName,
                 Details: $"Unlocked user '{targetName}'"), cancellationToken);
 
             return result;
@@ -56,7 +56,7 @@ public class UserListService : IUserListService
         {
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategories.User, AuditActions.Unlock, AuditOutcome.Failed, AuditReasonCodes.PersistenceFailure,
-                TargetId: userId, TargetName: userId,
+                TargetId: userId.Value, TargetName: userId.Value,
                 Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
             throw;
         }

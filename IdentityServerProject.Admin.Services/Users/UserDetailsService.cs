@@ -40,9 +40,9 @@ public partial class UserDetailsService : IUserDetailsService
 
     #region Profile
 
-    public async Task<UserDetailsModel?> GetUserDetailsAsync(string userId, string? currentUserId, CancellationToken cancellationToken = default)
+    public async Task<UserDetailsModel?> GetUserDetailsAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(userId))
+        if (userId.IsEmpty)
         {
             return null;
         }
@@ -65,7 +65,7 @@ public partial class UserDetailsService : IUserDetailsService
 
         var persistedGrantCount = await _persistedGrantDbContext.PersistedGrants
             .AsNoTracking()
-            .CountAsync(g => g.SubjectId == userId, cancellationToken);
+            .CountAsync(g => g.SubjectId == userId.Value, cancellationToken);
 
         return new UserDetailsModel
         {
@@ -79,7 +79,7 @@ public partial class UserDetailsService : IUserDetailsService
             AllRoles = account.AllRoles.ToList(),
             Claims = claims,
             PersistedGrantCount = persistedGrantCount,
-            IsCurrentUser = !string.IsNullOrWhiteSpace(currentUserId) && currentUserId == account.Id
+            IsCurrentUser = currentUserId is { IsEmpty: false } && currentUserId.Value == account.Id
         };
     }
 
@@ -87,11 +87,11 @@ public partial class UserDetailsService : IUserDetailsService
 
     #region Roles
 
-    public Task<RoleChangeResult> AddRoleAsync(string userId, string role, CancellationToken cancellationToken = default) =>
+    public Task<RoleChangeResult> AddRoleAsync(UserId userId, string role, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.AddRole,
-            userId ?? string.Empty,
-            () => AddRoleCoreAsync(userId ?? string.Empty, role ?? string.Empty, cancellationToken),
+            userId.Value,
+            () => AddRoleCoreAsync(userId.Value, role ?? string.Empty, cancellationToken),
             cancellationToken);
 
     private async Task<RoleChangeResult> AddRoleCoreAsync(string userId, string role, CancellationToken cancellationToken)
@@ -127,9 +127,9 @@ public partial class UserDetailsService : IUserDetailsService
         return RoleChangeResult.Succeeded();
     }
 
-    public async Task<RoleChangeResult> RemoveRoleAsync(string userId, string role, CancellationToken cancellationToken = default)
+    public async Task<RoleChangeResult> RemoveRoleAsync(UserId userId, string role, CancellationToken cancellationToken = default)
     {
-        var targetName = userId;
+        var targetName = userId.Value;
         RoleRemovalOutcome outcome;
 
         try
@@ -139,7 +139,7 @@ public partial class UserDetailsService : IUserDetailsService
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.RemoveRole, userId, targetName, ex, cancellationToken);
+            await AuditFailedAsync(AuditActions.RemoveRole, userId.Value, targetName, ex, cancellationToken);
             throw;
         }
 
@@ -148,19 +148,19 @@ public partial class UserDetailsService : IUserDetailsService
         switch (outcome.Status)
         {
             case RoleRemovalStatus.UserNotFound:
-                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.NotFound, userId, targetName,
+                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.NotFound, userId.Value, targetName,
                     "User not found.", cancellationToken);
                 return RoleChangeResult.Failed("User not found.", AuditReasonCodes.NotFound, AdminMutationStatus.NotFound);
 
             case RoleRemovalStatus.RoleNotFound:
-                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.NotFound, userId, targetName,
+                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.NotFound, userId.Value, targetName,
                     "Role not found.", cancellationToken);
                 return RoleChangeResult.Failed("Role not found.", AuditReasonCodes.NotFound, AdminMutationStatus.NotFound);
 
             case RoleRemovalStatus.SelfDemotionBlocked:
             {
                 var message = "You cannot remove your own SysAdmin role. Ask another administrator to do this if needed.";
-                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.SelfDemotion, userId, targetName,
+                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.SelfDemotion, userId.Value, targetName,
                     message, cancellationToken);
                 return RoleChangeResult.Failed(message, AuditReasonCodes.SelfDemotion);
             }
@@ -168,20 +168,20 @@ public partial class UserDetailsService : IUserDetailsService
             case RoleRemovalStatus.LastProtectedMemberBlocked:
             {
                 var message = $"'{targetName}' is the last SysAdmin. Assign the role to another user before removing it here.";
-                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.LastAdministrator, userId, targetName,
+                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.LastAdministrator, userId.Value, targetName,
                     message, cancellationToken);
                 return RoleChangeResult.Failed(message, AuditReasonCodes.LastAdministrator);
             }
 
             case RoleRemovalStatus.ValidationFailed:
-                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.ValidationFailed, userId, targetName,
+                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.ValidationFailed, userId.Value, targetName,
                     outcome.ErrorMessage!, cancellationToken);
                 return RoleChangeResult.Failed(outcome.ErrorMessage!, AuditReasonCodes.ValidationFailed, AdminMutationStatus.ValidationFailed);
         }
 
         await _auditWriter.WriteAsync(new AdminAuditEvent(
             AuditCategories.User, AuditActions.RemoveRole, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
-            TargetId: userId, TargetName: targetName,
+            TargetId: userId.Value, TargetName: targetName,
             Details: outcome.RoleWasRemoved ? $"Removed role '{role}'" : $"Role '{role}' was not assigned"), cancellationToken);
 
         if (outcome.RoleWasRemoved)
@@ -198,11 +198,11 @@ public partial class UserDetailsService : IUserDetailsService
 
     #region Claims
 
-    public Task<ClaimChangeResult> AddClaimAsync(string userId, string claimType, string claimValue, CancellationToken cancellationToken = default) =>
+    public Task<ClaimChangeResult> AddClaimAsync(UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.AddClaim,
-            userId ?? string.Empty,
-            () => AddClaimCoreAsync(userId ?? string.Empty, claimType ?? string.Empty, claimValue ?? string.Empty, cancellationToken),
+            userId.Value,
+            () => AddClaimCoreAsync(userId.Value, claimType ?? string.Empty, claimValue ?? string.Empty, cancellationToken),
             cancellationToken);
 
     private async Task<ClaimChangeResult> AddClaimCoreAsync(string userId, string claimType, string claimValue, CancellationToken cancellationToken)
@@ -282,11 +282,11 @@ public partial class UserDetailsService : IUserDetailsService
         return ClaimChangeResult.Succeeded();
     }
 
-    public Task<ClaimChangeResult> RemoveClaimAsync(string userId, string claimType, string claimValue, CancellationToken cancellationToken = default) =>
+    public Task<ClaimChangeResult> RemoveClaimAsync(UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.RemoveClaim,
-            userId ?? string.Empty,
-            () => RemoveClaimCoreAsync(userId ?? string.Empty, claimType ?? string.Empty, claimValue ?? string.Empty, cancellationToken),
+            userId.Value,
+            () => RemoveClaimCoreAsync(userId.Value, claimType ?? string.Empty, claimValue ?? string.Empty, cancellationToken),
             cancellationToken);
 
     private async Task<ClaimChangeResult> RemoveClaimCoreAsync(string userId, string claimType, string claimValue, CancellationToken cancellationToken)
@@ -327,7 +327,10 @@ public partial class UserDetailsService : IUserDetailsService
 
     #region Access revocation
 
-    public async Task<UserAccessRevokeResult> RevokeUserAccessAsync(string userId, string? currentUserId, CancellationToken cancellationToken = default)
+    public Task<UserAccessRevokeResult> RevokeUserAccessAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default) =>
+        RevokeUserAccessCoreAsync(userId.Value, currentUserId?.Value, cancellationToken);
+
+    private async Task<UserAccessRevokeResult> RevokeUserAccessCoreAsync(string userId, string? currentUserId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(userId))
         {
@@ -419,11 +422,11 @@ public partial class UserDetailsService : IUserDetailsService
 
     #region Account state and deletion
 
-    public Task<PasswordResetResult> ResetPasswordAsync(string userId, string newPassword, CancellationToken cancellationToken = default) =>
+    public Task<PasswordResetResult> ResetPasswordAsync(UserId userId, string newPassword, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.ResetPassword,
-            userId ?? string.Empty,
-            () => ResetPasswordCoreAsync(userId ?? string.Empty, newPassword, cancellationToken),
+            userId.Value,
+            () => ResetPasswordCoreAsync(userId.Value, newPassword, cancellationToken),
             cancellationToken);
 
     private async Task<PasswordResetResult> ResetPasswordCoreAsync(string userId, string newPassword, CancellationToken cancellationToken)
@@ -457,11 +460,11 @@ public partial class UserDetailsService : IUserDetailsService
         return PasswordResetResult.Succeeded();
     }
 
-    public Task<UserSuspendResult> SuspendUserAsync(string userId, string? currentUserId, CancellationToken cancellationToken = default) =>
+    public Task<UserSuspendResult> SuspendUserAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.SuspendUser,
-            userId ?? string.Empty,
-            () => SuspendUserCoreAsync(userId ?? string.Empty, currentUserId, cancellationToken),
+            userId.Value,
+            () => SuspendUserCoreAsync(userId.Value, currentUserId?.Value, cancellationToken),
             cancellationToken);
 
     private async Task<UserSuspendResult> SuspendUserCoreAsync(string userId, string? currentUserId, CancellationToken cancellationToken)
@@ -493,7 +496,10 @@ public partial class UserDetailsService : IUserDetailsService
         return UserSuspendResult.Succeeded();
     }
 
-    public async Task<UserUnlockResult> UnlockUserAsync(string userId, CancellationToken cancellationToken = default)
+    public Task<UserUnlockResult> UnlockUserAsync(UserId userId, CancellationToken cancellationToken = default) =>
+        UnlockUserCoreAsync(userId.Value, cancellationToken);
+
+    private async Task<UserUnlockResult> UnlockUserCoreAsync(string userId, CancellationToken cancellationToken)
     {
         try
         {
@@ -534,11 +540,11 @@ public partial class UserDetailsService : IUserDetailsService
         }
     }
 
-    public Task<UserDeleteResult> DeleteUserAsync(string userId, string? currentUserId, CancellationToken cancellationToken = default) =>
+    public Task<UserDeleteResult> DeleteUserAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditActions.DeleteUser,
-            userId ?? string.Empty,
-            () => DeleteUserCoreAsync(userId ?? string.Empty, currentUserId, cancellationToken),
+            userId.Value,
+            () => DeleteUserCoreAsync(userId.Value, currentUserId?.Value, cancellationToken),
             cancellationToken);
 
     private async Task<UserDeleteResult> DeleteUserCoreAsync(string userId, string? currentUserId, CancellationToken cancellationToken)

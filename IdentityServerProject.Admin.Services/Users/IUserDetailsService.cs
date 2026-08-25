@@ -92,58 +92,58 @@ public interface IUserDetailsService
     /// Returns full workspace details for a user by ID, including guard-relevant context
     /// (whether the requesting admin is viewing their own account). Returns null if not found.
     /// </summary>
-    Task<UserDetailsModel?> GetUserDetailsAsync(string userId, string? currentUserId, CancellationToken cancellationToken = default);
+    Task<UserDetailsModel?> GetUserDetailsAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Assigns a role to a user. Returns Success = false if the user or role is not found.
     /// </summary>
-    Task<RoleChangeResult> AddRoleAsync(string userId, string role, CancellationToken cancellationToken = default);
+    Task<RoleChangeResult> AddRoleAsync(UserId userId, string role, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes a role from a user. The canonical current-request actor accessor prevents an
     /// administrator from removing their own SysAdmin role, and the last SysAdmin membership
     /// is protected. Ordinary roles may be removed from their final holder.
     /// </summary>
-    Task<RoleChangeResult> RemoveRoleAsync(string userId, string role, CancellationToken cancellationToken = default);
+    Task<RoleChangeResult> RemoveRoleAsync(UserId userId, string role, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Adds a claim (type/value pair) to a user. Rejected (Reserved-Claim Guard) when the type is
     /// one the framework treats as an identity or authorization claim — see
     /// <see cref="ReservedClaimTypePolicy"/>.
     /// </summary>
-    Task<ClaimChangeResult> AddClaimAsync(string userId, string claimType, string claimValue, CancellationToken cancellationToken = default);
+    Task<ClaimChangeResult> AddClaimAsync(UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes a matching claim (type/value pair) from a user. Reserved types may be removed —
     /// removal only de-escalates, and pre-existing reserved claims need a cleanup path.
     /// </summary>
-    Task<ClaimChangeResult> RemoveClaimAsync(string userId, string claimType, string claimValue, CancellationToken cancellationToken = default);
+    Task<ClaimChangeResult> RemoveClaimAsync(UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Revokes a user's current access by rotating the security stamp, deleting persisted grants,
     /// and notifying affected clients. Blocked when the target is the current administrator.
     /// </summary>
-    Task<UserAccessRevokeResult> RevokeUserAccessAsync(string userId, string? currentUserId, CancellationToken cancellationToken = default);
+    Task<UserAccessRevokeResult> RevokeUserAccessAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Resets a user's password.
     /// </summary>
-    Task<PasswordResetResult> ResetPasswordAsync(string userId, string newPassword, CancellationToken cancellationToken = default);
+    Task<PasswordResetResult> ResetPasswordAsync(UserId userId, string newPassword, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Suspends a user by setting their lockout end date to the maximum value. Blocked when the target is the current administrator.
     /// </summary>
-    Task<UserSuspendResult> SuspendUserAsync(string userId, string? currentUserId, CancellationToken cancellationToken = default);
+    Task<UserSuspendResult> SuspendUserAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Unlocks a locked-out user account.
     /// </summary>
-    Task<UserUnlockResult> UnlockUserAsync(string userId, CancellationToken cancellationToken = default);
+    Task<UserUnlockResult> UnlockUserAsync(UserId userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a user account entirely. Blocked when the target is the current administrator.
     /// </summary>
-    Task<UserDeleteResult> DeleteUserAsync(string userId, string? currentUserId, CancellationToken cancellationToken = default);
+    Task<UserDeleteResult> DeleteUserAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default);
 }
 
 public class PasswordResetResult

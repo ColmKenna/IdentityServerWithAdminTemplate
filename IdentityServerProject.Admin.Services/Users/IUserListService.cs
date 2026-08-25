@@ -29,6 +29,6 @@ public interface IUserListService
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A result that distinguishes a missing user from an Identity operation failure.</returns>
     Task<UserUnlockResult> UnlockUserAsync(
-        string userId,
+        UserId userId,
         CancellationToken cancellationToken = default);
 }

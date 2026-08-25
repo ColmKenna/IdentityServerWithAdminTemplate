@@ -59,7 +59,7 @@ public class ResetPasswordModel : PageModel
             return await LoadPageAsync(cancellationToken);
         }
 
-        var result = await _userDetailsService.ResetPasswordAsync(Id, Input.NewPassword, cancellationToken);
+        var result = await _userDetailsService.ResetPasswordAsync(UserId.Create(Id), Input.NewPassword, cancellationToken);
         
         if (!result.Success)
         {
@@ -73,7 +73,7 @@ public class ResetPasswordModel : PageModel
 
     private async Task<IActionResult> LoadPageAsync(CancellationToken cancellationToken)
     {
-        var account = await _userDetailsService.GetUserDetailsAsync(Id, null, cancellationToken);
+        var account = await _userDetailsService.GetUserDetailsAsync(UserId.Create(Id), null, cancellationToken);
         if (account == null)
         {
             return NotFound();
