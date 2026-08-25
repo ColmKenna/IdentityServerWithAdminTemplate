@@ -94,13 +94,14 @@ public class EditModel : PageModel
         }
 
         var result = await _editorService.UpdateBasicsAsync(
-            Name,
-            Input.DisplayName,
-            Input.Description,
-            Input.Enabled,
-            Input.Required,
-            Input.Emphasize,
-            Input.ShowInDiscoveryDocument,
+            new UpdateIdentityResourceBasicsCommand(
+                IdentityServerProject.Services.Scopes.ScopeName.Create(Name),
+                Input.DisplayName,
+                Input.Description,
+                Input.Enabled,
+                Input.Required,
+                Input.Emphasize,
+                Input.ShowInDiscoveryDocument),
             cancellationToken);
 
         return await RenderOutcomeAsync(result, Name, cancellationToken);

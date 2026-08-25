@@ -59,14 +59,15 @@ public class CreateModel : PageModel
         }
 
         var result = await _identityResourceEditorService.CreateAsync(
-            Input.Name,
-            Input.DisplayName,
-            Input.Description,
-            Input.Enabled,
-            Input.Required,
-            Input.Emphasize,
-            Input.ShowInDiscoveryDocument,
-            Input.UserClaims,
+            new CreateIdentityResourceCommand(
+                IdentityServerProject.Services.Scopes.ScopeName.Create(Input.Name),
+                Input.DisplayName,
+                Input.Description,
+                Input.Enabled,
+                Input.Required,
+                Input.Emphasize,
+                Input.ShowInDiscoveryDocument,
+                Input.UserClaims),
             cancellationToken);
 
         if (!result.Success)

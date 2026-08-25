@@ -20,6 +20,13 @@ public class ApiScopeEditorService : IApiScopeEditorService
 
     #region Basics
 
+    public Task<ApiScopeCreateResult> CreateAsync(CreateApiScopeCommand command, CancellationToken cancellationToken = default) =>
+        CreateAsync(command.Name.Value, command.DisplayName, command.Description, cancellationToken);
+
+    public Task<bool> UpdateBasicsAsync(UpdateApiScopeBasicsCommand command, CancellationToken cancellationToken = default) =>
+        UpdateBasicsAsync(command.Name.Value, command.DisplayName, command.Description, command.Enabled, command.Required,
+            command.Emphasize, command.ShowInDiscoveryDocument, cancellationToken);
+
     public async Task<ApiScopeEditorModel?> GetForEditAsync(string name, CancellationToken cancellationToken = default)
     {
         var entity = await LoadScopeAsync(name, asNoTracking: true, cancellationToken);

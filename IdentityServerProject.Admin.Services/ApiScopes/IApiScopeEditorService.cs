@@ -1,4 +1,17 @@
+using IdentityServerProject.Services.Scopes;
+
 namespace IdentityServerProject.Services.ApiScopes;
+
+public sealed record CreateApiScopeCommand(ScopeName Name, string? DisplayName, string? Description);
+
+public sealed record UpdateApiScopeBasicsCommand(
+    ScopeName Name,
+    string? DisplayName,
+    string? Description,
+    bool Enabled,
+    bool Required,
+    bool Emphasize,
+    bool ShowInDiscoveryDocument);
 
 public class ApiScopeCreateResult
 {
@@ -15,6 +28,10 @@ public class ApiScopeCreateResult
 /// </summary>
 public interface IApiScopeEditorService
 {
+    Task<ApiScopeCreateResult> CreateAsync(CreateApiScopeCommand command, CancellationToken cancellationToken = default);
+
+    Task<bool> UpdateBasicsAsync(UpdateApiScopeBasicsCommand command, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Creates a new API scope. Returns failure if a scope or identity resource with the same name already exists.
     /// </summary>

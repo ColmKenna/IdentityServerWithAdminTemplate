@@ -75,7 +75,10 @@ public class ApiScopeEditorPageModelTests
     public async Task OnPostSaveAsync_Valid_UpdatesBasicsAndRedirectsToSameScope()
     {
         var mock = new Mock<IApiScopeEditorService>();
-        mock.Setup(s => s.UpdateBasicsAsync("sales.scope", "New Display", "New Desc", true, false, false, true, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.UpdateBasicsAsync(
+                new UpdateApiScopeBasicsCommand(
+                    IdentityServerProject.Services.Scopes.ScopeName.Create("sales.scope"), "New Display", "New Desc", true, false, false, true),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var model = new EditModel(mock.Object)
@@ -88,7 +91,10 @@ public class ApiScopeEditorPageModelTests
 
         var redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("sales.scope", redirect.RouteValues!["name"]);
-        mock.Verify(s => s.UpdateBasicsAsync("sales.scope", "New Display", "New Desc", true, false, false, true, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.UpdateBasicsAsync(
+            new UpdateApiScopeBasicsCommand(
+                IdentityServerProject.Services.Scopes.ScopeName.Create("sales.scope"), "New Display", "New Desc", true, false, false, true),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

@@ -97,13 +97,14 @@ public class EditModel : PageModel
         }
 
         var success = await _apiScopeEditorService.UpdateBasicsAsync(
-            Name,
-            Input.DisplayName,
-            Input.Description,
-            Input.Enabled,
-            Input.Required,
-            Input.Emphasize,
-            Input.ShowInDiscoveryDocument,
+            new UpdateApiScopeBasicsCommand(
+                IdentityServerProject.Services.Scopes.ScopeName.Create(Name),
+                Input.DisplayName,
+                Input.Description,
+                Input.Enabled,
+                Input.Required,
+                Input.Emphasize,
+                Input.ShowInDiscoveryDocument),
             cancellationToken);
         if (!success)
         {

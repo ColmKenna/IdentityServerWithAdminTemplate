@@ -21,6 +21,14 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
 
     #region Basics
 
+    public Task<IdentityResourceCreateResult> CreateAsync(CreateIdentityResourceCommand command, CancellationToken cancellationToken = default) =>
+        CreateAsync(command.Name.Value, command.DisplayName, command.Description, command.Enabled, command.Required,
+            command.Emphasize, command.ShowInDiscoveryDocument, command.UserClaims, cancellationToken);
+
+    public Task<IdentityResourceEditResult> UpdateBasicsAsync(UpdateIdentityResourceBasicsCommand command, CancellationToken cancellationToken = default) =>
+        UpdateBasicsAsync(command.Name.Value, command.DisplayName, command.Description, command.Enabled, command.Required,
+            command.Emphasize, command.ShowInDiscoveryDocument, cancellationToken);
+
     public async Task<IdentityResourceEditorModel?> GetForEditAsync(string name, CancellationToken cancellationToken = default)
     {
         var entity = await LoadIdentityResourceAsync(name, asNoTracking: true, cancellationToken);

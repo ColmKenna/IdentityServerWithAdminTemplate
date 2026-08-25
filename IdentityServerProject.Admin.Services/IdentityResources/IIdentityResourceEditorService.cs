@@ -1,4 +1,25 @@
+using IdentityServerProject.Services.Scopes;
+
 namespace IdentityServerProject.Services.IdentityResources;
+
+public sealed record CreateIdentityResourceCommand(
+    ScopeName Name,
+    string? DisplayName,
+    string? Description,
+    bool Enabled,
+    bool Required,
+    bool Emphasize,
+    bool ShowInDiscoveryDocument,
+    List<string> UserClaims);
+
+public sealed record UpdateIdentityResourceBasicsCommand(
+    ScopeName Name,
+    string? DisplayName,
+    string? Description,
+    bool Enabled,
+    bool Required,
+    bool Emphasize,
+    bool ShowInDiscoveryDocument);
 
 public class IdentityResourceCreateResult
 {
@@ -20,6 +41,10 @@ public class IdentityResourceCreateResult
 /// </remarks>
 public interface IIdentityResourceEditorService
 {
+    Task<IdentityResourceCreateResult> CreateAsync(CreateIdentityResourceCommand command, CancellationToken cancellationToken = default);
+
+    Task<IdentityResourceEditResult> UpdateBasicsAsync(UpdateIdentityResourceBasicsCommand command, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Creates a new Identity Resource. Returns failure if a scope or identity resource with the same name already exists.
     /// </summary>

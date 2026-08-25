@@ -53,9 +53,10 @@ public class CreateModel : PageModel
         }
 
         var result = await _apiScopeEditorService.CreateAsync(
-            Input.Name,
-            Input.DisplayName,
-            Input.Description,
+            new CreateApiScopeCommand(
+                IdentityServerProject.Services.Scopes.ScopeName.Create(Input.Name),
+                Input.DisplayName,
+                Input.Description),
             cancellationToken);
 
         if (!result.Success)
