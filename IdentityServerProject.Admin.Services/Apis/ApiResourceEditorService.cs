@@ -50,7 +50,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         SaveApiResourceBasicsCommand command,
         CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            command?.OriginalName == null ? AuditActions.Create : AuditActions.UpdateBasics,
+            command?.OriginalName == null ? AuditAction.Create : AuditAction.UpdateBasics,
             command?.Name ?? command?.OriginalName ?? string.Empty,
             command?.DisplayName ?? command?.Name ?? command?.OriginalName ?? string.Empty,
             () => SaveBasicsCoreAsync(command!, cancellationToken),
@@ -64,7 +64,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var name = command.Name?.Trim() ?? string.Empty;
         var displayName = NormalizeNullableString(command.DisplayName);
         var description = NormalizeNullableString(command.Description);
-        var action = originalName == null ? AuditActions.Create : AuditActions.UpdateBasics;
+        var action = originalName == null ? AuditAction.Create : AuditAction.UpdateBasics;
 
         if (await ValidateBasicsAsync(
                 action,
@@ -106,7 +106,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
     }
 
     private async Task<SaveApiResourceBasicsResult?> ValidateBasicsAsync(
-        string action,
+        AuditAction action,
         string name,
         string? displayName,
         string? description,
@@ -117,7 +117,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         {
             await AuditDeniedAsync(
                 action,
-                AuditReasonCodes.ValidationFailed,
+                AuditReasonCode.ValidationFailed,
                 name,
                 displayName ?? name,
                 "API Resource validation failed.",
@@ -130,7 +130,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
     }
 
     private async Task<SaveApiResourceBasicsResult?> CheckNameCollisionAsync(
-        string action,
+        AuditAction action,
         string? originalName,
         string name,
         string? displayName,
@@ -146,7 +146,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
     }
 
     private async Task<SaveApiResourceBasicsResult?> ApplyBasicsChangesAsync(
-        string action,
+        AuditAction action,
         string? originalName,
         string name,
         string? displayName,
@@ -173,7 +173,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         {
             await AuditDeniedAsync(
                 action,
-                AuditReasonCodes.NotFound,
+                AuditReasonCode.NotFound,
                 originalName,
                 originalName,
                 $"API Resource '{originalName}' was not found.",
@@ -190,7 +190,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
     }
 
     private async Task<SaveApiResourceBasicsResult> PersistBasicsAsync(
-        string action,
+        AuditAction action,
         string? originalName,
         string name,
         string? displayName,
@@ -216,14 +216,14 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
     }
 
     private async Task<SaveApiResourceBasicsResult> CreateNameCollisionResultAsync(
-        string action,
+        AuditAction action,
         string name,
         string? displayName,
         CancellationToken cancellationToken)
     {
         await AuditDeniedAsync(
             action,
-            AuditReasonCodes.NameCollision,
+            AuditReasonCode.NameCollision,
             name,
             displayName ?? name,
             $"An API Resource named '{name}' already exists.",
@@ -240,7 +240,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         CreateSecretCommand command,
         CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.GenerateSecret,
+            AuditAction.GenerateSecret,
             command?.TargetId ?? string.Empty,
             command?.TargetId ?? string.Empty,
             () => AddSecretCoreAsync(command?.TargetId ?? string.Empty, command?.Description, command?.ExpirationUtc, cancellationToken),
@@ -276,7 +276,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
 
         if (errors.HasErrors)
         {
-            await AuditDeniedAsync(AuditActions.GenerateSecret, AuditReasonCodes.ValidationFailed, name, name,
+            await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.ValidationFailed, name, name,
                 "API Resource secret validation failed.", cancellationToken);
             return ApiResourceAddSecretResult.ValidationFailure(errors);
         }
@@ -284,7 +284,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var entity = await LoadResourceAsync(name, asNoTracking: false, cancellationToken);
         if (entity == null)
         {
-            await AuditDeniedAsync(AuditActions.GenerateSecret, AuditReasonCodes.NotFound, name, name,
+            await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.NotFound, name, name,
                 $"API Resource '{name}' was not found.", cancellationToken);
             return ApiResourceAddSecretResult.NotFound;
         }
@@ -305,7 +305,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.ApiResource, AuditActions.GenerateSecret, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.ApiResource, AuditAction.GenerateSecret, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: name, TargetName: name,
                 Details: "Added secret to API Resource"), cancellationToken);
 
@@ -313,14 +313,14 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.GenerateSecret, name, name, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.GenerateSecret, name, name, ex, cancellationToken);
             throw;
         }
     }
 
     public Task<AdminMutationResult> RevokeSecretAsync(string name, int secretId, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.RevokeSecret,
+            AuditAction.RevokeSecret,
             name ?? string.Empty,
             name ?? string.Empty,
             () => RevokeSecretCoreAsync(name ?? string.Empty, secretId, cancellationToken),
@@ -333,7 +333,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var secret = entity?.Secrets.FirstOrDefault(s => s.Id == secretId);
         if (entity == null || secret == null)
         {
-            await AuditDeniedAsync(AuditActions.RevokeSecret, AuditReasonCodes.NotFound, name, name,
+            await AuditDeniedAsync(AuditAction.RevokeSecret, AuditReasonCode.NotFound, name, name,
                 $"API Resource '{name}' or secret {secretId} was not found.", cancellationToken);
             return AdminMutationResult.NotFoundResult();
         }
@@ -344,7 +344,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.ApiResource, AuditActions.RevokeSecret, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.ApiResource, AuditAction.RevokeSecret, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: name, TargetName: name,
                 Details: "Revoked secret from API Resource"), cancellationToken);
 
@@ -352,7 +352,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.RevokeSecret, name, name, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.RevokeSecret, name, name, ex, cancellationToken);
             throw;
         }
     }
@@ -363,7 +363,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
 
     public Task<AdminMutationResult> AttachScopeAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.AttachScope,
+            AuditAction.AttachScope,
             name ?? string.Empty,
             name ?? string.Empty,
             () => AttachScopeCoreAsync(name ?? string.Empty, scopeName, cancellationToken),
@@ -379,7 +379,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         AddIdentifierError(errors, "AttachScope.ScopeName", "Scope", scopeNameStr);
         if (errors.HasErrors)
         {
-            await AuditDeniedAsync(AuditActions.AttachScope, AuditReasonCodes.ValidationFailed, name, name,
+            await AuditDeniedAsync(AuditAction.AttachScope, AuditReasonCode.ValidationFailed, name, name,
                 "Scope attachment validation failed.", cancellationToken);
             return AdminMutationResult.ValidationFailure(errors);
         }
@@ -387,7 +387,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var entity = await LoadResourceAsync(name, asNoTracking: false, cancellationToken);
         if (entity == null)
         {
-            await AuditDeniedAsync(AuditActions.AttachScope, AuditReasonCodes.NotFound, name, name,
+            await AuditDeniedAsync(AuditAction.AttachScope, AuditReasonCode.NotFound, name, name,
                 $"API Resource '{name}' was not found.", cancellationToken);
             return AdminMutationResult.NotFoundResult();
         }
@@ -397,7 +397,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             .AnyAsync(s => s.Name == scopeNameStr, cancellationToken);
         if (!scopeExists)
         {
-            await AuditDeniedAsync(AuditActions.AttachScope, AuditReasonCodes.NotFound, name, name,
+            await AuditDeniedAsync(AuditAction.AttachScope, AuditReasonCode.NotFound, name, name,
                 $"API Scope '{scopeNameStr}' was not found.", cancellationToken);
             return AdminMutationResult.NotFoundResult();
         }
@@ -410,13 +410,13 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
                 await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
                 await _auditWriter.WriteAsync(new AdminAuditEvent(
-                    AuditCategories.ApiResource, AuditActions.AttachScope, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                    AuditCategory.ApiResource, AuditAction.AttachScope, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                     TargetId: name, TargetName: name,
                     Details: $"Attached scope '{scopeNameStr}' to API Resource"), cancellationToken);
             }
             catch (Exception ex)
             {
-                await AuditFailedAsync(AuditActions.AttachScope, name, name, ex, cancellationToken);
+                await AuditFailedAsync(AuditAction.AttachScope, name, name, ex, cancellationToken);
                 throw;
             }
         }
@@ -428,7 +428,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         CreateApiResourceScopeCommand command,
         CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.CreateScope,
+            AuditAction.CreateScope,
             command?.ResourceName ?? string.Empty,
             command?.ResourceName ?? string.Empty,
             () => CreateScopeCoreAsync(command!, cancellationToken),
@@ -466,7 +466,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
 
         if (errors.HasErrors)
         {
-            await AuditDeniedAsync(AuditActions.CreateScope, AuditReasonCodes.ValidationFailed, name, name,
+            await AuditDeniedAsync(AuditAction.CreateScope, AuditReasonCode.ValidationFailed, name, name,
                 "Scope creation validation failed.", cancellationToken);
             return AdminMutationResult.ValidationFailure(errors);
         }
@@ -474,7 +474,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var entity = await LoadResourceAsync(name, asNoTracking: false, cancellationToken);
         if (entity == null)
         {
-            await AuditDeniedAsync(AuditActions.CreateScope, AuditReasonCodes.NotFound, name, name,
+            await AuditDeniedAsync(AuditAction.CreateScope, AuditReasonCode.NotFound, name, name,
                 $"API Resource '{name}' was not found.", cancellationToken);
             return AdminMutationResult.NotFoundResult();
         }
@@ -483,7 +483,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var identityResourceCollision = await _configurationDbContext.IdentityResources.AsNoTracking().AnyAsync(r => r.Name == scopeName, cancellationToken);
         if (scopeCollision || identityResourceCollision)
         {
-            await AuditDeniedAsync(AuditActions.CreateScope, AuditReasonCodes.NameCollision, name, name,
+            await AuditDeniedAsync(AuditAction.CreateScope, AuditReasonCode.NameCollision, name, name,
                 $"A scope or identity resource named '{scopeName}' already exists.", cancellationToken);
             return AdminMutationResult.ConflictResult("CreateScope.ScopeName", $"A scope or identity resource named '{scopeName}' already exists.");
         }
@@ -508,7 +508,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
                 await transaction.CommitAsync(cancellationToken);
 
                 await _auditWriter.WriteAsync(new AdminAuditEvent(
-                    AuditCategories.ApiResource, AuditActions.CreateScope, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                    AuditCategory.ApiResource, AuditAction.CreateScope, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                     TargetId: name, TargetName: name,
                     Details: $"Created and attached new scope '{scopeName}' to API Resource"), cancellationToken);
 
@@ -517,14 +517,14 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
             {
                 await transaction.RollbackAsync(cancellationToken);
-                await AuditDeniedAsync(AuditActions.CreateScope, AuditReasonCodes.NameCollision, name, name,
+                await AuditDeniedAsync(AuditAction.CreateScope, AuditReasonCode.NameCollision, name, name,
                     $"A scope or identity resource named '{scopeName}' already exists.", cancellationToken);
                 return AdminMutationResult.ConflictResult("CreateScope.ScopeName", $"A scope or identity resource named '{scopeName}' already exists.");
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                await AuditFailedAsync(AuditActions.CreateScope, name, name, ex, cancellationToken);
+                await AuditFailedAsync(AuditAction.CreateScope, name, name, ex, cancellationToken);
                 throw;
             }
         });
@@ -532,7 +532,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
 
     public Task<AdminMutationResult> DetachScopeAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.DetachScope,
+            AuditAction.DetachScope,
             name ?? string.Empty,
             name ?? string.Empty,
             () => DetachScopeCoreAsync(name ?? string.Empty, scopeName, cancellationToken),
@@ -547,7 +547,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var scope = entity?.Scopes.FirstOrDefault(s => s.Scope == scopeNameStr);
         if (entity == null || scope == null)
         {
-            await AuditDeniedAsync(AuditActions.DetachScope, AuditReasonCodes.NotFound, name, name,
+            await AuditDeniedAsync(AuditAction.DetachScope, AuditReasonCode.NotFound, name, name,
                 $"API Resource '{name}' or scope '{scopeNameStr}' was not found.", cancellationToken);
             return AdminMutationResult.NotFoundResult();
         }
@@ -558,7 +558,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.ApiResource, AuditActions.DetachScope, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.ApiResource, AuditAction.DetachScope, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: name, TargetName: name,
                 Details: $"Detached scope '{scopeNameStr}' from API Resource"), cancellationToken);
 
@@ -566,7 +566,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.DetachScope, name, name, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.DetachScope, name, name, ex, cancellationToken);
             throw;
         }
     }
@@ -577,7 +577,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
 
     public Task<AdminMutationResult> AddClaimAsync(AddApiResourceClaimCommand command, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.AddClaim,
+            AuditAction.AddClaim,
             command?.ResourceName ?? string.Empty,
             command?.ResourceName ?? string.Empty,
             () => AddClaimCoreAsync(command!, cancellationToken),
@@ -600,7 +600,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         }
         if (errors.HasErrors)
         {
-            await AuditDeniedAsync(AuditActions.AddClaim, AuditReasonCodes.ValidationFailed, name, name,
+            await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, name, name,
                 "API Resource claim validation failed.", cancellationToken);
             return AdminMutationResult.ValidationFailure(errors);
         }
@@ -608,7 +608,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var entity = await LoadResourceAsync(name, asNoTracking: false, cancellationToken);
         if (entity == null)
         {
-            await AuditDeniedAsync(AuditActions.AddClaim, AuditReasonCodes.NotFound, name, name,
+            await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.NotFound, name, name,
                 $"API Resource '{name}' was not found.", cancellationToken);
             return AdminMutationResult.NotFoundResult();
         }
@@ -621,13 +621,13 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
                 await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
                 await _auditWriter.WriteAsync(new AdminAuditEvent(
-                    AuditCategories.ApiResource, AuditActions.AddClaim, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                    AuditCategory.ApiResource, AuditAction.AddClaim, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                     TargetId: name, TargetName: name,
                     Details: $"Added claim '{claimType}' to API Resource"), cancellationToken);
             }
             catch (Exception ex)
             {
-                await AuditFailedAsync(AuditActions.AddClaim, name, name, ex, cancellationToken);
+                await AuditFailedAsync(AuditAction.AddClaim, name, name, ex, cancellationToken);
                 throw;
             }
         }
@@ -637,7 +637,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
 
     public Task<AdminMutationResult> RemoveClaimAsync(string name, string claimType, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.RemoveClaim,
+            AuditAction.RemoveClaim,
             name ?? string.Empty,
             name ?? string.Empty,
             () => RemoveClaimCoreAsync(name ?? string.Empty, claimType ?? string.Empty, cancellationToken),
@@ -652,7 +652,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var claim = entity?.UserClaims.FirstOrDefault(c => c.Type == claimType);
         if (entity == null || claim == null)
         {
-            await AuditDeniedAsync(AuditActions.RemoveClaim, AuditReasonCodes.NotFound, name, name,
+            await AuditDeniedAsync(AuditAction.RemoveClaim, AuditReasonCode.NotFound, name, name,
                 $"API Resource '{name}' or claim '{claimType}' was not found.", cancellationToken);
             return AdminMutationResult.NotFoundResult();
         }
@@ -663,7 +663,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.ApiResource, AuditActions.RemoveClaim, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.ApiResource, AuditAction.RemoveClaim, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: name, TargetName: name,
                 Details: $"Removed claim '{claimType}' from API Resource"), cancellationToken);
 
@@ -671,7 +671,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.RemoveClaim, name, name, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.RemoveClaim, name, name, ex, cancellationToken);
             throw;
         }
     }
@@ -682,7 +682,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
 
     public Task<AdminMutationResult> SetEnabledAsync(string name, bool enabled, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.SetEnabled,
+            AuditAction.SetEnabled,
             name ?? string.Empty,
             name ?? string.Empty,
             () => SetEnabledCoreAsync(name ?? string.Empty, enabled, cancellationToken),
@@ -694,7 +694,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var entity = await _configurationDbContext.ApiResources.FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
         if (entity == null)
         {
-            await AuditDeniedAsync(AuditActions.SetEnabled, AuditReasonCodes.NotFound, name, name,
+            await AuditDeniedAsync(AuditAction.SetEnabled, AuditReasonCode.NotFound, name, name,
                 $"API Resource '{name}' was not found.", cancellationToken);
             return AdminMutationResult.NotFoundResult();
         }
@@ -705,7 +705,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.ApiResource, AuditActions.SetEnabled, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.ApiResource, AuditAction.SetEnabled, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: name, TargetName: name,
                 Details: $"Set API Resource enabled status to {enabled}"), cancellationToken);
 
@@ -713,14 +713,14 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.SetEnabled, name, name, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.SetEnabled, name, name, ex, cancellationToken);
             throw;
         }
     }
 
     public Task<AdminMutationResult> DeleteAsync(string name, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.Delete,
+            AuditAction.Delete,
             name ?? string.Empty,
             name ?? string.Empty,
             () => DeleteCoreAsync(name ?? string.Empty, cancellationToken),
@@ -732,7 +732,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         var entity = await _configurationDbContext.ApiResources.FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
         if (entity == null)
         {
-            await AuditDeniedAsync(AuditActions.Delete, AuditReasonCodes.NotFound, name, name,
+            await AuditDeniedAsync(AuditAction.Delete, AuditReasonCode.NotFound, name, name,
                 $"API Resource '{name}' was not found.", cancellationToken);
             return AdminMutationResult.NotFoundResult();
         }
@@ -743,7 +743,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.ApiResource, AuditActions.Delete, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.ApiResource, AuditAction.Delete, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: name, TargetName: name,
                 Details: $"Deleted API Resource '{name}'"), cancellationToken);
 
@@ -751,7 +751,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.Delete, name, name, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.Delete, name, name, ex, cancellationToken);
             throw;
         }
     }
@@ -808,18 +808,18 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         };
     }
 
-    private Task AuditDeniedAsync(string action, string reasonCode, string targetId, string targetName, string details, CancellationToken cancellationToken)
+    private Task AuditDeniedAsync(AuditAction action, AuditReasonCode reasonCode, string targetId, string targetName, string details, CancellationToken cancellationToken)
         => _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategories.ApiResource, action, AuditOutcome.Denied, reasonCode,
+            AuditCategory.ApiResource, action, AuditOutcome.Denied, reasonCode,
             TargetId: targetId, TargetName: targetName, Details: details), cancellationToken);
 
-    private Task AuditSucceededAsync(string action, string targetId, string targetName, string details, CancellationToken cancellationToken)
+    private Task AuditSucceededAsync(AuditAction action, string targetId, string targetName, string details, CancellationToken cancellationToken)
         => _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategories.ApiResource, action, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+            AuditCategory.ApiResource, action, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
             TargetId: targetId, TargetName: targetName, Details: details), cancellationToken);
 
     private async Task<T> ExecuteAuditedAsync<T>(
-        string action,
+        AuditAction action,
         string targetId,
         string targetName,
         Func<Task<T>> operation,
@@ -836,7 +836,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         }
     }
 
-    private async Task AuditFailedAsync(string action, string targetId, string targetName, Exception ex, CancellationToken cancellationToken)
+    private async Task AuditFailedAsync(AuditAction action, string targetId, string targetName, Exception ex, CancellationToken cancellationToken)
     {
         const string marker = "IdentityServerProject.Audit.ApiResource.Failed";
         if (ex.Data.Contains(marker))
@@ -846,7 +846,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
 
         ex.Data[marker] = true;
         await _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategories.ApiResource, action, AuditOutcome.Failed, AuditReasonCodes.PersistenceFailure,
+            AuditCategory.ApiResource, action, AuditOutcome.Failed, AuditReasonCode.PersistenceFailure,
             TargetId: targetId, TargetName: targetName, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
     }
 

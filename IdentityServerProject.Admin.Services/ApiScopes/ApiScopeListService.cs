@@ -82,7 +82,7 @@ public class ApiScopeListService : IApiScopeListService
             {
                 await transaction.RollbackAsync(cancellationToken);
                 await _auditWriter.WriteAsync(new AdminAuditEvent(
-                    AuditCategories.ApiScope, AuditActions.Delete, AuditOutcome.Denied, AuditReasonCodes.NotFound,
+                    AuditCategory.ApiScope, AuditAction.Delete, AuditOutcome.Denied, AuditReasonCode.NotFound,
                     TargetId: name, TargetName: name, Details: $"API Scope '{name}' was not found."), cancellationToken);
                 return ApiScopeDeleteResult.NotFound;
             }
@@ -93,7 +93,7 @@ public class ApiScopeListService : IApiScopeListService
             {
                 await transaction.RollbackAsync(cancellationToken);
                 await _auditWriter.WriteAsync(new AdminAuditEvent(
-                    AuditCategories.ApiScope, AuditActions.Delete, AuditOutcome.Denied, AuditReasonCodes.ReferencedResource,
+                    AuditCategory.ApiScope, AuditAction.Delete, AuditOutcome.Denied, AuditReasonCode.ReferencedResource,
                     TargetId: name, TargetName: scope.DisplayName ?? name,
                     Details: $"API Scope '{name}' is referenced by one or more clients."), cancellationToken);
                 return ApiScopeDeleteResult.Blocked;
@@ -105,7 +105,7 @@ public class ApiScopeListService : IApiScopeListService
             await transaction.CommitAsync(cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.ApiScope, AuditActions.Delete, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.ApiScope, AuditAction.Delete, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: name, TargetName: scope.DisplayName ?? name,
                 Details: $"Deleted API Scope '{name}'"), cancellationToken);
             return ApiScopeDeleteResult.Deleted;
@@ -113,7 +113,7 @@ public class ApiScopeListService : IApiScopeListService
         catch (Exception ex)
         {
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.ApiScope, AuditActions.Delete, AuditOutcome.Failed, AuditReasonCodes.PersistenceFailure,
+                AuditCategory.ApiScope, AuditAction.Delete, AuditOutcome.Failed, AuditReasonCode.PersistenceFailure,
                 TargetId: name, TargetName: name, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
             throw;
         }

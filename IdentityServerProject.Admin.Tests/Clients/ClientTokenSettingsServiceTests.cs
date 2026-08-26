@@ -39,7 +39,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientTokenSettingsAsync("non-existent-client-id-xyz");
+            var result = await service.GetClientTokenSettingsAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.Null(result);
         });
     }
@@ -61,7 +61,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientTokenSettingsAsync(clientId);
+            var result = await service.GetClientTokenSettingsAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
             Assert.Equal(3600, result!.AccessTokenLifetime.Seconds);
@@ -112,10 +112,10 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
                 }
             };
 
-            var updateResult = await service.UpdateClientTokenSettingsAsync(clientId, input);
+            var updateResult = await service.UpdateClientTokenSettingsAsync(ClientId.Create(clientId), input);
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
-            var result = await service.GetClientTokenSettingsAsync(clientId);
+            var result = await service.GetClientTokenSettingsAsync(ClientId.Create(clientId));
             Assert.NotNull(result);
             Assert.Equal(7200, result!.AccessTokenLifetime.Seconds);
             Assert.Equal(600, result.IdentityTokenLifetime.Seconds);
@@ -127,8 +127,8 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
             Assert.Equal(72000, result.RefreshToken.SlidingLifetime.Seconds);
 
             var audit = await sp.GetRequiredService<ApplicationDbContext>().AuditLogEntries
-                .SingleAsync(entry => entry.Category == AuditCategories.Client
-                    && entry.Action == AuditActions.UpdateTokenSettings
+                .SingleAsync(entry => entry.Category == AuditCategory.Client
+                    && entry.Action == AuditAction.UpdateTokenSettings
                     && entry.TargetId == clientId);
             Assert.Contains("AccessTokenLifetime", audit.OldValuesJson);
             Assert.Contains("SlidingLifetime", audit.NewValuesJson);
@@ -159,7 +159,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientTokenSettingsAsync(clientId, new ClientTokenSettingsInputModel
+            var result = await service.UpdateClientTokenSettingsAsync(ClientId.Create(clientId), new ClientTokenSettingsInputModel
             {
                 AccessTokenLifetime = TokenLifetime.FromSeconds(3600),
                 IdentityTokenLifetime = TokenLifetime.FromSeconds(300),
@@ -174,7 +174,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
             });
 
             Assert.True(result.Succeeded, result.ErrorMessage);
-            var saved = await service.GetClientTokenSettingsAsync(clientId);
+            var saved = await service.GetClientTokenSettingsAsync(ClientId.Create(clientId));
             Assert.NotNull(saved);
             Assert.False(saved!.AllowOfflineAccess);
             Assert.Equal(TokenUsage.OneTimeOnly, saved.RefreshToken.Usage);
@@ -190,7 +190,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientTokenSettingsAsync("non-existent-client-id-abc", new ClientTokenSettingsInputModel
+            var result = await service.UpdateClientTokenSettingsAsync(ClientId.Create("non-existent-client-id-abc"), new ClientTokenSettingsInputModel
             {
                 AccessTokenLifetime = TokenLifetime.FromSeconds(3600),
                 IdentityTokenLifetime = TokenLifetime.FromSeconds(300)
@@ -223,7 +223,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientTokenSettingsAsync(clientId, new ClientTokenSettingsInputModel
+            var result = await service.UpdateClientTokenSettingsAsync(ClientId.Create(clientId), new ClientTokenSettingsInputModel
             {
                 AccessTokenLifetime = TokenLifetime.FromSeconds(accessLifetime),
                 IdentityTokenLifetime = TokenLifetime.FromSeconds(identityLifetime)

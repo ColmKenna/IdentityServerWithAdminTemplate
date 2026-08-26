@@ -116,7 +116,7 @@ public class GrantListService : IGrantListService
 
     public Task<RevokeGrantResult> RevokeGrantAsync(GrantKey key, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.Revoke,
+            AuditAction.Revoke,
             key.Value ?? string.Empty,
             key.Value ?? string.Empty,
             () => RevokeGrantCoreAsync(key, cancellationToken),
@@ -131,7 +131,7 @@ public class GrantListService : IGrantListService
         if (grant == null)
         {
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.Grant, AuditActions.Revoke, AuditOutcome.Denied, AuditReasonCodes.NotFound,
+                AuditCategory.Grant, AuditAction.Revoke, AuditOutcome.Denied, AuditReasonCode.NotFound,
                 TargetId: keyStr, TargetName: keyStr, Details: "Grant not found."), cancellationToken);
             return RevokeGrantResult.NotFound;
         }
@@ -142,7 +142,7 @@ public class GrantListService : IGrantListService
             await _persistedGrantDbContext.SaveChangesAsync(cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.Grant, AuditActions.Revoke, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.Grant, AuditAction.Revoke, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: keyStr, TargetName: grant.SubjectId ?? keyStr,
                 Details: $"Revoked grant for client '{grant.ClientId}'"), cancellationToken);
 
@@ -150,14 +150,14 @@ public class GrantListService : IGrantListService
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.Revoke, keyStr, keyStr, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.Revoke, keyStr, keyStr, ex, cancellationToken);
             throw;
         }
     }
 
     public Task<int> RevokeGrantsBySubjectAsync(UserId subjectId, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.BulkRevoke,
+            AuditAction.BulkRevoke,
             subjectId.Value ?? string.Empty,
             subjectId.Value ?? string.Empty,
             () => RevokeGrantsBySubjectCoreAsync(subjectId, cancellationToken),
@@ -186,7 +186,7 @@ public class GrantListService : IGrantListService
             }
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.Grant, AuditActions.BulkRevoke, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.Grant, AuditAction.BulkRevoke, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: subjectIdStr, TargetName: subjectIdStr,
                 Details: $"Revoked {revokedCount} persisted grant(s) for subject '{subjectIdStr}'"), cancellationToken);
 
@@ -194,7 +194,7 @@ public class GrantListService : IGrantListService
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.BulkRevoke, subjectIdStr, subjectIdStr, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.BulkRevoke, subjectIdStr, subjectIdStr, ex, cancellationToken);
             throw;
         }
     }
@@ -204,7 +204,7 @@ public class GrantListService : IGrantListService
     #region Auditing
 
     private async Task<T> ExecuteAuditedAsync<T>(
-        string action,
+        AuditAction action,
         string targetId,
         string targetName,
         Func<Task<T>> operation,
@@ -222,7 +222,7 @@ public class GrantListService : IGrantListService
     }
 
     private async Task AuditFailedAsync(
-        string action,
+        AuditAction action,
         string targetId,
         string targetName,
         Exception ex,
@@ -236,7 +236,7 @@ public class GrantListService : IGrantListService
 
         ex.Data[marker] = true;
         await _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Grant, action, AuditOutcome.Failed, AuditReasonCodes.PersistenceFailure,
+            AuditCategory.Grant, action, AuditOutcome.Failed, AuditReasonCode.PersistenceFailure,
             TargetId: targetId, TargetName: targetName, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
     }
 

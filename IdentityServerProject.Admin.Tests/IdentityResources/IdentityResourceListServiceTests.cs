@@ -159,9 +159,9 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
 
             var auditDb = sp.GetRequiredService<ApplicationDbContext>();
             var audit = await auditDb.AuditLogEntries.SingleAsync(e =>
-                e.Category == AuditCategories.IdentityResource && e.Action == AuditActions.Delete && e.TargetId == resource.Name);
+                e.Category == AuditCategory.IdentityResource && e.Action == AuditAction.Delete && e.TargetId == resource.Name);
             Assert.Equal(AuditOutcome.Denied, audit.Outcome);
-            Assert.Equal(AuditReasonCodes.ReferencedResource, audit.ReasonCode);
+            Assert.Equal(AuditReasonCode.ReferencedResource, audit.ReasonCode);
         });
     }
 

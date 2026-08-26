@@ -163,7 +163,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
 
-            var updateResult = await service.UpdateClientPermissionsAsync(clientId, ScopeSet.FromStrings(new[] { $"{tag}.read" }));
+            var updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId), ScopeSet.FromStrings(new[] { $"{tag}.read" }));
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
             var result = await service.GetClientPermissionsAsync(clientId);
@@ -191,7 +191,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
 
-            var updateResult = await service.UpdateClientPermissionsAsync(clientId, ScopeSet.FromStrings(new[] { "openid", "profile", $"{tag}.write" }));
+            var updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId), ScopeSet.FromStrings(new[] { "openid", "profile", $"{tag}.write" }));
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
             var result = await service.GetClientPermissionsAsync(clientId);
@@ -221,7 +221,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
 
-            var updateResult = await service.UpdateClientPermissionsAsync(clientId, ScopeSet.FromStrings(new[] { "openid", $"{tag}.write" }));
+            var updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId), ScopeSet.FromStrings(new[] { "openid", $"{tag}.write" }));
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
             var result = await service.GetClientPermissionsAsync(clientId);
@@ -237,7 +237,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientPermissionsAsync("non-existent-client-id-xyz", ScopeSet.FromStrings(new[] { "openid" }));
+            var result = await service.UpdateClientPermissionsAsync(ClientId.Create("non-existent-client-id-xyz"), ScopeSet.FromStrings(new[] { "openid" }));
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
     }
@@ -260,7 +260,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
             var result = await service.UpdateClientPermissionsAsync(
-                clientId,
+                ClientId.Create(clientId),
                 ScopeSet.FromStrings(new[] { "openid", "scope.that.is.not.configured" }));
 
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);

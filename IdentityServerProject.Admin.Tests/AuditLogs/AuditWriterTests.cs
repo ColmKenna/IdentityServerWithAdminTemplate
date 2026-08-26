@@ -82,7 +82,7 @@ public class AuditWriterTests : IDisposable
         var writer = CreateWriter(context);
 
         await writer.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Client, AuditActions.Create, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded));
+            AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
         var entry = await GetOnlyEntryAsync();
         Assert.Equal("user-42", entry.ActorSubjectId);
@@ -98,7 +98,7 @@ public class AuditWriterTests : IDisposable
         var writer = CreateWriter(context);
 
         await writer.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Client, AuditActions.Create, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded));
+            AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
         var entry = await GetOnlyEntryAsync();
         Assert.Equal("subject-from-sub-claim", entry.ActorSubjectId);
@@ -110,7 +110,7 @@ public class AuditWriterTests : IDisposable
         var writer = CreateWriter(httpContext: null);
 
         await writer.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Client, AuditActions.Create, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded));
+            AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
         var entry = await GetOnlyEntryAsync();
         Assert.Equal(string.Empty, entry.ActorSubjectId);
@@ -124,7 +124,7 @@ public class AuditWriterTests : IDisposable
         var writer = CreateWriter(context);
 
         await writer.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Client, AuditActions.Create, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded));
+            AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
         var entry = await GetOnlyEntryAsync();
         Assert.Equal(string.Empty, entry.ActorSubjectId);
@@ -137,7 +137,7 @@ public class AuditWriterTests : IDisposable
         var writer = CreateWriter(context);
 
         await writer.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Client, AuditActions.Create, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded));
+            AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
         var entry = await GetOnlyEntryAsync();
         Assert.Equal("trace-123", entry.CorrelationId);
@@ -152,7 +152,7 @@ public class AuditWriterTests : IDisposable
         var writer = CreateWriter(httpContext: null, timeProvider: fakeTime);
 
         await writer.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Client, AuditActions.Create, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded));
+            AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
         var entry = await GetOnlyEntryAsync();
         Assert.Equal(fixedInstant.UtcDateTime, entry.Timestamp);
@@ -167,7 +167,7 @@ public class AuditWriterTests : IDisposable
         var writer = CreateWriter(httpContext: null);
 
         await writer.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Client, AuditActions.Create, outcome, AuditReasonCodes.Succeeded));
+            AuditCategory.Client, AuditAction.Create, outcome, AuditReasonCode.Succeeded));
 
         var entry = await GetOnlyEntryAsync();
         Assert.Equal(outcome, entry.Outcome);
@@ -180,7 +180,7 @@ public class AuditWriterTests : IDisposable
         var writer = CreateWriter(httpContext: null);
 
         await writer.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Client, AuditActions.UpdateBasics, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+            AuditCategory.Client, AuditAction.UpdateBasics, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
             OldValues: new AllowedAuditValue("old-name"),
             NewValues: new AllowedAuditValue("new-name")));
 
@@ -195,7 +195,7 @@ public class AuditWriterTests : IDisposable
         var writer = CreateWriter(httpContext: null);
 
         await writer.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Client, AuditActions.Create, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded));
+            AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
         var entry = await GetOnlyEntryAsync();
         Assert.Null(entry.OldValuesJson);
@@ -209,10 +209,10 @@ public class AuditWriterTests : IDisposable
         var writer = CreateWriter(httpContext: null);
 
         await writer.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Client,
-            AuditActions.UpdateAuthentication,
+            AuditCategory.Client,
+            AuditAction.UpdateAuthentication,
             AuditOutcome.Denied,
-            AuditReasonCodes.ValidationFailed,
+            AuditReasonCode.ValidationFailed,
             OldValues: new { Password = forbidden },
             NewValues: new { Secret = forbidden }));
 
@@ -243,7 +243,7 @@ public class AuditWriterTests : IDisposable
             TimeProvider.System);
 
         var exception = await Record.ExceptionAsync(() => writer.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Client, AuditActions.Create, AuditOutcome.Denied, AuditReasonCodes.NotFound,
+            AuditCategory.Client, AuditAction.Create, AuditOutcome.Denied, AuditReasonCode.NotFound,
             TargetId: "client-1", Details: "not found")));
 
         Assert.Null(exception);
@@ -268,7 +268,7 @@ public class AuditWriterTests : IDisposable
             TimeProvider.System);
 
         var exception = await Record.ExceptionAsync(() => writer.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Client, AuditActions.Create, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded)));
+            AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded)));
 
         Assert.Null(exception);
     }
@@ -287,7 +287,7 @@ public class AuditWriterTests : IDisposable
             TimeProvider.System);
 
         await writer.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Client, AuditActions.Create, outcome, AuditReasonCodes.Succeeded));
+            AuditCategory.Client, AuditAction.Create, outcome, AuditReasonCode.Succeeded));
 
         Assert.Contains(logger.Entries, e => e.Level == expectedLevel);
     }

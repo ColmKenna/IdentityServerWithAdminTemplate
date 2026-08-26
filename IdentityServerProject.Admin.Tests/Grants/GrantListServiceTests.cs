@@ -142,7 +142,7 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IGrantListService>();
-            var result = await service.RevokeGrantAsync(grantKey);
+            var result = await service.RevokeGrantAsync(GrantKey.Create(grantKey));
 
             Assert.Equal(RevokeGrantResult.Revoked, result);
         });
@@ -168,7 +168,7 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IGrantListService>();
-            var count = await service.RevokeGrantsBySubjectAsync(subjectId);
+            var count = await service.RevokeGrantsBySubjectAsync(UserId.Create(subjectId));
 
             Assert.Equal(2, count);
         });

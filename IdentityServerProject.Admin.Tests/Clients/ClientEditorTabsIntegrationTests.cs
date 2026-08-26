@@ -71,10 +71,10 @@ public class ClientEditorTabsIntegrationTests : IDisposable
     {
         var mock = new Mock<IClientDetailsService>();
 
-        mock.Setup(s => s.GetClientDetailsAsync(ClientId, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientDetailsAsync(IdentityServerProject.Services.Clients.ClientId.Create(ClientId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ClientDetailsModel
             {
-                ClientId = ClientId,
+                ClientId = IdentityServerProject.Services.Clients.ClientId.Create(ClientId),
                 ClientName = "Co-op Market Razor Client",
                 Description = "Storefront web client",
                 ClientType = "SPA with BFF",
@@ -82,10 +82,10 @@ public class ClientEditorTabsIntegrationTests : IDisposable
                 Enabled = true
             });
 
-        mock.Setup(s => s.GetClientAuthenticationAsync(ClientId, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientAuthenticationAsync(IdentityServerProject.Services.Clients.ClientId.Create(ClientId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ClientAuthenticationModel
             {
-                ClientId = ClientId,
+                ClientId = IdentityServerProject.Services.Clients.ClientId.Create(ClientId),
                 ClientName = "Co-op Market Razor Client",
                 RequirePkce = true,
                 RequireClientSecret = true,
@@ -95,7 +95,7 @@ public class ClientEditorTabsIntegrationTests : IDisposable
         mock.Setup(s => s.GetClientPermissionsAsync(ClientId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ClientPermissionsModel
             {
-                ClientId = ClientId,
+                ClientId = IdentityServerProject.Services.Clients.ClientId.Create(ClientId),
                 ClientName = "Co-op Market Razor Client",
                 IsInteractive = true,
                 AllowedScopes = new() { "openid" },
@@ -103,23 +103,23 @@ public class ClientEditorTabsIntegrationTests : IDisposable
                 AvailableApiScopes = new() { "coop.market.api" }
             });
 
-        mock.Setup(s => s.GetClientSecretsAsync(ClientId, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientSecretsAsync(IdentityServerProject.Services.Clients.ClientId.Create(ClientId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ClientSecretsModel
             {
-                ClientId = ClientId,
+                ClientId = IdentityServerProject.Services.Clients.ClientId.Create(ClientId),
                 ClientName = "Co-op Market Razor Client",
                 RequireClientSecret = true,
                 Secrets = new()
             });
 
-        mock.Setup(s => s.GetClientTokenSettingsAsync(ClientId, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientTokenSettingsAsync(IdentityServerProject.Services.Clients.ClientId.Create(ClientId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ClientTokenSettingsModel
             {
-                ClientId = ClientId,
+                ClientId = IdentityServerProject.Services.Clients.ClientId.Create(ClientId),
                 ClientName = "Co-op Market Razor Client",
-                AccessTokenLifetime = 300,
-                IdentityTokenLifetime = 300
-            });
+                AccessTokenLifetime = TokenLifetime.FromSeconds(300),
+                IdentityTokenLifetime = TokenLifetime.FromSeconds(300
+            )});
 
         return mock.Object;
     }

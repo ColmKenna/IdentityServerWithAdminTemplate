@@ -45,7 +45,7 @@ public class ClientsPermissionsIntegrationTests : IDisposable
 
     private static ClientPermissionsModel SampleInteractivePermissions(string id = "test-client") => new()
     {
-        ClientId = id,
+        ClientId = ClientId.Create(id),
         ClientName = "Co-op Market Razor Client",
         IsInteractive = true,
         AllowedScopes = new List<string> { "openid", "profile", "coop.market.api" },
@@ -55,7 +55,7 @@ public class ClientsPermissionsIntegrationTests : IDisposable
 
     private static ClientPermissionsModel SampleM2MPermissions(string id = "test-m2m-client") => new()
     {
-        ClientId = id,
+        ClientId = ClientId.Create(id),
         ClientName = "M2M Client",
         IsInteractive = false,
         AllowedScopes = new List<string> { "coop.market.api" },
@@ -160,7 +160,7 @@ public class ClientsPermissionsIntegrationTests : IDisposable
         var mock = new Mock<IClientDetailsService>();
         mock.Setup(s => s.GetClientPermissionsAsync("test-client", It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleInteractivePermissions());
-        mock.Setup(s => s.UpdateClientPermissionsAsync("test-client", It.IsAny<ScopeSet>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.UpdateClientPermissionsAsync(ClientId.Create("test-client"), It.IsAny<ScopeSet>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
         var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
@@ -183,8 +183,8 @@ public class ClientsPermissionsIntegrationTests : IDisposable
         Assert.Equal("/Admin/Clients/Details/test-client", response.Headers.Location?.OriginalString);
 
         mock.Verify(s => s.UpdateClientPermissionsAsync(
-            "test-client",
-            It.Is<ScopeSet>(scopes => scopes.Contains("coop.market.admin") && !scopes.Contains("coop.market.api")),
+            ClientId.Create("test-client"),
+            It.Is<ScopeSet>(scopes => scopes.Contains(ScopeName.Create("coop.market.admin")) && !scopes.Contains(ScopeName.Create("coop.market.api"))),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

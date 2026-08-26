@@ -72,10 +72,10 @@ public class RoleServiceTests
 
         _auditWriterMock.Verify(a => a.WriteAsync(
             It.Is<AdminAuditEvent>(e =>
-                e.Category == AuditCategories.Role &&
-                e.Action == AuditActions.Create &&
+                e.Category == AuditCategory.Role &&
+                e.Action == AuditAction.Create &&
                 e.Outcome == AuditOutcome.Succeeded &&
-                e.ReasonCode == AuditReasonCodes.Succeeded &&
+                e.ReasonCode == AuditReasonCode.Succeeded &&
                 e.TargetId == "role-123" &&
                 e.TargetName == "Manager"),
             It.IsAny<CancellationToken>()), Times.Once);
@@ -95,10 +95,10 @@ public class RoleServiceTests
 
         _auditWriterMock.Verify(a => a.WriteAsync(
             It.Is<AdminAuditEvent>(e =>
-                e.Category == AuditCategories.Role &&
-                e.Action == AuditActions.Create &&
+                e.Category == AuditCategory.Role &&
+                e.Action == AuditAction.Create &&
                 e.Outcome == AuditOutcome.Denied &&
-                e.ReasonCode == AuditReasonCodes.NameCollision &&
+                e.ReasonCode == AuditReasonCode.NameCollision &&
                 e.TargetName == "SysAdmin"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -117,10 +117,10 @@ public class RoleServiceTests
 
         _auditWriterMock.Verify(a => a.WriteAsync(
             It.Is<AdminAuditEvent>(e =>
-                e.Category == AuditCategories.Role &&
-                e.Action == AuditActions.Create &&
+                e.Category == AuditCategory.Role &&
+                e.Action == AuditAction.Create &&
                 e.Outcome == AuditOutcome.Denied &&
-                e.ReasonCode == AuditReasonCodes.ValidationFailed &&
+                e.ReasonCode == AuditReasonCode.ValidationFailed &&
                 e.TargetName == "BadRole"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -136,10 +136,10 @@ public class RoleServiceTests
 
         _auditWriterMock.Verify(a => a.WriteAsync(
             It.Is<AdminAuditEvent>(e =>
-                e.Category == AuditCategories.Role &&
-                e.Action == AuditActions.Create &&
+                e.Category == AuditCategory.Role &&
+                e.Action == AuditAction.Create &&
                 e.Outcome == AuditOutcome.Failed &&
-                e.ReasonCode == AuditReasonCodes.PersistenceFailure &&
+                e.ReasonCode == AuditReasonCode.PersistenceFailure &&
                 e.TargetName == "ExceptionRole"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -156,10 +156,10 @@ public class RoleServiceTests
 
         _auditWriterMock.Verify(a => a.WriteAsync(
             It.Is<AdminAuditEvent>(e =>
-                e.Category == AuditCategories.Role &&
-                e.Action == AuditActions.Delete &&
+                e.Category == AuditCategory.Role &&
+                e.Action == AuditAction.Delete &&
                 e.Outcome == AuditOutcome.Succeeded &&
-                e.ReasonCode == AuditReasonCodes.Succeeded &&
+                e.ReasonCode == AuditReasonCode.Succeeded &&
                 e.TargetId == "role-1" &&
                 e.TargetName == "Auditor"),
             It.IsAny<CancellationToken>()), Times.Once);
@@ -178,10 +178,10 @@ public class RoleServiceTests
 
         _auditWriterMock.Verify(a => a.WriteAsync(
             It.Is<AdminAuditEvent>(e =>
-                e.Category == AuditCategories.Role &&
-                e.Action == AuditActions.Delete &&
+                e.Category == AuditCategory.Role &&
+                e.Action == AuditAction.Delete &&
                 e.Outcome == AuditOutcome.Denied &&
-                e.ReasonCode == AuditReasonCodes.ProtectedResource &&
+                e.ReasonCode == AuditReasonCode.ProtectedResource &&
                 e.TargetId == "sysadmin-id" &&
                 e.TargetName == "SysAdmin"),
             It.IsAny<CancellationToken>()), Times.Once);
@@ -200,10 +200,10 @@ public class RoleServiceTests
 
         _auditWriterMock.Verify(a => a.WriteAsync(
             It.Is<AdminAuditEvent>(e =>
-                e.Category == AuditCategories.Role &&
-                e.Action == AuditActions.Delete &&
+                e.Category == AuditCategory.Role &&
+                e.Action == AuditAction.Delete &&
                 e.Outcome == AuditOutcome.Denied &&
-                e.ReasonCode == AuditReasonCodes.NotFound &&
+                e.ReasonCode == AuditReasonCode.NotFound &&
                 e.TargetId == "missing-id"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -221,10 +221,10 @@ public class RoleServiceTests
 
         _auditWriterMock.Verify(a => a.WriteAsync(
             It.Is<AdminAuditEvent>(e =>
-                e.Category == AuditCategories.Role &&
-                e.Action == AuditActions.Delete &&
+                e.Category == AuditCategory.Role &&
+                e.Action == AuditAction.Delete &&
                 e.Outcome == AuditOutcome.Denied &&
-                e.ReasonCode == AuditReasonCodes.ValidationFailed &&
+                e.ReasonCode == AuditReasonCode.ValidationFailed &&
                 e.TargetId == "bad-id" &&
                 e.TargetName == "bad-role"),
             It.IsAny<CancellationToken>()), Times.Once);
@@ -240,10 +240,10 @@ public class RoleServiceTests
 
         _auditWriterMock.Verify(a => a.WriteAsync(
             It.Is<AdminAuditEvent>(e =>
-                e.Category == AuditCategories.Role &&
-                e.Action == AuditActions.Delete &&
+                e.Category == AuditCategory.Role &&
+                e.Action == AuditAction.Delete &&
                 e.Outcome == AuditOutcome.Failed &&
-                e.ReasonCode == AuditReasonCodes.PersistenceFailure &&
+                e.ReasonCode == AuditReasonCode.PersistenceFailure &&
                 e.TargetId == "ex-id"),
             It.IsAny<CancellationToken>()), Times.Once);
     }

@@ -49,7 +49,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
 
     private static ClientDetailsModel SampleClientDetails(string id = "coop.market.razor", bool enabled = true) => new()
     {
-        ClientId = id,
+        ClientId = ClientId.Create(id),
         ClientName = "Co-op Market Razor Client",
         Description = "Sample description",
         ClientType = "SPA with BFF",
@@ -58,7 +58,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         RequireClientSecret = true,
         RequireConsent = false,
         AllowOfflineAccess = true,
-        AccessTokenLifetime = 300,
+        AccessTokenLifetime = TokenLifetime.FromSeconds(300),
         AllowedGrantTypes = "authorization_code",
         RedirectUrisCount = 2,
         CorsOriginsCount = 0,
@@ -91,9 +91,9 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
     public async Task Should_ToggleEnabledState_When_OnPostToggleStatusExecuted()
     {
         var mockService = new Mock<IClientDetailsService>();
-        mockService.Setup(s => s.GetClientDetailsAsync("coop.market.razor", It.IsAny<CancellationToken>()))
+        mockService.Setup(s => s.GetClientDetailsAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleClientDetails("coop.market.razor", enabled: true));
-        mockService.Setup(s => s.ToggleClientStatusAsync("coop.market.razor", It.IsAny<CancellationToken>()))
+        mockService.Setup(s => s.ToggleClientStatusAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var client = CreateClient(mockService.Object, allowAutoRedirect: false);
@@ -112,16 +112,16 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         // Asserts redirection back to Details page on successful toggle
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal("/Admin/Clients/Details/coop.market.razor", response.Headers.Location?.OriginalString);
-        mockService.Verify(s => s.ToggleClientStatusAsync("coop.market.razor", It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.ToggleClientStatusAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Should_Return404_When_ToggleStatusExecutedForNonExistentClient()
     {
         var mockService = new Mock<IClientDetailsService>();
-        mockService.Setup(s => s.GetClientDetailsAsync("existing-id", It.IsAny<CancellationToken>()))
+        mockService.Setup(s => s.GetClientDetailsAsync(ClientId.Create("existing-id"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleClientDetails("existing-id", enabled: true));
-        mockService.Setup(s => s.ToggleClientStatusAsync("non-existent-id", It.IsAny<CancellationToken>()))
+        mockService.Setup(s => s.ToggleClientStatusAsync(ClientId.Create("non-existent-id"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var client = CreateClient(mockService.Object, allowAutoRedirect: false);
@@ -138,7 +138,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         var response = await client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        mockService.Verify(s => s.ToggleClientStatusAsync("non-existent-id", It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.ToggleClientStatusAsync(ClientId.Create("non-existent-id"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -195,7 +195,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         await baseFactory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var secrets = await service.GetClientSecretsAsync(clientId);
+            var secrets = await service.GetClientSecretsAsync(ClientId.Create(clientId));
             Assert.NotNull(secrets);
             Assert.Single(secrets!.Secrets);
         });
@@ -225,7 +225,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
             await configDb.SaveChangesAsync();
 
             // Disable via the service so admin:disabledAt is stamped with "now" (< 90 days ago).
-            await service.ToggleClientStatusAsync(clientId);
+            await service.ToggleClientStatusAsync(ClientId.Create(clientId));
         });
 
         var client = baseFactory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
@@ -251,7 +251,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         await baseFactory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var stillExists = await service.GetClientDetailsAsync(clientId);
+            var stillExists = await service.GetClientDetailsAsync(ClientId.Create(clientId));
             Assert.NotNull(stillExists);
         });
     }

@@ -27,7 +27,7 @@ public readonly record struct AuditCategory(string Value) : IComparable<AuditCat
 
     public static implicit operator string(AuditCategory category) => category.Value ?? string.Empty;
 
-    public static implicit operator AuditCategory(string? value) => Create(value);
+    public static explicit operator AuditCategory(string? value) => Create(value);
 
     public override string ToString() => Value ?? string.Empty;
 

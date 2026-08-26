@@ -21,7 +21,7 @@ public readonly record struct ScopeName(string Value) : IComparable<ScopeName>, 
 
     public static implicit operator string(ScopeName scope) => scope.Value ?? string.Empty;
 
-    public static implicit operator ScopeName(string? value) => Create(value);
+    public static explicit operator ScopeName(string? value) => Create(value);
 
     public override string ToString() => Value ?? string.Empty;
 

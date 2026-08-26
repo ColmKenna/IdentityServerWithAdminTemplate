@@ -44,7 +44,7 @@ public class UsersDetailsPageModelTests
     public async Task OnPostUnlockAsync_FailureWithoutServiceErrors_RedirectsWithDefaultErrorMessage()
     {
         var service = new Mock<IUserDetailsService>();
-        service.Setup(s => s.UnlockUserAsync("user-1", It.IsAny<CancellationToken>()))
+        service.Setup(s => s.UnlockUserAsync(UserId.Create("user-1"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserUnlockResult(UserUnlockStatus.Failed, Array.Empty<string>()));
         var model = CreateModel(service);
         model.Id = "user-1";
@@ -60,7 +60,7 @@ public class UsersDetailsPageModelTests
     public async Task OnPostAddRoleAsync_MissingRole_ReturnsNotFound()
     {
         var service = new Mock<IUserDetailsService>();
-        service.Setup(s => s.AddRoleAsync("user-1", "missing-role", It.IsAny<CancellationToken>()))
+        service.Setup(s => s.AddRoleAsync(UserId.Create("user-1"), "missing-role", It.IsAny<CancellationToken>()))
             .ReturnsAsync(RoleChangeResult.Failed("Role not found."));
         var model = CreateModel(service);
         model.Id = "user-1";
@@ -74,7 +74,7 @@ public class UsersDetailsPageModelTests
     public async Task OnPostRevokeUserAccessAsync_ServiceFailure_RedirectsToAccessWithServiceError()
     {
         var service = new Mock<IUserDetailsService>();
-        service.Setup(s => s.RevokeUserAccessAsync("user-1", "admin", It.IsAny<CancellationToken>()))
+        service.Setup(s => s.RevokeUserAccessAsync(UserId.Create("user-1"), UserId.Create("admin"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserAccessRevokeResult.Failed("The current administrator cannot revoke their own access."));
         var model = CreateModel(service);
         model.Id = "user-1";

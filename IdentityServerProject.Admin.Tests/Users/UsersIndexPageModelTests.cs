@@ -21,7 +21,7 @@ public class UsersIndexPageModelTests
     {
         Items = new[]
         {
-            new UserListItem { Id = "u1", UserName = "admin@sales.local", Email = "admin@sales.local", FullName = "Sys Admin", IsLockedOut = false, LockoutEnd = null },
+            new UserListItem { Id = UserId.Create("u1"), UserName = "admin@sales.local", Email = "admin@sales.local", FullName = "Sys Admin", IsLockedOut = false, LockoutEnd = null },
         },
         TotalCount = 1,
         PageNumber = pageNumber,
@@ -77,7 +77,7 @@ public class UsersIndexPageModelTests
     public async Task OnPostUnlockAsync_ValidUserId_UnlocksUserAndRedirectsToPage()
     {
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.UnlockUserAsync("u1", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.UnlockUserAsync(UserId.Create("u1"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserUnlockResult.Succeeded);
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
@@ -86,14 +86,14 @@ public class UsersIndexPageModelTests
 
         var redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.NotNull(model.StatusMessage);
-        mock.Verify(s => s.UnlockUserAsync("u1", It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.UnlockUserAsync(UserId.Create("u1"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task OnPostUnlockAsync_InvalidUserId_ReturnsNotFound()
     {
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.UnlockUserAsync("invalid", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.UnlockUserAsync(UserId.Create("invalid"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserUnlockResult.NotFound);
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
@@ -107,7 +107,7 @@ public class UsersIndexPageModelTests
     public async Task OnPostUnlockAsync_IdentityOperationFails_ShowsOperatorErrorAndRedirects()
     {
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.UnlockUserAsync("u1", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.UnlockUserAsync(UserId.Create("u1"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserUnlockResult(
                 UserUnlockStatus.Failed,
                 new[] { "The lockout state could not be updated." }));

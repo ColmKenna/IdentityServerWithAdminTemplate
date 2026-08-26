@@ -89,24 +89,24 @@ public partial class UserDetailsService : IUserDetailsService
 
     public Task<RoleChangeResult> AddRoleAsync(UserId userId, string role, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.AddRole,
+            AuditAction.AddRole,
             userId.Value,
-            () => AddRoleCoreAsync(userId.Value, role ?? string.Empty, cancellationToken),
+            () => AddRoleCoreAsync(userId, role ?? string.Empty, cancellationToken),
             cancellationToken);
 
-    private async Task<RoleChangeResult> AddRoleCoreAsync(string userId, string role, CancellationToken cancellationToken)
+    private async Task<RoleChangeResult> AddRoleCoreAsync(UserId userId, string role, CancellationToken cancellationToken)
     {
         var outcome = await _store.AddRoleAsync(userId, role, cancellationToken);
 
         switch (outcome.Status)
         {
             case RoleAdditionStatus.UserNotFound:
-                await AuditDeniedAsync(AuditActions.AddRole, AuditReasonCodes.NotFound, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.AddRole, AuditReasonCode.NotFound, userId, outcome.TargetName,
                     "User not found.", cancellationToken);
                 return RoleChangeResult.Failed("User not found.");
 
             case RoleAdditionStatus.RoleNotFound:
-                await AuditDeniedAsync(AuditActions.AddRole, AuditReasonCodes.NotFound, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.AddRole, AuditReasonCode.NotFound, userId, outcome.TargetName,
                     "Role not found.", cancellationToken);
                 return RoleChangeResult.Failed("Role not found.");
 
@@ -114,13 +114,13 @@ public partial class UserDetailsService : IUserDetailsService
                 return RoleChangeResult.Succeeded();
 
             case RoleAdditionStatus.ValidationFailed:
-                await AuditDeniedAsync(AuditActions.AddRole, AuditReasonCodes.ValidationFailed, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.AddRole, AuditReasonCode.ValidationFailed, userId, outcome.TargetName,
                     outcome.ErrorMessage!, cancellationToken);
                 return RoleChangeResult.Failed(outcome.ErrorMessage!);
         }
 
         await _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategories.User, AuditActions.AddRole, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+            AuditCategory.User, AuditAction.AddRole, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
             TargetId: userId, TargetName: outcome.TargetName,
             Details: $"Added role '{role}'"), cancellationToken);
 
@@ -134,12 +134,12 @@ public partial class UserDetailsService : IUserDetailsService
 
         try
         {
-            var actorId = AuditActorResolver.Resolve(_httpContextAccessor.HttpContext?.User).SubjectId;
+            var actorId = UserId.Create(AuditActorResolver.Resolve(_httpContextAccessor.HttpContext?.User).SubjectId);
             outcome = await _store.RemoveRoleAsync(userId, role, ProtectedAdminRoles.SysAdmin, actorId, cancellationToken);
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.RemoveRole, userId.Value, targetName, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.RemoveRole, userId.Value, targetName, ex, cancellationToken);
             throw;
         }
 
@@ -148,39 +148,39 @@ public partial class UserDetailsService : IUserDetailsService
         switch (outcome.Status)
         {
             case RoleRemovalStatus.UserNotFound:
-                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.NotFound, userId.Value, targetName,
+                await AuditDeniedAsync(AuditAction.RemoveRole, AuditReasonCode.NotFound, userId.Value, targetName,
                     "User not found.", cancellationToken);
-                return RoleChangeResult.Failed("User not found.", AuditReasonCodes.NotFound, AdminMutationStatus.NotFound);
+                return RoleChangeResult.Failed("User not found.", AuditReasonCode.NotFound, AdminMutationStatus.NotFound);
 
             case RoleRemovalStatus.RoleNotFound:
-                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.NotFound, userId.Value, targetName,
+                await AuditDeniedAsync(AuditAction.RemoveRole, AuditReasonCode.NotFound, userId.Value, targetName,
                     "Role not found.", cancellationToken);
-                return RoleChangeResult.Failed("Role not found.", AuditReasonCodes.NotFound, AdminMutationStatus.NotFound);
+                return RoleChangeResult.Failed("Role not found.", AuditReasonCode.NotFound, AdminMutationStatus.NotFound);
 
             case RoleRemovalStatus.SelfDemotionBlocked:
             {
                 var message = "You cannot remove your own SysAdmin role. Ask another administrator to do this if needed.";
-                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.SelfDemotion, userId.Value, targetName,
+                await AuditDeniedAsync(AuditAction.RemoveRole, AuditReasonCode.SelfDemotion, userId.Value, targetName,
                     message, cancellationToken);
-                return RoleChangeResult.Failed(message, AuditReasonCodes.SelfDemotion);
+                return RoleChangeResult.Failed(message, AuditReasonCode.SelfDemotion);
             }
 
             case RoleRemovalStatus.LastProtectedMemberBlocked:
             {
                 var message = $"'{targetName}' is the last SysAdmin. Assign the role to another user before removing it here.";
-                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.LastAdministrator, userId.Value, targetName,
+                await AuditDeniedAsync(AuditAction.RemoveRole, AuditReasonCode.LastAdministrator, userId.Value, targetName,
                     message, cancellationToken);
-                return RoleChangeResult.Failed(message, AuditReasonCodes.LastAdministrator);
+                return RoleChangeResult.Failed(message, AuditReasonCode.LastAdministrator);
             }
 
             case RoleRemovalStatus.ValidationFailed:
-                await AuditDeniedAsync(AuditActions.RemoveRole, AuditReasonCodes.ValidationFailed, userId.Value, targetName,
+                await AuditDeniedAsync(AuditAction.RemoveRole, AuditReasonCode.ValidationFailed, userId.Value, targetName,
                     outcome.ErrorMessage!, cancellationToken);
-                return RoleChangeResult.Failed(outcome.ErrorMessage!, AuditReasonCodes.ValidationFailed, AdminMutationStatus.ValidationFailed);
+                return RoleChangeResult.Failed(outcome.ErrorMessage!, AuditReasonCode.ValidationFailed, AdminMutationStatus.ValidationFailed);
         }
 
         await _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategories.User, AuditActions.RemoveRole, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+            AuditCategory.User, AuditAction.RemoveRole, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
             TargetId: userId.Value, TargetName: targetName,
             Details: outcome.RoleWasRemoved ? $"Removed role '{role}'" : $"Role '{role}' was not assigned"), cancellationToken);
 
@@ -200,17 +200,17 @@ public partial class UserDetailsService : IUserDetailsService
 
     public Task<ClaimChangeResult> AddClaimAsync(UserId userId, UserClaim claim, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.AddClaim,
+            AuditAction.AddClaim,
             userId.Value,
-            () => AddClaimCoreAsync(userId.Value, claim.Type ?? string.Empty, claim.Value ?? string.Empty, cancellationToken),
+            () => AddClaimCoreAsync(userId, claim.Type ?? string.Empty, claim.Value ?? string.Empty, cancellationToken),
             cancellationToken);
 
-    private async Task<ClaimChangeResult> AddClaimCoreAsync(string userId, string claimType, string claimValue, CancellationToken cancellationToken)
+    private async Task<ClaimChangeResult> AddClaimCoreAsync(UserId userId, string claimType, string claimValue, CancellationToken cancellationToken)
     {
         var type = ReservedClaimTypePolicy.Normalize(claimType);
         if (type.Length == 0)
         {
-            await AuditDeniedAsync(AuditActions.AddClaim, AuditReasonCodes.ValidationFailed, userId, userId,
+            await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, userId, userId,
                 "Claim type is required.", cancellationToken);
             return ClaimChangeResult.Failed("Claim type is required.");
         }
@@ -218,7 +218,7 @@ public partial class UserDetailsService : IUserDetailsService
         if (type.Length > ValidationConstants.MaxClaimTypeLength)
         {
             var message = $"Claim type cannot exceed {ValidationConstants.MaxClaimTypeLength} characters.";
-            await AuditDeniedAsync(AuditActions.AddClaim, AuditReasonCodes.ValidationFailed, userId, userId,
+            await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, userId, userId,
                 message, cancellationToken);
             return ClaimChangeResult.Failed(message);
         }
@@ -226,7 +226,7 @@ public partial class UserDetailsService : IUserDetailsService
         if (string.IsNullOrWhiteSpace(claimValue))
         {
             const string message = "Claim value is required.";
-            await AuditDeniedAsync(AuditActions.AddClaim, AuditReasonCodes.ValidationFailed, userId, userId,
+            await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, userId, userId,
                 message, cancellationToken);
             return ClaimChangeResult.Failed(message);
         }
@@ -234,7 +234,7 @@ public partial class UserDetailsService : IUserDetailsService
         if (claimValue.Length > ValidationConstants.MaxClaimValueLength)
         {
             var message = $"Claim value cannot exceed {ValidationConstants.MaxClaimValueLength} characters.";
-            await AuditDeniedAsync(AuditActions.AddClaim, AuditReasonCodes.ValidationFailed, userId, userId,
+            await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, userId, userId,
                 message, cancellationToken);
             return ClaimChangeResult.Failed(message);
         }
@@ -247,7 +247,7 @@ public partial class UserDetailsService : IUserDetailsService
         {
             var message = $"'{type}' is a reserved claim type and cannot be assigned here. Roles are granted on the Roles tab; " +
                 "identity and security claims are issued by the framework.";
-            await AuditDeniedAsync(AuditActions.AddClaim, AuditReasonCodes.ReservedClaimType, userId, userId,
+            await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ReservedClaimType, userId, userId,
                 message, cancellationToken);
             return ClaimChangeResult.Failed(message);
         }
@@ -258,24 +258,24 @@ public partial class UserDetailsService : IUserDetailsService
             case ClaimMutationStatus.AlreadyExists:
             {
                 const string message = "This exact claim is already assigned to the user.";
-                await AuditDeniedAsync(AuditActions.AddClaim, AuditReasonCodes.ValidationFailed, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, userId, outcome.TargetName,
                     message, cancellationToken);
                 return ClaimChangeResult.Failed(message);
             }
 
             case ClaimMutationStatus.UserNotFound:
-                await AuditDeniedAsync(AuditActions.AddClaim, AuditReasonCodes.NotFound, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.NotFound, userId, outcome.TargetName,
                     "User not found.", cancellationToken);
                 return ClaimChangeResult.Failed("User not found.");
 
             case ClaimMutationStatus.ValidationFailed:
-                await AuditDeniedAsync(AuditActions.AddClaim, AuditReasonCodes.ValidationFailed, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, userId, outcome.TargetName,
                     outcome.ErrorMessage!, cancellationToken);
                 return ClaimChangeResult.Failed(outcome.ErrorMessage!);
         }
 
         await _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategories.User, AuditActions.AddClaim, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+            AuditCategory.User, AuditAction.AddClaim, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
             TargetId: userId, TargetName: outcome.TargetName,
             Details: $"Added claim type '{type}'"), cancellationToken);
 
@@ -284,17 +284,17 @@ public partial class UserDetailsService : IUserDetailsService
 
     public Task<ClaimChangeResult> RemoveClaimAsync(UserId userId, UserClaim claim, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.RemoveClaim,
+            AuditAction.RemoveClaim,
             userId.Value,
-            () => RemoveClaimCoreAsync(userId.Value, claim.Type ?? string.Empty, claim.Value ?? string.Empty, cancellationToken),
+            () => RemoveClaimCoreAsync(userId, claim.Type ?? string.Empty, claim.Value ?? string.Empty, cancellationToken),
             cancellationToken);
 
-    private async Task<ClaimChangeResult> RemoveClaimCoreAsync(string userId, string claimType, string claimValue, CancellationToken cancellationToken)
+    private async Task<ClaimChangeResult> RemoveClaimCoreAsync(UserId userId, string claimType, string claimValue, CancellationToken cancellationToken)
     {
         var type = ReservedClaimTypePolicy.Normalize(claimType);
         if (type.Length == 0)
         {
-            await AuditDeniedAsync(AuditActions.RemoveClaim, AuditReasonCodes.ValidationFailed, userId, userId,
+            await AuditDeniedAsync(AuditAction.RemoveClaim, AuditReasonCode.ValidationFailed, userId, userId,
                 "Claim type is required.", cancellationToken);
             return ClaimChangeResult.Failed("Claim type is required.");
         }
@@ -305,18 +305,18 @@ public partial class UserDetailsService : IUserDetailsService
         switch (outcome.Status)
         {
             case ClaimMutationStatus.UserNotFound:
-                await AuditDeniedAsync(AuditActions.RemoveClaim, AuditReasonCodes.NotFound, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.RemoveClaim, AuditReasonCode.NotFound, userId, outcome.TargetName,
                     "User not found.", cancellationToken);
                 return ClaimChangeResult.Failed("User not found.");
 
             case ClaimMutationStatus.ValidationFailed:
-                await AuditDeniedAsync(AuditActions.RemoveClaim, AuditReasonCodes.ValidationFailed, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.RemoveClaim, AuditReasonCode.ValidationFailed, userId, outcome.TargetName,
                     outcome.ErrorMessage!, cancellationToken);
                 return ClaimChangeResult.Failed(outcome.ErrorMessage!);
         }
 
         await _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategories.User, AuditActions.RemoveClaim, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+            AuditCategory.User, AuditAction.RemoveClaim, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
             TargetId: userId, TargetName: outcome.TargetName,
             Details: $"Removed claim type '{type}'"), cancellationToken);
 
@@ -328,18 +328,18 @@ public partial class UserDetailsService : IUserDetailsService
     #region Access revocation
 
     public Task<UserAccessRevokeResult> RevokeUserAccessAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default) =>
-        RevokeUserAccessCoreAsync(userId.Value, currentUserId?.Value, cancellationToken);
+        RevokeUserAccessCoreAsync(userId, currentUserId, cancellationToken);
 
-    private async Task<UserAccessRevokeResult> RevokeUserAccessCoreAsync(string userId, string? currentUserId, CancellationToken cancellationToken)
+    private async Task<UserAccessRevokeResult> RevokeUserAccessCoreAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(userId))
         {
-            await AuditDeniedAsync(AuditActions.RevokeUserAccess, AuditReasonCodes.NotFound, userId, userId,
+            await AuditDeniedAsync(AuditAction.RevokeUserAccess, AuditReasonCode.NotFound, userId, userId,
                 "User not found.", cancellationToken);
             return UserAccessRevokeResult.Failed("User not found.");
         }
 
-        var targetName = userId;
+        var targetName = userId.Value;
         var revokedCount = 0;
         var clientIds = new List<string>();
 
@@ -350,7 +350,7 @@ public partial class UserDetailsService : IUserDetailsService
 
             if (rotation.Status == SecurityStampRotationStatus.UserNotFound)
             {
-                await AuditDeniedAsync(AuditActions.RevokeUserAccess, AuditReasonCodes.NotFound, userId, userId,
+                await AuditDeniedAsync(AuditAction.RevokeUserAccess, AuditReasonCode.NotFound, userId, userId,
                     "User not found.", cancellationToken);
                 return UserAccessRevokeResult.Failed("User not found.");
             }
@@ -358,7 +358,7 @@ public partial class UserDetailsService : IUserDetailsService
             if (rotation.Status == SecurityStampRotationStatus.SelfActionBlocked)
             {
                 var message = "You cannot revoke your own access from this page. Ask another administrator to do this if needed.";
-                await AuditDeniedAsync(AuditActions.RevokeUserAccess, AuditReasonCodes.SelfAction, userId, targetName,
+                await AuditDeniedAsync(AuditAction.RevokeUserAccess, AuditReasonCode.SelfAction, userId, targetName,
                     message, cancellationToken);
                 return UserAccessRevokeResult.Failed(message);
             }
@@ -385,13 +385,13 @@ public partial class UserDetailsService : IUserDetailsService
             });
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.User, AuditActions.RevokeUserAccess, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.User, AuditAction.RevokeUserAccess, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: userId, TargetName: targetName,
                 Details: $"Rotated the security stamp and revoked {revokedCount} persisted grant(s)"), cancellationToken);
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.RevokeUserAccess, userId, targetName, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.RevokeUserAccess, userId, targetName, ex, cancellationToken);
             throw;
         }
 
@@ -409,8 +409,8 @@ public partial class UserDetailsService : IUserDetailsService
         catch (Exception ex)
         {
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.User, AuditActions.SendBackChannelLogout, AuditOutcome.Failed,
-                AuditReasonCodes.NotificationFailure, TargetId: userId, TargetName: targetName,
+                AuditCategory.User, AuditAction.SendBackChannelLogout, AuditOutcome.Failed,
+                AuditReasonCode.NotificationFailure, TargetId: userId, TargetName: targetName,
                 Details: $"Back-channel logout notification failed ({ex.GetType().Name})"), cancellationToken);
             warningMessage = "Access was revoked locally, but one or more clients could not be notified.";
         }
@@ -424,16 +424,16 @@ public partial class UserDetailsService : IUserDetailsService
 
     public Task<PasswordResetResult> ResetPasswordAsync(UserId userId, string newPassword, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.ResetPassword,
+            AuditAction.ResetPassword,
             userId.Value,
-            () => ResetPasswordCoreAsync(userId.Value, newPassword, cancellationToken),
+            () => ResetPasswordCoreAsync(userId, newPassword, cancellationToken),
             cancellationToken);
 
-    private async Task<PasswordResetResult> ResetPasswordCoreAsync(string userId, string newPassword, CancellationToken cancellationToken)
+    private async Task<PasswordResetResult> ResetPasswordCoreAsync(UserId userId, string newPassword, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(newPassword))
         {
-            await AuditDeniedAsync(AuditActions.ResetPassword, AuditReasonCodes.ValidationFailed, userId, userId,
+            await AuditDeniedAsync(AuditAction.ResetPassword, AuditReasonCode.ValidationFailed, userId, userId,
                 "Password is required.", cancellationToken);
             return PasswordResetResult.Failed("Password is required.");
         }
@@ -442,18 +442,18 @@ public partial class UserDetailsService : IUserDetailsService
         switch (outcome.Status)
         {
             case PasswordResetStatus.UserNotFound:
-                await AuditDeniedAsync(AuditActions.ResetPassword, AuditReasonCodes.NotFound, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.ResetPassword, AuditReasonCode.NotFound, userId, outcome.TargetName,
                     "User not found.", cancellationToken);
                 return PasswordResetResult.Failed("User not found.");
 
             case PasswordResetStatus.ValidationFailed:
-                await AuditDeniedAsync(AuditActions.ResetPassword, AuditReasonCodes.ValidationFailed, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.ResetPassword, AuditReasonCode.ValidationFailed, userId, outcome.TargetName,
                     outcome.ErrorMessage!, cancellationToken);
                 return PasswordResetResult.Failed(outcome.ErrorMessage!);
         }
 
         await _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategories.User, AuditActions.ResetPassword, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+            AuditCategory.User, AuditAction.ResetPassword, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
             TargetId: userId, TargetName: outcome.TargetName,
             Details: "Password was reset by administrator"), cancellationToken);
 
@@ -462,34 +462,34 @@ public partial class UserDetailsService : IUserDetailsService
 
     public Task<UserSuspendResult> SuspendUserAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.SuspendUser,
+            AuditAction.SuspendUser,
             userId.Value,
-            () => SuspendUserCoreAsync(userId.Value, currentUserId?.Value, cancellationToken),
+            () => SuspendUserCoreAsync(userId, currentUserId, cancellationToken),
             cancellationToken);
 
-    private async Task<UserSuspendResult> SuspendUserCoreAsync(string userId, string? currentUserId, CancellationToken cancellationToken)
+    private async Task<UserSuspendResult> SuspendUserCoreAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken)
     {
         var outcome = await _store.SuspendUserAsync(userId, currentUserId, cancellationToken);
         switch (outcome.Status)
         {
             case UserSuspendStatus.UserNotFound:
-                await AuditDeniedAsync(AuditActions.SuspendUser, AuditReasonCodes.NotFound, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.SuspendUser, AuditReasonCode.NotFound, userId, outcome.TargetName,
                     "User not found.", cancellationToken);
                 return UserSuspendResult.Failed("User not found.");
 
             case UserSuspendStatus.SelfActionBlocked:
-                await AuditDeniedAsync(AuditActions.SuspendUser, AuditReasonCodes.SelfAction, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.SuspendUser, AuditReasonCode.SelfAction, userId, outcome.TargetName,
                     "Cannot suspend your own account.", cancellationToken);
                 return UserSuspendResult.Failed("You cannot suspend your own account.");
 
             case UserSuspendStatus.ValidationFailed:
-                await AuditDeniedAsync(AuditActions.SuspendUser, AuditReasonCodes.ValidationFailed, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.SuspendUser, AuditReasonCode.ValidationFailed, userId, outcome.TargetName,
                     "Failed to suspend user.", cancellationToken);
                 return UserSuspendResult.Failed("Failed to suspend user.");
         }
 
         await _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategories.User, AuditActions.SuspendUser, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+            AuditCategory.User, AuditAction.SuspendUser, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
             TargetId: userId, TargetName: outcome.TargetName,
             Details: "User suspended manually by administrator"), cancellationToken);
 
@@ -497,9 +497,9 @@ public partial class UserDetailsService : IUserDetailsService
     }
 
     public Task<UserUnlockResult> UnlockUserAsync(UserId userId, CancellationToken cancellationToken = default) =>
-        UnlockUserCoreAsync(userId.Value, cancellationToken);
+        UnlockUserCoreAsync(userId, cancellationToken);
 
-    private async Task<UserUnlockResult> UnlockUserCoreAsync(string userId, CancellationToken cancellationToken)
+    private async Task<UserUnlockResult> UnlockUserCoreAsync(UserId userId, CancellationToken cancellationToken)
     {
         try
         {
@@ -511,20 +511,20 @@ public partial class UserDetailsService : IUserDetailsService
             {
                 case UserUnlockStatus.NotFound:
                     await _auditWriter.WriteAsync(new AdminAuditEvent(
-                        AuditCategories.User, AuditActions.Unlock, AuditOutcome.Denied, AuditReasonCodes.NotFound,
+                        AuditCategory.User, AuditAction.Unlock, AuditOutcome.Denied, AuditReasonCode.NotFound,
                         TargetId: userId, TargetName: targetName, Details: "User not found."), cancellationToken);
                     return result;
 
                 case UserUnlockStatus.Failed:
                     await _auditWriter.WriteAsync(new AdminAuditEvent(
-                        AuditCategories.User, AuditActions.Unlock, AuditOutcome.Denied, AuditReasonCodes.ValidationFailed,
+                        AuditCategory.User, AuditAction.Unlock, AuditOutcome.Denied, AuditReasonCode.ValidationFailed,
                         TargetId: userId, TargetName: targetName,
                         Details: string.Join(" ", result.Errors)), cancellationToken);
                     return result;
             }
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.User, AuditActions.Unlock, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.User, AuditAction.Unlock, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: userId, TargetName: targetName,
                 Details: $"Unlocked user '{targetName}'"), cancellationToken);
 
@@ -533,7 +533,7 @@ public partial class UserDetailsService : IUserDetailsService
         catch (Exception ex)
         {
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.User, AuditActions.Unlock, AuditOutcome.Failed, AuditReasonCodes.PersistenceFailure,
+                AuditCategory.User, AuditAction.Unlock, AuditOutcome.Failed, AuditReasonCode.PersistenceFailure,
                 TargetId: userId, TargetName: userId,
                 Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
             throw;
@@ -542,28 +542,28 @@ public partial class UserDetailsService : IUserDetailsService
 
     public Task<UserDeleteResult> DeleteUserAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            AuditActions.DeleteUser,
+            AuditAction.DeleteUser,
             userId.Value,
-            () => DeleteUserCoreAsync(userId.Value, currentUserId?.Value, cancellationToken),
+            () => DeleteUserCoreAsync(userId, currentUserId, cancellationToken),
             cancellationToken);
 
-    private async Task<UserDeleteResult> DeleteUserCoreAsync(string userId, string? currentUserId, CancellationToken cancellationToken)
+    private async Task<UserDeleteResult> DeleteUserCoreAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken)
     {
         var outcome = await _store.DeleteUserAsync(userId, currentUserId, cancellationToken);
         switch (outcome.Status)
         {
             case UserDeleteStatus.UserNotFound:
-                await AuditDeniedAsync(AuditActions.DeleteUser, AuditReasonCodes.NotFound, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.DeleteUser, AuditReasonCode.NotFound, userId, outcome.TargetName,
                     "User not found.", cancellationToken);
                 return UserDeleteResult.Failed("User not found.");
 
             case UserDeleteStatus.SelfActionBlocked:
-                await AuditDeniedAsync(AuditActions.DeleteUser, AuditReasonCodes.SelfAction, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.DeleteUser, AuditReasonCode.SelfAction, userId, outcome.TargetName,
                     "Cannot delete your own account.", cancellationToken);
                 return UserDeleteResult.Failed("You cannot delete your own account.");
 
             case UserDeleteStatus.ValidationFailed:
-                await AuditDeniedAsync(AuditActions.DeleteUser, AuditReasonCodes.ValidationFailed, userId, outcome.TargetName,
+                await AuditDeniedAsync(AuditAction.DeleteUser, AuditReasonCode.ValidationFailed, userId, outcome.TargetName,
                     "Failed to delete user.", cancellationToken);
                 return UserDeleteResult.Failed("Failed to delete user.");
         }
@@ -590,11 +590,11 @@ public partial class UserDetailsService : IUserDetailsService
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.RemoveGrantsOnUserDelete, userId, outcome.TargetName, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.RemoveGrantsOnUserDelete, userId, outcome.TargetName, ex, cancellationToken);
         }
 
         await _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategories.User, AuditActions.DeleteUser, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+            AuditCategory.User, AuditAction.DeleteUser, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
             TargetId: userId, TargetName: outcome.TargetName,
             Details: "User deleted manually by administrator"), cancellationToken);
 

@@ -11,7 +11,7 @@ public readonly record struct SecretRevealHandle(string Value)
 {
     public bool IsEmpty => string.IsNullOrWhiteSpace(Value);
     public static SecretRevealHandle Create(string? value) => new(value?.Trim() ?? string.Empty);
-    public static implicit operator SecretRevealHandle(string? value) => Create(value);
+    public static explicit operator SecretRevealHandle(string? value) => Create(value);
     public static implicit operator string(SecretRevealHandle handle) => handle.Value ?? string.Empty;
     public override string ToString() => Value ?? string.Empty;
 }

@@ -49,7 +49,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.GetUserDetailsAsync("non-existent-user-id-xyz", null);
+            var result = await service.GetUserDetailsAsync(UserId.Create("non-existent-user-id-xyz"), null);
             Assert.Null(result);
         });
     }
@@ -72,14 +72,14 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
 
             var service = sp.GetRequiredService<IUserDetailsService>();
 
-            var result = await service.GetUserDetailsAsync(user.Id, user.Id);
+            var result = await service.GetUserDetailsAsync(UserId.Create(user.Id), UserId.Create(user.Id));
             Assert.NotNull(result);
             Assert.Contains(roleName, result!.AssignedRoles);
             Assert.Contains(roleName, result.AllRoles);
             Assert.Contains(result.Claims, c => c.Type == "dept" && c.Value == "Engineering");
             Assert.True(result.IsCurrentUser);
 
-            var resultAsOther = await service.GetUserDetailsAsync(user.Id, "someone-else-id");
+            var resultAsOther = await service.GetUserDetailsAsync(UserId.Create(user.Id), UserId.Create("someone-else-id"));
             Assert.False(resultAsOther!.IsCurrentUser);
         });
     }
@@ -98,7 +98,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var user = await CreateUserAsync(userManager, tag, "addrole");
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.AddRoleAsync(user.Id, roleName);
+            var result = await service.AddRoleAsync(UserId.Create(user.Id), roleName);
 
             Assert.True(result.Success);
             Assert.True(await userManager.IsInRoleAsync(user, roleName));
@@ -123,7 +123,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             await userManager.AddToRoleAsync(userB, roleName);
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.RemoveRoleAsync(userA.Id, roleName);
+            var result = await service.RemoveRoleAsync(UserId.Create(userA.Id), roleName);
 
             Assert.True(result.Success);
             Assert.False(await userManager.IsInRoleAsync(userA, roleName));
@@ -147,7 +147,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             await userManager.AddToRoleAsync(soleHolder, roleName);
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.RemoveRoleAsync(soleHolder.Id, roleName);
+            var result = await service.RemoveRoleAsync(UserId.Create(soleHolder.Id), roleName);
 
             Assert.True(result.Success);
             Assert.False(await userManager.IsInRoleAsync(soleHolder, roleName));
@@ -166,16 +166,16 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
 
             var service = sp.GetRequiredService<IUserDetailsService>();
 
-            var addResult = await service.AddClaimAsync(user.Id, new IdentityServerProject.Services.Users.UserClaim("dept", "Sales"));
+            var addResult = await service.AddClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim("dept", "Sales"));
             Assert.True(addResult.Success);
 
-            var afterAdd = await service.GetUserDetailsAsync(user.Id, null);
+            var afterAdd = await service.GetUserDetailsAsync(UserId.Create(user.Id), null);
             Assert.Contains(afterAdd!.Claims, c => c.Type == "dept" && c.Value == "Sales");
 
-            var removeResult = await service.RemoveClaimAsync(user.Id, new IdentityServerProject.Services.Users.UserClaim("dept", "Sales"));
+            var removeResult = await service.RemoveClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim("dept", "Sales"));
             Assert.True(removeResult.Success);
 
-            var afterRemove = await service.GetUserDetailsAsync(user.Id, null);
+            var afterRemove = await service.GetUserDetailsAsync(UserId.Create(user.Id), null);
             Assert.DoesNotContain(afterRemove!.Claims, c => c.Type == "dept" && c.Value == "Sales");
         });
     }
@@ -203,7 +203,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var user = await CreateUserAsync(userManager, tag, "reserved");
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.AddClaimAsync(user.Id, new IdentityServerProject.Services.Users.UserClaim(claimType, Config.SysAdminRole));
+            var result = await service.AddClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim(claimType, Config.SysAdminRole));
 
             Assert.False(result.Success);
             Assert.Contains("reserved", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
@@ -240,7 +240,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var user = await CreateUserAsync(userManager, tag, "escalate");
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.AddClaimAsync(user.Id, new IdentityServerProject.Services.Users.UserClaim(roleClaimType, Config.SysAdminRole));
+            var result = await service.AddClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim(roleClaimType, Config.SysAdminRole));
 
             Assert.False(result.Success);
 
@@ -293,7 +293,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var user = await CreateUserAsync(userManager, tag, "blank");
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.AddClaimAsync(user.Id, new IdentityServerProject.Services.Users.UserClaim(claimType, "anything"));
+            var result = await service.AddClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim(claimType, "anything"));
 
             Assert.False(result.Success);
             Assert.Contains("required", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
@@ -313,7 +313,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var user = await CreateUserAsync(userManager, tag, "blank-value");
             var service = sp.GetRequiredService<IUserDetailsService>();
 
-            var result = await service.AddClaimAsync(user.Id, new IdentityServerProject.Services.Users.UserClaim("dept", claimValue));
+            var result = await service.AddClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim("dept", claimValue));
 
             Assert.False(result.Success);
             Assert.Contains("required", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
@@ -333,7 +333,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var type = new string('t', ValidationConstants.MaxClaimTypeLength);
             var value = new string('v', ValidationConstants.MaxClaimValueLength);
 
-            var result = await service.AddClaimAsync(user.Id, new IdentityServerProject.Services.Users.UserClaim(type, value));
+            var result = await service.AddClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim(type, value));
 
             Assert.True(result.Success, result.ErrorMessage);
             Assert.Contains(await userManager.GetClaimsAsync(user), claim => claim.Type == type && claim.Value == value);
@@ -354,7 +354,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var type = overlongType ? new string('t', ValidationConstants.MaxClaimTypeLength + 1) : "dept";
             var value = overlongType ? "Sales" : new string('v', ValidationConstants.MaxClaimValueLength + 1);
 
-            var result = await service.AddClaimAsync(user.Id, new IdentityServerProject.Services.Users.UserClaim(type, value));
+            var result = await service.AddClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim(type, value));
 
             Assert.False(result.Success);
             Assert.Contains("cannot exceed", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
@@ -372,8 +372,8 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var user = await CreateUserAsync(userManager, tag, "duplicate-claim");
             var service = sp.GetRequiredService<IUserDetailsService>();
 
-            Assert.True((await service.AddClaimAsync(user.Id, new IdentityServerProject.Services.Users.UserClaim("dept", "Sales"))).Success);
-            var duplicate = await service.AddClaimAsync(user.Id, new IdentityServerProject.Services.Users.UserClaim("dept", "Sales"));
+            Assert.True((await service.AddClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim("dept", "Sales"))).Success);
+            var duplicate = await service.AddClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim("dept", "Sales"));
 
             Assert.False(duplicate.Success);
             Assert.Contains("already", duplicate.ErrorMessage, StringComparison.OrdinalIgnoreCase);
@@ -400,7 +400,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var user = await CreateUserAsync(userManager, tag, $"ordinary-{claimType}");
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.AddClaimAsync(user.Id, new IdentityServerProject.Services.Users.UserClaim(claimType, "some-value"));
+            var result = await service.AddClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim(claimType, "some-value"));
 
             Assert.True(result.Success, result.ErrorMessage);
             Assert.Contains(await userManager.GetClaimsAsync(user), c => c.Type == claimType && c.Value == "some-value");
@@ -418,7 +418,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var user = await CreateUserAsync(userManager, tag, "trim");
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            Assert.True((await service.AddClaimAsync(user.Id, new IdentityServerProject.Services.Users.UserClaim("  dept  ", "Sales"))).Success);
+            Assert.True((await service.AddClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim("  dept  ", "Sales"))).Success);
 
             var claims = await userManager.GetClaimsAsync(user);
             Assert.Contains(claims, c => c.Type == "dept");
@@ -439,7 +439,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             await userManager.AddClaimAsync(user, new System.Security.Claims.Claim(ClaimTypes.Role, Config.SysAdminRole));
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.RemoveClaimAsync(user.Id, new IdentityServerProject.Services.Users.UserClaim(ClaimTypes.Role, Config.SysAdminRole));
+            var result = await service.RemoveClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim(ClaimTypes.Role, Config.SysAdminRole));
 
             Assert.True(result.Success);
             Assert.Empty(await userManager.GetClaimsAsync(user));
@@ -459,7 +459,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             await userManager.AddClaimAsync(user, new System.Security.Claims.Claim("dept", "Engineering"));
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.GetUserDetailsAsync(user.Id, null);
+            var result = await service.GetUserDetailsAsync(UserId.Create(user.Id), null);
 
             Assert.True(result!.Claims.Single(c => c.Type == ClaimTypes.Role).IsReserved);
             Assert.False(result.Claims.Single(c => c.Type == "dept").IsReserved);
@@ -490,7 +490,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             await grantDb.SaveChangesAsync();
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.RevokeUserAccessAsync(user.Id, "some-other-admin-id");
+            var result = await service.RevokeUserAccessAsync(UserId.Create(user.Id), UserId.Create("some-other-admin-id"));
 
             Assert.True(result.Success);
             Assert.Equal(1, result.RevokedGrantCount);
@@ -522,7 +522,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             await grantDb.SaveChangesAsync();
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.RevokeUserAccessAsync(user.Id, user.Id);
+            var result = await service.RevokeUserAccessAsync(UserId.Create(user.Id), UserId.Create(user.Id));
 
             Assert.False(result.Success);
             Assert.Contains("own", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
@@ -542,7 +542,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             await userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddHours(2));
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.UnlockUserAsync(user.Id);
+            var result = await service.UnlockUserAsync(UserId.Create(user.Id));
 
             Assert.Equal(UserUnlockStatus.Succeeded, result.Status);
 
@@ -557,7 +557,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.UnlockUserAsync("non-existent-user-id");
+            var result = await service.UnlockUserAsync(UserId.Create("non-existent-user-id"));
 
             Assert.Equal(UserUnlockStatus.NotFound, result.Status);
         });
@@ -576,7 +576,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             userId = user.Id;
             var service = sp.GetRequiredService<IUserDetailsService>();
 
-            var result = await service.ResetPasswordAsync(user.Id, "NewPassword123!");
+            var result = await service.ResetPasswordAsync(UserId.Create(user.Id), "NewPassword123!");
 
             Assert.True(result.Success, result.ErrorMessage);
         });
@@ -603,7 +603,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var user = await CreateUserAsync(userManager, tag, "blank-password");
             var service = sp.GetRequiredService<IUserDetailsService>();
 
-            var result = await service.ResetPasswordAsync(user.Id, "   ");
+            var result = await service.ResetPasswordAsync(UserId.Create(user.Id), "   ");
 
             Assert.False(result.Success);
             Assert.Equal("Password is required.", result.ErrorMessage);
@@ -624,7 +624,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             userId = user.Id;
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.SuspendUserAsync(user.Id, "another-administrator");
+            var result = await service.SuspendUserAsync(UserId.Create(user.Id), UserId.Create("another-administrator"));
 
             Assert.True(result.Success, result.ErrorMessage);
         });
@@ -645,7 +645,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.SuspendUserAsync($"missing-{Guid.NewGuid():N}", "another-administrator");
+            var result = await service.SuspendUserAsync(UserId.Create($"missing-{Guid.NewGuid():N}"), UserId.Create("another-administrator"));
 
             Assert.False(result.Success);
             Assert.Equal("User not found.", result.ErrorMessage);
@@ -678,7 +678,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             await grantDb.SaveChangesAsync();
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.DeleteUserAsync(user.Id, "another-administrator");
+            var result = await service.DeleteUserAsync(UserId.Create(user.Id), UserId.Create("another-administrator"));
 
             Assert.True(result.Success, result.ErrorMessage);
         });
@@ -721,7 +721,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var service = sp.GetRequiredService<IUserDetailsService>();
             await grantDb.DisposeAsync();
 
-            var result = await service.DeleteUserAsync(user.Id, "another-administrator");
+            var result = await service.DeleteUserAsync(UserId.Create(user.Id), UserId.Create("another-administrator"));
 
             Assert.True(result.Success, result.ErrorMessage);
         });

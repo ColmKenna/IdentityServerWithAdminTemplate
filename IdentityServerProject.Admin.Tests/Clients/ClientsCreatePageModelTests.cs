@@ -91,7 +91,7 @@ public class ClientsCreatePageModelTests : IClassFixture<AdminWebFactory>
                     "new-web-client",
                     "secret123",
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new SecretRevealTicket("opaque-handle", DateTimeOffset.UtcNow.AddMinutes(5)));
+                .ReturnsAsync(new SecretRevealTicket(SecretRevealHandle.Create("opaque-handle"), DateTimeOffset.UtcNow.AddMinutes(5)));
 
             var pageModel = new CreateModel(mockService.Object, presets, revealService.Object)
             {

@@ -146,7 +146,7 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.UnlockUserAsync(user.Id);
+            var result = await service.UnlockUserAsync(UserId.Create(user.Id));
 
             Assert.Equal(UserUnlockStatus.Succeeded, result.Status);
 

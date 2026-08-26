@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Services.Apis;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.SecretReveals;
 using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Mvc;
@@ -106,7 +107,7 @@ public class EditorModel : PageModel
             var reveal = await _secretRevealService.ConsumeAsync(
                 SecretRevealPurpose.ApiResourceSecretGenerated,
                 ResourceName,
-                handle,
+                IdentityServerProject.Services.SecretReveals.SecretRevealHandle.Create(handle),
                 cancellationToken);
             if (reveal.Status == SecretRevealConsumeStatus.Revealed)
             {
@@ -215,7 +216,7 @@ public class EditorModel : PageModel
             return NotFound();
         }
 
-        var result = await _apiResourceEditorService.AttachScopeAsync(ResourceName, AttachScope.ScopeName, cancellationToken);
+        var result = await _apiResourceEditorService.AttachScopeAsync(ResourceName, ScopeName.Create(AttachScope.ScopeName), cancellationToken);
 
         if (result.Status == AdminMutationStatus.NotFound)
         {
@@ -260,7 +261,7 @@ public class EditorModel : PageModel
             return NotFound();
         }
 
-        var result = await _apiResourceEditorService.DetachScopeAsync(ResourceName, scopeName, cancellationToken);
+        var result = await _apiResourceEditorService.DetachScopeAsync(ResourceName, ScopeName.Create(scopeName), cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
         {
             return NotFound();

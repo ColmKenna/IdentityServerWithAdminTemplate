@@ -38,14 +38,14 @@ public class ClientDeleteResult
     {
         Success = true,
         Status = AdminMutationStatus.Succeeded,
-        ReasonCode = AuditReasonCodes.Succeeded
+        ReasonCode = AuditReasonCode.Succeeded
     };
 
     public static ClientDeleteResult Failed(
         string errorMessage,
-        string reasonCode = AuditReasonCodes.ValidationFailed,
+        AuditReasonCode? reasonCode = null,
         AdminMutationStatus status = AdminMutationStatus.Denied) =>
-        new() { Success = false, Status = status, ReasonCode = reasonCode, ErrorMessage = errorMessage };
+        new() { Success = false, Status = status, ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed, ErrorMessage = errorMessage };
 }
 
 public class ClientBasicsModel
@@ -260,14 +260,14 @@ public class ClientSecretRevokeResult
     {
         Success = true,
         Status = AdminMutationStatus.Succeeded,
-        ReasonCode = AuditReasonCodes.Succeeded
+        ReasonCode = AuditReasonCode.Succeeded
     };
 
     public static ClientSecretRevokeResult Failed(
         string errorMessage,
-        string reasonCode = AuditReasonCodes.ValidationFailed,
+        AuditReasonCode? reasonCode = null,
         AdminMutationStatus status = AdminMutationStatus.Denied) =>
-        new() { Success = false, Status = status, ReasonCode = reasonCode, ErrorMessage = errorMessage };
+        new() { Success = false, Status = status, ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed, ErrorMessage = errorMessage };
 }
 
 public class ClientTokenSettingsModel

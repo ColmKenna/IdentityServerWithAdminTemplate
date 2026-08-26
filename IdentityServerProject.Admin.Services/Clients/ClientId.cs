@@ -21,7 +21,7 @@ public readonly record struct ClientId(string Value) : IComparable<ClientId>, IE
 
     public static implicit operator string(ClientId id) => id.Value ?? string.Empty;
 
-    public static implicit operator ClientId(string? value) => Create(value);
+    public static explicit operator ClientId(string? value) => Create(value);
 
     public override string ToString() => Value ?? string.Empty;
 

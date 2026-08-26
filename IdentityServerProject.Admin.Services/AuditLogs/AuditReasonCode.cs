@@ -40,7 +40,7 @@ public readonly record struct AuditReasonCode(string Value) : IComparable<AuditR
 
     public static implicit operator string(AuditReasonCode code) => code.Value ?? string.Empty;
 
-    public static implicit operator AuditReasonCode(string? value) => From(value);
+    public static explicit operator AuditReasonCode(string? value) => From(value);
 
     public override string ToString() => Value ?? string.Empty;
 

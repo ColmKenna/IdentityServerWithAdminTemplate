@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.Apis;
 using IdentityServerProject.Services.Apis;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.SecretReveals;
 using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Mvc;
@@ -173,7 +174,7 @@ public class ApiResourceEditorPageModelTests
                 "sales.api",
                 "the-plaintext-secret",
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new SecretRevealTicket("opaque-handle", DateTimeOffset.UtcNow.AddMinutes(5)));
+            .ReturnsAsync(new SecretRevealTicket(SecretRevealHandle.Create("opaque-handle"), DateTimeOffset.UtcNow.AddMinutes(5)));
 
         var model = new EditorModel(mock.Object, reveals.Object)
         {
@@ -285,7 +286,7 @@ public class ApiResourceEditorPageModelTests
     public async Task OnPostAttachScopeAsync_Success_RedirectsToScopesTab()
     {
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.AttachScopeAsync("sales.api", "sales.read", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.AttachScopeAsync("sales.api", ScopeName.Create("sales.read"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
         var model = new EditorModel(mock.Object)
@@ -304,7 +305,7 @@ public class ApiResourceEditorPageModelTests
     public async Task OnPostDetachScopeAsync_ScopeNotAttached_ReturnsNotFound()
     {
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.DetachScopeAsync("sales.api", "sales.read", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.DetachScopeAsync("sales.api", ScopeName.Create("sales.read"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.NotFoundResult());
 
         var model = new EditorModel(mock.Object) { Name = "sales.api" };

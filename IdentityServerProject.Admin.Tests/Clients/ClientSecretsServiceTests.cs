@@ -40,7 +40,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientSecretsAsync("non-existent-client-id-xyz");
+            var result = await service.GetClientSecretsAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.Null(result);
         });
     }
@@ -63,7 +63,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientSecretsAsync(clientId);
+            var result = await service.GetClientSecretsAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
             Assert.True(result!.RequireClientSecret);
@@ -88,7 +88,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
             var service = sp.GetRequiredService<IClientDetailsService>();
             var configDb = sp.GetRequiredService<ConfigurationDbContext>();
 
-            var result = await service.GenerateClientSecretAsync(clientId, "New secret");
+            var result = await service.GenerateClientSecretAsync(ClientId.Create(clientId), "New secret");
 
             Assert.True(result.Success);
             Assert.False(string.IsNullOrWhiteSpace(result.PlaintextSecret));
@@ -108,7 +108,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GenerateClientSecretAsync("non-existent-client-id-abc", null);
+            var result = await service.GenerateClientSecretAsync(ClientId.Create("non-existent-client-id-abc"), null);
             Assert.False(result.Success);
         });
     }
@@ -130,7 +130,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
             var configDb = sp.GetRequiredService<ConfigurationDbContext>();
 
             var result = await service.GenerateClientSecretAsync(
-                clientId,
+                ClientId.Create(clientId),
                 new string('x', ValidationConstants.MaxClientSecretDescriptionLength + 1));
 
             Assert.False(result.Success);
@@ -164,13 +164,13 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var secrets = await service.GetClientSecretsAsync(clientId);
+            var secrets = await service.GetClientSecretsAsync(ClientId.Create(clientId));
             var targetId = secrets!.Secrets.First().Id;
 
-            var result = await service.RevokeClientSecretAsync(clientId, targetId);
+            var result = await service.RevokeClientSecretAsync(ClientId.Create(clientId), targetId);
             Assert.True(result.Success);
 
-            var afterRevoke = await service.GetClientSecretsAsync(clientId);
+            var afterRevoke = await service.GetClientSecretsAsync(ClientId.Create(clientId));
             Assert.Single(afterRevoke!.Secrets);
             Assert.DoesNotContain(afterRevoke.Secrets, s => s.Id == targetId);
         });
@@ -194,16 +194,16 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var secrets = await service.GetClientSecretsAsync(clientId);
+            var secrets = await service.GetClientSecretsAsync(ClientId.Create(clientId));
             var targetId = secrets!.Secrets.Single().Id;
 
-            var result = await service.RevokeClientSecretAsync(clientId, targetId);
+            var result = await service.RevokeClientSecretAsync(ClientId.Create(clientId), targetId);
 
             Assert.False(result.Success);
             Assert.Contains("last usable secret", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
-            Assert.Equal(AuditReasonCodes.LastUsableSecret, result.ReasonCode);
+            Assert.Equal(AuditReasonCode.LastUsableSecret, result.ReasonCode);
 
-            var afterAttempt = await service.GetClientSecretsAsync(clientId);
+            var afterAttempt = await service.GetClientSecretsAsync(ClientId.Create(clientId));
             Assert.Single(afterAttempt!.Secrets);
         });
     }
@@ -227,13 +227,13 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var secrets = await service.GetClientSecretsAsync(clientId);
+            var secrets = await service.GetClientSecretsAsync(ClientId.Create(clientId));
             var targetId = secrets!.Secrets.Single().Id;
 
-            var result = await service.RevokeClientSecretAsync(clientId, targetId);
+            var result = await service.RevokeClientSecretAsync(ClientId.Create(clientId), targetId);
             Assert.True(result.Success);
 
-            var afterRevoke = await service.GetClientSecretsAsync(clientId);
+            var afterRevoke = await service.GetClientSecretsAsync(ClientId.Create(clientId));
             Assert.Empty(afterRevoke!.Secrets);
         });
     }
@@ -253,7 +253,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.RevokeClientSecretAsync(clientId, -1);
+            var result = await service.RevokeClientSecretAsync(ClientId.Create(clientId), -1);
             Assert.False(result.Success);
         });
     }
@@ -264,7 +264,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.RevokeClientSecretAsync("non-existent-client-id-abc", 1);
+            var result = await service.RevokeClientSecretAsync(ClientId.Create("non-existent-client-id-abc"), 1);
             Assert.False(result.Success);
         });
     }

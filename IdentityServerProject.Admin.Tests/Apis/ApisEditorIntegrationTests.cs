@@ -1,5 +1,6 @@
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Services.Apis;
+using IdentityServerProject.Services.Scopes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -138,7 +139,7 @@ public class ApisEditorIntegrationTests : IDisposable
             await configDb.SaveChangesAsync();
 
             var editorService = sp.GetRequiredService<IApiResourceEditorService>();
-            await editorService.AttachScopeAsync(name, attachedScopeName);
+            await editorService.AttachScopeAsync(name, ScopeName.Create(attachedScopeName));
         });
 
         var response = await client.GetAsync($"/Admin/Apis/Editor?name={name}&tab=scopes");

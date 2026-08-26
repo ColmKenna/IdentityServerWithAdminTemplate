@@ -44,7 +44,7 @@ public class ClientsBasicsIntegrationTests : IDisposable
 
     private static ClientDetailsModel SampleClientDetails(string id = "coop.market.razor") => new()
     {
-        ClientId = id,
+        ClientId = ClientId.Create(id),
         ClientName = "Co-op Market Razor Client",
         Description = "Original Description",
         ClientType = "SPA with BFF",
@@ -53,7 +53,7 @@ public class ClientsBasicsIntegrationTests : IDisposable
         RequireClientSecret = true,
         RequireConsent = false,
         AllowOfflineAccess = true,
-        AccessTokenLifetime = 300,
+        AccessTokenLifetime = TokenLifetime.FromSeconds(300),
         AllowedGrantTypes = "authorization_code",
         RedirectUrisCount = 2,
         CorsOriginsCount = 0,
@@ -137,9 +137,9 @@ public class ClientsBasicsIntegrationTests : IDisposable
     public async Task Post_ValidUpdates_RedirectsToDetails()
     {
         var mock = new Mock<IClientDetailsService>();
-        mock.Setup(s => s.GetClientDetailsAsync("test-client", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientDetailsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleClientDetails("test-client"));
-        mock.Setup(s => s.UpdateClientBasicsAsync("test-client", "Updated Name", "Updated Desc", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.UpdateClientBasicsAsync(ClientId.Create("test-client"), "Updated Name", "Updated Desc", It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
         var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
@@ -162,7 +162,7 @@ public class ClientsBasicsIntegrationTests : IDisposable
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal("/Admin/Clients/Details/test-client", response.Headers.Location?.OriginalString);
 
-        mock.Verify(s => s.UpdateClientBasicsAsync("test-client", "Updated Name", "Updated Desc", It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.UpdateClientBasicsAsync(ClientId.Create("test-client"), "Updated Name", "Updated Desc", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

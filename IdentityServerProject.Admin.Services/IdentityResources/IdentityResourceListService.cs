@@ -80,7 +80,7 @@ public class IdentityResourceListService : IIdentityResourceListService
         if (BuiltInIdentityResourcePolicy.IsProtectedName(name))
         {
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.IdentityResource, AuditActions.Delete, AuditOutcome.Denied, AuditReasonCodes.ProtectedResource,
+                AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Denied, AuditReasonCode.ProtectedResource,
                 TargetId: name, TargetName: name, Details: $"'{name}' is a protected identity resource name."), cancellationToken);
             return IdentityResourceDeleteResult.Blocked;
         }
@@ -96,7 +96,7 @@ public class IdentityResourceListService : IIdentityResourceListService
             {
                 await transaction.RollbackAsync(cancellationToken);
                 await _auditWriter.WriteAsync(new AdminAuditEvent(
-                    AuditCategories.IdentityResource, AuditActions.Delete, AuditOutcome.Denied, AuditReasonCodes.NotFound,
+                    AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Denied, AuditReasonCode.NotFound,
                     TargetId: name, TargetName: name, Details: $"Identity Resource '{name}' was not found."), cancellationToken);
                 return IdentityResourceDeleteResult.NotFound;
             }
@@ -105,7 +105,7 @@ public class IdentityResourceListService : IIdentityResourceListService
             {
                 await transaction.RollbackAsync(cancellationToken);
                 await _auditWriter.WriteAsync(new AdminAuditEvent(
-                    AuditCategories.IdentityResource, AuditActions.Delete, AuditOutcome.Denied, AuditReasonCodes.ProtectedResource,
+                    AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Denied, AuditReasonCode.ProtectedResource,
                     TargetId: name, TargetName: resource.DisplayName ?? name, Details: $"Identity Resource '{name}' is not editable."), cancellationToken);
                 return IdentityResourceDeleteResult.Blocked;
             }
@@ -116,7 +116,7 @@ public class IdentityResourceListService : IIdentityResourceListService
             {
                 await transaction.RollbackAsync(cancellationToken);
                 await _auditWriter.WriteAsync(new AdminAuditEvent(
-                    AuditCategories.IdentityResource, AuditActions.Delete, AuditOutcome.Denied, AuditReasonCodes.ReferencedResource,
+                    AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Denied, AuditReasonCode.ReferencedResource,
                     TargetId: name, TargetName: resource.DisplayName ?? name,
                     Details: $"Identity Resource '{name}' is referenced by one or more clients."), cancellationToken);
                 return IdentityResourceDeleteResult.Blocked;
@@ -128,7 +128,7 @@ public class IdentityResourceListService : IIdentityResourceListService
             await transaction.CommitAsync(cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.IdentityResource, AuditActions.Delete, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: name, TargetName: resource.DisplayName ?? name,
                 Details: $"Deleted Identity Resource '{name}'"), cancellationToken);
             return IdentityResourceDeleteResult.Deleted;
@@ -136,7 +136,7 @@ public class IdentityResourceListService : IIdentityResourceListService
         catch (Exception ex)
         {
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.IdentityResource, AuditActions.Delete, AuditOutcome.Failed, AuditReasonCodes.PersistenceFailure,
+                AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Failed, AuditReasonCode.PersistenceFailure,
                 TargetId: name, TargetName: name, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
             throw;
         }

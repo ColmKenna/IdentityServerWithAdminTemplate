@@ -51,7 +51,7 @@ public class CreateModel : PageModel
         if (!string.IsNullOrEmpty(handle) && !string.IsNullOrWhiteSpace(clientId))
         {
             var reveal = await _secretRevealService.ConsumeAsync(
-                SecretRevealPurpose.ClientCreated, clientId, handle, cancellationToken);
+                SecretRevealPurpose.ClientCreated, clientId, IdentityServerProject.Services.SecretReveals.SecretRevealHandle.Create(handle), cancellationToken);
             if (reveal.Status == SecretRevealConsumeStatus.Revealed)
             {
                 CreatedSecret = reveal.Plaintext;

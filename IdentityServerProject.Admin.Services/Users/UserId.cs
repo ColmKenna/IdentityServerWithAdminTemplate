@@ -18,7 +18,7 @@ public readonly record struct UserId(string Value) : IComparable<UserId>, IEquat
 
     public static implicit operator string(UserId id) => id.Value ?? string.Empty;
 
-    public static implicit operator UserId(string? value) => Create(value);
+    public static explicit operator UserId(string? value) => Create(value);
 
     public override string ToString() => Value ?? string.Empty;
 

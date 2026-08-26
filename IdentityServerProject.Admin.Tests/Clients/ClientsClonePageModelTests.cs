@@ -18,7 +18,7 @@ public class ClientsClonePageModelTests
 {
     private static ClientDetailsModel SourceClient() => new()
     {
-        ClientId = "source-client",
+        ClientId = ClientId.Create("source-client"),
         ClientName = "Source Client",
         Description = "Source description",
         ClientType = "Web",
@@ -49,7 +49,7 @@ public class ClientsClonePageModelTests
     {
         var createService = new Mock<IClientCreateService>();
         var detailsService = new Mock<IClientDetailsService>();
-        detailsService.Setup(s => s.GetClientDetailsAsync("source-client", It.IsAny<CancellationToken>()))
+        detailsService.Setup(s => s.GetClientDetailsAsync(ClientId.Create("source-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SourceClient());
         var model = CreateModel(createService, detailsService);
         model.SourceClientId = "source-client";
@@ -68,7 +68,7 @@ public class ClientsClonePageModelTests
     {
         var createService = new Mock<IClientCreateService>();
         var detailsService = new Mock<IClientDetailsService>();
-        detailsService.Setup(s => s.GetClientDetailsAsync("missing", It.IsAny<CancellationToken>()))
+        detailsService.Setup(s => s.GetClientDetailsAsync(ClientId.Create("missing"), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ClientDetailsModel?)null);
         var model = CreateModel(createService, detailsService);
         model.SourceClientId = "missing";
@@ -86,7 +86,7 @@ public class ClientsClonePageModelTests
         createService.Setup(s => s.CloneClientAsync("source-client", It.IsAny<ClientCreateInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ClientCreateResult.Failed("ClientId", "A client with this ID already exists."));
         var detailsService = new Mock<IClientDetailsService>();
-        detailsService.Setup(s => s.GetClientDetailsAsync("source-client", It.IsAny<CancellationToken>()))
+        detailsService.Setup(s => s.GetClientDetailsAsync(ClientId.Create("source-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SourceClient());
         var model = CreateModel(createService, detailsService);
         model.SourceClientId = "source-client";
@@ -106,11 +106,11 @@ public class ClientsClonePageModelTests
         createService.Setup(s => s.CloneClientAsync("source-client", It.IsAny<ClientCreateInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ClientCreateResult.Succeeded("target-client", "plaintext-secret"));
         var detailsService = new Mock<IClientDetailsService>();
-        detailsService.Setup(s => s.GetClientDetailsAsync("source-client", It.IsAny<CancellationToken>()))
+        detailsService.Setup(s => s.GetClientDetailsAsync(ClientId.Create("source-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SourceClient());
         var revealService = new Mock<ISecretRevealService>();
         revealService.Setup(s => s.IssueAsync(SecretRevealPurpose.ClientCreated, "target-client", "plaintext-secret", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new SecretRevealTicket("opaque-handle", DateTimeOffset.UtcNow.AddMinutes(5)));
+            .ReturnsAsync(new SecretRevealTicket(SecretRevealHandle.Create("opaque-handle"), DateTimeOffset.UtcNow.AddMinutes(5)));
         var model = CreateModel(createService, detailsService, revealService);
         model.SourceClientId = "source-client";
         model.Input = new ClientCreateInputModel { ClientId = "target-client", ClientName = "Target Client" };
@@ -120,7 +120,7 @@ public class ClientsClonePageModelTests
         var redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("./Create", redirect.PageName);
         Assert.Equal("target-client", redirect.RouteValues!["clientId"]);
-        Assert.Equal("opaque-handle", model.TempData["SecretRevealHandle"]);
+        Assert.Equal("opaque-handle", ((SecretRevealHandle)model.TempData["SecretRevealHandle"]!).Value);
         Assert.DoesNotContain("plaintext-secret", model.TempData.Values.OfType<string>());
     }
 }

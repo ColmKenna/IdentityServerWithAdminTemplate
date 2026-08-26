@@ -44,7 +44,7 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
 
     private static ClientAuthenticationModel SampleAuthentication(string id = "test-client") => new()
     {
-        ClientId = id,
+        ClientId = ClientId.Create(id),
         ClientName = "Co-op Market Razor Client",
         RequirePkce = true,
         RequireClientSecret = true,
@@ -161,9 +161,9 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
     public async Task Post_AddingRedirectUri_RedirectsToDetailsAndPersists()
     {
         var mock = new Mock<IClientDetailsService>();
-        mock.Setup(s => s.GetClientAuthenticationAsync("test-client", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientAuthenticationAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleAuthentication());
-        mock.Setup(s => s.UpdateClientAuthenticationAsync("test-client", It.IsAny<ClientAuthenticationInputModel>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.UpdateClientAuthenticationAsync(ClientId.Create("test-client"), It.IsAny<ClientAuthenticationInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
         var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
@@ -189,7 +189,7 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
         Assert.Equal("/Admin/Clients/Details/test-client", response.Headers.Location?.OriginalString);
 
         mock.Verify(s => s.UpdateClientAuthenticationAsync(
-            "test-client",
+            ClientId.Create("test-client"),
             It.Is<ClientAuthenticationInputModel>(m =>
                 m.RedirectUris.Contains("https://newapp.example.com/callback") &&
                 m.RedirectUris.Contains("https://localhost:5001/signin-oidc")),
@@ -200,9 +200,9 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
     public async Task Post_RemovingRedirectUri_PersistsRemoval()
     {
         var mock = new Mock<IClientDetailsService>();
-        mock.Setup(s => s.GetClientAuthenticationAsync("test-client", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientAuthenticationAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleAuthentication());
-        mock.Setup(s => s.UpdateClientAuthenticationAsync("test-client", It.IsAny<ClientAuthenticationInputModel>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.UpdateClientAuthenticationAsync(ClientId.Create("test-client"), It.IsAny<ClientAuthenticationInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
         var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
@@ -225,7 +225,7 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         mock.Verify(s => s.UpdateClientAuthenticationAsync(
-            "test-client",
+            ClientId.Create("test-client"),
             It.Is<ClientAuthenticationInputModel>(m => m.RedirectUris.Count == 0),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -234,9 +234,9 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
     public async Task Post_ChangingGrantTypes_PersistsNewSelection()
     {
         var mock = new Mock<IClientDetailsService>();
-        mock.Setup(s => s.GetClientAuthenticationAsync("test-client", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientAuthenticationAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleAuthentication());
-        mock.Setup(s => s.UpdateClientAuthenticationAsync("test-client", It.IsAny<ClientAuthenticationInputModel>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.UpdateClientAuthenticationAsync(ClientId.Create("test-client"), It.IsAny<ClientAuthenticationInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
         var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
@@ -258,7 +258,7 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         mock.Verify(s => s.UpdateClientAuthenticationAsync(
-            "test-client",
+            ClientId.Create("test-client"),
             It.Is<ClientAuthenticationInputModel>(m => m.GrantTypes.Single() == "client_credentials" && !m.RequirePkce),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -320,7 +320,7 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
     public async Task Post_OverlongAuthenticationValues_ReturnsFieldErrorsAndDoesNotCallMutationService()
     {
         var mock = new Mock<IClientDetailsService>();
-        mock.Setup(s => s.GetClientAuthenticationAsync("test-client", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientAuthenticationAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleAuthentication());
 
         var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);

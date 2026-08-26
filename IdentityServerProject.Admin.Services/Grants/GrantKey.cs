@@ -18,7 +18,7 @@ public readonly record struct GrantKey(string Value) : IComparable<GrantKey>, IE
 
     public static implicit operator string(GrantKey key) => key.Value ?? string.Empty;
 
-    public static implicit operator GrantKey(string? value) => Create(value);
+    public static explicit operator GrantKey(string? value) => Create(value);
 
     public override string ToString() => Value ?? string.Empty;
 

@@ -43,7 +43,7 @@ public class IdentityResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var db = sp.GetRequiredService<ApplicationDbContext>();
-            found = db.AuditLogEntries.Single(e => e.Category == AuditCategories.IdentityResource && e.Action == action && e.TargetId == targetId);
+            found = db.AuditLogEntries.Single(e => e.Category == AuditCategory.IdentityResource && e.Action == action && e.TargetId == targetId);
             await Task.CompletedTask;
         });
         return found!;
@@ -59,9 +59,9 @@ public class IdentityResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.Equal(IdentityResourceDeleteResult.Blocked, result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Delete, BuiltInIdentityResourcePolicy.OpenIdResourceName);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Delete, BuiltInIdentityResourcePolicy.OpenIdResourceName);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.ProtectedResource, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.ProtectedResource, entry.ReasonCode);
     }
 
     [Fact]
@@ -84,9 +84,9 @@ public class IdentityResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.Equal(IdentityResourceDeleteResult.Blocked, result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Delete, name);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Delete, name);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.ProtectedResource, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.ProtectedResource, entry.ReasonCode);
     }
 
     [Fact]
@@ -101,9 +101,9 @@ public class IdentityResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.Equal(IdentityResourceDeleteResult.NotFound, result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Delete, name);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Delete, name);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.NotFound, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.NotFound, entry.ReasonCode);
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public class IdentityResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.Equal(IdentityResourceDeleteResult.Deleted, result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Delete, name);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Delete, name);
         Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
     }
 
@@ -142,9 +142,9 @@ public class IdentityResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.False(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Create, BuiltInIdentityResourcePolicy.OpenIdResourceName);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Create, BuiltInIdentityResourcePolicy.OpenIdResourceName);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.ProtectedResource, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.ProtectedResource, entry.ReasonCode);
     }
 
     [Fact]
@@ -162,7 +162,7 @@ public class IdentityResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.True(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Create, name);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Create, name);
         Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
     }
 
@@ -180,9 +180,9 @@ public class IdentityResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.Equal(IdentityResourceEditOutcome.NotFound, result.Outcome);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Update, name);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Update, name);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.NotFound, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.NotFound, entry.ReasonCode);
     }
 
     [Fact]
@@ -199,8 +199,8 @@ public class IdentityResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
                 enabled: true, required: false, emphasize: false, showInDiscoveryDocument: true);
         }));
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Update, name);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Update, name);
         Assert.Equal(AuditOutcome.Failed, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.PersistenceFailure, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.PersistenceFailure, entry.ReasonCode);
     }
 }

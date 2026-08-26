@@ -66,7 +66,7 @@ public class UsersIndexIntegrationTests : IDisposable
 
     private static UserListItem MakeItem(string suffix, bool lockedOut = false) => new()
     {
-        Id = $"user-id-{suffix}",
+        Id = UserId.Create($"user-id-{suffix}"),
         UserName = $"username-{suffix}",
         Email = $"user-{suffix}@sales.local",
         FullName = $"Full Name {suffix}",
@@ -321,7 +321,7 @@ public class UsersIndexIntegrationTests : IDisposable
         };
         mockService.Setup(s => s.GetUsersAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
-        mockService.Setup(s => s.UnlockUserAsync("user-id-locked", It.IsAny<CancellationToken>()))
+        mockService.Setup(s => s.UnlockUserAsync(UserId.Create("user-id-locked"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserUnlockResult.Succeeded);
 
         var client = CreateClient(mockService.Object, allowAutoRedirect: false);
@@ -348,7 +348,7 @@ public class UsersIndexIntegrationTests : IDisposable
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.StartsWith("/Admin/Users", response.Headers.Location?.OriginalString);
-        mockService.Verify(s => s.UnlockUserAsync("user-id-locked", It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.UnlockUserAsync(UserId.Create("user-id-locked"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     public void Dispose()

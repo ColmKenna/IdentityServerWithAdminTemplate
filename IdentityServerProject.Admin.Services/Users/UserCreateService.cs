@@ -29,7 +29,7 @@ public class UserCreateService : IUserCreateService
             if (!result.Success)
             {
                 await _auditWriter.WriteAsync(new AdminAuditEvent(
-                    AuditCategories.User, AuditActions.Create, AuditOutcome.Denied, reasonCode,
+                    AuditCategory.User, AuditAction.Create, AuditOutcome.Denied, reasonCode,
                     TargetId: userName, TargetName: userName,
                     Details: "User creation validation failed."), cancellationToken);
 
@@ -37,7 +37,7 @@ public class UserCreateService : IUserCreateService
             }
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.User, AuditActions.Create, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.User, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: result.UserId, TargetName: userName,
                 Details: $"Created user '{userName}'"), cancellationToken);
 
@@ -46,7 +46,7 @@ public class UserCreateService : IUserCreateService
         catch (Exception ex)
         {
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.User, AuditActions.Create, AuditOutcome.Failed, AuditReasonCodes.PersistenceFailure,
+                AuditCategory.User, AuditAction.Create, AuditOutcome.Failed, AuditReasonCode.PersistenceFailure,
                 TargetId: userName, TargetName: userName,
                 Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
             throw;

@@ -71,7 +71,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientDetailsAsync("non-existent-client-id-xyz");
+            var result = await service.GetClientDetailsAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.Null(result);
         });
     }
@@ -86,7 +86,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
 
-            var details = await service.GetClientDetailsAsync(clientId);
+            var details = await service.GetClientDetailsAsync(ClientId.Create(clientId));
 
             Assert.NotNull(details);
             Assert.Equal(clientId, details!.ClientId);
@@ -117,17 +117,17 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
 
-            var firstToggle = await service.ToggleClientStatusAsync(clientId);
+            var firstToggle = await service.ToggleClientStatusAsync(ClientId.Create(clientId));
             Assert.True(firstToggle);
 
-            var detailsAfterFirst = await service.GetClientDetailsAsync(clientId);
+            var detailsAfterFirst = await service.GetClientDetailsAsync(ClientId.Create(clientId));
             Assert.NotNull(detailsAfterFirst);
             Assert.False(detailsAfterFirst!.Enabled);
 
-            var secondToggle = await service.ToggleClientStatusAsync(clientId);
+            var secondToggle = await service.ToggleClientStatusAsync(ClientId.Create(clientId));
             Assert.True(secondToggle);
 
-            var detailsAfterSecond = await service.GetClientDetailsAsync(clientId);
+            var detailsAfterSecond = await service.GetClientDetailsAsync(ClientId.Create(clientId));
             Assert.NotNull(detailsAfterSecond);
             Assert.True(detailsAfterSecond!.Enabled);
         });
@@ -139,7 +139,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.ToggleClientStatusAsync("non-existent-client-id-abc");
+            var result = await service.ToggleClientStatusAsync(ClientId.Create("non-existent-client-id-abc"));
             Assert.False(result);
         });
     }
@@ -154,10 +154,10 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
 
-            var result = await service.UpdateClientBasicsAsync(clientId, "New Name", "New Description");
+            var result = await service.UpdateClientBasicsAsync(ClientId.Create(clientId), "New Name", "New Description");
             Assert.True(result.Succeeded, result.ErrorMessage);
 
-            var details = await service.GetClientDetailsAsync(clientId);
+            var details = await service.GetClientDetailsAsync(ClientId.Create(clientId));
             Assert.NotNull(details);
             Assert.Equal("New Name", details!.ClientName);
             Assert.Equal("New Description", details.Description);
@@ -170,7 +170,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientBasicsAsync("non-existent-client-id-abc", "New Name", "New Description");
+            var result = await service.UpdateClientBasicsAsync(ClientId.Create("non-existent-client-id-abc"), "New Name", "New Description");
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
     }
@@ -185,12 +185,12 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
 
-            var result = await service.DeleteClientAsync(clientId);
+            var result = await service.DeleteClientAsync(ClientId.Create(clientId));
 
             Assert.False(result.Success);
             Assert.Equal("Client must be disabled before it can be deleted.", result.ErrorMessage);
 
-            var stillExists = await service.GetClientDetailsAsync(clientId);
+            var stillExists = await service.GetClientDetailsAsync(ClientId.Create(clientId));
             Assert.NotNull(stillExists);
         });
     }
@@ -206,19 +206,19 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
             var service = sp.GetRequiredService<IClientDetailsService>();
 
             // Disable via the service so admin:disabledAt is stamped with "now".
-            await service.ToggleClientStatusAsync(clientId);
+            await service.ToggleClientStatusAsync(ClientId.Create(clientId));
 
-            var details = await service.GetClientDetailsAsync(clientId);
+            var details = await service.GetClientDetailsAsync(ClientId.Create(clientId));
             Assert.NotNull(details);
             Assert.False(details!.Enabled);
             Assert.False(details.CanDelete);
 
-            var result = await service.DeleteClientAsync(clientId);
+            var result = await service.DeleteClientAsync(ClientId.Create(clientId));
 
             Assert.False(result.Success);
             Assert.Contains("90-day retention rule", result.ErrorMessage);
 
-            var stillExists = await service.GetClientDetailsAsync(clientId);
+            var stillExists = await service.GetClientDetailsAsync(ClientId.Create(clientId));
             Assert.NotNull(stillExists);
         });
     }
@@ -246,14 +246,14 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
 
-            var details = await service.GetClientDetailsAsync(clientId);
+            var details = await service.GetClientDetailsAsync(ClientId.Create(clientId));
             Assert.NotNull(details);
             Assert.True(details!.CanDelete);
 
-            var result = await service.DeleteClientAsync(clientId);
+            var result = await service.DeleteClientAsync(ClientId.Create(clientId));
             Assert.True(result.Success);
 
-            var afterDelete = await service.GetClientDetailsAsync(clientId);
+            var afterDelete = await service.GetClientDetailsAsync(ClientId.Create(clientId));
             Assert.Null(afterDelete);
         });
     }
@@ -264,7 +264,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.DeleteClientAsync("non-existent-client-id-xyz");
+            var result = await service.DeleteClientAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.False(result.Success);
         });
     }
@@ -280,14 +280,14 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
             var service = sp.GetRequiredService<IClientDetailsService>();
             var configDb = sp.GetRequiredService<ConfigurationDbContext>();
 
-            await service.ToggleClientStatusAsync(clientId);
+            await service.ToggleClientStatusAsync(ClientId.Create(clientId));
 
             var entity = await configDb.Clients
                 .Include(c => c.Properties)
                 .SingleAsync(c => c.ClientId == clientId);
             Assert.Contains(entity.Properties, p => p.Key == "admin:disabledAt");
 
-            await service.ToggleClientStatusAsync(clientId);
+            await service.ToggleClientStatusAsync(ClientId.Create(clientId));
 
             var entityAfterReEnable = await configDb.Clients
                 .Include(c => c.Properties)

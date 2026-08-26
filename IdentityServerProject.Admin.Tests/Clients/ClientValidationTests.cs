@@ -201,7 +201,7 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
                 CorsOrigins = new List<string> { "invalid-origin" }
             };
 
-            var result = await detailsService.UpdateClientAuthenticationAsync(clientId, input);
+            var result = await detailsService.UpdateClientAuthenticationAsync(ClientId.Create(clientId), input);
 
             Assert.False(result.Succeeded);
             Assert.NotNull(result.ErrorMessage);
@@ -230,7 +230,7 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientAuthenticationAsync(clientId, new ClientAuthenticationInputModel
+            var result = await service.UpdateClientAuthenticationAsync(ClientId.Create(clientId), new ClientAuthenticationInputModel
             {
                 RequirePkce = true,
                 RequireClientSecret = false,
@@ -283,7 +283,7 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
                 CorsOrigins = new List<string> { "https://example.com/" + new string('c', ValidationConstants.MaxClientCorsOriginLength) }
             };
 
-            var result = await service.UpdateClientAuthenticationAsync(clientId, input);
+            var result = await service.UpdateClientAuthenticationAsync(ClientId.Create(clientId), input);
 
             Assert.False(result.Succeeded);
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
@@ -337,11 +337,11 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
 
             var input = new ClientTokenSettingsInputModel
             {
-                AccessTokenLifetime = -1,
-                IdentityTokenLifetime = 300
-            };
+                AccessTokenLifetime = TokenLifetime.FromSeconds(-1),
+                IdentityTokenLifetime = TokenLifetime.FromSeconds(300
+            )};
 
-            var result = await detailsService.UpdateClientTokenSettingsAsync(clientId, input);
+            var result = await detailsService.UpdateClientTokenSettingsAsync(ClientId.Create(clientId), input);
 
             Assert.False(result.Succeeded);
         });

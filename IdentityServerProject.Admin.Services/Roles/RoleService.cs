@@ -43,18 +43,18 @@ public class RoleService : IRoleService
             switch (outcome.Status)
             {
                 case RoleCreateOutcome.NameCollision:
-                    await AuditDeniedAsync(AuditActions.Create, AuditReasonCodes.NameCollision, null, input.Name,
+                    await AuditDeniedAsync(AuditAction.Create, AuditReasonCode.NameCollision, null, input.Name,
                         "A role with that name already exists.", cancellationToken);
                     return RoleCreateResult.Failed("A role with that name already exists.");
 
                 case RoleCreateOutcome.ValidationFailed:
-                    await AuditDeniedAsync(AuditActions.Create, AuditReasonCodes.ValidationFailed, null, input.Name,
+                    await AuditDeniedAsync(AuditAction.Create, AuditReasonCode.ValidationFailed, null, input.Name,
                         outcome.ErrorMessage ?? "Validation failed.", cancellationToken);
                     return RoleCreateResult.Failed(outcome.ErrorMessage ?? "Validation failed.");
             }
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.Role, AuditActions.Create, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.Role, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: outcome.RoleId, TargetName: input.Name,
                 Details: "Role created"), cancellationToken);
 
@@ -62,7 +62,7 @@ public class RoleService : IRoleService
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.Create, null, input.Name, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.Create, null, input.Name, ex, cancellationToken);
             throw;
         }
     }
@@ -75,23 +75,23 @@ public class RoleService : IRoleService
             switch (outcome.Status)
             {
                 case RoleDeleteOutcome.RoleNotFound:
-                    await AuditDeniedAsync(AuditActions.Delete, AuditReasonCodes.NotFound, roleId, outcome.TargetName,
+                    await AuditDeniedAsync(AuditAction.Delete, AuditReasonCode.NotFound, roleId, outcome.TargetName,
                         "Role not found.", cancellationToken);
                     return RoleDeleteResult.Failed("Role not found.");
 
                 case RoleDeleteOutcome.ProtectedRoleBlocked:
-                    await AuditDeniedAsync(AuditActions.Delete, AuditReasonCodes.ProtectedResource, roleId, outcome.TargetName,
+                    await AuditDeniedAsync(AuditAction.Delete, AuditReasonCode.ProtectedResource, roleId, outcome.TargetName,
                         "Cannot delete protected role.", cancellationToken);
                     return RoleDeleteResult.Failed("You cannot delete this protected role.");
 
                 case RoleDeleteOutcome.ValidationFailed:
-                    await AuditDeniedAsync(AuditActions.Delete, AuditReasonCodes.ValidationFailed, roleId, outcome.TargetName,
+                    await AuditDeniedAsync(AuditAction.Delete, AuditReasonCode.ValidationFailed, roleId, outcome.TargetName,
                         "Failed to delete role.", cancellationToken);
                     return RoleDeleteResult.Failed("Failed to delete role.");
             }
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategories.Role, AuditActions.Delete, AuditOutcome.Succeeded, AuditReasonCodes.Succeeded,
+                AuditCategory.Role, AuditAction.Delete, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 TargetId: roleId, TargetName: outcome.TargetName,
                 Details: "Role deleted manually by administrator"), cancellationToken);
 
@@ -99,18 +99,18 @@ public class RoleService : IRoleService
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditActions.Delete, roleId, roleId, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.Delete, roleId, roleId, ex, cancellationToken);
             throw;
         }
     }
 
-    private Task AuditDeniedAsync(string action, string reasonCode, string? targetId, string? targetName, string details, CancellationToken cancellationToken)
+    private Task AuditDeniedAsync(AuditAction action, AuditReasonCode reasonCode, string? targetId, string? targetName, string details, CancellationToken cancellationToken)
         => _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Role, action, AuditOutcome.Denied, reasonCode,
+            AuditCategory.Role, action, AuditOutcome.Denied, reasonCode,
             TargetId: targetId, TargetName: targetName, Details: details), cancellationToken);
 
-    private Task AuditFailedAsync(string action, string? targetId, string? targetName, Exception ex, CancellationToken cancellationToken)
+    private Task AuditFailedAsync(AuditAction action, string? targetId, string? targetName, Exception ex, CancellationToken cancellationToken)
         => _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategories.Role, action, AuditOutcome.Failed, AuditReasonCodes.PersistenceFailure,
+            AuditCategory.Role, action, AuditOutcome.Failed, AuditReasonCode.PersistenceFailure,
             TargetId: targetId, TargetName: targetName, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
 }

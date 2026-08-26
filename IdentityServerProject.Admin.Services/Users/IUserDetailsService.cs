@@ -48,14 +48,14 @@ public class RoleChangeResult
     {
         Success = true,
         Status = AdminMutationStatus.Succeeded,
-        ReasonCode = AuditLogs.AuditReasonCodes.Succeeded
+        ReasonCode = AuditLogs.AuditReasonCode.Succeeded
     };
 
     public static RoleChangeResult Failed(
         string errorMessage,
-        string reasonCode = AuditLogs.AuditReasonCodes.ValidationFailed,
+        AuditLogs.AuditReasonCode? reasonCode = null,
         AdminMutationStatus status = AdminMutationStatus.Denied) =>
-        new() { Success = false, Status = status, ReasonCode = reasonCode, ErrorMessage = errorMessage };
+        new() { Success = false, Status = status, ReasonCode = reasonCode ?? AuditLogs.AuditReasonCode.ValidationFailed, ErrorMessage = errorMessage };
 }
 
 public class ClaimChangeResult

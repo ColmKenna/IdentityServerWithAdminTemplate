@@ -16,11 +16,11 @@ public class ClientEditorPageModelCharacterisationTests
     public async Task AuthenticationPost_ServiceValidationFailure_ReloadsClientDisplayAndAddsServiceErrors()
     {
         var service = new Mock<IClientDetailsService>();
-        service.Setup(s => s.UpdateClientAuthenticationAsync("client-1", It.IsAny<ClientAuthenticationInputModel>(), It.IsAny<CancellationToken>()))
+        service.Setup(s => s.UpdateClientAuthenticationAsync(ClientId.Create("client-1"), It.IsAny<ClientAuthenticationInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.ValidationFailure("Input.RedirectUris", "The redirect URI is already assigned to another client."));
-        service.Setup(s => s.GetClientAuthenticationAsync("client-1", It.IsAny<CancellationToken>())).ReturnsAsync(new ClientAuthenticationModel
+        service.Setup(s => s.GetClientAuthenticationAsync(ClientId.Create("client-1"), It.IsAny<CancellationToken>())).ReturnsAsync(new ClientAuthenticationModel
         {
-            ClientId = "client-1",
+            ClientId = ClientId.Create("client-1"),
             ClientName = "Client One",
             GrantTypes = new List<string> { "authorization_code" }
         });
@@ -45,11 +45,11 @@ public class ClientEditorPageModelCharacterisationTests
     public async Task TokenSettingsPost_ServiceValidationFailure_ReloadsClientDisplayAndSelectsConsentTab()
     {
         var service = new Mock<IClientDetailsService>();
-        service.Setup(s => s.UpdateClientTokenSettingsAsync("client-1", It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()))
+        service.Setup(s => s.UpdateClientTokenSettingsAsync(ClientId.Create("client-1"), It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.ValidationFailure("Input.AllowOfflineAccess", "Offline access is not permitted for this client."));
-        service.Setup(s => s.GetClientTokenSettingsAsync("client-1", It.IsAny<CancellationToken>())).ReturnsAsync(new ClientTokenSettingsModel
+        service.Setup(s => s.GetClientTokenSettingsAsync(ClientId.Create("client-1"), It.IsAny<CancellationToken>())).ReturnsAsync(new ClientTokenSettingsModel
         {
-            ClientId = "client-1",
+            ClientId = ClientId.Create("client-1"),
             ClientName = "Client One"
         });
         var model = new TokenSettingsModel(service.Object)

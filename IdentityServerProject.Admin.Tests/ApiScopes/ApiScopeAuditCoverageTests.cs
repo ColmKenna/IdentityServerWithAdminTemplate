@@ -42,7 +42,7 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var db = sp.GetRequiredService<ApplicationDbContext>();
-            found = db.AuditLogEntries.Single(e => e.Category == AuditCategories.ApiScope && e.Action == action && e.TargetId == targetId);
+            found = db.AuditLogEntries.Single(e => e.Category == AuditCategory.ApiScope && e.Action == action && e.TargetId == targetId);
             await Task.CompletedTask;
         });
         return found!;
@@ -60,9 +60,9 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.Equal(ApiScopeDeleteResult.NotFound, result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Delete, name);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Delete, name);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.NotFound, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.NotFound, entry.ReasonCode);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.Equal(ApiScopeDeleteResult.Deleted, result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Delete, name);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Delete, name);
         Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
     }
 
@@ -95,9 +95,9 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.False(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Create, name);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Create, name);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.NameCollision, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.NameCollision, entry.ReasonCode);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.True(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Create, name);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Create, name);
         Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
     }
 
@@ -128,9 +128,9 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.False(result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Update, name);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Update, name);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.NotFound, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.NotFound, entry.ReasonCode);
     }
 
     [Fact]
@@ -145,8 +145,8 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
             await service.UpdateBasicsAsync(name, "Display", null, true, false, false, true);
         }));
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Update, name);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Update, name);
         Assert.Equal(AuditOutcome.Failed, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.PersistenceFailure, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.PersistenceFailure, entry.ReasonCode);
     }
 }

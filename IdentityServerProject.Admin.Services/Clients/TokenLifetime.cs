@@ -35,11 +35,11 @@ public readonly record struct TokenLifetime : IComparable<TokenLifetime>
 
     public static implicit operator int(TokenLifetime lifetime) => lifetime.Seconds;
 
-    public static implicit operator TokenLifetime(int seconds) => new(seconds);
+    public static explicit operator TokenLifetime(int seconds) => new(seconds);
 
     public static implicit operator TimeSpan(TokenLifetime lifetime) => lifetime.TotalTimeSpan;
 
-    public static implicit operator TokenLifetime(TimeSpan timeSpan) => FromTimeSpan(timeSpan);
+    public static explicit operator TokenLifetime(TimeSpan timeSpan) => FromTimeSpan(timeSpan);
 
     public int CompareTo(TokenLifetime other) => Seconds.CompareTo(other.Seconds);
 

@@ -61,7 +61,7 @@ public sealed class Task02SqlServerIntegrationTests
         await _factory.RunInScopeAsync(async services =>
         {
             var service = services.GetRequiredService<IUserDetailsService>();
-            var result = await service.RevokeUserAccessAsync(userId, "another-administrator");
+            var result = await service.RevokeUserAccessAsync(UserId.Create(userId), UserId.Create("another-administrator"));
             Assert.True(result.Success);
             Assert.Equal(1, result.RevokedGrantCount);
         });
@@ -127,7 +127,7 @@ public sealed class Task02SqlServerIntegrationTests
             await _factory.RunInScopeAsync(async services =>
             {
                 var service = services.GetRequiredService<IUserDetailsService>();
-                var result = await service.RevokeUserAccessAsync(userId, "another-administrator");
+                var result = await service.RevokeUserAccessAsync(UserId.Create(userId), UserId.Create("another-administrator"));
                 Assert.True(result.Success);
                 Assert.NotNull(result.WarningMessage);
             });
@@ -149,13 +149,13 @@ public sealed class Task02SqlServerIntegrationTests
             var audits = await services.GetRequiredService<ApplicationDbContext>().AuditLogEntries
                 .AsNoTracking()
                 .Where(a => a.TargetId == userId
-                    && (a.Action == AuditActions.RevokeUserAccess || a.Action == AuditActions.SendBackChannelLogout))
+                    && (a.Action == AuditAction.RevokeUserAccess || a.Action == AuditAction.SendBackChannelLogout))
                 .ToListAsync();
-            Assert.Single(audits, a => a.Action == AuditActions.RevokeUserAccess
+            Assert.Single(audits, a => a.Action == AuditAction.RevokeUserAccess
                 && a.Outcome == AuditOutcome.Succeeded);
-            Assert.Single(audits, a => a.Action == AuditActions.SendBackChannelLogout
+            Assert.Single(audits, a => a.Action == AuditAction.SendBackChannelLogout
                 && a.Outcome == AuditOutcome.Failed
-                && a.ReasonCode == AuditReasonCodes.NotificationFailure);
+                && a.ReasonCode == AuditReasonCode.NotificationFailure);
         });
     }
 
@@ -176,10 +176,10 @@ public sealed class Task02SqlServerIntegrationTests
             };
 
             var result = await services.GetRequiredService<IUserDetailsService>()
-                .RemoveRoleAsync(admin.Id, Config.SysAdminRole);
+                .RemoveRoleAsync(UserId.Create(admin.Id), Config.SysAdminRole);
 
             Assert.False(result.Success);
-            Assert.Equal(AuditReasonCodes.SelfDemotion, result.ReasonCode);
+            Assert.Equal(AuditReasonCode.SelfDemotion, result.ReasonCode);
             Assert.True(await users.IsInRoleAsync(admin, Config.SysAdminRole));
             actor.HttpContext = null;
         });
@@ -221,7 +221,7 @@ public sealed class Task02SqlServerIntegrationTests
                 await using var scope = _factory.Services.CreateAsyncScope();
                 var service = scope.ServiceProvider.GetRequiredService<IUserDetailsService>();
                 start.SignalAndWait();
-                return await service.RemoveRoleAsync(userId, Config.SysAdminRole);
+                return await service.RemoveRoleAsync(UserId.Create(userId), Config.SysAdminRole);
             })).ToArray();
 
             start.SignalAndWait();
@@ -229,7 +229,7 @@ public sealed class Task02SqlServerIntegrationTests
 
             Assert.Single(results, result => result.Success);
             Assert.Single(results, result => !result.Success
-                && result.ReasonCode == AuditReasonCodes.LastAdministrator);
+                && result.ReasonCode == AuditReasonCode.LastAdministrator);
 
             await _factory.RunInScopeAsync(async services =>
             {
@@ -239,12 +239,12 @@ public sealed class Task02SqlServerIntegrationTests
                 Assert.Equal(1, await db.UserRoles.CountAsync(ur => ur.RoleId == sysAdminRoleId));
 
                 var audits = await db.AuditLogEntries.AsNoTracking()
-                    .Where(a => a.Action == AuditActions.RemoveRole && userIds.Contains(a.TargetId!))
+                    .Where(a => a.Action == AuditAction.RemoveRole && userIds.Contains(a.TargetId!))
                     .ToListAsync();
                 Assert.Equal(2, audits.Count);
                 Assert.Single(audits, a => a.Outcome == AuditOutcome.Succeeded);
                 Assert.Single(audits, a => a.Outcome == AuditOutcome.Denied
-                    && a.ReasonCode == AuditReasonCodes.LastAdministrator);
+                    && a.ReasonCode == AuditReasonCode.LastAdministrator);
             });
         }
         finally
@@ -291,14 +291,14 @@ public sealed class Task02SqlServerIntegrationTests
             await using var scope = _factory.Services.CreateAsyncScope();
             var service = scope.ServiceProvider.GetRequiredService<IClientDetailsService>();
             start.SignalAndWait();
-            return await service.ToggleClientStatusAsync(clientId);
+            return await service.ToggleClientStatusAsync(ClientId.Create(clientId));
         });
         var delete = Task.Run(async () =>
         {
             await using var scope = _factory.Services.CreateAsyncScope();
             var service = scope.ServiceProvider.GetRequiredService<IClientDetailsService>();
             start.SignalAndWait();
-            return await service.DeleteClientAsync(clientId);
+            return await service.DeleteClientAsync(ClientId.Create(clientId));
         });
 
         start.SignalAndWait();
@@ -316,7 +316,7 @@ public sealed class Task02SqlServerIntegrationTests
             else
             {
                 Assert.True(enable.Result);
-                Assert.Equal(AuditReasonCodes.ClientEnabled, delete.Result.ReasonCode);
+                Assert.Equal(AuditReasonCode.ClientEnabled, delete.Result.ReasonCode);
                 Assert.NotNull(client);
                 Assert.True(client!.Enabled);
             }
@@ -346,11 +346,11 @@ public sealed class Task02SqlServerIntegrationTests
         await _factory.RunInScopeAsync(async services =>
         {
             var service = services.GetRequiredService<IClientDetailsService>();
-            var validResult = await service.RevokeClientSecretAsync(clientId, validId);
+            var validResult = await service.RevokeClientSecretAsync(ClientId.Create(clientId), validId);
             Assert.False(validResult.Success);
-            Assert.Equal(AuditReasonCodes.LastUsableSecret, validResult.ReasonCode);
+            Assert.Equal(AuditReasonCode.LastUsableSecret, validResult.ReasonCode);
 
-            var expiredResult = await service.RevokeClientSecretAsync(clientId, expiredId);
+            var expiredResult = await service.RevokeClientSecretAsync(ClientId.Create(clientId), expiredId);
             Assert.True(expiredResult.Success);
         });
 
@@ -380,7 +380,7 @@ public sealed class Task02SqlServerIntegrationTests
             await using var scope = _factory.Services.CreateAsyncScope();
             var service = scope.ServiceProvider.GetRequiredService<IClientDetailsService>();
             start.SignalAndWait();
-            return await service.RevokeClientSecretAsync(clientId, secretId);
+            return await service.RevokeClientSecretAsync(ClientId.Create(clientId), secretId);
         })).ToArray();
 
         start.SignalAndWait();
@@ -388,19 +388,19 @@ public sealed class Task02SqlServerIntegrationTests
 
         Assert.Single(results, result => result.Success);
         Assert.Single(results, result => !result.Success
-            && result.ReasonCode == AuditReasonCodes.LastUsableSecret);
+            && result.ReasonCode == AuditReasonCode.LastUsableSecret);
         Assert.Single(await GetSecretIdsAsync(clientId));
 
         await _factory.RunInScopeAsync(async services =>
         {
             var audits = await services.GetRequiredService<ApplicationDbContext>().AuditLogEntries
                 .AsNoTracking()
-                .Where(a => a.Action == AuditActions.RevokeSecret && a.TargetId == clientId)
+                .Where(a => a.Action == AuditAction.RevokeSecret && a.TargetId == clientId)
                 .ToListAsync();
             Assert.Equal(2, audits.Count);
             Assert.Single(audits, a => a.Outcome == AuditOutcome.Succeeded);
             Assert.Single(audits, a => a.Outcome == AuditOutcome.Denied
-                && a.ReasonCode == AuditReasonCodes.LastUsableSecret);
+                && a.ReasonCode == AuditReasonCode.LastUsableSecret);
         });
     }
 

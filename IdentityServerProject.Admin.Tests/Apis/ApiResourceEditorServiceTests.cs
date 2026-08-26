@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
 using IdentityServerProject.Services.Apis;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -221,7 +222,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.AttachScopeAsync($"{tag}-missing-api", scopeName);
+            var result = await service.AttachScopeAsync($"{tag}-missing-api", ScopeName.Create(scopeName));
 
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
@@ -244,7 +245,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
-            var firstResult = await service.AttachScopeAsync(name, scopeName);
+            var firstResult = await service.AttachScopeAsync(name, ScopeName.Create(scopeName));
             Assert.True(firstResult.Succeeded);
         });
 
@@ -252,7 +253,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.AttachScopeAsync(name, scopeName);
+            var result = await service.AttachScopeAsync(name, ScopeName.Create(scopeName));
 
             Assert.True(result.Succeeded);
             var editor = await service.GetForEditAsync(name);
@@ -286,7 +287,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.DetachScopeAsync(name, $"{tag}-never-attached");
+            var result = await service.DetachScopeAsync(name, ScopeName.Create($"{tag}-never-attached"));
 
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
@@ -413,7 +414,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
             Assert.Contains(scopeName, (await service.GetForEditAsync(resourceName))!.Scopes);
             Assert.Contains(scopeName, await service.GetAllApiScopeNamesAsync());
 
-            var detached = await service.DetachScopeAsync(resourceName, scopeName);
+            var detached = await service.DetachScopeAsync(resourceName, ScopeName.Create(scopeName));
 
             Assert.True(detached.Succeeded);
             Assert.DoesNotContain(scopeName, (await service.GetForEditAsync(resourceName))!.Scopes);

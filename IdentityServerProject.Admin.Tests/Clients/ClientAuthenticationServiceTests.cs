@@ -39,7 +39,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientAuthenticationAsync("non-existent-client-id-xyz");
+            var result = await service.GetClientAuthenticationAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.Null(result);
         });
     }
@@ -62,7 +62,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientAuthenticationAsync(clientId);
+            var result = await service.GetClientAuthenticationAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
             Assert.True(result!.RequirePkce);
@@ -101,10 +101,10 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
                 CorsOrigins = new List<string> { "https://new.example.com" }
             };
 
-            var updateResult = await service.UpdateClientAuthenticationAsync(clientId, input);
+            var updateResult = await service.UpdateClientAuthenticationAsync(ClientId.Create(clientId), input);
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
-            var result = await service.GetClientAuthenticationAsync(clientId);
+            var result = await service.GetClientAuthenticationAsync(ClientId.Create(clientId));
             Assert.NotNull(result);
             Assert.Equal(new[] { "https://new.example.com/callback" }, result!.RedirectUris);
             Assert.DoesNotContain("https://old.example.com/callback", result.RedirectUris);
@@ -137,10 +137,10 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
                 CorsOrigins = new List<string>()
             };
 
-            var updateResult = await service.UpdateClientAuthenticationAsync(clientId, input);
+            var updateResult = await service.UpdateClientAuthenticationAsync(ClientId.Create(clientId), input);
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
-            var result = await service.GetClientAuthenticationAsync(clientId);
+            var result = await service.GetClientAuthenticationAsync(ClientId.Create(clientId));
             Assert.NotNull(result);
             Assert.Equal(new[] { "client_credentials" }, result!.GrantTypes);
         });
@@ -152,7 +152,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientAuthenticationAsync("unknown-client", new ClientAuthenticationInputModel
+            var result = await service.UpdateClientAuthenticationAsync(ClientId.Create("unknown-client"), new ClientAuthenticationInputModel
             {
                 GrantTypes = new List<string> { "client_credentials" }
             });
@@ -178,7 +178,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientAuthenticationAsync(clientId);
+            var result = await service.GetClientAuthenticationAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
             Assert.False(result!.HasDrifted);
@@ -213,7 +213,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientAuthenticationAsync(clientId);
+            var result = await service.GetClientAuthenticationAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
             Assert.False(result!.HasDrifted);
@@ -249,7 +249,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientAuthenticationAsync(clientId);
+            var result = await service.GetClientAuthenticationAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
             Assert.True(result!.HasDrifted);

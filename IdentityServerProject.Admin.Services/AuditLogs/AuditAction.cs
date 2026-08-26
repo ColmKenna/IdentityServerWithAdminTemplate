@@ -60,7 +60,7 @@ public readonly record struct AuditAction(string Value) : IComparable<AuditActio
 
     public static implicit operator string(AuditAction action) => action.Value ?? string.Empty;
 
-    public static implicit operator AuditAction(string? value) => From(value);
+    public static explicit operator AuditAction(string? value) => From(value);
 
     public override string ToString() => Value ?? string.Empty;
 

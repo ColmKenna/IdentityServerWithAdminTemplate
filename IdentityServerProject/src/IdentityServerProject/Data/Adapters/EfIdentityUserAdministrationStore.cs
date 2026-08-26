@@ -114,12 +114,12 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
         if (!result.Succeeded)
         {
             var reasonCode = result.Errors.Any(e => e.Code.StartsWith("Duplicate", StringComparison.Ordinal))
-                ? AuditReasonCodes.NameCollision
-                : AuditReasonCodes.ValidationFailed;
+                ? AuditReasonCode.NameCollision
+                : AuditReasonCode.ValidationFailed;
             return new UserCreateOutcome(UserCreateResult.Failed(result.Errors.Select(e => e.Description).ToList()), reasonCode);
         }
 
-        return new UserCreateOutcome(UserCreateResult.Succeeded(user.Id), AuditReasonCodes.Succeeded);
+        return new UserCreateOutcome(UserCreateResult.Succeeded(user.Id), AuditReasonCode.Succeeded);
     }
 
     public async Task<UserAccountDetails?> FindUserDetailsAsync(UserId userId, CancellationToken cancellationToken = default)

@@ -109,11 +109,11 @@ public sealed class SecretRevealServiceTests : IDisposable
         Assert.Empty(_dbContext.SecretRevealRecords);
 
         AssertUnavailable(await _service.ConsumeAsync(
-            SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api", "not base64url!"));
+            SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api", SecretRevealHandle.Create("not base64url!")));
         AssertUnavailable(await _service.ConsumeAsync(
             SecretRevealPurpose.ApiResourceSecretGenerated,
             "sales.api",
-            Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(new byte[32])));
+            SecretRevealHandle.Create(Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(new byte[32]))));
 
         _httpContextAccessor.HttpContext = new DefaultHttpContext();
         AssertUnavailable(await _service.ConsumeAsync(
@@ -137,9 +137,9 @@ public sealed class SecretRevealServiceTests : IDisposable
         AssertUnavailable(result);
         Assert.Empty(_dbContext.SecretRevealRecords);
         Assert.Contains(_auditWriter.Events, audit =>
-            audit.Action == AuditActions.Consume
+            audit.Action == AuditAction.Consume
             && audit.Outcome == AuditOutcome.Failed
-            && audit.ReasonCode == AuditReasonCodes.PersistenceFailure);
+            && audit.ReasonCode == AuditReasonCode.PersistenceFailure);
         AssertAuditIsRedacted("do-not-log-me", ticket.Handle, "invalid-protected-payload");
         AssertLogsAreRedacted("do-not-log-me", ticket.Handle, "invalid-protected-payload");
     }

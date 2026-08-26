@@ -80,7 +80,7 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var db = sp.GetRequiredService<ApplicationDbContext>();
-            found = db.AuditLogEntries.Single(e => e.Category == AuditCategories.Client && e.Action == action && e.TargetId == targetId);
+            found = db.AuditLogEntries.Single(e => e.Category == AuditCategory.Client && e.Action == action && e.TargetId == targetId);
             await Task.CompletedTask;
         });
         return found!;
@@ -107,9 +107,9 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.False(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Create, clientId);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Create, clientId);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.NameCollision, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.NameCollision, entry.ReasonCode);
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
             Assert.True(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Create, clientId);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Create, clientId);
         Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
     }
 
@@ -148,13 +148,13 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.DeleteClientAsync(clientId);
+            var result = await service.DeleteClientAsync(ClientId.Create(clientId));
             Assert.False(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Delete, clientId);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Delete, clientId);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.ClientEnabled, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.ClientEnabled, entry.ReasonCode);
     }
 
     [Fact]
@@ -165,13 +165,13 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.DeleteClientAsync(clientId);
+            var result = await service.DeleteClientAsync(ClientId.Create(clientId));
             Assert.False(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Delete, clientId);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Delete, clientId);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.NotFound, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.NotFound, entry.ReasonCode);
     }
 
     [Fact]
@@ -182,13 +182,13 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.ToggleClientStatusAsync(clientId);
+            var result = await service.ToggleClientStatusAsync(ClientId.Create(clientId));
             Assert.False(result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.SetEnabled, clientId);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.SetEnabled, clientId);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.NotFound, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.NotFound, entry.ReasonCode);
     }
 
     [Fact]
@@ -200,11 +200,11 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.ToggleClientStatusAsync(clientId);
+            var result = await service.ToggleClientStatusAsync(ClientId.Create(clientId));
             Assert.True(result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.SetEnabled, clientId);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.SetEnabled, clientId);
         Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
     }
 
@@ -225,13 +225,13 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.RevokeClientSecretAsync(clientId, secretId);
+            var result = await service.RevokeClientSecretAsync(ClientId.Create(clientId), secretId);
             Assert.False(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.RevokeSecret, clientId);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.RevokeSecret, clientId);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.LastUsableSecret, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.LastUsableSecret, entry.ReasonCode);
     }
 
     [Fact]
@@ -243,11 +243,11 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
             await sp.GetRequiredService<ConfigurationDbContext>().DisposeAsync();
-            await service.ToggleClientStatusAsync(clientId);
+            await service.ToggleClientStatusAsync(ClientId.Create(clientId));
         }));
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.SetEnabled, clientId);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.SetEnabled, clientId);
         Assert.Equal(AuditOutcome.Failed, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.PersistenceFailure, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.PersistenceFailure, entry.ReasonCode);
     }
 }

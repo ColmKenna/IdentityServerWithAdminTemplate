@@ -7,6 +7,7 @@ using Duende.IdentityServer.EntityFramework.Entities;
 using IdentityServerProject.Data;
 using IdentityServerProject.Services.AuditLogs;
 using IdentityServerProject.Services.Grants;
+using IdentityServerProject.Services.Users;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -45,7 +46,7 @@ public class GrantAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var db = sp.GetRequiredService<ApplicationDbContext>();
-            result = db.AuditLogEntries.Single(e => e.Category == AuditCategories.Grant && e.Action == action && e.TargetId == targetId);
+            result = db.AuditLogEntries.Single(e => e.Category == AuditCategory.Grant && e.Action == action && e.TargetId == targetId);
             await Task.CompletedTask;
         });
         return result!;
@@ -65,13 +66,13 @@ public class GrantAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IGrantListService>();
-            var result = await service.RevokeGrantAsync(grantKey);
+            var result = await service.RevokeGrantAsync(GrantKey.Create(grantKey));
             Assert.Equal(RevokeGrantResult.Revoked, result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Revoke, grantKey);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Revoke, grantKey);
         Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.Succeeded, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.Succeeded, entry.ReasonCode);
     }
 
     [Fact]
@@ -83,13 +84,13 @@ public class GrantAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IGrantListService>();
-            var result = await service.RevokeGrantAsync(missingKey);
+            var result = await service.RevokeGrantAsync(GrantKey.Create(missingKey));
             Assert.Equal(RevokeGrantResult.NotFound, result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Revoke, missingKey);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Revoke, missingKey);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.NotFound, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.NotFound, entry.ReasonCode);
     }
 
     [Fact]
@@ -110,7 +111,7 @@ public class GrantAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IGrantListService>();
-            var count = await service.RevokeGrantsBySubjectAsync(subjectId);
+            var count = await service.RevokeGrantsBySubjectAsync(UserId.Create(subjectId));
             Assert.Equal(2, count);
         });
 
@@ -118,7 +119,7 @@ public class GrantAuditCoverageTests : IClassFixture<AdminWebFactory>
         {
             var db = sp.GetRequiredService<ApplicationDbContext>();
             var entries = db.AuditLogEntries
-                .Where(e => e.Category == AuditCategories.Grant && e.Action == AuditActions.BulkRevoke && e.TargetId == subjectId)
+                .Where(e => e.Category == AuditCategory.Grant && e.Action == AuditAction.BulkRevoke && e.TargetId == subjectId)
                 .ToList();
 
             // Exactly one bounded summary event, never one row per revoked grant.
@@ -137,11 +138,11 @@ public class GrantAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IGrantListService>();
-            var count = await service.RevokeGrantsBySubjectAsync(subjectId);
+            var count = await service.RevokeGrantsBySubjectAsync(UserId.Create(subjectId));
             Assert.Equal(0, count);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.BulkRevoke, subjectId);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.BulkRevoke, subjectId);
         Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
     }
 
@@ -154,11 +155,11 @@ public class GrantAuditCoverageTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IGrantListService>();
             await sp.GetRequiredService<PersistedGrantDbContext>().DisposeAsync();
-            await service.RevokeGrantAsync(key);
+            await service.RevokeGrantAsync(GrantKey.Create(key));
         }));
 
-        var entry = await GetSingleAuditEntryAsync(AuditActions.Revoke, key);
+        var entry = await GetSingleAuditEntryAsync(AuditAction.Revoke, key);
         Assert.Equal(AuditOutcome.Failed, entry.Outcome);
-        Assert.Equal(AuditReasonCodes.PersistenceFailure, entry.ReasonCode);
+        Assert.Equal(AuditReasonCode.PersistenceFailure, entry.ReasonCode);
     }
 }

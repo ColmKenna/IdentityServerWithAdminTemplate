@@ -54,7 +54,7 @@ public class EfIdentityUserAdministrationStoreTests : IClassFixture<AdminWebFact
                 userManager.Object,
                 sp.GetRequiredService<RoleManager<IdentityRole>>());
 
-            var outcome = await store.UnlockUserAsync(user.Id);
+            var outcome = await store.UnlockUserAsync(UserId.Create(user.Id));
 
             Assert.Equal(UserUnlockStatus.Failed, outcome.Result.Status);
             Assert.Equal("Lockout state update failed.", Assert.Single(outcome.Result.Errors));
@@ -83,7 +83,7 @@ public class EfIdentityUserAdministrationStoreTests : IClassFixture<AdminWebFact
                 userManager.Object,
                 sp.GetRequiredService<RoleManager<IdentityRole>>());
 
-            var outcome = await store.UnlockUserAsync(user.Id);
+            var outcome = await store.UnlockUserAsync(UserId.Create(user.Id));
 
             Assert.Equal(UserUnlockStatus.Failed, outcome.Result.Status);
             Assert.Equal("Access-failure reset failed.", Assert.Single(outcome.Result.Errors));
@@ -103,7 +103,7 @@ public class EfIdentityUserAdministrationStoreTests : IClassFixture<AdminWebFact
                 userManager.Object,
                 sp.GetRequiredService<RoleManager<IdentityRole>>());
 
-            var outcome = await store.UnlockUserAsync("missing-user");
+            var outcome = await store.UnlockUserAsync(UserId.Create("missing-user"));
 
             Assert.Equal(UserUnlockStatus.NotFound, outcome.Result.Status);
             Assert.Equal("missing-user", outcome.TargetName);

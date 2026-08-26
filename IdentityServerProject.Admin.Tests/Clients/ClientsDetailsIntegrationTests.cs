@@ -43,7 +43,7 @@ public class ClientsDetailsIntegrationTests : IDisposable
 
     private static ClientDetailsModel SampleClientDetails(string id = "coop.market.razor", bool enabled = true) => new()
     {
-        ClientId = id,
+        ClientId = ClientId.Create(id),
         ClientName = "Co-op Market Razor Client",
         Description = "No description seeded or configured.",
         ClientType = "SPA with BFF",
@@ -52,7 +52,7 @@ public class ClientsDetailsIntegrationTests : IDisposable
         RequireClientSecret = true,
         RequireConsent = false,
         AllowOfflineAccess = true,
-        AccessTokenLifetime = 300,
+        AccessTokenLifetime = TokenLifetime.FromSeconds(300),
         AllowedGrantTypes = "authorization_code",
         RedirectUrisCount = 2,
         CorsOriginsCount = 0,
