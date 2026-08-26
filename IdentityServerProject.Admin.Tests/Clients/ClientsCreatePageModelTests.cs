@@ -87,8 +87,7 @@ public class ClientsCreatePageModelTests : IClassFixture<AdminWebFactory>
             var presets = sp.GetRequiredService<IClientPresetService>();
             var revealService = new Mock<ISecretRevealService>();
             revealService.Setup(service => service.IssueAsync(
-                    SecretRevealPurpose.ClientCreated,
-                    "new-web-client",
+                    new SecretRevealTarget(SecretRevealPurpose.ClientCreated, "new-web-client"),
                     "secret123",
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new SecretRevealTicket(SecretRevealHandle.Create("opaque-handle"), DateTimeOffset.UtcNow.AddMinutes(5)));

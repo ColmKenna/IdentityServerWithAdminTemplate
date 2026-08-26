@@ -105,8 +105,7 @@ public class EditorModel : PageModel
         if (!string.IsNullOrEmpty(handle))
         {
             var reveal = await _secretRevealService.ConsumeAsync(
-                SecretRevealPurpose.ApiResourceSecretGenerated,
-                ResourceName,
+                new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, ResourceName),
                 IdentityServerProject.Services.SecretReveals.SecretRevealHandle.Create(handle),
                 cancellationToken);
             if (reveal.Status == SecretRevealConsumeStatus.Revealed)
@@ -174,8 +173,7 @@ public class EditorModel : PageModel
         }
 
         var ticket = await _secretRevealService.IssueAsync(
-            SecretRevealPurpose.ApiResourceSecretGenerated,
-            ResourceName,
+            new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, ResourceName),
             result.PlaintextSecret!,
             cancellationToken);
         SecretRevealHandle = ticket.Handle;
@@ -479,15 +477,13 @@ public class EditorModel : PageModel
         public static UnconfiguredSecretRevealService Instance { get; } = new();
 
         public Task<SecretRevealTicket> IssueAsync(
-            SecretRevealPurpose purpose,
-            string targetId,
+            SecretRevealTarget target,
             string plaintext,
             CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("The secret reveal service is not configured.");
 
         public Task<SecretRevealConsumeResult> ConsumeAsync(
-            SecretRevealPurpose purpose,
-            string targetId,
+            SecretRevealTarget target,
             SecretRevealHandle handle,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(SecretRevealConsumeResult.Unavailable());

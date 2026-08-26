@@ -38,14 +38,12 @@ public sealed record SecretRevealConsumeResult(
 public interface ISecretRevealService
 {
     Task<SecretRevealTicket> IssueAsync(
-        SecretRevealPurpose purpose,
-        string targetId,
+        SecretRevealTarget target,
         string plaintext,
         CancellationToken cancellationToken = default);
 
     Task<SecretRevealConsumeResult> ConsumeAsync(
-        SecretRevealPurpose purpose,
-        string targetId,
+        SecretRevealTarget target,
         SecretRevealHandle handle,
         CancellationToken cancellationToken = default);
 }

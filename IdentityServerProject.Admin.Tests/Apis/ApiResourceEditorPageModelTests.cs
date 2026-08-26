@@ -170,8 +170,7 @@ public class ApiResourceEditorPageModelTests
 
         var reveals = new Mock<ISecretRevealService>();
         reveals.Setup(service => service.IssueAsync(
-                SecretRevealPurpose.ApiResourceSecretGenerated,
-                "sales.api",
+                new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api"),
                 "the-plaintext-secret",
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SecretRevealTicket(SecretRevealHandle.Create("opaque-handle"), DateTimeOffset.UtcNow.AddMinutes(5)));

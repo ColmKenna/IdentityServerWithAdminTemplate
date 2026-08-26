@@ -32,7 +32,7 @@ public sealed class SecretRevealSqlServerIntegrationTests
         await using (var scope = issuer.CreateAsyncScope())
         {
             ticket = await scope.ServiceProvider.GetRequiredService<ISecretRevealService>().IssueAsync(
-                SecretRevealPurpose.ClientCreated, "cross-instance-client", plaintext);
+                new SecretRevealTarget(SecretRevealPurpose.ClientCreated, "cross-instance-client"), plaintext);
         }
 
         await using (var verifier = BuildInstance("shared-actor"))
@@ -47,7 +47,7 @@ public sealed class SecretRevealSqlServerIntegrationTests
             Assert.True(await db.DataProtectionKeys.AnyAsync());
 
             var result = await scope.ServiceProvider.GetRequiredService<ISecretRevealService>().ConsumeAsync(
-                SecretRevealPurpose.ClientCreated, "cross-instance-client", ticket.Handle);
+                new SecretRevealTarget(SecretRevealPurpose.ClientCreated, "cross-instance-client"), ticket.Handle);
             Assert.Equal(SecretRevealConsumeStatus.Revealed, result.Status);
             Assert.Equal(plaintext, result.Plaintext);
         }
@@ -66,8 +66,7 @@ public sealed class SecretRevealSqlServerIntegrationTests
         await using (var scope = issuer.CreateAsyncScope())
         {
             ticket = await scope.ServiceProvider.GetRequiredService<ISecretRevealService>().IssueAsync(
-                SecretRevealPurpose.ApiResourceSecretGenerated,
-                "concurrent.api",
+                new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, "concurrent.api"),
                 "one-consumer-only");
         }
 
@@ -79,8 +78,7 @@ public sealed class SecretRevealSqlServerIntegrationTests
             var service = scope.ServiceProvider.GetRequiredService<ISecretRevealService>();
             start.SignalAndWait();
             return await service.ConsumeAsync(
-                SecretRevealPurpose.ApiResourceSecretGenerated,
-                "concurrent.api",
+                new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, "concurrent.api"),
                 ticket.Handle);
         })).ToArray();
 

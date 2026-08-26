@@ -17,8 +17,6 @@ namespace IdentityServerProject.Services.Apis;
 
 public partial class ApiResourceEditorService : IApiResourceEditorService
 {
-    private const string SecretType = "SharedSecret";
-
     private readonly ConfigurationDbContext _configurationDbContext;
     private readonly IAuditWriter _auditWriter;
     private readonly TimeProvider _timeProvider;
@@ -297,7 +295,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             {
                 Description = description,
                 Value = plaintextSecret.Sha256(),
-                Type = SecretType,
+                Type = SecretType.SharedSecret.ToSecretTypeValue(),
                 Expiration = expiration,
                 Created = _timeProvider.GetUtcNow().UtcDateTime,
             });
@@ -798,7 +796,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
                 {
                     Id = s.Id,
                     Description = s.Description,
-                    Type = s.Type,
+                    Type = s.Type.ParseSecretType(),
                     Expiration = s.Expiration,
                     Created = s.Created,
                 })

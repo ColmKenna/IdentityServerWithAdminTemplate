@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Dom;
 using IdentityServerProject.Services.Diagnostics;
+using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -147,7 +148,7 @@ public class DiagnosticsIndexIntegrationTests : IDisposable
         {
             new()
             {
-                UserId = "user-42",
+                UserId = UserId.Create("user-42"),
                 UserName = "jane.doe",
                 ClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
                 ClaimValue = "SysAdmin"

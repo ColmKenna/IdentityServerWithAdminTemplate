@@ -84,7 +84,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientPermissionsAsync("non-existent-client-id-xyz");
+            var result = await service.GetClientPermissionsAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.Null(result);
         });
     }
@@ -107,7 +107,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientPermissionsAsync(clientId);
+            var result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
             Assert.Equal(clientId, result!.ClientId);
@@ -136,7 +136,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientPermissionsAsync(clientId);
+            var result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
             Assert.False(result!.IsInteractive);
@@ -166,7 +166,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
             var updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId), ScopeSet.FromStrings(new[] { $"{tag}.read" }));
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
-            var result = await service.GetClientPermissionsAsync(clientId);
+            var result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
             Assert.NotNull(result);
             Assert.Contains("openid", result!.AllowedScopes);
             Assert.Contains($"{tag}.read", result.AllowedScopes);
@@ -194,7 +194,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
             var updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId), ScopeSet.FromStrings(new[] { "openid", "profile", $"{tag}.write" }));
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
-            var result = await service.GetClientPermissionsAsync(clientId);
+            var result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
             Assert.NotNull(result);
             Assert.DoesNotContain("openid", result!.AllowedScopes);
             Assert.DoesNotContain("profile", result.AllowedScopes);
@@ -224,7 +224,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
             var updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId), ScopeSet.FromStrings(new[] { "openid", $"{tag}.write" }));
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
-            var result = await service.GetClientPermissionsAsync(clientId);
+            var result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
             Assert.NotNull(result);
             Assert.Contains($"{tag}.write", result!.AllowedScopes);
             Assert.DoesNotContain($"{tag}.read", result.AllowedScopes);

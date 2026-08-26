@@ -66,8 +66,8 @@ public class ClientsPermissionsIntegrationTests : IDisposable
     private static IClientDetailsService MockService(ClientPermissionsModel? details = null, bool updateSuccess = true)
     {
         var mock = new Mock<IClientDetailsService>();
-        mock.Setup(s => s.GetClientPermissionsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, CancellationToken _) => id == "non-existent" ? null : (details ?? SampleInteractivePermissions(id)));
+        mock.Setup(s => s.GetClientPermissionsAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, CancellationToken _) => id.Value == "non-existent" ? null : (details ?? SampleInteractivePermissions(id.Value)));
         mock.Setup(s => s.UpdateClientPermissionsAsync(It.IsAny<ClientId>(), It.IsAny<ScopeSet>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ClientId id, ScopeSet _, CancellationToken _) =>
                 id.Value == "non-existent"
@@ -158,7 +158,7 @@ public class ClientsPermissionsIntegrationTests : IDisposable
     public async Task Post_AddingAndRemovingApiScopes_RedirectsToDetailsAndPersists()
     {
         var mock = new Mock<IClientDetailsService>();
-        mock.Setup(s => s.GetClientPermissionsAsync("test-client", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientPermissionsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleInteractivePermissions());
         mock.Setup(s => s.UpdateClientPermissionsAsync(ClientId.Create("test-client"), It.IsAny<ScopeSet>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());

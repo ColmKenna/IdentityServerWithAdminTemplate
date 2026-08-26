@@ -42,11 +42,12 @@ public sealed class SecretRevealService : ISecretRevealService
     }
 
     public async Task<SecretRevealTicket> IssueAsync(
-        SecretRevealPurpose purpose,
-        string targetId,
+        SecretRevealTarget target,
         string plaintext,
         CancellationToken cancellationToken = default)
     {
+        var purpose = target.Purpose;
+        var targetId = target.TargetId;
         var normalizedTarget = NormalizeTarget(targetId);
         ValidatePurpose(purpose);
         if (normalizedTarget.Length == 0)
@@ -113,11 +114,12 @@ public sealed class SecretRevealService : ISecretRevealService
     }
 
     public async Task<SecretRevealConsumeResult> ConsumeAsync(
-        SecretRevealPurpose purpose,
-        string targetId,
+        SecretRevealTarget target,
         SecretRevealHandle handle,
         CancellationToken cancellationToken = default)
     {
+        var purpose = target.Purpose;
+        var targetId = target.TargetId;
         var normalizedTarget = NormalizeTarget(targetId);
         var actorSubjectId = ResolveActorSubjectId();
         if (!Enum.IsDefined(purpose)

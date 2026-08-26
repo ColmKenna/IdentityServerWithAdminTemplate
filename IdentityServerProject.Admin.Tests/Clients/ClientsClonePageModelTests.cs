@@ -109,7 +109,7 @@ public class ClientsClonePageModelTests
         detailsService.Setup(s => s.GetClientDetailsAsync(ClientId.Create("source-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SourceClient());
         var revealService = new Mock<ISecretRevealService>();
-        revealService.Setup(s => s.IssueAsync(SecretRevealPurpose.ClientCreated, "target-client", "plaintext-secret", It.IsAny<CancellationToken>()))
+        revealService.Setup(s => s.IssueAsync(new SecretRevealTarget(SecretRevealPurpose.ClientCreated, "target-client"), "plaintext-secret", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SecretRevealTicket(SecretRevealHandle.Create("opaque-handle"), DateTimeOffset.UtcNow.AddMinutes(5)));
         var model = CreateModel(createService, detailsService, revealService);
         model.SourceClientId = "source-client";

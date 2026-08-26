@@ -88,8 +88,7 @@ public class CloneModel : PageModel
         if (!string.IsNullOrEmpty(result.PlaintextSecret))
         {
             var ticket = await _secretRevealService.IssueAsync(
-                SecretRevealPurpose.ClientCreated,
-                result.ClientId!,
+                new SecretRevealTarget(SecretRevealPurpose.ClientCreated, result.ClientId!),
                 result.PlaintextSecret,
                 cancellationToken);
             TempData["SecretRevealHandle"] = ticket.Handle;

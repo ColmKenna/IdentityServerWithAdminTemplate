@@ -45,7 +45,7 @@ public sealed class SecretRevealServiceTests : IDisposable
     {
         const string plaintext = "top-secret-value-that-must-not-leak";
         var ticket = await _service.IssueAsync(
-            SecretRevealPurpose.ClientCreated, " client-a ", plaintext);
+            new SecretRevealTarget(SecretRevealPurpose.ClientCreated, " client-a "), plaintext);
 
         var stored = await _dbContext.SecretRevealRecords.AsNoTracking().SingleAsync();
         Assert.Equal(32, stored.HandleDigest.Length);
@@ -59,9 +59,9 @@ public sealed class SecretRevealServiceTests : IDisposable
             value => Assert.DoesNotContain(ticket.Handle, value, StringComparison.Ordinal));
 
         var first = await _service.ConsumeAsync(
-            SecretRevealPurpose.ClientCreated, "client-a", ticket.Handle);
+            new SecretRevealTarget(SecretRevealPurpose.ClientCreated, "client-a"), ticket.Handle);
         var second = await _service.ConsumeAsync(
-            SecretRevealPurpose.ClientCreated, "client-a", ticket.Handle);
+            new SecretRevealTarget(SecretRevealPurpose.ClientCreated, "client-a"), ticket.Handle);
 
         Assert.Equal(SecretRevealConsumeStatus.Revealed, first.Status);
         Assert.Equal(plaintext, first.Plaintext);
@@ -75,24 +75,24 @@ public sealed class SecretRevealServiceTests : IDisposable
     public async Task WrongActorPurposeOrTarget_IsUnavailableAndCannotInvalidateLegitimateReveal()
     {
         var ticket = await _service.IssueAsync(
-            SecretRevealPurpose.ClientSecretGenerated, "client-a", "bound-secret");
+            new SecretRevealTarget(SecretRevealPurpose.ClientSecretGenerated, "client-a"), "bound-secret");
 
         SetActor("actor-b");
         AssertUnavailable(await _service.ConsumeAsync(
-            SecretRevealPurpose.ClientSecretGenerated, "client-a", ticket.Handle));
+            new SecretRevealTarget(SecretRevealPurpose.ClientSecretGenerated, "client-a"), ticket.Handle));
         Assert.Single(_dbContext.SecretRevealRecords);
 
         SetActor("actor-a");
         AssertUnavailable(await _service.ConsumeAsync(
-            SecretRevealPurpose.ApiResourceSecretGenerated, "client-a", ticket.Handle));
+            new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, "client-a"), ticket.Handle));
         Assert.Single(_dbContext.SecretRevealRecords);
 
         AssertUnavailable(await _service.ConsumeAsync(
-            SecretRevealPurpose.ClientSecretGenerated, "client-b", ticket.Handle));
+            new SecretRevealTarget(SecretRevealPurpose.ClientSecretGenerated, "client-b"), ticket.Handle));
         Assert.Single(_dbContext.SecretRevealRecords);
 
         var legitimate = await _service.ConsumeAsync(
-            SecretRevealPurpose.ClientSecretGenerated, "client-a", ticket.Handle);
+            new SecretRevealTarget(SecretRevealPurpose.ClientSecretGenerated, "client-a"), ticket.Handle);
         Assert.Equal(SecretRevealConsumeStatus.Revealed, legitimate.Status);
         Assert.Equal("bound-secret", legitimate.Plaintext);
     }
@@ -101,38 +101,37 @@ public sealed class SecretRevealServiceTests : IDisposable
     public async Task ExpiredMalformedMissingAndUnauthenticatedHandles_AreGenericallyUnavailable()
     {
         var ticket = await _service.IssueAsync(
-            SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api", "expiring-secret");
+            new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api"), "expiring-secret");
         _timeProvider.Advance(TimeSpan.FromMinutes(5));
 
         AssertUnavailable(await _service.ConsumeAsync(
-            SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api", ticket.Handle));
+            new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api"), ticket.Handle));
         Assert.Empty(_dbContext.SecretRevealRecords);
 
         AssertUnavailable(await _service.ConsumeAsync(
-            SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api", SecretRevealHandle.Create("not base64url!")));
+            new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api"), SecretRevealHandle.Create("not base64url!")));
         AssertUnavailable(await _service.ConsumeAsync(
-            SecretRevealPurpose.ApiResourceSecretGenerated,
-            "sales.api",
+            new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api"),
             SecretRevealHandle.Create(Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(new byte[32]))));
 
         _httpContextAccessor.HttpContext = new DefaultHttpContext();
         AssertUnavailable(await _service.ConsumeAsync(
-            SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api", ticket.Handle));
+            new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api"), ticket.Handle));
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.IssueAsync(
-            SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api", "secret"));
+            new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api"), "secret"));
     }
 
     [Fact]
     public async Task UnprotectFailure_IsUnavailableAndDoesNotRecreateConsumedRecord()
     {
         var ticket = await _service.IssueAsync(
-            SecretRevealPurpose.ClientSecretGenerated, "client-a", "do-not-log-me");
+            new SecretRevealTarget(SecretRevealPurpose.ClientSecretGenerated, "client-a"), "do-not-log-me");
         var record = await _dbContext.SecretRevealRecords.SingleAsync();
         record.ProtectedPayload = "invalid-protected-payload";
         await _dbContext.SaveChangesAsync();
 
         var result = await _service.ConsumeAsync(
-            SecretRevealPurpose.ClientSecretGenerated, "client-a", ticket.Handle);
+            new SecretRevealTarget(SecretRevealPurpose.ClientSecretGenerated, "client-a"), ticket.Handle);
 
         AssertUnavailable(result);
         Assert.Empty(_dbContext.SecretRevealRecords);
@@ -150,7 +149,7 @@ public sealed class SecretRevealServiceTests : IDisposable
     public async Task Issue_InvalidTarget_IsRejected(string targetId)
     {
         await Assert.ThrowsAsync<ArgumentException>(() => _service.IssueAsync(
-            SecretRevealPurpose.ClientCreated, targetId, "secret"));
+            new SecretRevealTarget(SecretRevealPurpose.ClientCreated, targetId), "secret"));
         Assert.Empty(_dbContext.SecretRevealRecords);
     }
 
@@ -158,7 +157,7 @@ public sealed class SecretRevealServiceTests : IDisposable
     public async Task Issue_EmptyPlaintext_IsRejected()
     {
         await Assert.ThrowsAsync<ArgumentException>(() => _service.IssueAsync(
-            SecretRevealPurpose.ClientCreated, "client-a", string.Empty));
+            new SecretRevealTarget(SecretRevealPurpose.ClientCreated, "client-a"), string.Empty));
         Assert.Empty(_dbContext.SecretRevealRecords);
     }
 

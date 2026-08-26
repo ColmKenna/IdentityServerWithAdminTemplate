@@ -41,7 +41,7 @@ public class PermissionsModel : PageModel
             return NotFound();
         }
 
-        var permissions = await _clientDetailsService.GetClientPermissionsAsync(Id, cancellationToken);
+        var permissions = await _clientDetailsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
         if (permissions == null)
         {
             return NotFound();
@@ -76,7 +76,7 @@ public class PermissionsModel : PageModel
                 }
             }
 
-            var permissions = await _clientDetailsService.GetClientPermissionsAsync(Id, cancellationToken);
+            var permissions = await _clientDetailsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
             if (permissions == null)
             {
                 return NotFound();

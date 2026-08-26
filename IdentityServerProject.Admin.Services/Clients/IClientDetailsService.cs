@@ -54,7 +54,7 @@ public interface IClientDetailsService
     /// Returns the current allowed scopes for a client along with the available identity resources
     /// and API scopes to choose from. Returns null if no matching client is found.
     /// </summary>
-    Task<ClientPermissionsModel?> GetClientPermissionsAsync(string clientId, CancellationToken cancellationToken = default);
+    Task<ClientPermissionsModel?> GetClientPermissionsAsync(ClientId clientId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates the allowed scopes for a client. For interactive clients, 'openid' is always

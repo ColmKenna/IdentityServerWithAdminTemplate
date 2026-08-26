@@ -27,7 +27,6 @@ public partial class ClientDetailsService : IClientDetailsService
     private const string GrantTypeHybrid = "hybrid";
     private const string GrantTypeImplicit = "implicit";
     private const string GrantTypeDeviceCode = "urn:ietf:params:oauth:grant-type:device_code";
-    private const string SecretTypeShared = "SharedSecret";
 
     public const string DisabledAtPropertyKey = "admin:disabledAt";
     public const int MinimumDisabledDaysBeforeDelete = 90;
@@ -570,9 +569,9 @@ public partial class ClientDetailsService : IClientDetailsService
 
     #region Permissions
 
-    public async Task<ClientPermissionsModel?> GetClientPermissionsAsync(string clientId, CancellationToken cancellationToken = default)
+    public async Task<ClientPermissionsModel?> GetClientPermissionsAsync(ClientId clientId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(clientId))
+        if (clientId.IsEmpty)
         {
             return null;
         }
@@ -581,7 +580,7 @@ public partial class ClientDetailsService : IClientDetailsService
             .AsNoTracking()
             .Include(c => c.AllowedGrantTypes)
             .Include(c => c.AllowedScopes)
-            .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
+            .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
         if (client == null)
         {
@@ -827,7 +826,7 @@ public partial class ClientDetailsService : IClientDetailsService
             {
                 Description = trimmedDescription,
                 Value = plaintextSecret.Sha256(),
-                Type = SecretTypeShared,
+                Type = SecretType.SharedSecret.ToSecretTypeValue(),
                 Expiration = expiration?.ToUniversalTime(),
                 Created = DateTime.UtcNow
             });

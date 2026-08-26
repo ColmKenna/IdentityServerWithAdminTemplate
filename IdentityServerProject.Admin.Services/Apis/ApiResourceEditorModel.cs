@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using IdentityServerProject.Services.Secrets;
 
 namespace IdentityServerProject.Services.Apis;
 
@@ -46,7 +47,7 @@ public sealed class ApiResourceSecretItem
 
     public required string? Description { get; init; }
 
-    public required string Type { get; init; }
+    public required SecretType Type { get; init; }
 
     public required System.DateTime? Expiration { get; init; }
 

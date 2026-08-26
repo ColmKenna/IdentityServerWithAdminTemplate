@@ -51,7 +51,7 @@ public class CreateModel : PageModel
         if (!string.IsNullOrEmpty(handle) && !string.IsNullOrWhiteSpace(clientId))
         {
             var reveal = await _secretRevealService.ConsumeAsync(
-                SecretRevealPurpose.ClientCreated, clientId, IdentityServerProject.Services.SecretReveals.SecretRevealHandle.Create(handle), cancellationToken);
+                new SecretRevealTarget(SecretRevealPurpose.ClientCreated, clientId), IdentityServerProject.Services.SecretReveals.SecretRevealHandle.Create(handle), cancellationToken);
             if (reveal.Status == SecretRevealConsumeStatus.Revealed)
             {
                 CreatedSecret = reveal.Plaintext;
@@ -100,8 +100,7 @@ public class CreateModel : PageModel
         if (!string.IsNullOrEmpty(result.PlaintextSecret))
         {
             var ticket = await _secretRevealService.IssueAsync(
-                SecretRevealPurpose.ClientCreated,
-                result.ClientId!,
+                new SecretRevealTarget(SecretRevealPurpose.ClientCreated, result.ClientId!),
                 result.PlaintextSecret,
                 cancellationToken);
             SecretRevealHandle = ticket.Handle;

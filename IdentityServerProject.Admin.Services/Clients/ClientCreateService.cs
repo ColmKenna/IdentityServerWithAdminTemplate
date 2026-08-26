@@ -10,6 +10,7 @@ using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Validation;
 using IdentityServerProject.Services.AuditLogs;
+using IdentityServerProject.Services.Secrets;
 using IdentityServerProject.Services.Validation;
 using Microsoft.EntityFrameworkCore;
 using static Duende.IdentityServer.Models.HashExtensions;
@@ -19,7 +20,6 @@ namespace IdentityServerProject.Services.Clients;
 
 public partial class ClientCreateService : IClientCreateService
 {
-    private const string SecretTypeShared = "SharedSecret";
     public const string PresetPropertyKey = "admin:preset";
 
     private readonly ConfigurationDbContext _configurationDbContext;
@@ -184,7 +184,7 @@ public partial class ClientCreateService : IClientCreateService
             {
                 Description = "Initial client secret (cloned)",
                 Value = plaintextSecret.Sha256(),
-                Type = SecretTypeShared,
+                Type = SecretType.SharedSecret.ToSecretTypeValue(),
                 Created = DateTime.UtcNow
             });
         }
@@ -446,7 +446,7 @@ public partial class ClientCreateService : IClientCreateService
             {
                 Description = "Initial client secret",
                 Value = plaintextSecret.Sha256(),
-                Type = SecretTypeShared,
+                Type = SecretType.SharedSecret.ToSecretTypeValue(),
                 Created = DateTime.UtcNow
             });
         }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using IdentityServerProject.Services.Users;
 
 namespace IdentityServerProject.Services.Diagnostics;
 
@@ -25,7 +26,7 @@ public class SigningKeySummary
 /// </summary>
 public class ReservedClaimHolder
 {
-    public required string UserId { get; set; }
+    public required UserId UserId { get; set; }
     public required string UserName { get; set; }
     public required string ClaimType { get; set; }
     public required string ClaimValue { get; set; }

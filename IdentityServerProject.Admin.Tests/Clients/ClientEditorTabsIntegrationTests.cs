@@ -92,7 +92,7 @@ public class ClientEditorTabsIntegrationTests : IDisposable
                 GrantTypes = new() { "authorization_code" }
             });
 
-        mock.Setup(s => s.GetClientPermissionsAsync(ClientId, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientPermissionsAsync(IdentityServerProject.Services.Clients.ClientId.Create(ClientId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ClientPermissionsModel
             {
                 ClientId = IdentityServerProject.Services.Clients.ClientId.Create(ClientId),

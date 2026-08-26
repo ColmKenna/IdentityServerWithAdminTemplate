@@ -56,7 +56,7 @@ public class SecretsModel : PageModel
         if (!string.IsNullOrEmpty(handle))
         {
             var reveal = await _secretRevealService.ConsumeAsync(
-                SecretRevealPurpose.ClientSecretGenerated, Id, IdentityServerProject.Services.SecretReveals.SecretRevealHandle.Create(handle), cancellationToken);
+                new SecretRevealTarget(SecretRevealPurpose.ClientSecretGenerated, Id), IdentityServerProject.Services.SecretReveals.SecretRevealHandle.Create(handle), cancellationToken);
             if (reveal.Status == SecretRevealConsumeStatus.Revealed)
             {
                 GeneratedSecret = reveal.Plaintext;
@@ -107,8 +107,7 @@ public class SecretsModel : PageModel
         if (!string.IsNullOrEmpty(result.PlaintextSecret))
         {
             var ticket = await _secretRevealService.IssueAsync(
-                SecretRevealPurpose.ClientSecretGenerated,
-                Id,
+                new SecretRevealTarget(SecretRevealPurpose.ClientSecretGenerated, Id),
                 result.PlaintextSecret,
                 cancellationToken);
             SecretRevealHandle = ticket.Handle;
