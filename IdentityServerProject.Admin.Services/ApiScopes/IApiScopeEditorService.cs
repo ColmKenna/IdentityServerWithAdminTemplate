@@ -1,4 +1,5 @@
 using IdentityServerProject.Services.Scopes;
+using IdentityServerProject.Services.Validation;
 
 namespace IdentityServerProject.Services.ApiScopes;
 
@@ -13,29 +14,20 @@ public sealed record UpdateApiScopeBasicsCommand(
     bool Emphasize,
     bool ShowInDiscoveryDocument);
 
-public class ApiScopeCreateResult
-{
-    public bool Success { get; set; }
-    public string? ErrorMessage { get; set; }
-
-    public static ApiScopeCreateResult Failed(string errorMessage) => new() { Success = false, ErrorMessage = errorMessage };
-    public static ApiScopeCreateResult Succeeded() => new() { Success = true };
-}
-
 /// <summary>
 /// Reads and mutates a single API scope for the Admin &gt; API Scopes edit page.
 /// The scope's Name is immutable through this service — there is no rename operation.
 /// </summary>
 public interface IApiScopeEditorService
 {
-    Task<ApiScopeCreateResult> CreateAsync(CreateApiScopeCommand command, CancellationToken cancellationToken = default);
+    Task<AdminMutationResult> CreateAsync(CreateApiScopeCommand command, CancellationToken cancellationToken = default);
 
     Task<bool> UpdateBasicsAsync(UpdateApiScopeBasicsCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates a new API scope. Returns failure if a scope or identity resource with the same name already exists.
     /// </summary>
-    Task<ApiScopeCreateResult> CreateAsync(
+    Task<AdminMutationResult> CreateAsync(
         string name,
         string? displayName,
         string? description,
@@ -45,7 +37,7 @@ public interface IApiScopeEditorService
     /// Loads a single API scope by name for editing. Returns null if <paramref name="name"/>
     /// does not resolve to an existing API scope.
     /// </summary>
-    Task<ApiScopeEditorModel?> GetForEditAsync(string name, CancellationToken cancellationToken = default);
+    Task<ApiScopeEditorModel?> GetForEditAsync(ScopeName name, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates the display name and description of an existing API scope. Returns false if
@@ -62,8 +54,8 @@ public interface IApiScopeEditorService
         CancellationToken cancellationToken = default);
 
     /// <summary>Adds a user claim type to the scope. Adding a claim type that already exists is a no-op.</summary>
-    Task<bool> AddClaimAsync(string name, string claimType, CancellationToken cancellationToken = default);
+    Task<bool> AddClaimAsync(ScopeName name, ClaimType claimType, CancellationToken cancellationToken = default);
 
     /// <summary>Removes a user claim type from the scope.</summary>
-    Task<bool> RemoveClaimAsync(string name, string claimType, CancellationToken cancellationToken = default);
+    Task<bool> RemoveClaimAsync(ScopeName name, ClaimType claimType, CancellationToken cancellationToken = default);
 }

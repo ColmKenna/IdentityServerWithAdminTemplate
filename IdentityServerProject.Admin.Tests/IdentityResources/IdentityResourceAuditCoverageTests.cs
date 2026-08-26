@@ -139,7 +139,7 @@ public class IdentityResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
                 BuiltInIdentityResourcePolicy.OpenIdResourceName, "OpenId", null,
                 enabled: true, required: true, emphasize: false, showInDiscoveryDocument: true,
                 userClaims: new List<string>());
-            Assert.False(result.Success);
+            Assert.False(result.Succeeded);
         });
 
         var entry = await GetSingleAuditEntryAsync(AuditAction.Create, BuiltInIdentityResourcePolicy.OpenIdResourceName);
@@ -159,7 +159,7 @@ public class IdentityResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
                 name, "New Resource", null,
                 enabled: true, required: false, emphasize: false, showInDiscoveryDocument: true,
                 userClaims: new List<string>());
-            Assert.True(result.Success);
+            Assert.True(result.Succeeded);
         });
 
         var entry = await GetSingleAuditEntryAsync(AuditAction.Create, name);

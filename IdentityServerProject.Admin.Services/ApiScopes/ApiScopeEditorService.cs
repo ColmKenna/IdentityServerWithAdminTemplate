@@ -3,6 +3,7 @@ using Duende.IdentityServer.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
 
 using IdentityServerProject.Services.AuditLogs;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 
 namespace IdentityServerProject.Services.ApiScopes;
@@ -20,20 +21,20 @@ public class ApiScopeEditorService : IApiScopeEditorService
 
     #region Basics
 
-    public Task<ApiScopeCreateResult> CreateAsync(CreateApiScopeCommand command, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> CreateAsync(CreateApiScopeCommand command, CancellationToken cancellationToken = default) =>
         CreateAsync(command.Name.Value, command.DisplayName, command.Description, cancellationToken);
 
     public Task<bool> UpdateBasicsAsync(UpdateApiScopeBasicsCommand command, CancellationToken cancellationToken = default) =>
         UpdateBasicsAsync(command.Name.Value, command.DisplayName, command.Description, command.Enabled, command.Required,
             command.Emphasize, command.ShowInDiscoveryDocument, cancellationToken);
 
-    public async Task<ApiScopeEditorModel?> GetForEditAsync(string name, CancellationToken cancellationToken = default)
+    public async Task<ApiScopeEditorModel?> GetForEditAsync(ScopeName name, CancellationToken cancellationToken = default)
     {
-        var entity = await LoadScopeAsync(name, asNoTracking: true, cancellationToken);
+        var entity = await LoadScopeAsync(name.Value, asNoTracking: true, cancellationToken);
         return entity == null ? null : MapToEditorModel(entity);
     }
 
-    public Task<ApiScopeCreateResult> CreateAsync(
+    public Task<AdminMutationResult> CreateAsync(
         string name,
         string? displayName,
         string? description,
@@ -45,7 +46,7 @@ public class ApiScopeEditorService : IApiScopeEditorService
             () => CreateCoreAsync(name ?? string.Empty, displayName, description, cancellationToken),
             cancellationToken);
 
-    private async Task<ApiScopeCreateResult> CreateCoreAsync(
+    private async Task<AdminMutationResult> CreateCoreAsync(
         string name,
         string? displayName,
         string? description,
@@ -55,14 +56,14 @@ public class ApiScopeEditorService : IApiScopeEditorService
         {
             await AuditDeniedAsync(AuditAction.Create, AuditReasonCode.ValidationFailed, name, displayName ?? name,
                 "Scope name is required.", cancellationToken);
-            return ApiScopeCreateResult.Failed("Scope name is required.");
+            return AdminMutationResult.ValidationFailure(string.Empty, "Scope name is required.");
         }
 
         if (!ScopeValidationHelper.IsValidScopeName(name))
         {
             await AuditDeniedAsync(AuditAction.Create, AuditReasonCode.ValidationFailed, name, displayName ?? name,
                 "Scope name contains invalid characters. Spaces are not allowed.", cancellationToken);
-            return ApiScopeCreateResult.Failed("Scope name contains invalid characters. Spaces are not allowed.");
+            return AdminMutationResult.ValidationFailure(string.Empty, "Scope name contains invalid characters. Spaces are not allowed.");
         }
 
         var scopeNameIsInUse = await _configurationDbContext.ApiScopes
@@ -73,7 +74,7 @@ public class ApiScopeEditorService : IApiScopeEditorService
         {
             await AuditDeniedAsync(AuditAction.Create, AuditReasonCode.NameCollision, name, displayName ?? name,
                 "A scope with this name already exists.", cancellationToken);
-            return ApiScopeCreateResult.Failed("A scope with this name already exists.");
+            return AdminMutationResult.ConflictResult(string.Empty, "A scope with this name already exists.");
         }
 
         var identityResourceNameIsInUse = await _configurationDbContext.IdentityResources
@@ -84,7 +85,7 @@ public class ApiScopeEditorService : IApiScopeEditorService
         {
             await AuditDeniedAsync(AuditAction.Create, AuditReasonCode.NameCollision, name, displayName ?? name,
                 "An identity resource with this name already exists.", cancellationToken);
-            return ApiScopeCreateResult.Failed("An identity resource with this name already exists.");
+            return AdminMutationResult.ConflictResult(string.Empty, "An identity resource with this name already exists.");
         }
 
         try
@@ -105,7 +106,7 @@ public class ApiScopeEditorService : IApiScopeEditorService
                 TargetId: name, TargetName: displayName ?? name,
                 Details: $"Created API Scope '{name}'"), cancellationToken);
 
-            return ApiScopeCreateResult.Succeeded();
+            return AdminMutationResult.Success();
         }
         catch (Exception ex)
         {
@@ -178,16 +179,23 @@ public class ApiScopeEditorService : IApiScopeEditorService
 
     #region Claims
 
-    public Task<bool> AddClaimAsync(string name, string claimType, CancellationToken cancellationToken = default) =>
+    public Task<bool> AddClaimAsync(ScopeName name, ClaimType claimType, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.AddClaim,
-            name ?? string.Empty,
-            name ?? string.Empty,
-            () => AddClaimCoreAsync(name ?? string.Empty, claimType ?? string.Empty, cancellationToken),
+            name.Value,
+            name.Value,
+            () => AddClaimCoreAsync(name.Value, claimType, cancellationToken),
             cancellationToken);
 
-    private async Task<bool> AddClaimCoreAsync(string name, string claimType, CancellationToken cancellationToken = default)
+    private async Task<bool> AddClaimCoreAsync(string name, ClaimType claimType, CancellationToken cancellationToken = default)
     {
+        if (!claimType.IsValid)
+        {
+            await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, name, name,
+                "Claim type is required and must not exceed the maximum length.", cancellationToken);
+            return false;
+        }
+
         var entity = await LoadScopeAsync(name, asNoTracking: false, cancellationToken);
         if (entity == null)
         {
@@ -196,11 +204,11 @@ public class ApiScopeEditorService : IApiScopeEditorService
             return false;
         }
 
-        if (entity.UserClaims.All(c => c.Type != claimType))
+        if (entity.UserClaims.All(c => c.Type != claimType.Value))
         {
             try
             {
-                entity.UserClaims.Add(new ApiScopeClaim { Type = claimType });
+                entity.UserClaims.Add(new ApiScopeClaim { Type = claimType.Value });
                 await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
                 await _auditWriter.WriteAsync(new AdminAuditEvent(
@@ -218,18 +226,18 @@ public class ApiScopeEditorService : IApiScopeEditorService
         return true;
     }
 
-    public Task<bool> RemoveClaimAsync(string name, string claimType, CancellationToken cancellationToken = default) =>
+    public Task<bool> RemoveClaimAsync(ScopeName name, ClaimType claimType, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.RemoveClaim,
-            name ?? string.Empty,
-            name ?? string.Empty,
-            () => RemoveClaimCoreAsync(name ?? string.Empty, claimType ?? string.Empty, cancellationToken),
+            name.Value,
+            name.Value,
+            () => RemoveClaimCoreAsync(name.Value, claimType, cancellationToken),
             cancellationToken);
 
-    private async Task<bool> RemoveClaimCoreAsync(string name, string claimType, CancellationToken cancellationToken = default)
+    private async Task<bool> RemoveClaimCoreAsync(string name, ClaimType claimType, CancellationToken cancellationToken = default)
     {
         var entity = await LoadScopeAsync(name, asNoTracking: false, cancellationToken);
-        var claim = entity?.UserClaims.FirstOrDefault(c => c.Type == claimType);
+        var claim = entity?.UserClaims.FirstOrDefault(c => c.Type == claimType.Value);
         if (entity == null || claim == null)
         {
             await AuditDeniedAsync(AuditAction.RemoveClaim, AuditReasonCode.NotFound, name, name,

@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.ApiScopes;
 using IdentityServerProject.Services.ApiScopes;
+using IdentityServerProject.Services.Scopes;
+using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Moq;
@@ -31,7 +33,7 @@ public class ApiScopeEditorPageModelTests
     {
         var editor = MakeEditor();
         var mock = new Mock<IApiScopeEditorService>();
-        mock.Setup(s => s.GetForEditAsync("sales.scope", It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.scope"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
 
         var model = new EditModel(mock.Object) { Name = "sales.scope" };
 
@@ -47,7 +49,7 @@ public class ApiScopeEditorPageModelTests
     public async Task OnGetAsync_NameDoesNotResolve_ReturnsNotFound()
     {
         var mock = new Mock<IApiScopeEditorService>();
-        mock.Setup(s => s.GetForEditAsync("missing", It.IsAny<CancellationToken>())).ReturnsAsync(default(ApiScopeEditorModel));
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("missing"), It.IsAny<CancellationToken>())).ReturnsAsync(default(ApiScopeEditorModel));
 
         var model = new EditModel(mock.Object) { Name = "missing" };
 
@@ -66,7 +68,7 @@ public class ApiScopeEditorPageModelTests
         var result = await model.OnGetAsync(CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
-        mock.Verify(s => s.GetForEditAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mock.Verify(s => s.GetForEditAsync(It.IsAny<ScopeName>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // ---------- OnPostSaveAsync ----------
@@ -116,7 +118,7 @@ public class ApiScopeEditorPageModelTests
     {
         var editor = MakeEditor();
         var mock = new Mock<IApiScopeEditorService>();
-        mock.Setup(s => s.GetForEditAsync("sales.scope", It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.scope"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
 
         var model = new EditModel(mock.Object)
         {
@@ -138,7 +140,7 @@ public class ApiScopeEditorPageModelTests
     public async Task OnPostAddClaimAsync_Success_RedirectsToSameScope()
     {
         var mock = new Mock<IApiScopeEditorService>();
-        mock.Setup(s => s.AddClaimAsync("sales.scope", "email", It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        mock.Setup(s => s.AddClaimAsync(ScopeName.Create("sales.scope"), ClaimType.Create("email"), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var model = new EditModel(mock.Object);
 
@@ -152,7 +154,7 @@ public class ApiScopeEditorPageModelTests
     public async Task OnPostAddClaimAsync_ScopeNotFound_ReturnsNotFound()
     {
         var mock = new Mock<IApiScopeEditorService>();
-        mock.Setup(s => s.AddClaimAsync("missing", "email", It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        mock.Setup(s => s.AddClaimAsync(ScopeName.Create("missing"), ClaimType.Create("email"), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         var model = new EditModel(mock.Object);
 
@@ -167,7 +169,7 @@ public class ApiScopeEditorPageModelTests
     public async Task OnPostRemoveClaimAsync_Success_RedirectsToSameScope()
     {
         var mock = new Mock<IApiScopeEditorService>();
-        mock.Setup(s => s.RemoveClaimAsync("sales.scope", "email", It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        mock.Setup(s => s.RemoveClaimAsync(ScopeName.Create("sales.scope"), ClaimType.Create("email"), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var model = new EditModel(mock.Object);
 
@@ -181,7 +183,7 @@ public class ApiScopeEditorPageModelTests
     public async Task OnPostRemoveClaimAsync_ScopeOrClaimNotFound_ReturnsNotFound()
     {
         var mock = new Mock<IApiScopeEditorService>();
-        mock.Setup(s => s.RemoveClaimAsync("sales.scope", "missing-claim", It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        mock.Setup(s => s.RemoveClaimAsync(ScopeName.Create("sales.scope"), ClaimType.Create("missing-claim"), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         var model = new EditModel(mock.Object);
 

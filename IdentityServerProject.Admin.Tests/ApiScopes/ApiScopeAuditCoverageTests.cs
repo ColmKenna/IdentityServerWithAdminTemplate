@@ -92,7 +92,7 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiScopeEditorService>();
             var result = await service.CreateAsync(name, "Duplicate", null);
-            Assert.False(result.Success);
+            Assert.False(result.Succeeded);
         });
 
         var entry = await GetSingleAuditEntryAsync(AuditAction.Create, name);
@@ -109,7 +109,7 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiScopeEditorService>();
             var result = await service.CreateAsync(name, "New Scope", null);
-            Assert.True(result.Success);
+            Assert.True(result.Succeeded);
         });
 
         var entry = await GetSingleAuditEntryAsync(AuditAction.Create, name);

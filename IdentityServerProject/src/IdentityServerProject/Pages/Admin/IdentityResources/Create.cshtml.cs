@@ -70,7 +70,7 @@ public class CreateModel : PageModel
                 Input.UserClaims),
             cancellationToken);
 
-        if (!result.Success)
+        if (!result.Succeeded)
         {
             ModelState.AddModelError(nameof(Input.Name), result.ErrorMessage ?? "Failed to create identity resource.");
             return Page();

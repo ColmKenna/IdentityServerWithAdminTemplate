@@ -59,7 +59,7 @@ public class CreateModel : PageModel
                 Input.Description),
             cancellationToken);
 
-        if (!result.Success)
+        if (!result.Succeeded)
         {
             ModelState.AddModelError(nameof(Input.Name), result.ErrorMessage ?? "Failed to create scope.");
             return Page();

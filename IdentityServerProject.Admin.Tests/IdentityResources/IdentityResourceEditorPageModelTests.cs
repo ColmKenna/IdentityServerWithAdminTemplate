@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.IdentityResources;
 using IdentityServerProject.Services.IdentityResources;
+using IdentityServerProject.Services.Scopes;
+using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Moq;
@@ -28,7 +30,7 @@ public class IdentityResourceEditorPageModelTests
     public async Task OnPostSaveAsync_InvalidModelState_ReloadsEditorWithoutUpdating()
     {
         var service = new Mock<IIdentityResourceEditorService>();
-        service.Setup(s => s.GetForEditAsync("profile", It.IsAny<CancellationToken>())).ReturnsAsync(Editor());
+        service.Setup(s => s.GetForEditAsync(ScopeName.Create("profile"), It.IsAny<CancellationToken>())).ReturnsAsync(Editor());
         var model = new EditModel(service.Object) { Name = "profile" };
         model.ModelState.AddModelError("Input.DisplayName", "Too long");
 
@@ -46,9 +48,9 @@ public class IdentityResourceEditorPageModelTests
     public async Task OnPostRemoveClaimAsync_ProtectedResource_ReloadsEditorAndShowsServiceReason()
     {
         var service = new Mock<IIdentityResourceEditorService>();
-        service.Setup(s => s.RemoveClaimAsync("openid", "sub", It.IsAny<CancellationToken>()))
+        service.Setup(s => s.RemoveClaimAsync(ScopeName.Create("openid"), ClaimType.Create("sub"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(IdentityResourceEditResult.Protected("The openid resource must retain the sub claim."));
-        service.Setup(s => s.GetForEditAsync("openid", It.IsAny<CancellationToken>())).ReturnsAsync(new IdentityResourceEditorModel
+        service.Setup(s => s.GetForEditAsync(ScopeName.Create("openid"), It.IsAny<CancellationToken>())).ReturnsAsync(new IdentityResourceEditorModel
         {
             Name = "openid",
             DisplayName = "OpenID",

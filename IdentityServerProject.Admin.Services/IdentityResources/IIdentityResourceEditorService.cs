@@ -1,4 +1,5 @@
 using IdentityServerProject.Services.Scopes;
+using IdentityServerProject.Services.Validation;
 
 namespace IdentityServerProject.Services.IdentityResources;
 
@@ -21,15 +22,6 @@ public sealed record UpdateIdentityResourceBasicsCommand(
     bool Emphasize,
     bool ShowInDiscoveryDocument);
 
-public class IdentityResourceCreateResult
-{
-    public bool Success { get; set; }
-    public string? ErrorMessage { get; set; }
-
-    public static IdentityResourceCreateResult Failed(string errorMessage) => new() { Success = false, ErrorMessage = errorMessage };
-    public static IdentityResourceCreateResult Succeeded() => new() { Success = true };
-}
-
 /// <summary>
 /// Reads and mutates a single identity resource for the Admin &gt; Identity Resources edit page.
 /// The resource's Name is immutable through this service — there is no rename operation.
@@ -41,14 +33,14 @@ public class IdentityResourceCreateResult
 /// </remarks>
 public interface IIdentityResourceEditorService
 {
-    Task<IdentityResourceCreateResult> CreateAsync(CreateIdentityResourceCommand command, CancellationToken cancellationToken = default);
+    Task<AdminMutationResult> CreateAsync(CreateIdentityResourceCommand command, CancellationToken cancellationToken = default);
 
     Task<IdentityResourceEditResult> UpdateBasicsAsync(UpdateIdentityResourceBasicsCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates a new Identity Resource. Returns failure if a scope or identity resource with the same name already exists.
     /// </summary>
-    Task<IdentityResourceCreateResult> CreateAsync(
+    Task<AdminMutationResult> CreateAsync(
         string name,
         string? displayName,
         string? description,
@@ -63,7 +55,7 @@ public interface IIdentityResourceEditorService
     /// Loads a single identity resource by name for editing. Returns null if <paramref name="name"/>
     /// does not resolve to an existing identity resource.
     /// </summary>
-    Task<IdentityResourceEditorModel?> GetForEditAsync(string name, CancellationToken cancellationToken = default);
+    Task<IdentityResourceEditorModel?> GetForEditAsync(ScopeName name, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates the display name, description, and flags of an existing identity resource.
@@ -84,12 +76,12 @@ public interface IIdentityResourceEditorService
     /// Refused when the resource is protected, or when the claim type is "openid" (a scope, never
     /// a user claim).
     /// </summary>
-    Task<IdentityResourceEditResult> AddClaimAsync(string name, string claimType, CancellationToken cancellationToken = default);
+    Task<IdentityResourceEditResult> AddClaimAsync(ScopeName name, ClaimType claimType, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes a user claim type from the resource. Refused when the resource is protected, when
     /// the claim type is "openid", or when the claim is structural to the resource — the
     /// <c>openid</c> resource keeps its <c>sub</c> claim under every circumstance.
     /// </summary>
-    Task<IdentityResourceEditResult> RemoveClaimAsync(string name, string claimType, CancellationToken cancellationToken = default);
+    Task<IdentityResourceEditResult> RemoveClaimAsync(ScopeName name, ClaimType claimType, CancellationToken cancellationToken = default);
 }

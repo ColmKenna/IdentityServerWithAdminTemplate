@@ -7,6 +7,8 @@ using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using IdentityServerProject.Services.IdentityResources;
+using IdentityServerProject.Services.Scopes;
+using IdentityServerProject.Services.Validation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -164,7 +166,7 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-            var result = await service.AddClaimAsync("openid", "email");
+            var result = await service.AddClaimAsync(ScopeName.Create("openid"), ClaimType.Create("email"));
 
             Assert.Equal(IdentityResourceEditOutcome.Protected, result.Outcome);
         });
@@ -180,7 +182,7 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-            var result = await service.RemoveClaimAsync("openid", "sub");
+            var result = await service.RemoveClaimAsync(ScopeName.Create("openid"), ClaimType.Create("sub"));
 
             Assert.Equal(IdentityResourceEditOutcome.Protected, result.Outcome);
 
@@ -226,8 +228,8 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
             var outcomes = new[]
             {
                 (await service.UpdateBasicsAsync(name, "x", "x", true, false, false, true)).Outcome,
-                (await service.AddClaimAsync(name, "phone_number")).Outcome,
-                (await service.RemoveClaimAsync(name, "email")).Outcome,
+                (await service.AddClaimAsync(ScopeName.Create(name), ClaimType.Create("phone_number"))).Outcome,
+                (await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("email"))).Outcome,
             };
 
             Assert.All(outcomes, o => Assert.Equal(IdentityResourceEditOutcome.Protected, o));
@@ -286,8 +288,8 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-            Assert.Equal(IdentityResourceEditOutcome.Success, (await service.AddClaimAsync(name, "phone_number")).Outcome);
-            Assert.Equal(IdentityResourceEditOutcome.Success, (await service.RemoveClaimAsync(name, "email")).Outcome);
+            Assert.Equal(IdentityResourceEditOutcome.Success, (await service.AddClaimAsync(ScopeName.Create(name), ClaimType.Create("phone_number"))).Outcome);
+            Assert.Equal(IdentityResourceEditOutcome.Success, (await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("email"))).Outcome);
         });
 
         var after = await LoadAsync(name);
@@ -305,7 +307,7 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-            Assert.Equal(IdentityResourceEditOutcome.Success, (await service.RemoveClaimAsync(name, "sub")).Outcome);
+            Assert.Equal(IdentityResourceEditOutcome.Success, (await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("sub"))).Outcome);
         });
 
         Assert.DoesNotContain((await LoadAsync(name)).UserClaims, c => c.Type == "sub");
@@ -329,8 +331,8 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
             var result = operation switch
             {
                 "basics" => await service.UpdateBasicsAsync(missing, "x", null, true, false, false, true),
-                "add" => await service.AddClaimAsync(missing, "email"),
-                _ => await service.RemoveClaimAsync(missing, "email"),
+                "add" => await service.AddClaimAsync(ScopeName.Create(missing), ClaimType.Create("email")),
+                _ => await service.RemoveClaimAsync(ScopeName.Create(missing), ClaimType.Create("email")),
             };
 
             Assert.Equal(IdentityResourceEditOutcome.NotFound, result.Outcome);
@@ -357,8 +359,8 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
                 showInDiscoveryDocument: false,
                 userClaims: new List<string> { "email", "name" });
 
-            Assert.True(result.Success, result.ErrorMessage);
-            var editor = await service.GetForEditAsync(name);
+            Assert.True(result.Succeeded, result.ErrorMessage);
+            var editor = await service.GetForEditAsync(ScopeName.Create(name));
             Assert.NotNull(editor);
             Assert.Equal("Resource display", editor!.DisplayName);
             Assert.Equal("Resource description", editor.Description);
@@ -405,7 +407,7 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
             var service = sp.GetRequiredService<IIdentityResourceEditorService>();
             var result = await service.CreateAsync(name, "Resource display", null, true, false, false, true, new List<string>());
 
-            Assert.False(result.Success);
+            Assert.False(result.Succeeded);
             Assert.Equal("An API scope with this name already exists.", result.ErrorMessage);
             Assert.False(await db.IdentityResources.AnyAsync(resource => resource.Name == name));
         });

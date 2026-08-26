@@ -3,6 +3,7 @@ using Duende.IdentityServer.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
 
 using IdentityServerProject.Services.AuditLogs;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 
 namespace IdentityServerProject.Services.IdentityResources;
@@ -21,7 +22,7 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
 
     #region Basics
 
-    public Task<IdentityResourceCreateResult> CreateAsync(CreateIdentityResourceCommand command, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> CreateAsync(CreateIdentityResourceCommand command, CancellationToken cancellationToken = default) =>
         CreateAsync(command.Name.Value, command.DisplayName, command.Description, command.Enabled, command.Required,
             command.Emphasize, command.ShowInDiscoveryDocument, command.UserClaims, cancellationToken);
 
@@ -29,13 +30,13 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
         UpdateBasicsAsync(command.Name.Value, command.DisplayName, command.Description, command.Enabled, command.Required,
             command.Emphasize, command.ShowInDiscoveryDocument, cancellationToken);
 
-    public async Task<IdentityResourceEditorModel?> GetForEditAsync(string name, CancellationToken cancellationToken = default)
+    public async Task<IdentityResourceEditorModel?> GetForEditAsync(ScopeName name, CancellationToken cancellationToken = default)
     {
-        var entity = await LoadIdentityResourceAsync(name, asNoTracking: true, cancellationToken);
+        var entity = await LoadIdentityResourceAsync(name.Value, asNoTracking: true, cancellationToken);
         return entity == null ? null : MapToEditorModel(entity);
     }
 
-    public Task<IdentityResourceCreateResult> CreateAsync(
+    public Task<AdminMutationResult> CreateAsync(
         string name,
         string? displayName,
         string? description,
@@ -53,7 +54,7 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
                 showInDiscoveryDocument, userClaims ?? new List<string>(), cancellationToken),
             cancellationToken);
 
-    private async Task<IdentityResourceCreateResult> CreateCoreAsync(
+    private async Task<AdminMutationResult> CreateCoreAsync(
         string name,
         string? displayName,
         string? description,
@@ -68,21 +69,21 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
         {
             await AuditDeniedAsync(AuditAction.Create, AuditReasonCode.ValidationFailed, name, displayName ?? name,
                 "Resource name is required.", cancellationToken);
-            return IdentityResourceCreateResult.Failed("Resource name is required.");
+            return AdminMutationResult.ValidationFailure(string.Empty, "Resource name is required.");
         }
 
         if (!ScopeValidationHelper.IsValidScopeName(name))
         {
             await AuditDeniedAsync(AuditAction.Create, AuditReasonCode.ValidationFailed, name, displayName ?? name,
                 "Resource name contains invalid characters. Spaces are not allowed.", cancellationToken);
-            return IdentityResourceCreateResult.Failed("Resource name contains invalid characters. Spaces are not allowed.");
+            return AdminMutationResult.ValidationFailure(string.Empty, "Resource name contains invalid characters. Spaces are not allowed.");
         }
 
         if (BuiltInIdentityResourcePolicy.IsProtectedName(name))
         {
             await AuditDeniedAsync(AuditAction.Create, AuditReasonCode.ProtectedResource, name, displayName ?? name,
                 $"'{name.Trim()}' is a protected identity resource name and cannot be created here.", cancellationToken);
-            return IdentityResourceCreateResult.Failed($"'{name.Trim()}' is a protected identity resource name and cannot be created here.");
+            return AdminMutationResult.DeniedResult(string.Empty, $"'{name.Trim()}' is a protected identity resource name and cannot be created here.");
         }
 
         var resourceNameIsInUse = await _configurationDbContext.IdentityResources
@@ -93,7 +94,7 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
         {
             await AuditDeniedAsync(AuditAction.Create, AuditReasonCode.NameCollision, name, displayName ?? name,
                 "An identity resource with this name already exists.", cancellationToken);
-            return IdentityResourceCreateResult.Failed("An identity resource with this name already exists.");
+            return AdminMutationResult.ConflictResult(string.Empty, "An identity resource with this name already exists.");
         }
 
         var scopeNameIsInUse = await _configurationDbContext.ApiScopes
@@ -104,7 +105,7 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
         {
             await AuditDeniedAsync(AuditAction.Create, AuditReasonCode.NameCollision, name, displayName ?? name,
                 "An API scope with this name already exists.", cancellationToken);
-            return IdentityResourceCreateResult.Failed("An API scope with this name already exists.");
+            return AdminMutationResult.ConflictResult(string.Empty, "An API scope with this name already exists.");
         }
 
         try
@@ -129,7 +130,7 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
                 TargetId: name, TargetName: displayName ?? name,
                 Details: $"Created Identity Resource '{name}'"), cancellationToken);
 
-            return IdentityResourceCreateResult.Succeeded();
+            return AdminMutationResult.Success();
         }
         catch (Exception ex)
         {
@@ -212,20 +213,20 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
 
     #region Claims
 
-    public Task<IdentityResourceEditResult> AddClaimAsync(string name, string claimType, CancellationToken cancellationToken = default) =>
+    public Task<IdentityResourceEditResult> AddClaimAsync(ScopeName name, ClaimType claimType, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.AddClaim,
-            name ?? string.Empty,
-            name ?? string.Empty,
-            () => AddClaimCoreAsync(name ?? string.Empty, claimType ?? string.Empty, cancellationToken),
+            name.Value,
+            name.Value,
+            () => AddClaimCoreAsync(name.Value, claimType, cancellationToken),
             cancellationToken);
 
-    private async Task<IdentityResourceEditResult> AddClaimCoreAsync(string name, string claimType, CancellationToken cancellationToken = default)
+    private async Task<IdentityResourceEditResult> AddClaimCoreAsync(string name, ClaimType claimType, CancellationToken cancellationToken = default)
     {
         // "openid" is a scope, never a user claim. Rejecting it on any resource predates the
         // resource-identity guard below and is kept because it is still correct — the two rules
         // are independent, and this one catches a nonsense edit the other has no opinion on.
-        if (string.Equals(claimType, OpenIdClaimType, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(claimType.Value, OpenIdClaimType, StringComparison.OrdinalIgnoreCase))
         {
             var message = $"The '{OpenIdClaimType}' claim is protected and cannot be added. It is a scope, not a user claim.";
             await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ProtectedResource, name, name, message, cancellationToken);
@@ -250,11 +251,11 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
             return IdentityResourceEditResult.Protected(message);
         }
 
-        if (entity.UserClaims.All(c => c.Type != claimType))
+        if (entity.UserClaims.All(c => c.Type != claimType.Value))
         {
             try
             {
-                entity.UserClaims.Add(new IdentityResourceClaim { Type = claimType });
+                entity.UserClaims.Add(new IdentityResourceClaim { Type = claimType.Value });
                 await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
                 await _auditWriter.WriteAsync(new AdminAuditEvent(
@@ -272,17 +273,17 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
         return IdentityResourceEditResult.Succeeded;
     }
 
-    public Task<IdentityResourceEditResult> RemoveClaimAsync(string name, string claimType, CancellationToken cancellationToken = default) =>
+    public Task<IdentityResourceEditResult> RemoveClaimAsync(ScopeName name, ClaimType claimType, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.RemoveClaim,
-            name ?? string.Empty,
-            name ?? string.Empty,
-            () => RemoveClaimCoreAsync(name ?? string.Empty, claimType ?? string.Empty, cancellationToken),
+            name.Value,
+            name.Value,
+            () => RemoveClaimCoreAsync(name.Value, claimType, cancellationToken),
             cancellationToken);
 
-    private async Task<IdentityResourceEditResult> RemoveClaimCoreAsync(string name, string claimType, CancellationToken cancellationToken = default)
+    private async Task<IdentityResourceEditResult> RemoveClaimCoreAsync(string name, ClaimType claimType, CancellationToken cancellationToken = default)
     {
-        if (string.Equals(claimType, OpenIdClaimType, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(claimType.Value, OpenIdClaimType, StringComparison.OrdinalIgnoreCase))
         {
             var message = $"The '{OpenIdClaimType}' claim is protected and cannot be removed.";
             await AuditDeniedAsync(AuditAction.RemoveClaim, AuditReasonCode.ProtectedResource, name, name, message, cancellationToken);

@@ -2,6 +2,8 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Services.IdentityResources;
+using IdentityServerProject.Services.Scopes;
+using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -63,7 +65,7 @@ public class EditModel : PageModel
             return NotFound();
         }
 
-        var editor = await _editorService.GetForEditAsync(Name, cancellationToken);
+        var editor = await _editorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
         if (editor == null)
         {
             return NotFound();
@@ -84,7 +86,7 @@ public class EditModel : PageModel
 
         if (!ModelState.IsValid)
         {
-            var editor = await _editorService.GetForEditAsync(Name, cancellationToken);
+            var editor = await _editorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
             if (editor == null)
             {
                 return NotFound();
@@ -95,7 +97,7 @@ public class EditModel : PageModel
 
         var result = await _editorService.UpdateBasicsAsync(
             new UpdateIdentityResourceBasicsCommand(
-                IdentityServerProject.Services.Scopes.ScopeName.Create(Name),
+                ScopeName.Create(Name),
                 Input.DisplayName,
                 Input.Description,
                 Input.Enabled,
@@ -109,13 +111,13 @@ public class EditModel : PageModel
 
     public async Task<IActionResult> OnPostAddClaimAsync(string name, string claimType, CancellationToken cancellationToken)
     {
-        var result = await _editorService.AddClaimAsync(name, claimType, cancellationToken);
+        var result = await _editorService.AddClaimAsync(ScopeName.Create(name), ClaimType.Create(claimType), cancellationToken);
         return await RenderOutcomeAsync(result, name, cancellationToken);
     }
 
     public async Task<IActionResult> OnPostRemoveClaimAsync(string name, string claimType, CancellationToken cancellationToken)
     {
-        var result = await _editorService.RemoveClaimAsync(name, claimType, cancellationToken);
+        var result = await _editorService.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create(claimType), cancellationToken);
         return await RenderOutcomeAsync(result, name, cancellationToken);
     }
 
@@ -133,7 +135,7 @@ public class EditModel : PageModel
                 return RedirectToPage(new { name });
 
             case IdentityResourceEditOutcome.Protected:
-                var editor = await _editorService.GetForEditAsync(name, cancellationToken);
+                var editor = await _editorService.GetForEditAsync(ScopeName.Create(name), cancellationToken);
                 if (editor == null)
                 {
                     return NotFound();

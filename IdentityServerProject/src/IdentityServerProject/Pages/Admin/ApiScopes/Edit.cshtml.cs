@@ -2,6 +2,8 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Services.ApiScopes;
+using IdentityServerProject.Services.Scopes;
+using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -58,7 +60,7 @@ public class EditModel : PageModel
             return NotFound();
         }
 
-        var editor = await _apiScopeEditorService.GetForEditAsync(Name, cancellationToken);
+        var editor = await _apiScopeEditorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
         if (editor == null)
         {
             return NotFound();
@@ -87,7 +89,7 @@ public class EditModel : PageModel
 
         if (!ModelState.IsValid)
         {
-            var editor = await _apiScopeEditorService.GetForEditAsync(Name, cancellationToken);
+            var editor = await _apiScopeEditorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
             if (editor == null)
             {
                 return NotFound();
@@ -98,7 +100,7 @@ public class EditModel : PageModel
 
         var success = await _apiScopeEditorService.UpdateBasicsAsync(
             new UpdateApiScopeBasicsCommand(
-                IdentityServerProject.Services.Scopes.ScopeName.Create(Name),
+                ScopeName.Create(Name),
                 Input.DisplayName,
                 Input.Description,
                 Input.Enabled,
@@ -116,7 +118,7 @@ public class EditModel : PageModel
 
     public async Task<IActionResult> OnPostAddClaimAsync(string name, string claimType, CancellationToken cancellationToken)
     {
-        var success = await _apiScopeEditorService.AddClaimAsync(name, claimType, cancellationToken);
+        var success = await _apiScopeEditorService.AddClaimAsync(ScopeName.Create(name), ClaimType.Create(claimType), cancellationToken);
         if (!success)
         {
             return NotFound();
@@ -127,7 +129,7 @@ public class EditModel : PageModel
 
     public async Task<IActionResult> OnPostRemoveClaimAsync(string name, string claimType, CancellationToken cancellationToken)
     {
-        var success = await _apiScopeEditorService.RemoveClaimAsync(name, claimType, cancellationToken);
+        var success = await _apiScopeEditorService.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create(claimType), cancellationToken);
         if (!success)
         {
             return NotFound();
