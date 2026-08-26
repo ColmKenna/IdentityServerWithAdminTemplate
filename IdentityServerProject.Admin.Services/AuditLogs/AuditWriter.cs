@@ -2,6 +2,7 @@ using System;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -61,7 +62,7 @@ public class AuditWriter : IAuditWriter
             var record = new AuditLogRecord(
                 Timestamp: timestamp,
                 CorrelationId: correlationId,
-                ActorSubjectId: actorSubjectId,
+                ActorSubjectId: UserId.Create(actorSubjectId),
                 ActorName: actorName,
                 IpAddress: ipAddress,
                 Category: auditEvent.Category,

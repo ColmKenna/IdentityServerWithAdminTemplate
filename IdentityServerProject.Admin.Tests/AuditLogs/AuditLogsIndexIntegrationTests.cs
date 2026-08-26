@@ -9,6 +9,7 @@ using AngleSharp;
 using IdentityServerProject.Data;
 using IdentityServerProject.Services;
 using IdentityServerProject.Services.AuditLogs;
+using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -56,7 +57,7 @@ public class AuditLogsIndexIntegrationTests : IDisposable
         IsSuccess = true,
         TargetName = target,
         Details = details,
-        ActorSubjectId = "actor-subject",
+        ActorSubjectId = UserId.Create("actor-subject"),
         TargetId = "target-id",
         ReasonCode = AuditReasonCode.Succeeded,
         CorrelationId = "correlation-id",

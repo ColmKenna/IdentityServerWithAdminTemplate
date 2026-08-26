@@ -1,4 +1,5 @@
 using System;
+using IdentityServerProject.Services.Users;
 
 namespace IdentityServerProject.Services.AuditLogs;
 
@@ -12,7 +13,7 @@ public sealed class AuditLogListItem
 
     public required string ActorName { get; init; }
 
-    public string? ActorSubjectId { get; init; }
+    public UserId? ActorSubjectId { get; init; }
 
     public required AuditCategory Category { get; init; }
 

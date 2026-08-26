@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using IdentityServerProject.Services.Users;
 
 namespace IdentityServerProject.Services.AuditLogs;
 
@@ -12,7 +13,7 @@ namespace IdentityServerProject.Services.AuditLogs;
 public sealed record AuditLogRecord(
     DateTime Timestamp,
     string CorrelationId,
-    string ActorSubjectId,
+    UserId ActorSubjectId,
     string ActorName,
     string? IpAddress,
     AuditCategory Category,

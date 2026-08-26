@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IdentityServerProject.Services;
 using IdentityServerProject.Services.AuditLogs;
+using IdentityServerProject.Services.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace IdentityServerProject.Data.Adapters;
@@ -27,7 +28,7 @@ public sealed class EfAdminAuditStore : IAdminAuditStore
         {
             Timestamp = record.Timestamp,
             CorrelationId = record.CorrelationId,
-            ActorSubjectId = record.ActorSubjectId,
+            ActorSubjectId = record.ActorSubjectId.Value,
             ActorName = record.ActorName,
             IpAddress = record.IpAddress,
             Category = record.Category.Value,
@@ -121,7 +122,7 @@ public sealed class EfAdminAuditStore : IAdminAuditStore
         Id = entity.Id,
         Timestamp = entity.Timestamp,
         ActorName = entity.ActorName,
-        ActorSubjectId = entity.ActorSubjectId,
+        ActorSubjectId = string.IsNullOrWhiteSpace(entity.ActorSubjectId) ? null : UserId.Create(entity.ActorSubjectId),
         Category = AuditCategory.Create(entity.Category),
         Action = AuditAction.From(entity.Action),
         Outcome = entity.Outcome,
