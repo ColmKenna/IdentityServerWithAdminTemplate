@@ -18,8 +18,7 @@ public interface IUserListService
     /// <param name="pagination">Pagination settings (page number and page size).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task<ListResult<UserListItem>> GetUsersAsync(
-        string? filter,
-        Pagination pagination = default,
+        ListQuery query,
         CancellationToken cancellationToken = default);
 
     /// <summary>

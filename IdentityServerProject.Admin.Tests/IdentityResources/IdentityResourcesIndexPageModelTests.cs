@@ -44,7 +44,7 @@ public class IdentityResourcesIndexPageModelTests
         };
 
         mockService
-            .Setup(s => s.GetIdentityResourcesAsync(null, DefaultPagination, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetIdentityResourcesAsync(new ListQuery(null, DefaultPagination), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole);
@@ -59,13 +59,13 @@ public class IdentityResourcesIndexPageModelTests
     {
         var mockService = new Mock<IIdentityResourceListService>();
         mockService
-            .Setup(s => s.GetIdentityResourcesAsync("profile", DefaultPagination, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetIdentityResourcesAsync(new ListQuery("profile", DefaultPagination), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ListResult<IdentityResourceListItem>.Empty(1, TestOptions.PageSize));
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole) { Filter = "profile" };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mockService.Verify(s => s.GetIdentityResourcesAsync("profile", DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.GetIdentityResourcesAsync(new ListQuery("profile", DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

@@ -66,7 +66,7 @@ public class ApiScopesIndexIntegrationTests : IDisposable
     private static Mock<IApiScopeListService> MockService(ListResult<ApiScopeListItem> result)
     {
         var mock = new Mock<IApiScopeListService>();
-        mock.Setup(s => s.GetApiScopesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiScopesAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock;
     }

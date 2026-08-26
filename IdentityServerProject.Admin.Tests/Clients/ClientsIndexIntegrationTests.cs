@@ -48,7 +48,7 @@ public class ClientsIndexIntegrationTests : IDisposable
     private static IClientListService MockService(ListResult<ClientListItem> result)
     {
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientsAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock.Object;
     }

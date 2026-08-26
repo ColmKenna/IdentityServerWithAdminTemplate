@@ -33,14 +33,14 @@ public class ApiScopesIndexPageModelTests
     public async Task OnGetAsync_NoQueryParameters_CallsServiceWithNullFilterAndFirstPage()
     {
         var mock = new Mock<IApiScopeListService>();
-        mock.Setup(s => s.GetApiScopesAsync(null, DefaultPagination, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiScopesAsync(new ListQuery(null, DefaultPagination), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiScopesAsync(null, DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiScopesAsync(new ListQuery(null, DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class ApiScopesIndexPageModelTests
     {
         var expected = MakeResult();
         var mock = new Mock<IApiScopeListService>();
-        mock.Setup(s => s.GetApiScopesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiScopesAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
@@ -62,27 +62,27 @@ public class ApiScopesIndexPageModelTests
     public async Task OnGetAsync_FilterSet_PassesFilterToService()
     {
         var mock = new Mock<IApiScopeListService>();
-        mock.Setup(s => s.GetApiScopesAsync("sales", DefaultPagination, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiScopesAsync(new ListQuery("sales", DefaultPagination), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { Filter = "sales" };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiScopesAsync("sales", DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiScopesAsync(new ListQuery("sales", DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task OnGetAsync_PageNumberBelowOne_NormalizesToFirstPageBeforeCallingService()
     {
         var mock = new Mock<IApiScopeListService>();
-        mock.Setup(s => s.GetApiScopesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiScopesAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { PageNumber = 0 };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiScopesAsync(null, DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiScopesAsync(new ListQuery(null, DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

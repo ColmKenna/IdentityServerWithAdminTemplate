@@ -72,7 +72,7 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IIdentityResourceListService>();
-            var result = await service.GetIdentityResourcesAsync(tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetIdentityResourcesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(2, result.TotalCount);
             Assert.Contains(result.Items, item => item.Name == r1.Name);
@@ -100,7 +100,7 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IIdentityResourceListService>();
-            var result = await service.GetIdentityResourcesAsync(tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetIdentityResourcesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             var item = Assert.Single(result.Items);
             Assert.Equal(1, item.ClientReferenceCount);

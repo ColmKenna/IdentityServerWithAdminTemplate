@@ -19,8 +19,7 @@ public interface IApiScopeListService
     /// <param name="pagination">Pagination settings (page number and page size).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task<ListResult<ApiScopeListItem>> GetApiScopesAsync(
-        string? filter,
-        Pagination pagination = default,
+        ListQuery query,
         CancellationToken cancellationToken = default);
 
     /// <summary>

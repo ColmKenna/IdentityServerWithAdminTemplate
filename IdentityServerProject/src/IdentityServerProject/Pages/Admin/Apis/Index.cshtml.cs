@@ -33,6 +33,6 @@ public class IndexModel : PageModel
         var pagination = Pagination.From(PageNumber, _options.DefaultPageSize);
         PageNumber = pagination.PageNumber;
 
-        ApiResources = await _apiResourceListService.GetApiResourcesAsync(Filter, pagination, cancellationToken);
+        ApiResources = await _apiResourceListService.GetApiResourcesAsync(new ListQuery(Filter, pagination), cancellationToken);
     }
 }

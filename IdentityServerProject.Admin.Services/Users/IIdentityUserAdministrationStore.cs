@@ -108,8 +108,7 @@ public sealed record UserDeleteOutcome(UserDeleteStatus Status, string TargetNam
 public interface IIdentityUserAdministrationStore
 {
     Task<ListResult<UserListItem>> GetUsersAsync(
-        string? filter,
-        Pagination pagination = default,
+        ListQuery query,
         CancellationToken cancellationToken = default);
 
     Task<UserUnlockOutcome> UnlockUserAsync(

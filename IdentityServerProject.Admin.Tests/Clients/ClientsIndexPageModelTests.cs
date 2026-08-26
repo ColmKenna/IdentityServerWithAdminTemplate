@@ -32,14 +32,14 @@ public class ClientsIndexPageModelTests
     public async Task OnGetAsync_NoQueryParameters_CallsServiceWithNullFilterAndFirstPage()
     {
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync(null, DefaultPagination, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetClientsAsync(null, DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class ClientsIndexPageModelTests
     {
         var expected = MakeResult();
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientsAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
@@ -61,13 +61,13 @@ public class ClientsIndexPageModelTests
     public async Task OnGetAsync_FilterSet_PassesFilterToService()
     {
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync("portal", DefaultPagination, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == "portal" && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { Filter = "portal" };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetClientsAsync("portal", DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == "portal" && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -75,27 +75,27 @@ public class ClientsIndexPageModelTests
     {
         var page3 = Pagination.From(3, TestOptions.PageSize);
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync(It.IsAny<string?>(), page3, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Pagination == page3), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult(pageNumber: 3));
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { PageNumber = 3 };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetClientsAsync(null, page3, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == page3), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task OnGetAsync_PageNumberBelowOne_NormalizesToFirstPageBeforeCallingService()
     {
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientsAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { PageNumber = 0 };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetClientsAsync(null, DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

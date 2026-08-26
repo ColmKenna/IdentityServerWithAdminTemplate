@@ -58,7 +58,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync($"{tag} Client alpha", pagination: Pagination.From(1, 10));
+            var result = await service.GetClientsAsync(new ListQuery($"{tag} Client alpha", Pagination.From(1, 10)));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-client-alpha", item.ClientId);
@@ -75,7 +75,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync($"{tag}-client-delta", pagination: Pagination.From(1, 10));
+            var result = await service.GetClientsAsync(new ListQuery($"{tag}-client-delta", Pagination.From(1, 10)));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-client-delta", item.ClientId);
@@ -92,7 +92,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync($"{tag} CLIENT EPSILON".ToUpperInvariant(), pagination: Pagination.From(1, 10));
+            var result = await service.GetClientsAsync(new ListQuery($"{tag} CLIENT EPSILON".ToUpperInvariant(), Pagination.From(1, 10)));
 
             Assert.Single(result.Items);
         });
@@ -108,7 +108,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetClientsAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(2, result.Items.Count);
             Assert.True(string.Compare(result.Items[0].ClientName, result.Items[1].ClientName, StringComparison.Ordinal) <= 0);
@@ -127,7 +127,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(filter: tag, pagination: Pagination.From(2, 2));
+            var result = await service.GetClientsAsync(new ListQuery(tag, Pagination.From(2, 2)));
 
             Assert.Equal(2, result.Items.Count);
             Assert.Equal(5, result.TotalCount);
@@ -145,7 +145,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetClientsAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.False(Assert.Single(result.Items).Enabled);
         });
@@ -165,7 +165,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetClientsAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(expectedType, Assert.Single(result.Items).ClientType);
         });
@@ -180,7 +180,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetClientsAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Empty(result.Items);
             Assert.Equal(0, result.TotalCount);

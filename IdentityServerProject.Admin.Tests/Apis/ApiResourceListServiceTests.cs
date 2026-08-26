@@ -68,7 +68,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync($"{tag}-api-alpha", pagination: Pagination.From(1, 10));
+            var result = await service.GetApiResourcesAsync(new ListQuery($"{tag}-api-alpha", Pagination.From(1, 10)));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-api-alpha", item.Name);
@@ -85,7 +85,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync($"{tag} API delta", pagination: Pagination.From(1, 10));
+            var result = await service.GetApiResourcesAsync(new ListQuery($"{tag} API delta", Pagination.From(1, 10)));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-api-delta", item.Name);
@@ -102,7 +102,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync($"{tag} API EPSILON".ToUpperInvariant(), pagination: Pagination.From(1, 10));
+            var result = await service.GetApiResourcesAsync(new ListQuery($"{tag} API EPSILON".ToUpperInvariant(), Pagination.From(1, 10)));
 
             Assert.Single(result.Items);
         });
@@ -118,7 +118,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetApiResourcesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(2, result.Items.Count);
             Assert.True(string.Compare(result.Items[0].Name, result.Items[1].Name, StringComparison.Ordinal) <= 0);
@@ -137,7 +137,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync(filter: tag, pagination: Pagination.From(2, 2));
+            var result = await service.GetApiResourcesAsync(new ListQuery(tag, Pagination.From(2, 2)));
 
             Assert.Equal(2, result.Items.Count);
             Assert.Equal(5, result.TotalCount);
@@ -155,7 +155,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync(filter: tag, pagination: Pagination.From(99, 10));
+            var result = await service.GetApiResourcesAsync(new ListQuery(tag, Pagination.From(99, 10)));
 
             Assert.Empty(result.Items);
             Assert.Equal(2, result.TotalCount);
@@ -173,7 +173,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetApiResourcesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.False(Assert.Single(result.Items).Enabled);
         });
@@ -189,7 +189,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetApiResourcesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(3, Assert.Single(result.Items).ScopeCount);
         });
@@ -204,7 +204,7 @@ public class ApiResourceListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceListService>();
 
-            var result = await service.GetApiResourcesAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetApiResourcesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Empty(result.Items);
             Assert.Equal(0, result.TotalCount);

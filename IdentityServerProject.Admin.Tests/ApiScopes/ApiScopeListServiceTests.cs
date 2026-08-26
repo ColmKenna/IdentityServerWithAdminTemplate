@@ -83,7 +83,7 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync($"{tag}-scope-alpha", pagination: Pagination.From(1, 10));
+            var result = await service.GetApiScopesAsync(new ListQuery($"{tag}-scope-alpha", Pagination.From(1, 10)));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-scope-alpha", item.Name);
@@ -100,7 +100,7 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync($"{tag} Scope delta", pagination: Pagination.From(1, 10));
+            var result = await service.GetApiScopesAsync(new ListQuery($"{tag} Scope delta", Pagination.From(1, 10)));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-scope-delta", item.Name);
@@ -117,7 +117,7 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync($"{tag} SCOPE EPSILON".ToUpperInvariant(), pagination: Pagination.From(1, 10));
+            var result = await service.GetApiScopesAsync(new ListQuery($"{tag} SCOPE EPSILON".ToUpperInvariant(), Pagination.From(1, 10)));
 
             Assert.Single(result.Items);
         });
@@ -133,7 +133,7 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(2, result.Items.Count);
             Assert.True(string.Compare(result.Items[0].Name, result.Items[1].Name, StringComparison.Ordinal) <= 0);
@@ -154,7 +154,7 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(filter: tag, pagination: Pagination.From(2, 2));
+            var result = await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(2, 2)));
 
             Assert.Equal(2, result.Items.Count);
             Assert.Equal(5, result.TotalCount);
@@ -172,7 +172,7 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.False(Assert.Single(result.Items).Enabled);
         });
@@ -187,7 +187,7 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Empty(result.Items);
             Assert.Equal(0, result.TotalCount);
@@ -204,7 +204,7 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(0, Assert.Single(result.Items).ClientReferenceCount);
         });
@@ -227,7 +227,7 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(2, Assert.Single(result.Items).ClientReferenceCount);
         });

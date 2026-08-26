@@ -36,7 +36,7 @@ public class IndexModel : PageModel
         var pagination = Pagination.From(PageNumber, _options.DefaultPageSize);
         PageNumber = pagination.PageNumber;
 
-        ApiScopes = await _apiScopeListService.GetApiScopesAsync(Filter, pagination, cancellationToken);
+        ApiScopes = await _apiScopeListService.GetApiScopesAsync(new ListQuery(Filter, pagination), cancellationToken);
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(string name, CancellationToken cancellationToken)

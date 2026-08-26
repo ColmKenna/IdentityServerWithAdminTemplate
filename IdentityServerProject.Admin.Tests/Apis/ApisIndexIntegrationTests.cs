@@ -48,7 +48,7 @@ public class ApisIndexIntegrationTests : IDisposable
     private static IApiResourceListService MockService(ListResult<ApiResourceListItem> result)
     {
         var mock = new Mock<IApiResourceListService>();
-        mock.Setup(s => s.GetApiResourcesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetApiResourcesAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock.Object;
     }

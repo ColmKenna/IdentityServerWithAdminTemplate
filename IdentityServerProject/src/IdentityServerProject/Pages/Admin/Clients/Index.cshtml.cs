@@ -33,6 +33,6 @@ public class IndexModel : PageModel
         var pagination = Pagination.From(PageNumber, _options.DefaultPageSize);
         PageNumber = pagination.PageNumber;
 
-        Clients = await _clientListService.GetClientsAsync(Filter, pagination, cancellationToken);
+        Clients = await _clientListService.GetClientsAsync(new ListQuery(Filter, pagination), cancellationToken);
     }
 }

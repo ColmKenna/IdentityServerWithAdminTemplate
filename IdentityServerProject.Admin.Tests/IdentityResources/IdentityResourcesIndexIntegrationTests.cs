@@ -40,7 +40,7 @@ public class IdentityResourcesIndexIntegrationTests : IDisposable
     private static IIdentityResourceListService MockService(ListResult<IdentityResourceListItem> result)
     {
         var mock = new Mock<IIdentityResourceListService>();
-        mock.Setup(s => s.GetIdentityResourcesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetIdentityResourcesAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock.Object;
     }

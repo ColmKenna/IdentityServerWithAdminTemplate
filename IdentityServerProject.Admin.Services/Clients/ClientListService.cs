@@ -24,17 +24,16 @@ public class ClientListService : IClientListService
     }
 
     public async Task<ListResult<ClientListItem>> GetClientsAsync(
-        string? filter,
-        Pagination pagination = default,
+        ListQuery query,
         CancellationToken cancellationToken = default)
     {
-        pagination = pagination.Normalize();
+        var pagination = query.Pagination.Normalize();
 
-        var query = ApplyFilter(_configurationDbContext.Clients.AsNoTracking(), filter);
+        var dbQuery = ApplyFilter(_configurationDbContext.Clients.AsNoTracking(), query.Filter);
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        var totalCount = await dbQuery.CountAsync(cancellationToken);
 
-        var pageEntities = await query
+        var pageEntities = await dbQuery
             .OrderBy(c => c.ClientName)
             .ThenBy(c => c.ClientId)
             .Skip(pagination.Skip)

@@ -51,7 +51,7 @@ public class UsersIndexIntegrationTests : IDisposable
     private static IUserListService MockService(ListResult<UserListItem> result)
     {
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUsersAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock.Object;
     }
@@ -228,8 +228,8 @@ public class UsersIndexIntegrationTests : IDisposable
         };
 
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync(null, Pagination.From(1, TestOptions.PageSize), It.IsAny<CancellationToken>())).ReturnsAsync(page1);
-        mock.Setup(s => s.GetUsersAsync(null, Pagination.From(2, TestOptions.PageSize), It.IsAny<CancellationToken>())).ReturnsAsync(page2);
+        mock.Setup(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == Pagination.From(1, TestOptions.PageSize)), It.IsAny<CancellationToken>())).ReturnsAsync(page1);
+        mock.Setup(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == Pagination.From(2, TestOptions.PageSize)), It.IsAny<CancellationToken>())).ReturnsAsync(page2);
 
         var client = CreateClient(mock.Object);
 
@@ -254,7 +254,7 @@ public class UsersIndexIntegrationTests : IDisposable
         };
 
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync(null, Pagination.From(99, TestOptions.PageSize), It.IsAny<CancellationToken>())).ReturnsAsync(beyondLastPage);
+        mock.Setup(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == Pagination.From(99, TestOptions.PageSize)), It.IsAny<CancellationToken>())).ReturnsAsync(beyondLastPage);
 
         var client = CreateClient(mock.Object);
 
@@ -281,7 +281,7 @@ public class UsersIndexIntegrationTests : IDisposable
         };
 
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync("admin", Pagination.From(1, TestOptions.PageSize), It.IsAny<CancellationToken>())).ReturnsAsync(result);
+        mock.Setup(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == "admin" && q.Pagination == Pagination.From(1, TestOptions.PageSize)), It.IsAny<CancellationToken>())).ReturnsAsync(result);
 
         var client = CreateClient(mock.Object);
 
@@ -319,7 +319,7 @@ public class UsersIndexIntegrationTests : IDisposable
             PageNumber = 1,
             PageSize = 10,
         };
-        mockService.Setup(s => s.GetUsersAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mockService.Setup(s => s.GetUsersAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         mockService.Setup(s => s.UnlockUserAsync(UserId.Create("user-id-locked"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserUnlockResult.Succeeded);

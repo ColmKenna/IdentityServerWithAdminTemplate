@@ -29,17 +29,16 @@ public class ApiScopeListService : IApiScopeListService
     }
 
     public async Task<ListResult<ApiScopeListItem>> GetApiScopesAsync(
-        string? filter,
-        Pagination pagination = default,
+        ListQuery query,
         CancellationToken cancellationToken = default)
     {
-        pagination = pagination.Normalize();
+        var pagination = query.Pagination.Normalize();
 
-        var query = ApplyFilter(_configurationDbContext.ApiScopes.AsNoTracking(), filter);
+        var dbQuery = ApplyFilter(_configurationDbContext.ApiScopes.AsNoTracking(), query.Filter);
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        var totalCount = await dbQuery.CountAsync(cancellationToken);
 
-        var items = await query
+        var items = await dbQuery
             .OrderBy(s => s.Name)
             .ThenBy(s => s.DisplayName)
             .Skip(pagination.Skip)

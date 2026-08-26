@@ -57,7 +57,7 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync($"{tag}-username-alpha", pagination: Pagination.From(1, 10));
+            var result = await service.GetUsersAsync(new ListQuery($"{tag}-username-alpha", Pagination.From(1, 10)));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-user-alpha", item.Id);
@@ -74,7 +74,7 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync($"{tag}-email-delta", pagination: Pagination.From(1, 10));
+            var result = await service.GetUsersAsync(new ListQuery($"{tag}-email-delta", Pagination.From(1, 10)));
 
             var item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-user-delta", item.Id);
@@ -93,7 +93,7 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync(filter: tag, pagination: Pagination.From(2, 2));
+            var result = await service.GetUsersAsync(new ListQuery(tag, Pagination.From(2, 2)));
 
             Assert.Equal(2, result.Items.Count);
             Assert.Equal(5, result.TotalCount);
@@ -111,7 +111,7 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync(filter: tag, pagination: Pagination.From(99, 10));
+            var result = await service.GetUsersAsync(new ListQuery(tag, Pagination.From(99, 10)));
 
             Assert.Empty(result.Items);
             Assert.Equal(2, result.TotalCount);
@@ -129,7 +129,7 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var result = await service.GetUsersAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.True(Assert.Single(result.Items).IsLockedOut);
         });
@@ -150,7 +150,7 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
 
             Assert.Equal(UserUnlockStatus.Succeeded, result.Status);
 
-            var listResult = await service.GetUsersAsync(filter: tag, pagination: Pagination.From(1, 10));
+            var listResult = await service.GetUsersAsync(new ListQuery(tag, Pagination.From(1, 10)));
             Assert.False(Assert.Single(listResult.Items).IsLockedOut);
         });
     }

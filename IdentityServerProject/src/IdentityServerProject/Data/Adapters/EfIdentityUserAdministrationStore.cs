@@ -35,19 +35,18 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<ListResult<UserListItem>> GetUsersAsync(
-        string? filter,
-        Pagination pagination = default,
+        ListQuery query,
         CancellationToken cancellationToken = default)
     {
-        pagination = pagination.Normalize();
+        var pagination = query.Pagination.Normalize();
 
-        var query = ApplyFilter(_dbContext.Users.AsNoTracking(), filter);
+        var dbQuery = ApplyFilter(_dbContext.Users.AsNoTracking(), query.Filter);
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        var totalCount = await dbQuery.CountAsync(cancellationToken);
 
         var now = DateTimeOffset.UtcNow;
 
-        var items = await query
+        var items = await dbQuery
             .OrderBy(u => u.UserName)
             .Skip(pagination.Skip)
             .Take(pagination.PageSize)
