@@ -73,7 +73,7 @@ public class ResetPasswordModel : PageModel
 
     private async Task<IActionResult> LoadPageAsync(CancellationToken cancellationToken)
     {
-        var account = await _userDetailsService.GetUserDetailsAsync(UserId.Create(Id), null, cancellationToken);
+        var account = await _userDetailsService.GetUserDetailsAsync(new UserActionContext(UserId.Create(Id), null), cancellationToken);
         if (account == null)
         {
             return NotFound();

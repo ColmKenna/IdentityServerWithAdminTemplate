@@ -136,14 +136,14 @@ public interface IIdentityUserAdministrationStore
         UserId userId, UserClaim claim, CancellationToken cancellationToken = default);
 
     Task<SecurityStampRotationOutcome> RotateSecurityStampAsync(
-        UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default);
+        UserActionContext context, CancellationToken cancellationToken = default);
 
     Task<PasswordResetOutcome> ResetPasswordAsync(
         UserId userId, string newPassword, CancellationToken cancellationToken = default);
 
     Task<UserSuspendOutcome> SuspendUserAsync(
-        UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default);
+        UserActionContext context, CancellationToken cancellationToken = default);
 
     Task<UserDeleteOutcome> DeleteUserAsync(
-        UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default);
+        UserActionContext context, CancellationToken cancellationToken = default);
 }

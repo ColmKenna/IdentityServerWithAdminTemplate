@@ -74,7 +74,7 @@ public class UsersDetailsPageModelTests
     public async Task OnPostRevokeUserAccessAsync_ServiceFailure_RedirectsToAccessWithServiceError()
     {
         var service = new Mock<IUserDetailsService>();
-        service.Setup(s => s.RevokeUserAccessAsync(UserId.Create("user-1"), UserId.Create("admin"), It.IsAny<CancellationToken>()))
+        service.Setup(s => s.RevokeUserAccessAsync(new UserActionContext(UserId.Create("user-1"), UserId.Create("admin")), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserAccessRevokeResult.Failed("The current administrator cannot revoke their own access."));
         var model = CreateModel(service);
         model.Id = "user-1";
@@ -99,6 +99,6 @@ public class UsersDetailsPageModelTests
         var redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("danger", redirect.RouteValues!["tab"]);
         Assert.Equal("Type DELETE exactly to confirm permanent deletion.", model.ErrorMessage);
-        service.Verify(s => s.DeleteUserAsync(It.IsAny<UserId>(), It.IsAny<UserId?>(), It.IsAny<CancellationToken>()), Times.Never);
+        service.Verify(s => s.DeleteUserAsync(It.IsAny<UserActionContext>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

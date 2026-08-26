@@ -383,10 +383,11 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<SecurityStampRotationOutcome> RotateSecurityStampAsync(
-        UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default)
+        UserActionContext context, CancellationToken cancellationToken = default)
     {
+        var userId = context.Target;
         var userIdStr = userId.Value ?? string.Empty;
-        var actingUserIdStr = actingUserId?.Value;
+        var actingUserIdStr = context.ActingUser?.Value;
         var outcome = new SecurityStampRotationOutcome(SecurityStampRotationStatus.UserNotFound, userIdStr);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
@@ -467,10 +468,11 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<UserSuspendOutcome> SuspendUserAsync(
-        UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default)
+        UserActionContext context, CancellationToken cancellationToken = default)
     {
+        var userId = context.Target;
         var userIdStr = userId.Value ?? string.Empty;
-        var actingUserIdStr = actingUserId?.Value;
+        var actingUserIdStr = context.ActingUser?.Value;
         var outcome = new UserSuspendOutcome(UserSuspendStatus.UserNotFound, userIdStr);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
@@ -513,10 +515,11 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<UserDeleteOutcome> DeleteUserAsync(
-        UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default)
+        UserActionContext context, CancellationToken cancellationToken = default)
     {
+        var userId = context.Target;
         var userIdStr = userId.Value ?? string.Empty;
-        var actingUserIdStr = actingUserId?.Value;
+        var actingUserIdStr = context.ActingUser?.Value;
         var outcome = new UserDeleteOutcome(UserDeleteStatus.UserNotFound, userIdStr);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();

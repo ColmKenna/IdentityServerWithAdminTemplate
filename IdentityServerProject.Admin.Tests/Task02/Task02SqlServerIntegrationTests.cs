@@ -61,7 +61,7 @@ public sealed class Task02SqlServerIntegrationTests
         await _factory.RunInScopeAsync(async services =>
         {
             var service = services.GetRequiredService<IUserDetailsService>();
-            var result = await service.RevokeUserAccessAsync(UserId.Create(userId), UserId.Create("another-administrator"));
+            var result = await service.RevokeUserAccessAsync(new UserActionContext(UserId.Create(userId), UserId.Create("another-administrator")));
             Assert.True(result.Success);
             Assert.Equal(1, result.RevokedGrantCount);
         });
@@ -127,7 +127,7 @@ public sealed class Task02SqlServerIntegrationTests
             await _factory.RunInScopeAsync(async services =>
             {
                 var service = services.GetRequiredService<IUserDetailsService>();
-                var result = await service.RevokeUserAccessAsync(UserId.Create(userId), UserId.Create("another-administrator"));
+                var result = await service.RevokeUserAccessAsync(new UserActionContext(UserId.Create(userId), UserId.Create("another-administrator")));
                 Assert.True(result.Success);
                 Assert.NotNull(result.WarningMessage);
             });

@@ -42,7 +42,7 @@ public class ResetPasswordPageModelTests
     public async Task OnPostAsync_InvalidModelState_ReloadsDisplayNameWithoutCallingResetService()
     {
         var service = new Mock<IUserDetailsService>();
-        service.Setup(s => s.GetUserDetailsAsync(UserId.Create("user-1"), null, It.IsAny<CancellationToken>()))
+        service.Setup(s => s.GetUserDetailsAsync(new UserActionContext(UserId.Create("user-1"), null), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Account());
         var model = CreateModel(service);
         model.Id = "user-1";
@@ -61,7 +61,7 @@ public class ResetPasswordPageModelTests
         var service = new Mock<IUserDetailsService>();
         service.Setup(s => s.ResetPasswordAsync(UserId.Create("user-1"), "new-password", It.IsAny<CancellationToken>()))
             .ReturnsAsync(PasswordResetResult.Failed("The password does not meet the configured policy."));
-        service.Setup(s => s.GetUserDetailsAsync(UserId.Create("user-1"), null, It.IsAny<CancellationToken>()))
+        service.Setup(s => s.GetUserDetailsAsync(new UserActionContext(UserId.Create("user-1"), null), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Account());
         var model = CreateModel(service);
         model.Id = "user-1";

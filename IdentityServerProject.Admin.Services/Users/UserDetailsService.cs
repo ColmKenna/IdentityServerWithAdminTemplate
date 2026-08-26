@@ -40,8 +40,10 @@ public partial class UserDetailsService : IUserDetailsService
 
     #region Profile
 
-    public async Task<UserDetailsModel?> GetUserDetailsAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default)
+    public async Task<UserDetailsModel?> GetUserDetailsAsync(UserActionContext context, CancellationToken cancellationToken = default)
     {
+        var userId = context.Target;
+        var currentUserId = context.ActingUser;
         if (userId.IsEmpty)
         {
             return null;
@@ -188,7 +190,7 @@ public partial class UserDetailsService : IUserDetailsService
         {
             // This runs after the role transaction commits. Its own durable mutations complete
             // before any back-channel call is made.
-            await RevokeUserAccessAsync(userId, null, cancellationToken);
+            await RevokeUserAccessAsync(new UserActionContext(userId, null), cancellationToken);
         }
 
         return RoleChangeResult.Succeeded();
@@ -327,11 +329,12 @@ public partial class UserDetailsService : IUserDetailsService
 
     #region Access revocation
 
-    public Task<UserAccessRevokeResult> RevokeUserAccessAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default) =>
-        RevokeUserAccessCoreAsync(userId, currentUserId, cancellationToken);
+    public Task<UserAccessRevokeResult> RevokeUserAccessAsync(UserActionContext context, CancellationToken cancellationToken = default) =>
+        RevokeUserAccessCoreAsync(context, cancellationToken);
 
-    private async Task<UserAccessRevokeResult> RevokeUserAccessCoreAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken)
+    private async Task<UserAccessRevokeResult> RevokeUserAccessCoreAsync(UserActionContext context, CancellationToken cancellationToken)
     {
+        var userId = context.Target;
         if (string.IsNullOrWhiteSpace(userId))
         {
             await AuditDeniedAsync(AuditAction.RevokeUserAccess, AuditReasonCode.NotFound, userId, userId,
@@ -345,7 +348,7 @@ public partial class UserDetailsService : IUserDetailsService
 
         try
         {
-            var rotation = await _store.RotateSecurityStampAsync(userId, currentUserId, cancellationToken);
+            var rotation = await _store.RotateSecurityStampAsync(context, cancellationToken);
             targetName = rotation.TargetName;
 
             if (rotation.Status == SecurityStampRotationStatus.UserNotFound)
@@ -460,16 +463,17 @@ public partial class UserDetailsService : IUserDetailsService
         return PasswordResetResult.Succeeded();
     }
 
-    public Task<UserSuspendResult> SuspendUserAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default) =>
+    public Task<UserSuspendResult> SuspendUserAsync(UserActionContext context, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.SuspendUser,
-            userId.Value,
-            () => SuspendUserCoreAsync(userId, currentUserId, cancellationToken),
+            context.Target.Value,
+            () => SuspendUserCoreAsync(context, cancellationToken),
             cancellationToken);
 
-    private async Task<UserSuspendResult> SuspendUserCoreAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken)
+    private async Task<UserSuspendResult> SuspendUserCoreAsync(UserActionContext context, CancellationToken cancellationToken)
     {
-        var outcome = await _store.SuspendUserAsync(userId, currentUserId, cancellationToken);
+        var userId = context.Target;
+        var outcome = await _store.SuspendUserAsync(context, cancellationToken);
         switch (outcome.Status)
         {
             case UserSuspendStatus.UserNotFound:
@@ -540,16 +544,17 @@ public partial class UserDetailsService : IUserDetailsService
         }
     }
 
-    public Task<UserDeleteResult> DeleteUserAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default) =>
+    public Task<UserDeleteResult> DeleteUserAsync(UserActionContext context, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.DeleteUser,
-            userId.Value,
-            () => DeleteUserCoreAsync(userId, currentUserId, cancellationToken),
+            context.Target.Value,
+            () => DeleteUserCoreAsync(context, cancellationToken),
             cancellationToken);
 
-    private async Task<UserDeleteResult> DeleteUserCoreAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken)
+    private async Task<UserDeleteResult> DeleteUserCoreAsync(UserActionContext context, CancellationToken cancellationToken)
     {
-        var outcome = await _store.DeleteUserAsync(userId, currentUserId, cancellationToken);
+        var userId = context.Target;
+        var outcome = await _store.DeleteUserAsync(context, cancellationToken);
         switch (outcome.Status)
         {
             case UserDeleteStatus.UserNotFound:

@@ -92,7 +92,7 @@ public interface IUserDetailsService
     /// Returns full workspace details for a user by ID, including guard-relevant context
     /// (whether the requesting admin is viewing their own account). Returns null if not found.
     /// </summary>
-    Task<UserDetailsModel?> GetUserDetailsAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default);
+    Task<UserDetailsModel?> GetUserDetailsAsync(UserActionContext context, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Assigns a role to a user. Returns Success = false if the user or role is not found.
@@ -123,7 +123,7 @@ public interface IUserDetailsService
     /// Revokes a user's current access by rotating the security stamp, deleting persisted grants,
     /// and notifying affected clients. Blocked when the target is the current administrator.
     /// </summary>
-    Task<UserAccessRevokeResult> RevokeUserAccessAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default);
+    Task<UserAccessRevokeResult> RevokeUserAccessAsync(UserActionContext context, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Resets a user's password.
@@ -133,7 +133,7 @@ public interface IUserDetailsService
     /// <summary>
     /// Suspends a user by setting their lockout end date to the maximum value. Blocked when the target is the current administrator.
     /// </summary>
-    Task<UserSuspendResult> SuspendUserAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default);
+    Task<UserSuspendResult> SuspendUserAsync(UserActionContext context, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Unlocks a locked-out user account.
@@ -143,7 +143,7 @@ public interface IUserDetailsService
     /// <summary>
     /// Deletes a user account entirely. Blocked when the target is the current administrator.
     /// </summary>
-    Task<UserDeleteResult> DeleteUserAsync(UserId userId, UserId? currentUserId, CancellationToken cancellationToken = default);
+    Task<UserDeleteResult> DeleteUserAsync(UserActionContext context, CancellationToken cancellationToken = default);
 }
 
 public class PasswordResetResult

@@ -217,7 +217,7 @@ public class UserAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.RevokeUserAccessAsync(UserId.Create(user.Id), UserId.Create(user.Id));
+            var result = await service.RevokeUserAccessAsync(new UserActionContext(UserId.Create(user.Id), UserId.Create(user.Id)));
             Assert.False(result.Success);
         });
 
@@ -236,7 +236,7 @@ public class UserAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.RevokeUserAccessAsync(UserId.Create(target.Id), UserId.Create(admin.Id));
+            var result = await service.RevokeUserAccessAsync(new UserActionContext(UserId.Create(target.Id), UserId.Create(admin.Id)));
             Assert.True(result.Success);
         });
 
@@ -271,7 +271,7 @@ public class UserAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.SuspendUserAsync(UserId.Create(target.Id), UserId.Create(admin.Id));
+            var result = await service.SuspendUserAsync(new UserActionContext(UserId.Create(target.Id), UserId.Create(admin.Id)));
             Assert.True(result.Success);
         });
 
@@ -289,7 +289,7 @@ public class UserAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.SuspendUserAsync(UserId.Create(user.Id), UserId.Create(user.Id));
+            var result = await service.SuspendUserAsync(new UserActionContext(UserId.Create(user.Id), UserId.Create(user.Id)));
             Assert.False(result.Success);
         });
 
@@ -308,7 +308,7 @@ public class UserAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.DeleteUserAsync(UserId.Create(target.Id), UserId.Create(admin.Id));
+            var result = await service.DeleteUserAsync(new UserActionContext(UserId.Create(target.Id), UserId.Create(admin.Id)));
             Assert.True(result.Success);
         });
 
@@ -326,7 +326,7 @@ public class UserAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.DeleteUserAsync(UserId.Create(user.Id), UserId.Create(user.Id));
+            var result = await service.DeleteUserAsync(new UserActionContext(UserId.Create(user.Id), UserId.Create(user.Id)));
             Assert.False(result.Success);
         });
 

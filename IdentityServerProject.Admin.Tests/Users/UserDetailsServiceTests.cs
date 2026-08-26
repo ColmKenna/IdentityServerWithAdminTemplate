@@ -49,7 +49,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.GetUserDetailsAsync(UserId.Create("non-existent-user-id-xyz"), null);
+            var result = await service.GetUserDetailsAsync(new UserActionContext(UserId.Create("non-existent-user-id-xyz"), null));
             Assert.Null(result);
         });
     }
@@ -72,14 +72,14 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
 
             var service = sp.GetRequiredService<IUserDetailsService>();
 
-            var result = await service.GetUserDetailsAsync(UserId.Create(user.Id), UserId.Create(user.Id));
+            var result = await service.GetUserDetailsAsync(new UserActionContext(UserId.Create(user.Id), UserId.Create(user.Id)));
             Assert.NotNull(result);
             Assert.Contains(roleName, result!.AssignedRoles);
             Assert.Contains(roleName, result.AllRoles);
             Assert.Contains(result.Claims, c => c.Type == "dept" && c.Value == "Engineering");
             Assert.True(result.IsCurrentUser);
 
-            var resultAsOther = await service.GetUserDetailsAsync(UserId.Create(user.Id), UserId.Create("someone-else-id"));
+            var resultAsOther = await service.GetUserDetailsAsync(new UserActionContext(UserId.Create(user.Id), UserId.Create("someone-else-id")));
             Assert.False(resultAsOther!.IsCurrentUser);
         });
     }
@@ -169,13 +169,13 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var addResult = await service.AddClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim("dept", "Sales"));
             Assert.True(addResult.Success);
 
-            var afterAdd = await service.GetUserDetailsAsync(UserId.Create(user.Id), null);
+            var afterAdd = await service.GetUserDetailsAsync(new UserActionContext(UserId.Create(user.Id), null));
             Assert.Contains(afterAdd!.Claims, c => c.Type == "dept" && c.Value == "Sales");
 
             var removeResult = await service.RemoveClaimAsync(UserId.Create(user.Id), new IdentityServerProject.Services.Users.UserClaim("dept", "Sales"));
             Assert.True(removeResult.Success);
 
-            var afterRemove = await service.GetUserDetailsAsync(UserId.Create(user.Id), null);
+            var afterRemove = await service.GetUserDetailsAsync(new UserActionContext(UserId.Create(user.Id), null));
             Assert.DoesNotContain(afterRemove!.Claims, c => c.Type == "dept" && c.Value == "Sales");
         });
     }
@@ -459,7 +459,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             await userManager.AddClaimAsync(user, new System.Security.Claims.Claim("dept", "Engineering"));
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.GetUserDetailsAsync(UserId.Create(user.Id), null);
+            var result = await service.GetUserDetailsAsync(new UserActionContext(UserId.Create(user.Id), null));
 
             Assert.True(result!.Claims.Single(c => c.Type == ClaimTypes.Role).IsReserved);
             Assert.False(result.Claims.Single(c => c.Type == "dept").IsReserved);
@@ -490,7 +490,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             await grantDb.SaveChangesAsync();
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.RevokeUserAccessAsync(UserId.Create(user.Id), UserId.Create("some-other-admin-id"));
+            var result = await service.RevokeUserAccessAsync(new UserActionContext(UserId.Create(user.Id), UserId.Create("some-other-admin-id")));
 
             Assert.True(result.Success);
             Assert.Equal(1, result.RevokedGrantCount);
@@ -522,7 +522,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             await grantDb.SaveChangesAsync();
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.RevokeUserAccessAsync(UserId.Create(user.Id), UserId.Create(user.Id));
+            var result = await service.RevokeUserAccessAsync(new UserActionContext(UserId.Create(user.Id), UserId.Create(user.Id)));
 
             Assert.False(result.Success);
             Assert.Contains("own", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
@@ -624,7 +624,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             userId = user.Id;
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.SuspendUserAsync(UserId.Create(user.Id), UserId.Create("another-administrator"));
+            var result = await service.SuspendUserAsync(new UserActionContext(UserId.Create(user.Id), UserId.Create("another-administrator")));
 
             Assert.True(result.Success, result.ErrorMessage);
         });
@@ -645,7 +645,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.SuspendUserAsync(UserId.Create($"missing-{Guid.NewGuid():N}"), UserId.Create("another-administrator"));
+            var result = await service.SuspendUserAsync(new UserActionContext(UserId.Create($"missing-{Guid.NewGuid():N}"), UserId.Create("another-administrator")));
 
             Assert.False(result.Success);
             Assert.Equal("User not found.", result.ErrorMessage);
@@ -678,7 +678,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             await grantDb.SaveChangesAsync();
 
             var service = sp.GetRequiredService<IUserDetailsService>();
-            var result = await service.DeleteUserAsync(UserId.Create(user.Id), UserId.Create("another-administrator"));
+            var result = await service.DeleteUserAsync(new UserActionContext(UserId.Create(user.Id), UserId.Create("another-administrator")));
 
             Assert.True(result.Success, result.ErrorMessage);
         });
@@ -721,7 +721,7 @@ public class UserDetailsServiceTests : IClassFixture<AdminWebFactory>
             var service = sp.GetRequiredService<IUserDetailsService>();
             await grantDb.DisposeAsync();
 
-            var result = await service.DeleteUserAsync(UserId.Create(user.Id), UserId.Create("another-administrator"));
+            var result = await service.DeleteUserAsync(new UserActionContext(UserId.Create(user.Id), UserId.Create("another-administrator")));
 
             Assert.True(result.Success, result.ErrorMessage);
         });

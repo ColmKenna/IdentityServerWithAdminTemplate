@@ -45,6 +45,8 @@ public class DetailsModel : PageModel
         ? UserId.Create(currentUserId)
         : null;
 
+    private UserActionContext Context => new(TargetUserId, CurrentUser);
+
     private bool HasUserId => !string.IsNullOrWhiteSpace(Id);
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
@@ -54,7 +56,7 @@ public class DetailsModel : PageModel
             return NotFound();
         }
 
-        var user = await _userDetailsService.GetUserDetailsAsync(TargetUserId, CurrentUser, cancellationToken);
+        var user = await _userDetailsService.GetUserDetailsAsync(Context, cancellationToken);
         if (user == null)
         {
             return NotFound();
@@ -196,7 +198,7 @@ public class DetailsModel : PageModel
             return NotFound();
         }
 
-        var result = await _userDetailsService.RevokeUserAccessAsync(TargetUserId, CurrentUser, cancellationToken);
+        var result = await _userDetailsService.RevokeUserAccessAsync(Context, cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage == "User not found.")
@@ -224,7 +226,7 @@ public class DetailsModel : PageModel
             return NotFound();
         }
 
-        var result = await _userDetailsService.SuspendUserAsync(TargetUserId, CurrentUser, cancellationToken);
+        var result = await _userDetailsService.SuspendUserAsync(Context, cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage == "User not found.")
@@ -254,7 +256,7 @@ public class DetailsModel : PageModel
             return RedirectToUserTab("danger");
         }
 
-        var result = await _userDetailsService.DeleteUserAsync(TargetUserId, CurrentUser, cancellationToken);
+        var result = await _userDetailsService.DeleteUserAsync(Context, cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage == "User not found.")
