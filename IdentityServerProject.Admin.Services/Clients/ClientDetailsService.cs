@@ -769,9 +769,6 @@ public partial class ClientDetailsService : IClientDetailsService
         };
     }
 
-    public Task<ClientSecretGenerateResult> GenerateClientSecretAsync(CreateSecretCommand command, CancellationToken cancellationToken = default) =>
-        GenerateClientSecretAsync(ClientId.Create(command.TargetId), command.Description, command.ExpirationUtc, cancellationToken);
-
     public Task<ClientSecretGenerateResult> GenerateClientSecretAsync(ClientId clientId, string? description, DateTime? expiration = null, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.GenerateSecret,
