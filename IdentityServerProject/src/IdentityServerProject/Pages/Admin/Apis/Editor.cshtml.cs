@@ -77,17 +77,11 @@ public class EditorModel : PageModel
         Tab = NormalizeTab(Tab);
 
         if (!HasResourceName)
-        {
-            Editor = ApiResourceEditorModel.Empty();
-            Tab = "basics";
-            return Page();
-        }
+            return InitializeApiResourceEditor();
 
         var editor = await _apiResourceEditorService.GetForEditAsync(ResourceScopeName, cancellationToken);
         if (editor == null)
-        {
             return NotFound();
-        }
 
         Editor = editor;
         Basics = new BasicsInputModel
@@ -98,9 +92,7 @@ public class EditorModel : PageModel
         };
 
         if (Tab == "scopes")
-        {
             await LoadAttachableScopeNamesAsync(editor, cancellationToken);
-        }
 
         var handle = SecretRevealHandle;
         if (!string.IsNullOrEmpty(handle))
@@ -110,11 +102,16 @@ public class EditorModel : PageModel
                 IdentityServerProject.Services.SecretReveals.SecretRevealHandle.Create(handle),
                 cancellationToken);
             if (reveal.Status == SecretRevealConsumeStatus.Revealed)
-            {
                 GeneratedSecret = reveal.Plaintext;
-            }
         }
 
+        return Page();
+    }
+
+    private IActionResult InitializeApiResourceEditor()
+    {
+        Editor = ApiResourceEditorModel.Empty();
+        Tab = "basics";
         return Page();
     }
 
@@ -128,54 +125,52 @@ public class EditorModel : PageModel
         var result = await _apiResourceEditorService.SaveBasicsAsync(command, cancellationToken);
 
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (!result.Succeeded)
-        {
-            if (result.ValidationErrors != null)
-            {
-                result.ValidationErrors.AddToModelState(ModelState, "Basics");
-            }
-            else
-            {
-                foreach (var (key, messages) in result.Errors)
-                {
-                    foreach (var message in messages)
-                    {
-                        ModelState.AddModelError(key, message);
-                    }
-                }
-            }
-
-            await PopulateEditorAsync(cancellationToken);
-            Tab = "basics";
-            return Page();
-        }
+            return await RedisplayWithErrorsAsync(result, cancellationToken);
 
         return RedirectToPage(new { name = Basics.Name, tab = "basics" });
+    }
+
+    private async Task<IActionResult> RedisplayWithErrorsAsync(
+        SaveApiResourceBasicsResult result,
+        CancellationToken cancellationToken = default)
+    {
+        AddErrorsToModelState(result);
+        await PopulateEditorAsync(cancellationToken);
+        Tab = "basics";
+        return Page();
+    }
+
+    private void AddErrorsToModelState(SaveApiResourceBasicsResult result)
+    {
+        if (result.ValidationErrors != null)
+            result.ValidationErrors.AddToModelState(ModelState, "Basics");
+        else
+        {
+            var errors = result.Errors.SelectMany(error => error.Value.Select(message => (error.Key, message)));
+
+            foreach (var (key, message) in errors)
+            {
+                ModelState.AddModelError(key, message);
+            }
+        }
     }
 
     public async Task<IActionResult> OnPostAddSecretAsync(CancellationToken cancellationToken = default)
     {
         if (!HasResourceName)
-        {
             return NotFound();
-        }
 
         var command = new AddApiResourceSecretCommand(ResourceScopeName, Secret.Description, Secret.Expiration);
         var result = await _apiResourceEditorService.AddSecretAsync(command, cancellationToken);
 
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (!result.Success)
-        {
             return await RedisplayWithErrorsAsync(result.Errors, "secrets", cancellationToken);
-        }
 
         var ticket = await _secretRevealService.IssueAsync(
             new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, ResourceName),
@@ -188,48 +183,40 @@ public class EditorModel : PageModel
     public async Task<IActionResult> OnPostRevokeSecretAsync(int secretId, string? confirmation = null, CancellationToken cancellationToken = default)
     {
         if (!HasResourceName)
-        {
             return NotFound();
-        }
 
         if (!HasConfirmation(confirmation, "REVOKE"))
-        {
-            ErrorMessage = "Type REVOKE to confirm secret revocation.";
-            return RedirectToEditorTab("secrets");
-        }
+            return RedirectToSecretsTab("Type REVOKE to confirm secret revocation.", "secrets");
 
         var result = await _apiResourceEditorService.RevokeSecretAsync(ResourceScopeName, secretId, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (!result.Succeeded)
-        {
             return await RedisplayWithErrorsAsync(result.Errors, "secrets", cancellationToken);
-        }
 
         return RedirectToEditorTab("secrets");
+    }
+
+    private IActionResult RedirectToSecretsTab(string typeRevokeToConfirmSecretRevocation, string secrets)
+    {
+        ErrorMessage = typeRevokeToConfirmSecretRevocation;
+        return RedirectToEditorTab(secrets);
     }
 
     public async Task<IActionResult> OnPostAttachScopeAsync(CancellationToken cancellationToken = default)
     {
         if (!HasResourceName)
-        {
             return NotFound();
-        }
 
-        var result = await _apiResourceEditorService.AttachScopeAsync(ResourceScopeName, ScopeName.Create(AttachScope.ScopeName), cancellationToken);
+        var result = await _apiResourceEditorService.AttachScopeAsync(ResourceScopeName,
+            ScopeName.Create(AttachScope.ScopeName), cancellationToken);
 
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (!result.Succeeded)
-        {
             return await RedisplayWithErrorsAsync(result.Errors, "scopes", cancellationToken);
-        }
 
         return RedirectToEditorTab("scopes");
     }
@@ -237,43 +224,35 @@ public class EditorModel : PageModel
     public async Task<IActionResult> OnPostCreateScopeAsync(CancellationToken cancellationToken = default)
     {
         if (!HasResourceName)
-        {
             return NotFound();
-        }
 
-        var command = new CreateApiResourceScopeCommand(ResourceScopeName, CreateScope.ScopeName, CreateScope.ScopeDisplayName);
+        var command =
+            new CreateApiResourceScopeCommand(ResourceScopeName, CreateScope.ScopeName, CreateScope.ScopeDisplayName);
         var result = await _apiResourceEditorService.CreateScopeAsync(command, cancellationToken);
 
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (!result.Succeeded)
-        {
             return await RedisplayWithErrorsAsync(result.Errors, "scopes", cancellationToken);
-        }
 
         return RedirectToEditorTab("scopes");
     }
 
-    public async Task<IActionResult> OnPostDetachScopeAsync(string scopeName, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> OnPostDetachScopeAsync(string scopeName,
+        CancellationToken cancellationToken = default)
     {
         if (!HasResourceName)
-        {
             return NotFound();
-        }
 
-        var result = await _apiResourceEditorService.DetachScopeAsync(ResourceScopeName, ScopeName.Create(scopeName), cancellationToken);
+        var result =
+            await _apiResourceEditorService.DetachScopeAsync(ResourceScopeName, ScopeName.Create(scopeName),
+                cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (!result.Succeeded)
-        {
             return await RedisplayWithErrorsAsync(result.Errors, "scopes", cancellationToken);
-        }
 
         return RedirectToEditorTab("scopes");
     }
@@ -281,43 +260,34 @@ public class EditorModel : PageModel
     public async Task<IActionResult> OnPostAddClaimAsync(CancellationToken cancellationToken = default)
     {
         if (!HasResourceName)
-        {
             return NotFound();
-        }
 
         var command = new AddApiResourceClaimCommand(ResourceScopeName, ClaimType.Create(Claim.ClaimType));
         var result = await _apiResourceEditorService.AddClaimAsync(command, cancellationToken);
 
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (!result.Succeeded)
-        {
             return await RedisplayWithErrorsAsync(result.Errors, "claims", cancellationToken);
-        }
 
         return RedirectToEditorTab("claims");
     }
 
-    public async Task<IActionResult> OnPostRemoveClaimAsync(string claimType, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> OnPostRemoveClaimAsync(string claimType,
+        CancellationToken cancellationToken = default)
     {
         if (!HasResourceName)
-        {
             return NotFound();
-        }
 
-        var result = await _apiResourceEditorService.RemoveClaimAsync(ResourceScopeName, ClaimType.Create(claimType), cancellationToken);
+        var result = await _apiResourceEditorService
+            .RemoveClaimAsync(ResourceScopeName, ClaimType.Create(claimType), cancellationToken);
+        
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (!result.Succeeded)
-        {
             return await RedisplayWithErrorsAsync(result.Errors, "claims", cancellationToken);
-        }
 
         return RedirectToEditorTab("claims");
     }
@@ -325,59 +295,45 @@ public class EditorModel : PageModel
     public async Task<IActionResult> OnPostEnableAsync(CancellationToken cancellationToken = default)
     {
         if (!HasResourceName)
-        {
             return NotFound();
-        }
 
-        var result = await _apiResourceEditorService.SetEnabledAsync(ResourceScopeName, enabled: true, cancellationToken);
+        var result =
+            await _apiResourceEditorService.SetEnabledAsync(ResourceScopeName, enabled: true, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         return RedirectToEditorTab("basics");
     }
 
-    public async Task<IActionResult> OnPostDisableAsync(string? confirmation = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> OnPostDisableAsync(string? confirmation = null,
+        CancellationToken cancellationToken = default)
     {
         if (!HasResourceName)
-        {
             return NotFound();
-        }
 
         if (!HasConfirmation(confirmation, "DISABLE"))
-        {
-            ErrorMessage = "Type DISABLE to confirm disabling this API resource.";
-            return RedirectToEditorTab("basics");
-        }
+            return RedirectToSecretsTab("Type DISABLE to confirm disabling this API resource.", "basics");
 
-        var result = await _apiResourceEditorService.SetEnabledAsync(ResourceScopeName, enabled: false, cancellationToken);
+        var result =
+            await _apiResourceEditorService.SetEnabledAsync(ResourceScopeName, enabled: false, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         return RedirectToEditorTab("basics");
     }
 
-    public async Task<IActionResult> OnPostDeleteAsync(string? confirmation = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> OnPostDeleteAsync(string? confirmation = null,
+        CancellationToken cancellationToken = default)
     {
         if (!HasResourceName)
-        {
             return NotFound();
-        }
 
         if (!HasConfirmation(confirmation, "DELETE"))
-        {
-            ErrorMessage = "Type DELETE to confirm deleting this API resource.";
-            return RedirectToEditorTab("basics");
-        }
+            return RedirectToSecretsTab("Type DELETE to confirm deleting this API resource.", "basics");
 
         var result = await _apiResourceEditorService.DeleteAsync(ResourceScopeName, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         return RedirectToPage("./Index");
     }
@@ -386,8 +342,10 @@ public class EditorModel : PageModel
     {
         if (HasResourceName)
         {
-            Editor = await _apiResourceEditorService.GetForEditAsync(ResourceScopeName, cancellationToken) ?? ApiResourceEditorModel.Empty();
-            var allScopeNames = (await _apiResourceEditorService.GetAllApiScopeNamesAsync(cancellationToken)) ?? new List<string>();
+            Editor = await _apiResourceEditorService.GetForEditAsync(ResourceScopeName, cancellationToken) ??
+                     ApiResourceEditorModel.Empty();
+            var allScopeNames = (await _apiResourceEditorService.GetAllApiScopeNamesAsync(cancellationToken)) ??
+                                new List<string>();
             AttachableScopeNames = allScopeNames.Where(scopeName => !Editor.Scopes.Contains(scopeName)).ToList();
         }
         else
@@ -398,7 +356,8 @@ public class EditorModel : PageModel
 
     private async Task LoadAttachableScopeNamesAsync(ApiResourceEditorModel editor, CancellationToken cancellationToken)
     {
-        var allScopeNames = (await _apiResourceEditorService.GetAllApiScopeNamesAsync(cancellationToken)) ?? new List<string>();
+        var allScopeNames = (await _apiResourceEditorService.GetAllApiScopeNamesAsync(cancellationToken)) ??
+                            new List<string>();
         AttachableScopeNames = allScopeNames.Where(s => !editor.Scopes.Contains(s)).ToList();
     }
 
