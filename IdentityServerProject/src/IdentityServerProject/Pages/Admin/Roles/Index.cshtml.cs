@@ -39,13 +39,13 @@ public class IndexModel : PageModel
         var pagination = Pagination.From(PageNumber, _options.DefaultPageSize);
         PageNumber = pagination.PageNumber;
 
-        Roles = await _roleService.GetRolesAsync(Filter, pagination, cancellationToken);
+        Roles = await _roleService.GetRolesAsync(new ListQuery(Filter, pagination), cancellationToken);
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(string id, CancellationToken cancellationToken)
     {
-        var result = await _roleService.DeleteRoleAsync(id, cancellationToken);
-        if (!result.Success)
+        var result = await _roleService.DeleteRoleAsync(RoleId.Create(id), cancellationToken);
+        if (!result.Succeeded)
         {
             ErrorMessage = result.ErrorMessage;
             return RedirectToPage(new { Filter, PageNumber });

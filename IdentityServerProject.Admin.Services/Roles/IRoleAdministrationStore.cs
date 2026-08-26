@@ -7,14 +7,14 @@ namespace IdentityServerProject.Services.Roles;
 
 public class RoleListItem
 {
-    public required string Id { get; set; }
+    public required RoleId Id { get; set; }
     public required string Name { get; set; }
     public bool IsProtected { get; set; }
 }
 
 public class RoleDetailsModel
 {
-    public required string Id { get; set; }
+    public required RoleId Id { get; set; }
     public required string Name { get; set; }
     public bool IsProtected { get; set; }
 }
@@ -42,16 +42,15 @@ public enum RoleDeleteOutcome
 public interface IRoleAdministrationStore
 {
     Task<ListResult<RoleListItem>> GetRolesAsync(
-        string? filter,
-        Pagination pagination = default,
+        ListQuery query,
         CancellationToken cancellationToken = default);
 
     Task<RoleDetailsModel?> FindRoleAsync(
-        string roleId, CancellationToken cancellationToken = default);
+        RoleId roleId, CancellationToken cancellationToken = default);
 
-    Task<(RoleCreateOutcome Status, string? RoleId, string? ErrorMessage)> CreateRoleAsync(
+    Task<(RoleCreateOutcome Status, RoleId? RoleId, string? ErrorMessage)> CreateRoleAsync(
         RoleCreateInputModel input, CancellationToken cancellationToken = default);
 
     Task<(RoleDeleteOutcome Status, string TargetName)> DeleteRoleAsync(
-        string roleId, string protectedRoleName, CancellationToken cancellationToken = default);
+        RoleId roleId, string protectedRoleName, CancellationToken cancellationToken = default);
 }

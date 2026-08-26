@@ -5,6 +5,7 @@ using IdentityServerProject.Configuration;
 using IdentityServerProject.Pages.Admin.Roles;
 using IdentityServerProject.Services;
 using IdentityServerProject.Services.Roles;
+using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -44,13 +45,13 @@ public class RolesPageModelTests
     {
         var expected = new ListResult<RoleListItem>
         {
-            Items = new List<RoleListItem> { new() { Id = "1", Name = "Admin", IsProtected = true } },
+            Items = new List<RoleListItem> { new() { Id = RoleId.Create("1"), Name = "Admin", IsProtected = true } },
             TotalCount = 1,
             PageNumber = 1,
             PageSize = 10
         };
 
-        _roleServiceMock.Setup(s => s.GetRolesAsync("test", Pagination.From(2, 10), It.IsAny<CancellationToken>()))
+        _roleServiceMock.Setup(s => s.GetRolesAsync(new ListQuery("test", Pagination.From(2, 10)), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var (pageContext, tempData) = CreatePageContext();
@@ -70,8 +71,8 @@ public class RolesPageModelTests
     [Fact]
     public async Task IndexModel_OnPostDeleteAsync_Success_SetsStatusMessageAndRedirects()
     {
-        _roleServiceMock.Setup(s => s.DeleteRoleAsync("role-1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(RoleDeleteResult.Succeeded());
+        _roleServiceMock.Setup(s => s.DeleteRoleAsync(RoleId.Create("role-1"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(AdminMutationResult.Success());
 
         var (pageContext, tempData) = CreatePageContext();
         var model = new IndexModel(_roleServiceMock.Object, _options)
@@ -92,8 +93,8 @@ public class RolesPageModelTests
     [Fact]
     public async Task IndexModel_OnPostDeleteAsync_Failure_SetsErrorMessageAndRedirects()
     {
-        _roleServiceMock.Setup(s => s.DeleteRoleAsync("sysadmin", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(RoleDeleteResult.Failed("Cannot delete protected role."));
+        _roleServiceMock.Setup(s => s.DeleteRoleAsync(RoleId.Create("sysadmin"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(AdminMutationResult.DeniedResult(string.Empty, "Cannot delete protected role."));
 
         var (pageContext, tempData) = CreatePageContext();
         var model = new IndexModel(_roleServiceMock.Object, _options)
@@ -150,7 +151,7 @@ public class RolesPageModelTests
     public async Task CreateModel_OnPostAsync_Success_SetsTempDataAndRedirectsToIndex()
     {
         _roleServiceMock.Setup(s => s.CreateRoleAsync(It.IsAny<RoleCreateInputModel>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(RoleCreateResult.Succeeded("new-role-id"));
+            .ReturnsAsync(RoleCreateResult.Succeeded(RoleId.Create("new-role-id")));
 
         var (pageContext, tempData) = CreatePageContext();
         var model = new CreateModel(_roleServiceMock.Object)

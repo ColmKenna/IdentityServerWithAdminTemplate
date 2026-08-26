@@ -25,27 +25,28 @@ public sealed class EfRoleAdministrationStore : IRoleAdministrationStore
     }
 
     public async Task<ListResult<RoleListItem>> GetRolesAsync(
-        string? filter,
-        Pagination pagination = default,
+        ListQuery query,
         CancellationToken cancellationToken = default)
     {
-        pagination = pagination.Normalize();
+        var pagination = query.Pagination.Normalize();
 
-        var query = ApplyFilter(_dbContext.Roles.AsNoTracking(), filter);
+        var dbQuery = ApplyFilter(_dbContext.Roles.AsNoTracking(), query.Filter);
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        var totalCount = await dbQuery.CountAsync(cancellationToken);
 
-        var items = await query
+        var rows = await dbQuery
             .OrderBy(r => r.Name)
             .Skip(pagination.Skip)
             .Take(pagination.PageSize)
-            .Select(r => new RoleListItem
-            {
-                Id = r.Id,
-                Name = r.Name ?? string.Empty,
-                IsProtected = r.Name == "SysAdmin"
-            })
+            .Select(r => new { r.Id, r.Name })
             .ToListAsync(cancellationToken);
+
+        var items = rows.Select(r => new RoleListItem
+        {
+            Id = RoleId.Create(r.Id),
+            Name = r.Name ?? string.Empty,
+            IsProtected = r.Name == "SysAdmin"
+        }).ToList();
 
         return new ListResult<RoleListItem>
         {
@@ -56,24 +57,25 @@ public sealed class EfRoleAdministrationStore : IRoleAdministrationStore
         };
     }
 
-    public async Task<RoleDetailsModel?> FindRoleAsync(string roleId, CancellationToken cancellationToken = default)
+    public async Task<RoleDetailsModel?> FindRoleAsync(RoleId roleId, CancellationToken cancellationToken = default)
     {
+        var roleIdStr = roleId.Value ?? string.Empty;
         var role = await _dbContext.Roles.AsNoTracking()
-            .FirstOrDefaultAsync(r => r.Id == roleId, cancellationToken);
+            .FirstOrDefaultAsync(r => r.Id == roleIdStr, cancellationToken);
 
         if (role == null) return null;
 
         return new RoleDetailsModel
         {
-            Id = role.Id,
+            Id = RoleId.Create(role.Id),
             Name = role.Name ?? string.Empty,
             IsProtected = role.Name == "SysAdmin"
         };
     }
 
-    public async Task<(RoleCreateOutcome Status, string? RoleId, string? ErrorMessage)> CreateRoleAsync(RoleCreateInputModel input, CancellationToken cancellationToken = default)
+    public async Task<(RoleCreateOutcome Status, RoleId? RoleId, string? ErrorMessage)> CreateRoleAsync(RoleCreateInputModel input, CancellationToken cancellationToken = default)
     {
-        var outcome = (Status: RoleCreateOutcome.NameCollision, RoleId: (string?)null, ErrorMessage: (string?)null);
+        var outcome = (Status: RoleCreateOutcome.NameCollision, RoleId: (RoleId?)null, ErrorMessage: (string?)null);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
@@ -103,23 +105,24 @@ public sealed class EfRoleAdministrationStore : IRoleAdministrationStore
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
-            outcome = (RoleCreateOutcome.Succeeded, newRole.Id, null);
+            outcome = (RoleCreateOutcome.Succeeded, RoleId.Create(newRole.Id), null);
         });
 
         return outcome;
     }
 
-    public async Task<(RoleDeleteOutcome Status, string TargetName)> DeleteRoleAsync(string roleId, string protectedRoleName, CancellationToken cancellationToken = default)
+    public async Task<(RoleDeleteOutcome Status, string TargetName)> DeleteRoleAsync(RoleId roleId, string protectedRoleName, CancellationToken cancellationToken = default)
     {
-        var outcome = (Status: RoleDeleteOutcome.RoleNotFound, TargetName: roleId);
+        var roleIdStr = roleId.Value ?? string.Empty;
+        var outcome = (Status: RoleDeleteOutcome.RoleNotFound, TargetName: roleIdStr);
 
         var strategy = _dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             _dbContext.ChangeTracker.Clear();
-            outcome = (RoleDeleteOutcome.RoleNotFound, roleId);
+            outcome = (RoleDeleteOutcome.RoleNotFound, roleIdStr);
 
-            var role = await _roleManager.FindByIdAsync(roleId);
+            var role = await _roleManager.FindByIdAsync(roleIdStr);
             if (role == null)
             {
                 return;

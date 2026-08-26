@@ -10,6 +10,7 @@ using AngleSharp.Dom;
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Services;
 using IdentityServerProject.Services.Roles;
+using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -69,13 +70,13 @@ public class RolesIndexIntegrationTests : IDisposable
     public async Task Get_RolesIndex_RendersRolesTable()
     {
         var mock = new Mock<IRoleService>();
-        mock.Setup(s => s.GetRolesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetRolesAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ListResult<RoleListItem>
             {
                 Items = new List<RoleListItem>
                 {
-                    new() { Id = "role-1", Name = "SysAdmin", IsProtected = true },
-                    new() { Id = "role-2", Name = "Operator", IsProtected = false }
+                    new() { Id = RoleId.Create("role-1"), Name = "SysAdmin", IsProtected = true },
+                    new() { Id = RoleId.Create("role-2"), Name = "Operator", IsProtected = false }
                 },
                 TotalCount = 2,
                 PageNumber = 1,
@@ -111,7 +112,7 @@ public class RolesIndexIntegrationTests : IDisposable
     {
         var mock = new Mock<IRoleService>();
         mock.Setup(s => s.CreateRoleAsync(It.IsAny<RoleCreateInputModel>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(RoleCreateResult.Succeeded("role-new"));
+            .ReturnsAsync(RoleCreateResult.Succeeded(RoleId.Create("role-new")));
 
         var client = CreateClient(mock.Object, allowAutoRedirect: false);
         var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/Roles/Create");
@@ -134,19 +135,19 @@ public class RolesIndexIntegrationTests : IDisposable
     public async Task Post_RolesDelete_ValidRole_RedirectsWithStatus()
     {
         var mock = new Mock<IRoleService>();
-        mock.Setup(s => s.GetRolesAsync(It.IsAny<string?>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetRolesAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ListResult<RoleListItem>
             {
                 Items = new List<RoleListItem>
                 {
-                    new() { Id = "role-custom", Name = "CustomRole", IsProtected = false }
+                    new() { Id = RoleId.Create("role-custom"), Name = "CustomRole", IsProtected = false }
                 },
                 TotalCount = 1,
                 PageNumber = 1,
                 PageSize = 10
             });
-        mock.Setup(s => s.DeleteRoleAsync("role-custom", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(RoleDeleteResult.Succeeded());
+        mock.Setup(s => s.DeleteRoleAsync(RoleId.Create("role-custom"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(AdminMutationResult.Success());
 
         var client = CreateClient(mock.Object, allowAutoRedirect: false);
         var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/Roles");

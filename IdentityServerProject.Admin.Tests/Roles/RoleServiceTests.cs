@@ -28,34 +28,34 @@ public class RoleServiceTests
         {
             Items = new List<RoleListItem>
             {
-                new() { Id = "1", Name = "SysAdmin", IsProtected = true },
-                new() { Id = "2", Name = "Editor", IsProtected = false }
+                new() { Id = RoleId.Create("1"), Name = "SysAdmin", IsProtected = true },
+                new() { Id = RoleId.Create("2"), Name = "Editor", IsProtected = false }
             },
             TotalCount = 2,
             PageNumber = 1,
             PageSize = 10
         };
 
-        _storeMock.Setup(s => s.GetRolesAsync("edit", Pagination.From(1, 10), It.IsAny<CancellationToken>()))
+        _storeMock.Setup(s => s.GetRolesAsync(new ListQuery("edit", Pagination.From(1, 10)), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
-        var result = await _sut.GetRolesAsync("edit", Pagination.From(1, 10));
+        var result = await _sut.GetRolesAsync(new ListQuery("edit", Pagination.From(1, 10)));
 
         Assert.Same(expected, result);
-        _storeMock.Verify(s => s.GetRolesAsync("edit", Pagination.From(1, 10), It.IsAny<CancellationToken>()), Times.Once);
+        _storeMock.Verify(s => s.GetRolesAsync(new ListQuery("edit", Pagination.From(1, 10)), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetRoleAsync_DelegatesToStore()
     {
-        var expected = new RoleDetailsModel { Id = "1", Name = "SysAdmin", IsProtected = true };
-        _storeMock.Setup(s => s.FindRoleAsync("1", It.IsAny<CancellationToken>()))
+        var expected = new RoleDetailsModel { Id = RoleId.Create("1"), Name = "SysAdmin", IsProtected = true };
+        _storeMock.Setup(s => s.FindRoleAsync(RoleId.Create("1"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
-        var result = await _sut.GetRoleAsync("1");
+        var result = await _sut.GetRoleAsync(RoleId.Create("1"));
 
         Assert.Same(expected, result);
-        _storeMock.Verify(s => s.FindRoleAsync("1", It.IsAny<CancellationToken>()), Times.Once);
+        _storeMock.Verify(s => s.FindRoleAsync(RoleId.Create("1"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -63,12 +63,12 @@ public class RoleServiceTests
     {
         var input = new RoleCreateInputModel { Name = "Manager" };
         _storeMock.Setup(s => s.CreateRoleAsync(input, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((RoleCreateOutcome.Succeeded, "role-123", null));
+            .ReturnsAsync((RoleCreateOutcome.Succeeded, RoleId.Create("role-123"), null));
 
         var result = await _sut.CreateRoleAsync(input);
 
         Assert.True(result.Success);
-        Assert.Equal("role-123", result.RoleId);
+        Assert.Equal(RoleId.Create("role-123"), result.RoleId);
 
         _auditWriterMock.Verify(a => a.WriteAsync(
             It.Is<AdminAuditEvent>(e =>
@@ -147,12 +147,12 @@ public class RoleServiceTests
     [Fact]
     public async Task DeleteRoleAsync_SuccessfulDeletion_WritesSucceededAudit()
     {
-        _storeMock.Setup(s => s.DeleteRoleAsync("role-1", "SysAdmin", It.IsAny<CancellationToken>()))
+        _storeMock.Setup(s => s.DeleteRoleAsync(RoleId.Create("role-1"), "SysAdmin", It.IsAny<CancellationToken>()))
             .ReturnsAsync((RoleDeleteOutcome.Succeeded, "Auditor"));
 
-        var result = await _sut.DeleteRoleAsync("role-1");
+        var result = await _sut.DeleteRoleAsync(RoleId.Create("role-1"));
 
-        Assert.True(result.Success);
+        Assert.True(result.Succeeded);
 
         _auditWriterMock.Verify(a => a.WriteAsync(
             It.Is<AdminAuditEvent>(e =>
@@ -168,12 +168,12 @@ public class RoleServiceTests
     [Fact]
     public async Task DeleteRoleAsync_ProtectedRole_WritesDeniedAudit()
     {
-        _storeMock.Setup(s => s.DeleteRoleAsync("sysadmin-id", "SysAdmin", It.IsAny<CancellationToken>()))
+        _storeMock.Setup(s => s.DeleteRoleAsync(RoleId.Create("sysadmin-id"), "SysAdmin", It.IsAny<CancellationToken>()))
             .ReturnsAsync((RoleDeleteOutcome.ProtectedRoleBlocked, "SysAdmin"));
 
-        var result = await _sut.DeleteRoleAsync("sysadmin-id");
+        var result = await _sut.DeleteRoleAsync(RoleId.Create("sysadmin-id"));
 
-        Assert.False(result.Success);
+        Assert.False(result.Succeeded);
         Assert.Contains("protected role", result.ErrorMessage);
 
         _auditWriterMock.Verify(a => a.WriteAsync(
@@ -190,12 +190,12 @@ public class RoleServiceTests
     [Fact]
     public async Task DeleteRoleAsync_NotFound_WritesDeniedAudit()
     {
-        _storeMock.Setup(s => s.DeleteRoleAsync("missing-id", "SysAdmin", It.IsAny<CancellationToken>()))
+        _storeMock.Setup(s => s.DeleteRoleAsync(RoleId.Create("missing-id"), "SysAdmin", It.IsAny<CancellationToken>()))
             .ReturnsAsync((RoleDeleteOutcome.RoleNotFound, "missing-id"));
 
-        var result = await _sut.DeleteRoleAsync("missing-id");
+        var result = await _sut.DeleteRoleAsync(RoleId.Create("missing-id"));
 
-        Assert.False(result.Success);
+        Assert.False(result.Succeeded);
         Assert.Equal("Role not found.", result.ErrorMessage);
 
         _auditWriterMock.Verify(a => a.WriteAsync(
@@ -211,12 +211,12 @@ public class RoleServiceTests
     [Fact]
     public async Task DeleteRoleAsync_ValidationFailed_WritesDeniedAudit()
     {
-        _storeMock.Setup(s => s.DeleteRoleAsync("bad-id", "SysAdmin", It.IsAny<CancellationToken>()))
+        _storeMock.Setup(s => s.DeleteRoleAsync(RoleId.Create("bad-id"), "SysAdmin", It.IsAny<CancellationToken>()))
             .ReturnsAsync((RoleDeleteOutcome.ValidationFailed, "bad-role"));
 
-        var result = await _sut.DeleteRoleAsync("bad-id");
+        var result = await _sut.DeleteRoleAsync(RoleId.Create("bad-id"));
 
-        Assert.False(result.Success);
+        Assert.False(result.Succeeded);
         Assert.Equal("Failed to delete role.", result.ErrorMessage);
 
         _auditWriterMock.Verify(a => a.WriteAsync(
@@ -233,10 +233,10 @@ public class RoleServiceTests
     [Fact]
     public async Task DeleteRoleAsync_Exception_WritesFailedAuditAndRethrows()
     {
-        _storeMock.Setup(s => s.DeleteRoleAsync("ex-id", "SysAdmin", It.IsAny<CancellationToken>()))
+        _storeMock.Setup(s => s.DeleteRoleAsync(RoleId.Create("ex-id"), "SysAdmin", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("DB error"));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.DeleteRoleAsync("ex-id"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.DeleteRoleAsync(RoleId.Create("ex-id")));
 
         _auditWriterMock.Verify(a => a.WriteAsync(
             It.Is<AdminAuditEvent>(e =>
