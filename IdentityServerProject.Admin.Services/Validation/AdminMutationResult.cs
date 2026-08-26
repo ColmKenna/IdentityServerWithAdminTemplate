@@ -28,6 +28,9 @@ public sealed record AdminMutationResult(
     public static AdminMutationResult ConflictResult(string field, string message) =>
         new(AdminMutationStatus.Conflict, new ValidationErrorDictionary().AddError(field, message));
 
+    public static AdminMutationResult DeniedResult(string field, string message) =>
+        new(AdminMutationStatus.Denied, new ValidationErrorDictionary().AddError(field, message));
+
     public static AdminMutationResult ValidationFailure(IReadOnlyDictionary<string, string[]> errors) =>
         new(AdminMutationStatus.ValidationFailed, errors);
 
