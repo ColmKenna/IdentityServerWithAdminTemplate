@@ -1,8 +1,11 @@
 using IdentityServerProject.Admin.Tests.Infrastructure;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
+using IdentityServerProject;
 using IdentityServerProject.Data;
+using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,16 +27,19 @@ public class SeededIdentityResourceProtectionTests
     {
         await factory.RunInScopeAsync(async sp =>
         {
+            var clients = new List<SeedClientSpec>
+            {
+                new("razorclient", "Sales Razor Client", AbsoluteHttpUri.Create("https://localhost:5001"), "secret"),
+                new("blazorclient", "Sales Blazor Client", AbsoluteHttpUri.Create("https://localhost:5002"), "secret"),
+            };
+
             await SeedData.SeedAsync(
                 sp.GetRequiredService<ApplicationDbContext>(),
                 sp.GetRequiredService<ConfigurationDbContext>(),
                 sp.GetRequiredService<PersistedGrantDbContext>(),
                 sp.GetRequiredService<UserManager<ApplicationUser>>(),
                 sp.GetRequiredService<RoleManager<IdentityRole>>(),
-                razorClientUri: "https://localhost:5001",
-                razorClientSecret: "secret",
-                blazorClientUri: "https://localhost:5002",
-                blazorClientSecret: "secret",
+                clients,
                 sysAdminEmail: "admin@sales.local",
                 sysAdminPassword: "Password123!",
                 testUserPassword: "Password123!");

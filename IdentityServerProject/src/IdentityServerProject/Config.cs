@@ -1,7 +1,15 @@
 using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
+using IdentityServerProject.Services.Validation;
 
 namespace IdentityServerProject;
+
+/// <summary>
+/// A seeded client's identity, display name, redirect origin, and shared secret, kept together
+/// instead of traveling as four separate parameters from <c>Program.cs</c> through
+/// <see cref="Data.SeedData"/> to <see cref="Config.Clients"/>.
+/// </summary>
+public sealed record SeedClientSpec(string ClientId, string ClientName, AbsoluteHttpUri Uri, string Secret);
 
 public static class Config
 {
@@ -39,50 +47,26 @@ public static class Config
             },
         };
 
-    public static IEnumerable<Client> Clients(string razorClientUri, string razorClientSecret, string blazorClientUri, string blazorClientSecret) =>
-        new[]
+    public static IEnumerable<Client> Clients(IReadOnlyList<SeedClientSpec> clients) =>
+        clients.Select(spec => new Client
         {
-            new Client
+            ClientId = spec.ClientId,
+            ClientName = spec.ClientName,
+            AllowedGrantTypes = GrantTypes.Code,
+            RequirePkce = true,
+            ClientSecrets = { new Secret(spec.Secret.Sha256()) },
+            RedirectUris = { $"{spec.Uri}/signin-oidc" },
+            PostLogoutRedirectUris = { $"{spec.Uri}/signout-callback-oidc" },
+            FrontChannelLogoutUri = $"{spec.Uri}/signout-oidc",
+            AllowedScopes =
             {
-                ClientId = "razorclient",
-                ClientName = "Sales Razor Client",
-                AllowedGrantTypes = GrantTypes.Code,
-                RequirePkce = true,
-                ClientSecrets = { new Secret(razorClientSecret.Sha256()) },
-                RedirectUris = { $"{razorClientUri}/signin-oidc" },
-                PostLogoutRedirectUris = { $"{razorClientUri}/signout-callback-oidc" },
-                FrontChannelLogoutUri = $"{razorClientUri}/signout-oidc",
-                AllowedScopes =
-                {
-                    IdentityServerConstants.StandardScopes.OpenId,
-                    IdentityServerConstants.StandardScopes.Profile,
-                    "email",
-                    "roles",
-                    ApiScopeName,
-                },
-                AllowOfflineAccess = true,
-                RequireConsent = false,
+                IdentityServerConstants.StandardScopes.OpenId,
+                IdentityServerConstants.StandardScopes.Profile,
+                "email",
+                "roles",
+                ApiScopeName,
             },
-            new Client
-            {
-                ClientId = "blazorclient",
-                ClientName = "Sales Blazor Client",
-                AllowedGrantTypes = GrantTypes.Code,
-                RequirePkce = true,
-                ClientSecrets = { new Secret(blazorClientSecret.Sha256()) },
-                RedirectUris = { $"{blazorClientUri}/signin-oidc" },
-                PostLogoutRedirectUris = { $"{blazorClientUri}/signout-callback-oidc" },
-                FrontChannelLogoutUri = $"{blazorClientUri}/signout-oidc",
-                AllowedScopes =
-                {
-                    IdentityServerConstants.StandardScopes.OpenId,
-                    IdentityServerConstants.StandardScopes.Profile,
-                    "email",
-                    "roles",
-                    ApiScopeName,
-                },
-                AllowOfflineAccess = true,
-                RequireConsent = false,
-            },
-        };
+            AllowOfflineAccess = true,
+            RequireConsent = false,
+        });
 }

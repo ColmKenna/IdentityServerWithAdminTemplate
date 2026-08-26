@@ -19,17 +19,14 @@ public static class SeedData
         PersistedGrantDbContext operationalDb,
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
-        string razorClientUri,
-        string razorClientSecret,
-        string blazorClientUri,
-        string blazorClientSecret,
+        IReadOnlyList<SeedClientSpec> clients,
         string sysAdminEmail,
         string sysAdminPassword,
         string testUserPassword)
     {
 
         await SeedRolesAndUsersAsync(identityDb, userManager, roleManager, sysAdminEmail, sysAdminPassword, testUserPassword);
-        await SeedClientsAsync(configDb, razorClientUri, razorClientSecret, blazorClientUri, blazorClientSecret);
+        await SeedClientsAsync(configDb, clients);
         await SeedResourcesAsync(configDb);
     }
 
@@ -110,14 +107,11 @@ public static class SeedData
 
     private static async Task SeedClientsAsync(
         ConfigurationDbContext configDb,
-        string razorClientUri,
-        string razorClientSecret,
-        string blazorClientUri,
-        string blazorClientSecret)
+        IReadOnlyList<SeedClientSpec> clients)
     {
         var existingClientIds = await configDb.Clients.Select(c => c.ClientId).ToListAsync();
 
-        foreach (var client in Config.Clients(razorClientUri, razorClientSecret, blazorClientUri, blazorClientSecret))
+        foreach (var client in Config.Clients(clients))
         {
             if (!existingClientIds.Contains(client.ClientId))
             {

@@ -5,6 +5,7 @@ using IdentityServerProject.Services.AuditLogs;
 using IdentityServerProject.Services.Diagnostics;
 using IdentityServerProject.Services.SecretReveals;
 using IdentityServerProject.Services.Users;
+using IdentityServerProject.Services.Validation;
 using IdentityServerProject.Configuration;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
@@ -84,10 +85,10 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Account/AccessDenied";
 });
 
-var razorClientUri = builder.Configuration["Clients:RazorClientUri"]
-    ?? "https://localhost"; // Fallback for design-time tools
-var blazorClientUri = builder.Configuration["Clients:BlazorClientUri"]
-    ?? "https://localhost"; // Fallback for design-time tools
+var razorClientUri = AbsoluteHttpUri.Create(builder.Configuration["Clients:RazorClientUri"]
+    ?? "https://localhost"); // Fallback for design-time tools
+var blazorClientUri = AbsoluteHttpUri.Create(builder.Configuration["Clients:BlazorClientUri"]
+    ?? "https://localhost"); // Fallback for design-time tools
 
 var isBuilder = builder.Services
     .AddIdentityServer(options =>
@@ -212,16 +213,19 @@ await DevelopmentSeeder.SeedIfDevelopmentAsync(app.Environment, async () =>
     var testUserPassword = app.Configuration["Seed:TestUserPassword"]
         ?? "Password123!";
 
+    var seedClients = new List<SeedClientSpec>
+    {
+        new("razorclient", "Sales Razor Client", razorClientUri, razorClientSecret),
+        new("blazorclient", "Sales Blazor Client", blazorClientUri, blazorClientSecret),
+    };
+
     await SeedData.SeedAsync(
         identityDb,
         configDb,
         operationalDb,
         userManager,
         roleManager,
-        razorClientUri,
-        razorClientSecret,
-        blazorClientUri,
-        blazorClientSecret,
+        seedClients,
         sysAdminEmail,
         sysAdminPassword,
         testUserPassword);

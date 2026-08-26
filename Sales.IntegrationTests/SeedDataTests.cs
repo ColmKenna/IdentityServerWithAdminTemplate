@@ -1,5 +1,7 @@
 using Duende.IdentityServer.EntityFramework.DbContexts;
+using IdentityServerProject;
 using IdentityServerProject.Data;
+using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,13 +46,19 @@ public class SeedDataTests
         using var scope = provider.CreateScope();
         var services = scope.ServiceProvider;
 
+        var clients = new List<SeedClientSpec>
+        {
+            new("razorclient", "Sales Razor Client", AbsoluteHttpUri.Create(RazorUri), RazorSecret),
+            new("blazorclient", "Sales Blazor Client", AbsoluteHttpUri.Create(BlazorUri), BlazorSecret),
+        };
+
         await SeedData.SeedAsync(
             services.GetRequiredService<ApplicationDbContext>(),
             services.GetRequiredService<ConfigurationDbContext>(),
             services.GetRequiredService<PersistedGrantDbContext>(),
             services.GetRequiredService<UserManager<ApplicationUser>>(),
             services.GetRequiredService<RoleManager<IdentityRole>>(),
-            RazorUri, RazorSecret, BlazorUri, BlazorSecret,
+            clients,
             SysAdminEmail, SysAdminPassword, TestUserPassword);
     }
 
