@@ -1,5 +1,6 @@
 using IdentityServerProject.Services.Apis;
 using IdentityServerProject.Services.Clients;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
@@ -31,7 +32,7 @@ public sealed class ConfigurationConcurrencyTests
             start.SignalAndWait();
             return await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(
                 null,
-                name,
+                ScopeName.Create(name),
                 $"Concurrent API {index}",
                 null));
         })).ToArray();

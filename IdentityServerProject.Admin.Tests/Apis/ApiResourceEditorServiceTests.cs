@@ -54,7 +54,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var editor = await service.GetForEditAsync(name);
+            var editor = await service.GetForEditAsync(ScopeName.Create(name));
 
             Assert.NotNull(editor);
             Assert.False(editor!.IsNew);
@@ -71,7 +71,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var editor = await service.GetForEditAsync(Guid.NewGuid().ToString("N"));
+            var editor = await service.GetForEditAsync(ScopeName.Create(Guid.NewGuid().ToString("N")));
 
             Assert.Null(editor);
         });
@@ -89,10 +89,10 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, name, "Display", "Desc"));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, ScopeName.Create(name), "Display", "Desc"));
 
             Assert.True(result.Succeeded);
-            var editor = await service.GetForEditAsync(name);
+            var editor = await service.GetForEditAsync(ScopeName.Create(name));
             Assert.NotNull(editor);
             Assert.True(editor!.Enabled);
         });
@@ -110,11 +110,11 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(originalName, newName, "New Display", "New Desc"));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(ScopeName.Create(originalName), ScopeName.Create(newName), "New Display", "New Desc"));
 
             Assert.True(result.Succeeded);
-            Assert.Null(await service.GetForEditAsync(originalName));
-            var renamed = await service.GetForEditAsync(newName);
+            Assert.Null(await service.GetForEditAsync(ScopeName.Create(originalName)));
+            var renamed = await service.GetForEditAsync(ScopeName.Create(newName));
             Assert.NotNull(renamed);
             Assert.Equal("New Display", renamed!.DisplayName);
         });
@@ -137,10 +137,10 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(name, name, "Updated Display", "Updated Desc"));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(ScopeName.Create(name), ScopeName.Create(name), "Updated Display", "Updated Desc"));
 
             Assert.True(result.Succeeded);
-            var updated = await service.GetForEditAsync(name);
+            var updated = await service.GetForEditAsync(ScopeName.Create(name));
             Assert.NotNull(updated);
             Assert.Equal("Updated Display", updated!.DisplayName);
             Assert.Equal("Updated Desc", updated.Description);
@@ -158,13 +158,13 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, existingName, "Duplicate", "Desc"));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, ScopeName.Create(existingName), "Duplicate", "Desc"));
 
             Assert.Equal(AdminMutationStatus.Conflict, result.Status);
             Assert.True(result.Errors.ContainsKey("Basics.Name"));
             Assert.Contains(result.Errors["Basics.Name"], msg => msg.Contains($"An API resource named '{existingName}' already exists."));
 
-            var editor = await service.GetForEditAsync(existingName);
+            var editor = await service.GetForEditAsync(ScopeName.Create(existingName));
             Assert.NotNull(editor);
             Assert.Equal("Original", editor!.DisplayName);
         });
@@ -183,7 +183,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(otherName, existingName, null, null));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(ScopeName.Create(otherName), ScopeName.Create(existingName), null, null));
 
             Assert.Equal(AdminMutationStatus.Conflict, result.Status);
             Assert.True(result.Errors.ContainsKey("Basics.Name"));
@@ -198,7 +198,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(Guid.NewGuid().ToString("N"), "irrelevant", null, null));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(ScopeName.Create(Guid.NewGuid().ToString("N")), ScopeName.Create("irrelevant"), null, null));
 
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
@@ -222,7 +222,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.AttachScopeAsync($"{tag}-missing-api", ScopeName.Create(scopeName));
+            var result = await service.AttachScopeAsync(ScopeName.Create($"{tag}-missing-api"), ScopeName.Create(scopeName));
 
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
@@ -245,7 +245,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
-            var firstResult = await service.AttachScopeAsync(name, ScopeName.Create(scopeName));
+            var firstResult = await service.AttachScopeAsync(ScopeName.Create(name), ScopeName.Create(scopeName));
             Assert.True(firstResult.Succeeded);
         });
 
@@ -253,10 +253,10 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.AttachScopeAsync(name, ScopeName.Create(scopeName));
+            var result = await service.AttachScopeAsync(ScopeName.Create(name), ScopeName.Create(scopeName));
 
             Assert.True(result.Succeeded);
-            var editor = await service.GetForEditAsync(name);
+            var editor = await service.GetForEditAsync(ScopeName.Create(name));
             Assert.Single(editor!.Scopes);
         });
     }
@@ -270,7 +270,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.CreateScopeAsync(new CreateApiResourceScopeCommand($"{tag}-missing-api", $"{tag}-scope", null));
+            var result = await service.CreateScopeAsync(new CreateApiResourceScopeCommand(ScopeName.Create($"{tag}-missing-api"), $"{tag}-scope", null));
 
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
@@ -287,7 +287,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.DetachScopeAsync(name, ScopeName.Create($"{tag}-never-attached"));
+            var result = await service.DetachScopeAsync(ScopeName.Create(name), ScopeName.Create($"{tag}-never-attached"));
 
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
@@ -302,7 +302,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.AddClaimAsync(new AddApiResourceClaimCommand($"{tag}-missing-api", "department"));
+            var result = await service.AddClaimAsync(new AddApiResourceClaimCommand(ScopeName.Create($"{tag}-missing-api"), ClaimType.Create("department")));
 
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
@@ -319,12 +319,12 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var res1 = await service.AddClaimAsync(new AddApiResourceClaimCommand(name, "department"));
-            var res2 = await service.AddClaimAsync(new AddApiResourceClaimCommand(name, "department"));
+            var res1 = await service.AddClaimAsync(new AddApiResourceClaimCommand(ScopeName.Create(name), ClaimType.Create("department")));
+            var res2 = await service.AddClaimAsync(new AddApiResourceClaimCommand(ScopeName.Create(name), ClaimType.Create("department")));
             Assert.True(res1.Succeeded);
             Assert.True(res2.Succeeded);
 
-            var editor = await service.GetForEditAsync(name);
+            var editor = await service.GetForEditAsync(ScopeName.Create(name));
             Assert.Single(editor!.Claims);
         });
     }
@@ -340,7 +340,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.RemoveClaimAsync(name, "never-added");
+            var result = await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("never-added"));
 
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
@@ -355,7 +355,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.SetEnabledAsync($"{tag}-missing-api", enabled: false);
+            var result = await service.SetEnabledAsync(ScopeName.Create($"{tag}-missing-api"), enabled: false);
 
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
@@ -370,7 +370,7 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.RevokeSecretAsync($"{tag}-missing-api", secretId: 1);
+            var result = await service.RevokeSecretAsync(ScopeName.Create($"{tag}-missing-api"), secretId: 1);
 
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
@@ -388,10 +388,10 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.AddSecretAsync(new AddApiResourceSecretCommand(name, "desc", expiration));
+            var result = await service.AddSecretAsync(new AddApiResourceSecretCommand(ScopeName.Create(name), "desc", expiration));
             Assert.True(result.Success);
 
-            var editor = await service.GetForEditAsync(name);
+            var editor = await service.GetForEditAsync(ScopeName.Create(name));
             var secret = Assert.Single(editor!.Secrets);
             Assert.NotNull(secret.Expiration);
         });
@@ -408,16 +408,16 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
-            var created = await service.CreateScopeAsync(new CreateApiResourceScopeCommand(resourceName, scopeName, "Scope display"));
+            var created = await service.CreateScopeAsync(new CreateApiResourceScopeCommand(ScopeName.Create(resourceName), scopeName, "Scope display"));
 
             Assert.True(created.Succeeded);
-            Assert.Contains(scopeName, (await service.GetForEditAsync(resourceName))!.Scopes);
+            Assert.Contains(scopeName, (await service.GetForEditAsync(ScopeName.Create(resourceName)))!.Scopes);
             Assert.Contains(scopeName, await service.GetAllApiScopeNamesAsync());
 
-            var detached = await service.DetachScopeAsync(resourceName, ScopeName.Create(scopeName));
+            var detached = await service.DetachScopeAsync(ScopeName.Create(resourceName), ScopeName.Create(scopeName));
 
             Assert.True(detached.Succeeded);
-            Assert.DoesNotContain(scopeName, (await service.GetForEditAsync(resourceName))!.Scopes);
+            Assert.DoesNotContain(scopeName, (await service.GetForEditAsync(ScopeName.Create(resourceName)))!.Scopes);
             Assert.Contains(scopeName, await service.GetAllApiScopeNamesAsync());
         });
     }
@@ -432,11 +432,11 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            Assert.True((await service.SetEnabledAsync(name, enabled: false)).Succeeded);
-            Assert.False((await service.GetForEditAsync(name))!.Enabled);
+            Assert.True((await service.SetEnabledAsync(ScopeName.Create(name), enabled: false)).Succeeded);
+            Assert.False((await service.GetForEditAsync(ScopeName.Create(name)))!.Enabled);
 
-            Assert.True((await service.DeleteAsync(name)).Succeeded);
-            Assert.Null(await service.GetForEditAsync(name));
+            Assert.True((await service.DeleteAsync(ScopeName.Create(name))).Succeeded);
+            Assert.Null(await service.GetForEditAsync(ScopeName.Create(name)));
         });
     }
 
@@ -449,13 +449,13 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
-            var added = await service.AddSecretAsync(new AddApiResourceSecretCommand(name, "temporary", null));
-            var secret = Assert.Single((await service.GetForEditAsync(name))!.Secrets);
+            var added = await service.AddSecretAsync(new AddApiResourceSecretCommand(ScopeName.Create(name), "temporary", null));
+            var secret = Assert.Single((await service.GetForEditAsync(ScopeName.Create(name)))!.Secrets);
 
             Assert.True(added.Success);
             Assert.False(string.IsNullOrWhiteSpace(added.PlaintextSecret));
-            Assert.True((await service.RevokeSecretAsync(name, secret.Id)).Succeeded);
-            Assert.Empty((await service.GetForEditAsync(name))!.Secrets);
+            Assert.True((await service.RevokeSecretAsync(ScopeName.Create(name), secret.Id)).Succeeded);
+            Assert.Empty((await service.GetForEditAsync(ScopeName.Create(name)))!.Secrets);
         });
     }
 }

@@ -45,7 +45,7 @@ public class ApiResourceEditorPageModelTests
         Assert.IsType<PageResult>(result);
         Assert.True(model.Editor.IsNew);
         Assert.Equal("basics", model.Tab);
-        mock.Verify(s => s.GetForEditAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mock.Verify(s => s.GetForEditAsync(It.IsAny<ScopeName>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public class ApiResourceEditorPageModelTests
     {
         var editor = MakeEditor();
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync("sales.api", It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
 
         var model = new EditorModel(mock.Object) { Name = "sales.api" };
 
@@ -68,7 +68,7 @@ public class ApiResourceEditorPageModelTests
     public async Task OnGetAsync_NameDoesNotResolve_ReturnsNotFound()
     {
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync("missing", It.IsAny<CancellationToken>())).ReturnsAsync(default(ApiResourceEditorModel));
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("missing"), It.IsAny<CancellationToken>())).ReturnsAsync(default(ApiResourceEditorModel));
 
         var model = new EditorModel(mock.Object) { Name = "missing" };
 
@@ -87,7 +87,7 @@ public class ApiResourceEditorPageModelTests
     {
         var editor = MakeEditor();
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync("sales.api", It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
         mock.Setup(s => s.GetAllApiScopeNamesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<string>());
 
         var model = new EditorModel(mock.Object) { Name = "sales.api", Tab = requestedTab! };
@@ -124,7 +124,7 @@ public class ApiResourceEditorPageModelTests
     {
         var editor = MakeEditor("original.api");
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync("original.api", It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("original.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
         mock.Setup(s => s.SaveBasicsAsync(It.IsAny<SaveApiResourceBasicsCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SaveApiResourceBasicsResult.ConflictResult("Basics.Name", "An API resource named 'taken.api' already exists."));
 
@@ -209,7 +209,7 @@ public class ApiResourceEditorPageModelTests
     public async Task OnPostDeleteAsync_Success_RedirectsToIndexPage()
     {
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.DeleteAsync("sales.api", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.DeleteAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
         var model = new EditorModel(mock.Object) { Name = "sales.api" };
@@ -224,7 +224,7 @@ public class ApiResourceEditorPageModelTests
     public async Task OnPostDeleteAsync_ResourceNotFound_ReturnsNotFound()
     {
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.DeleteAsync("missing", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.DeleteAsync(ScopeName.Create("missing"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.NotFoundResult());
 
         var model = new EditorModel(mock.Object) { Name = "missing" };
@@ -240,7 +240,7 @@ public class ApiResourceEditorPageModelTests
     public async Task OnPostDisableAsync_Success_RedirectsToBasicsTab()
     {
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.SetEnabledAsync("sales.api", false, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.SetEnabledAsync(ScopeName.Create("sales.api"), false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
         var model = new EditorModel(mock.Object) { Name = "sales.api" };
@@ -262,14 +262,14 @@ public class ApiResourceEditorPageModelTests
         var redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("sales.api", redirect.RouteValues!["name"]);
         Assert.Contains("Type DELETE", model.ErrorMessage);
-        mock.Verify(s => s.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mock.Verify(s => s.DeleteAsync(It.IsAny<ScopeName>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task OnPostEnableAsync_ResourceNotFound_ReturnsNotFound()
     {
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.SetEnabledAsync("missing", true, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.SetEnabledAsync(ScopeName.Create("missing"), true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.NotFoundResult());
 
         var model = new EditorModel(mock.Object) { Name = "missing" };
@@ -285,7 +285,7 @@ public class ApiResourceEditorPageModelTests
     public async Task OnPostAttachScopeAsync_Success_RedirectsToScopesTab()
     {
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.AttachScopeAsync("sales.api", ScopeName.Create("sales.read"), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.AttachScopeAsync(ScopeName.Create("sales.api"), ScopeName.Create("sales.read"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
         var model = new EditorModel(mock.Object)
@@ -304,7 +304,7 @@ public class ApiResourceEditorPageModelTests
     public async Task OnPostDetachScopeAsync_ScopeNotAttached_ReturnsNotFound()
     {
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.DetachScopeAsync("sales.api", ScopeName.Create("sales.read"), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.DetachScopeAsync(ScopeName.Create("sales.api"), ScopeName.Create("sales.read"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.NotFoundResult());
 
         var model = new EditorModel(mock.Object) { Name = "sales.api" };
@@ -338,9 +338,9 @@ public class ApiResourceEditorPageModelTests
     {
         var editor = MakeEditor("sales.api");
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.RemoveClaimAsync("sales.api", "sub", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.RemoveClaimAsync(ScopeName.Create("sales.api"), ClaimType.Create("sub"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.ValidationFailure("Claim.ClaimType", "The sub claim cannot be removed."));
-        mock.Setup(s => s.GetForEditAsync("sales.api", It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
         mock.Setup(s => s.GetAllApiScopeNamesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<string>());
 
         var model = new EditorModel(mock.Object) { Name = "sales.api", Tab = "basics" };
@@ -358,9 +358,9 @@ public class ApiResourceEditorPageModelTests
     {
         var editor = MakeEditor("sales.api");
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.RevokeSecretAsync("sales.api", 17, It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.RevokeSecretAsync(ScopeName.Create("sales.api"), 17, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.ValidationFailure(string.Empty, "The secret cannot be revoked."));
-        mock.Setup(s => s.GetForEditAsync("sales.api", It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
         mock.Setup(s => s.GetAllApiScopeNamesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<string>());
 
         var model = new EditorModel(mock.Object) { Name = "sales.api" };
@@ -380,7 +380,7 @@ public class ApiResourceEditorPageModelTests
     {
         var editor = MakeEditor("sales.api");
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync("sales.api", It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
         mock.Setup(s => s.SaveBasicsAsync(It.IsAny<SaveApiResourceBasicsCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SaveApiResourceBasicsResult.ValidationFailure("Basics.Name", "The Name field is required."));
 
@@ -408,7 +408,7 @@ public class ApiResourceEditorPageModelTests
         validationErrors.AddDescriptionError("Description is too long.");
 
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync("sales.api", It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
         mock.Setup(s => s.SaveBasicsAsync(It.IsAny<SaveApiResourceBasicsCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SaveApiResourceBasicsResult.ValidationFailure(validationErrors));
 
@@ -434,7 +434,7 @@ public class ApiResourceEditorPageModelTests
     {
         var editor = MakeEditor("sales.api");
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync("sales.api", It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
         mock.Setup(s => s.GetAllApiScopeNamesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<string>());
         mock.Setup(s => s.CreateScopeAsync(It.IsAny<CreateApiResourceScopeCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.ConflictResult("CreateScope.ScopeName", "A scope named 'taken.scope' already exists."));

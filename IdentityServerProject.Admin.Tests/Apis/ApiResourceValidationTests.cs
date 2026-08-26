@@ -4,6 +4,7 @@ using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Services.Apis;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
@@ -27,11 +28,11 @@ public class ApiResourceValidationTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var whitespaceResult = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, "   ", "Display", "Desc"));
+            var whitespaceResult = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, ScopeName.Create("   "), "Display", "Desc"));
             Assert.Equal(AdminMutationStatus.ValidationFailed, whitespaceResult.Status);
             Assert.True(whitespaceResult.Errors.ContainsKey("Basics.Name"));
 
-            var invalidCharResult = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, "invalid name with spaces", "Display", "Desc"));
+            var invalidCharResult = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, ScopeName.Create("invalid name with spaces"), "Display", "Desc"));
             Assert.Equal(AdminMutationStatus.ValidationFailed, invalidCharResult.Status);
             Assert.True(invalidCharResult.Errors.ContainsKey("Basics.Name"));
         });
@@ -46,7 +47,7 @@ public class ApiResourceValidationTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, overlongName, "Display", "Desc"));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, ScopeName.Create(overlongName), "Display", "Desc"));
 
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
             Assert.True(result.Errors.ContainsKey("Basics.Name"));
@@ -63,7 +64,7 @@ public class ApiResourceValidationTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, "valid-name", overlongDisplayName, "Desc"));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, ScopeName.Create("valid-name"), overlongDisplayName, "Desc"));
 
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
             Assert.True(result.Errors.ContainsKey("Basics.DisplayName"));
@@ -80,7 +81,7 @@ public class ApiResourceValidationTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, "valid-name", "Display", overlongDescription));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, ScopeName.Create("valid-name"), "Display", overlongDescription));
 
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
             Assert.True(result.Errors.ContainsKey("Basics.Description"));
@@ -99,7 +100,7 @@ public class ApiResourceValidationTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, overlongName, overlongDisplayName, overlongDescription));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, ScopeName.Create(overlongName), overlongDisplayName, overlongDescription));
 
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
             Assert.True(result.Errors.ContainsKey("Basics.Name"));
@@ -127,12 +128,12 @@ public class ApiResourceValidationTests : IClassFixture<AdminWebFactory>
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
             var overlongName = new string('a', ValidationConstants.MaxNameLength + 1);
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(name, overlongName, "Updated Display", "Updated Desc"));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(ScopeName.Create(name), ScopeName.Create(overlongName), "Updated Display", "Updated Desc"));
 
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
             Assert.True(result.Errors.ContainsKey("Basics.Name"));
 
-            var editor = await service.GetForEditAsync(name);
+            var editor = await service.GetForEditAsync(ScopeName.Create(name));
             Assert.NotNull(editor);
             Assert.Equal(originalDisplay, editor!.DisplayName);
         });
@@ -161,17 +162,17 @@ public class ApiResourceValidationTests : IClassFixture<AdminWebFactory>
             var service = new ApiResourceEditorService(db, auditWriter, fakeTime);
 
             // Past expiration
-            var pastResult = await service.AddSecretAsync(new AddApiResourceSecretCommand(name, "desc", now.AddMinutes(-5).UtcDateTime));
+            var pastResult = await service.AddSecretAsync(new AddApiResourceSecretCommand(ScopeName.Create(name), "desc", now.AddMinutes(-5).UtcDateTime));
             Assert.Equal(AdminMutationStatus.ValidationFailed, pastResult.Status);
             Assert.True(pastResult.Errors.ContainsKey("Secret.Expiration"));
 
             // Exact current time
-            var currentResult = await service.AddSecretAsync(new AddApiResourceSecretCommand(name, "desc", now.UtcDateTime));
+            var currentResult = await service.AddSecretAsync(new AddApiResourceSecretCommand(ScopeName.Create(name), "desc", now.UtcDateTime));
             Assert.Equal(AdminMutationStatus.ValidationFailed, currentResult.Status);
             Assert.True(currentResult.Errors.ContainsKey("Secret.Expiration"));
 
             // Strictly future expiration
-            var futureResult = await service.AddSecretAsync(new AddApiResourceSecretCommand(name, "desc", now.AddMinutes(5).UtcDateTime));
+            var futureResult = await service.AddSecretAsync(new AddApiResourceSecretCommand(ScopeName.Create(name), "desc", now.AddMinutes(5).UtcDateTime));
             Assert.Equal(AdminMutationStatus.Succeeded, futureResult.Status);
             Assert.True(futureResult.Success);
         });
@@ -196,7 +197,7 @@ public class ApiResourceValidationTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.CreateScopeAsync(new CreateApiResourceScopeCommand(name, scopeName, "Display"));
+            var result = await service.CreateScopeAsync(new CreateApiResourceScopeCommand(ScopeName.Create(name), scopeName, "Display"));
 
             Assert.Equal(AdminMutationStatus.Conflict, result.Status);
             Assert.True(result.Errors.ContainsKey("CreateScope.ScopeName"));
@@ -221,7 +222,7 @@ public class ApiResourceValidationTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var result = await service.AddClaimAsync(new AddApiResourceClaimCommand(name, overlongClaim));
+            var result = await service.AddClaimAsync(new AddApiResourceClaimCommand(ScopeName.Create(name), ClaimType.Create(overlongClaim)));
 
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
             Assert.True(result.Errors.ContainsKey("Claim.ClaimType"));
@@ -235,16 +236,16 @@ public class ApiResourceValidationTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
 
-            var secret = await service.AddSecretAsync(new AddApiResourceSecretCommand("   ", "description", null));
+            var secret = await service.AddSecretAsync(new AddApiResourceSecretCommand(ScopeName.Create("   "), "description", null));
             Assert.Equal(AdminMutationStatus.ValidationFailed, secret.Status);
             Assert.True(secret.Errors.ContainsKey("Name"));
 
-            var scope = await service.CreateScopeAsync(new CreateApiResourceScopeCommand("   ", "   ", "Display"));
+            var scope = await service.CreateScopeAsync(new CreateApiResourceScopeCommand(ScopeName.Create("   "), "   ", "Display"));
             Assert.Equal(AdminMutationStatus.ValidationFailed, scope.Status);
             Assert.True(scope.Errors.ContainsKey("Name"));
             Assert.True(scope.Errors.ContainsKey("CreateScope.ScopeName"));
 
-            var claim = await service.AddClaimAsync(new AddApiResourceClaimCommand("   ", "   "));
+            var claim = await service.AddClaimAsync(new AddApiResourceClaimCommand(ScopeName.Create("   "), ClaimType.Create("   ")));
             Assert.Equal(AdminMutationStatus.ValidationFailed, claim.Status);
             Assert.True(claim.Errors.ContainsKey("Name"));
             Assert.True(claim.Errors.ContainsKey("Claim.ClaimType"));

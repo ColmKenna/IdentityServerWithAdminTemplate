@@ -33,14 +33,14 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
 
     #region Overview and basics
 
-    public async Task<ApiResourceEditorModel?> GetForEditAsync(string name, CancellationToken cancellationToken = default)
+    public async Task<ApiResourceEditorModel?> GetForEditAsync(ScopeName name, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        if (name.IsEmpty)
         {
             return null;
         }
 
-        var entity = await LoadResourceAsync(name.Trim(), asNoTracking: true, cancellationToken);
+        var entity = await LoadResourceAsync(name.Value.Trim(), asNoTracking: true, cancellationToken);
         return entity == null ? null : MapToEditorModel(entity);
     }
 
@@ -49,8 +49,8 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             command?.OriginalName == null ? AuditAction.Create : AuditAction.UpdateBasics,
-            command?.Name ?? command?.OriginalName ?? string.Empty,
-            command?.DisplayName ?? command?.Name ?? command?.OriginalName ?? string.Empty,
+            (command?.Name ?? command?.OriginalName)?.Value ?? string.Empty,
+            command?.DisplayName ?? (command?.Name ?? command?.OriginalName)?.Value ?? string.Empty,
             () => SaveBasicsCoreAsync(command!, cancellationToken),
             cancellationToken);
 
@@ -58,8 +58,8 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         SaveApiResourceBasicsCommand command,
         CancellationToken cancellationToken = default)
     {
-        var originalName = command.OriginalName?.Trim();
-        var name = command.Name?.Trim() ?? string.Empty;
+        var originalName = command.OriginalName?.Value?.Trim();
+        var name = command.Name.Value?.Trim() ?? string.Empty;
         var displayName = NormalizeNullableString(command.DisplayName);
         var description = NormalizeNullableString(command.Description);
         var action = originalName == null ? AuditAction.Create : AuditAction.UpdateBasics;
@@ -316,12 +316,12 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         }
     }
 
-    public Task<AdminMutationResult> RevokeSecretAsync(string name, int secretId, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> RevokeSecretAsync(ScopeName name, int secretId, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.RevokeSecret,
-            name ?? string.Empty,
-            name ?? string.Empty,
-            () => RevokeSecretCoreAsync(name ?? string.Empty, secretId, cancellationToken),
+            name.Value,
+            name.Value,
+            () => RevokeSecretCoreAsync(name.Value, secretId, cancellationToken),
             cancellationToken);
 
     private async Task<AdminMutationResult> RevokeSecretCoreAsync(string name, int secretId, CancellationToken cancellationToken = default)
@@ -359,12 +359,12 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
 
     #region Scopes
 
-    public Task<AdminMutationResult> AttachScopeAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> AttachScopeAsync(ScopeName name, ScopeName scopeName, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.AttachScope,
-            name ?? string.Empty,
-            name ?? string.Empty,
-            () => AttachScopeCoreAsync(name ?? string.Empty, scopeName, cancellationToken),
+            name.Value,
+            name.Value,
+            () => AttachScopeCoreAsync(name.Value, scopeName, cancellationToken),
             cancellationToken);
 
     private async Task<AdminMutationResult> AttachScopeCoreAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default)
@@ -427,8 +427,8 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.CreateScope,
-            command?.ResourceName ?? string.Empty,
-            command?.ResourceName ?? string.Empty,
+            command?.ResourceName.Value ?? string.Empty,
+            command?.ResourceName.Value ?? string.Empty,
             () => CreateScopeCoreAsync(command!, cancellationToken),
             cancellationToken);
 
@@ -436,7 +436,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         CreateApiResourceScopeCommand command,
         CancellationToken cancellationToken = default)
     {
-        var name = command.ResourceName?.Trim() ?? string.Empty;
+        var name = command.ResourceName.Value?.Trim() ?? string.Empty;
         var scopeName = command.ScopeName?.Trim() ?? string.Empty;
         var scopeDisplayName = NormalizeNullableString(command.DisplayName);
 
@@ -528,12 +528,12 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         });
     }
 
-    public Task<AdminMutationResult> DetachScopeAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> DetachScopeAsync(ScopeName name, ScopeName scopeName, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.DetachScope,
-            name ?? string.Empty,
-            name ?? string.Empty,
-            () => DetachScopeCoreAsync(name ?? string.Empty, scopeName, cancellationToken),
+            name.Value,
+            name.Value,
+            () => DetachScopeCoreAsync(name.Value, scopeName, cancellationToken),
             cancellationToken);
 
     private async Task<AdminMutationResult> DetachScopeCoreAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default)
@@ -576,15 +576,15 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
     public Task<AdminMutationResult> AddClaimAsync(AddApiResourceClaimCommand command, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.AddClaim,
-            command?.ResourceName ?? string.Empty,
-            command?.ResourceName ?? string.Empty,
+            command?.ResourceName.Value ?? string.Empty,
+            command?.ResourceName.Value ?? string.Empty,
             () => AddClaimCoreAsync(command!, cancellationToken),
             cancellationToken);
 
     private async Task<AdminMutationResult> AddClaimCoreAsync(AddApiResourceClaimCommand command, CancellationToken cancellationToken = default)
     {
-        var name = command.ResourceName?.Trim() ?? string.Empty;
-        var claimType = command.ClaimType?.Trim() ?? string.Empty;
+        var name = command.ResourceName.Value?.Trim() ?? string.Empty;
+        var claimType = command.ClaimType.Value?.Trim() ?? string.Empty;
 
         var errors = new ValidationErrorDictionary();
         AddIdentifierError(errors, "Name", "API Resource", name);
@@ -633,12 +633,12 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         return AdminMutationResult.Success();
     }
 
-    public Task<AdminMutationResult> RemoveClaimAsync(string name, string claimType, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> RemoveClaimAsync(ScopeName name, ClaimType claimType, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.RemoveClaim,
-            name ?? string.Empty,
-            name ?? string.Empty,
-            () => RemoveClaimCoreAsync(name ?? string.Empty, claimType ?? string.Empty, cancellationToken),
+            name.Value,
+            name.Value,
+            () => RemoveClaimCoreAsync(name.Value, claimType.Value, cancellationToken),
             cancellationToken);
 
     private async Task<AdminMutationResult> RemoveClaimCoreAsync(string name, string claimType, CancellationToken cancellationToken = default)
@@ -678,12 +678,12 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
 
     #region Lifecycle
 
-    public Task<AdminMutationResult> SetEnabledAsync(string name, bool enabled, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> SetEnabledAsync(ScopeName name, bool enabled, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.SetEnabled,
-            name ?? string.Empty,
-            name ?? string.Empty,
-            () => SetEnabledCoreAsync(name ?? string.Empty, enabled, cancellationToken),
+            name.Value,
+            name.Value,
+            () => SetEnabledCoreAsync(name.Value, enabled, cancellationToken),
             cancellationToken);
 
     private async Task<AdminMutationResult> SetEnabledCoreAsync(string name, bool enabled, CancellationToken cancellationToken = default)
@@ -716,12 +716,12 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         }
     }
 
-    public Task<AdminMutationResult> DeleteAsync(string name, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> DeleteAsync(ScopeName name, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.Delete,
-            name ?? string.Empty,
-            name ?? string.Empty,
-            () => DeleteCoreAsync(name ?? string.Empty, cancellationToken),
+            name.Value,
+            name.Value,
+            () => DeleteCoreAsync(name.Value, cancellationToken),
             cancellationToken);
 
     private async Task<AdminMutationResult> DeleteCoreAsync(string name, CancellationToken cancellationToken = default)

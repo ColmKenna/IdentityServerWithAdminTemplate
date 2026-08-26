@@ -70,6 +70,7 @@ public class EditorModel : PageModel
 
     private bool HasResourceName => !string.IsNullOrWhiteSpace(Name);
     private string ResourceName => Name!;
+    private ScopeName ResourceScopeName => ScopeName.Create(ResourceName);
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken = default)
     {
@@ -82,7 +83,7 @@ public class EditorModel : PageModel
             return Page();
         }
 
-        var editor = await _apiResourceEditorService.GetForEditAsync(ResourceName, cancellationToken);
+        var editor = await _apiResourceEditorService.GetForEditAsync(ResourceScopeName, cancellationToken);
         if (editor == null)
         {
             return NotFound();
@@ -119,7 +120,11 @@ public class EditorModel : PageModel
 
     public async Task<IActionResult> OnPostSaveBasicsAsync(CancellationToken cancellationToken = default)
     {
-        var command = new SaveApiResourceBasicsCommand(Name, Basics.Name, Basics.DisplayName, Basics.Description);
+        var command = new SaveApiResourceBasicsCommand(
+            Name != null ? ScopeName.Create(Name) : null,
+            ScopeName.Create(Basics.Name),
+            Basics.DisplayName,
+            Basics.Description);
         var result = await _apiResourceEditorService.SaveBasicsAsync(command, cancellationToken);
 
         if (result.Status == AdminMutationStatus.NotFound)
@@ -159,7 +164,7 @@ public class EditorModel : PageModel
             return NotFound();
         }
 
-        var command = new AddApiResourceSecretCommand(ResourceName, Secret.Description, Secret.Expiration);
+        var command = new AddApiResourceSecretCommand(ResourceScopeName, Secret.Description, Secret.Expiration);
         var result = await _apiResourceEditorService.AddSecretAsync(command, cancellationToken);
 
         if (result.Status == AdminMutationStatus.NotFound)
@@ -193,7 +198,7 @@ public class EditorModel : PageModel
             return RedirectToEditorTab("secrets");
         }
 
-        var result = await _apiResourceEditorService.RevokeSecretAsync(ResourceName, secretId, cancellationToken);
+        var result = await _apiResourceEditorService.RevokeSecretAsync(ResourceScopeName, secretId, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
         {
             return NotFound();
@@ -214,7 +219,7 @@ public class EditorModel : PageModel
             return NotFound();
         }
 
-        var result = await _apiResourceEditorService.AttachScopeAsync(ResourceName, ScopeName.Create(AttachScope.ScopeName), cancellationToken);
+        var result = await _apiResourceEditorService.AttachScopeAsync(ResourceScopeName, ScopeName.Create(AttachScope.ScopeName), cancellationToken);
 
         if (result.Status == AdminMutationStatus.NotFound)
         {
@@ -236,7 +241,7 @@ public class EditorModel : PageModel
             return NotFound();
         }
 
-        var command = new CreateApiResourceScopeCommand(ResourceName, CreateScope.ScopeName, CreateScope.ScopeDisplayName);
+        var command = new CreateApiResourceScopeCommand(ResourceScopeName, CreateScope.ScopeName, CreateScope.ScopeDisplayName);
         var result = await _apiResourceEditorService.CreateScopeAsync(command, cancellationToken);
 
         if (result.Status == AdminMutationStatus.NotFound)
@@ -259,7 +264,7 @@ public class EditorModel : PageModel
             return NotFound();
         }
 
-        var result = await _apiResourceEditorService.DetachScopeAsync(ResourceName, ScopeName.Create(scopeName), cancellationToken);
+        var result = await _apiResourceEditorService.DetachScopeAsync(ResourceScopeName, ScopeName.Create(scopeName), cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
         {
             return NotFound();
@@ -280,7 +285,7 @@ public class EditorModel : PageModel
             return NotFound();
         }
 
-        var command = new AddApiResourceClaimCommand(ResourceName, Claim.ClaimType);
+        var command = new AddApiResourceClaimCommand(ResourceScopeName, ClaimType.Create(Claim.ClaimType));
         var result = await _apiResourceEditorService.AddClaimAsync(command, cancellationToken);
 
         if (result.Status == AdminMutationStatus.NotFound)
@@ -303,7 +308,7 @@ public class EditorModel : PageModel
             return NotFound();
         }
 
-        var result = await _apiResourceEditorService.RemoveClaimAsync(ResourceName, claimType, cancellationToken);
+        var result = await _apiResourceEditorService.RemoveClaimAsync(ResourceScopeName, ClaimType.Create(claimType), cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
         {
             return NotFound();
@@ -324,7 +329,7 @@ public class EditorModel : PageModel
             return NotFound();
         }
 
-        var result = await _apiResourceEditorService.SetEnabledAsync(ResourceName, enabled: true, cancellationToken);
+        var result = await _apiResourceEditorService.SetEnabledAsync(ResourceScopeName, enabled: true, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
         {
             return NotFound();
@@ -346,7 +351,7 @@ public class EditorModel : PageModel
             return RedirectToEditorTab("basics");
         }
 
-        var result = await _apiResourceEditorService.SetEnabledAsync(ResourceName, enabled: false, cancellationToken);
+        var result = await _apiResourceEditorService.SetEnabledAsync(ResourceScopeName, enabled: false, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
         {
             return NotFound();
@@ -368,7 +373,7 @@ public class EditorModel : PageModel
             return RedirectToEditorTab("basics");
         }
 
-        var result = await _apiResourceEditorService.DeleteAsync(ResourceName, cancellationToken);
+        var result = await _apiResourceEditorService.DeleteAsync(ResourceScopeName, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
         {
             return NotFound();
@@ -381,7 +386,7 @@ public class EditorModel : PageModel
     {
         if (HasResourceName)
         {
-            Editor = await _apiResourceEditorService.GetForEditAsync(ResourceName, cancellationToken) ?? ApiResourceEditorModel.Empty();
+            Editor = await _apiResourceEditorService.GetForEditAsync(ResourceScopeName, cancellationToken) ?? ApiResourceEditorModel.Empty();
             var allScopeNames = (await _apiResourceEditorService.GetAllApiScopeNamesAsync(cancellationToken)) ?? new List<string>();
             AttachableScopeNames = allScopeNames.Where(scopeName => !Editor.Scopes.Contains(scopeName)).ToList();
         }

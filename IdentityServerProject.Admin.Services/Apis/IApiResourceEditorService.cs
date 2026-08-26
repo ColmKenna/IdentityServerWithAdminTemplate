@@ -9,27 +9,27 @@ using IdentityServerProject.Services.Validation;
 namespace IdentityServerProject.Services.Apis;
 
 public sealed record SaveApiResourceBasicsCommand(
-    string? OriginalName,
-    string Name,
+    ScopeName? OriginalName,
+    ScopeName Name,
     string? DisplayName,
     string? Description);
 
 public sealed record AddApiResourceSecretCommand(
-    string ResourceName,
+    ScopeName ResourceName,
     string? Description,
     DateTime? ExpirationUtc)
 {
-    public CreateSecretCommand ToCreateSecretCommand() => new(ResourceName, Description, ExpirationUtc);
+    public CreateSecretCommand ToCreateSecretCommand() => new(ResourceName.Value, Description, ExpirationUtc);
 }
 
 public sealed record CreateApiResourceScopeCommand(
-    string ResourceName,
+    ScopeName ResourceName,
     string ScopeName,
     string? DisplayName);
 
 public sealed record AddApiResourceClaimCommand(
-    string ResourceName,
-    string ClaimType);
+    ScopeName ResourceName,
+    ClaimType ClaimType);
 
 /// <summary>
 /// Reads and mutates a single API resource for the Admin &gt; API Resources tabbed editor
@@ -41,7 +41,7 @@ public interface IApiResourceEditorService
     /// Loads a single API resource by name for editing. Returns null if <paramref name=\"name\"/>
     /// does not resolve to an existing API resource.
     /// </summary>
-    Task<ApiResourceEditorModel?> GetForEditAsync(string name, CancellationToken cancellationToken = default);
+    Task<ApiResourceEditorModel?> GetForEditAsync(ScopeName name, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates a new API resource (when <paramref name=\"command.OriginalName\"/> is null) or updates
@@ -68,10 +68,10 @@ public interface IApiResourceEditorService
         CancellationToken cancellationToken = default);
 
     /// <summary>Removes a secret by its id.</summary>
-    Task<AdminMutationResult> RevokeSecretAsync(string name, int secretId, CancellationToken cancellationToken = default);
+    Task<AdminMutationResult> RevokeSecretAsync(ScopeName name, int secretId, CancellationToken cancellationToken = default);
 
     /// <summary>Attaches an existing system-wide API scope to the resource.</summary>
-    Task<AdminMutationResult> AttachScopeAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default);
+    Task<AdminMutationResult> AttachScopeAsync(ScopeName name, ScopeName scopeName, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates a new system-wide <c>ApiScope</c> and attaches it to the resource in one step.
@@ -81,19 +81,19 @@ public interface IApiResourceEditorService
         CancellationToken cancellationToken = default);
 
     /// <summary>Detaches a scope from the resource. The system-wide ApiScope itself is not deleted.</summary>
-    Task<AdminMutationResult> DetachScopeAsync(string name, ScopeName scopeName, CancellationToken cancellationToken = default);
+    Task<AdminMutationResult> DetachScopeAsync(ScopeName name, ScopeName scopeName, CancellationToken cancellationToken = default);
 
     /// <summary>Adds a user claim type to the resource.</summary>
     Task<AdminMutationResult> AddClaimAsync(AddApiResourceClaimCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>Removes a user claim type from the resource.</summary>
-    Task<AdminMutationResult> RemoveClaimAsync(string name, string claimType, CancellationToken cancellationToken = default);
+    Task<AdminMutationResult> RemoveClaimAsync(ScopeName name, ClaimType claimType, CancellationToken cancellationToken = default);
 
     /// <summary>Enables or disables the resource.</summary>
-    Task<AdminMutationResult> SetEnabledAsync(string name, bool enabled, CancellationToken cancellationToken = default);
+    Task<AdminMutationResult> SetEnabledAsync(ScopeName name, bool enabled, CancellationToken cancellationToken = default);
 
     /// <summary>Permanently deletes the API resource, including its secrets, scopes, and claims.</summary>
-    Task<AdminMutationResult> DeleteAsync(string name, CancellationToken cancellationToken = default);
+    Task<AdminMutationResult> DeleteAsync(ScopeName name, CancellationToken cancellationToken = default);
 
     /// <summary>Returns the names of all system-wide API scopes, for the "attach existing scope" picker.</summary>
     Task<List<string>> GetAllApiScopeNamesAsync(CancellationToken cancellationToken = default);

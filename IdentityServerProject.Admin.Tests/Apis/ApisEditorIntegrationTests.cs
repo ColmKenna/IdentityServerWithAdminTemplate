@@ -139,7 +139,7 @@ public class ApisEditorIntegrationTests : IDisposable
             await configDb.SaveChangesAsync();
 
             var editorService = sp.GetRequiredService<IApiResourceEditorService>();
-            await editorService.AttachScopeAsync(name, ScopeName.Create(attachedScopeName));
+            await editorService.AttachScopeAsync(ScopeName.Create(name), ScopeName.Create(attachedScopeName));
         });
 
         var response = await client.GetAsync($"/Admin/Apis/Editor?name={name}&tab=scopes");

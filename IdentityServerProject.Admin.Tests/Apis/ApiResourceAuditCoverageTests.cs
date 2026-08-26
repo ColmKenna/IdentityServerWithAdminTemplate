@@ -7,6 +7,7 @@ using Duende.IdentityServer.EntityFramework.Entities;
 using IdentityServerProject.Data;
 using IdentityServerProject.Services.Apis;
 using IdentityServerProject.Services.AuditLogs;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -56,7 +57,7 @@ public class ApiResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
-            var result = await service.DeleteAsync(name);
+            var result = await service.DeleteAsync(ScopeName.Create(name));
             Assert.False(result.Succeeded);
         });
 
@@ -74,7 +75,7 @@ public class ApiResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
-            var result = await service.DeleteAsync(name);
+            var result = await service.DeleteAsync(ScopeName.Create(name));
             Assert.True(result.Succeeded);
         });
 
@@ -90,7 +91,7 @@ public class ApiResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, invalidName, "Display", "Desc"));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, ScopeName.Create(invalidName), "Display", "Desc"));
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
         });
 
@@ -111,7 +112,7 @@ public class ApiResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(newName, existingName, "Renamed", null));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(ScopeName.Create(newName), ScopeName.Create(existingName), "Renamed", null));
             Assert.Equal(AdminMutationStatus.Conflict, result.Status);
         });
 
@@ -129,7 +130,7 @@ public class ApiResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
-            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, existingName, "Duplicate", null));
+            var result = await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(null, ScopeName.Create(existingName), "Duplicate", null));
             Assert.Equal(AdminMutationStatus.Conflict, result.Status);
         });
 
@@ -146,7 +147,7 @@ public class ApiResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
-            var result = await service.AddSecretAsync(new AddApiResourceSecretCommand(name, "desc", null));
+            var result = await service.AddSecretAsync(new AddApiResourceSecretCommand(ScopeName.Create(name), "desc", null));
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
 
@@ -164,7 +165,7 @@ public class ApiResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
-            var result = await service.SetEnabledAsync(name, false);
+            var result = await service.SetEnabledAsync(ScopeName.Create(name), false);
             Assert.True(result.Succeeded);
         });
 
@@ -181,7 +182,7 @@ public class ApiResourceAuditCoverageTests : IClassFixture<AdminWebFactory>
         {
             var service = sp.GetRequiredService<IApiResourceEditorService>();
             await sp.GetRequiredService<ConfigurationDbContext>().DisposeAsync();
-            await service.SetEnabledAsync(name, false);
+            await service.SetEnabledAsync(ScopeName.Create(name), false);
         }));
 
         var entry = await GetSingleAuditEntryAsync(AuditAction.SetEnabled, name);

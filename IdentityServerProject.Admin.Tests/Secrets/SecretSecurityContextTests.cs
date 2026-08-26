@@ -1,5 +1,6 @@
 using System;
 using IdentityServerProject.Services.Apis;
+using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Users;
 using IdentityServerProject.Services.SecretReveals;
 using IdentityServerProject.Services.Secrets;
@@ -50,7 +51,7 @@ public sealed class SecretSecurityContextTests
     public void AddApiResourceSecretCommand_ToCreateSecretCommand_MapsProperties()
     {
         var expiration = DateTime.UtcNow.AddDays(7);
-        var apiSecretCmd = new AddApiResourceSecretCommand("api-1", "Api Secret", expiration);
+        var apiSecretCmd = new AddApiResourceSecretCommand(ScopeName.Create("api-1"), "Api Secret", expiration);
 
         var unifiedCmd = apiSecretCmd.ToCreateSecretCommand();
 
