@@ -40,9 +40,7 @@ public class ResetPasswordModel : PageModel
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Id))
-        {
             return NotFound();
-        }
 
         return await LoadPageAsync(cancellationToken);
     }
@@ -50,17 +48,13 @@ public class ResetPasswordModel : PageModel
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Id))
-        {
             return NotFound();
-        }
 
         if (!ModelState.IsValid)
-        {
             return await LoadPageAsync(cancellationToken);
-        }
 
         var result = await _userDetailsService.ResetPasswordAsync(UserId.Create(Id), Input.NewPassword, cancellationToken);
-        
+
         if (!result.Success)
         {
             ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Password reset failed.");
@@ -75,9 +69,7 @@ public class ResetPasswordModel : PageModel
     {
         var account = await _userDetailsService.GetUserDetailsAsync(new UserActionContext(UserId.Create(Id), null), cancellationToken);
         if (account == null)
-        {
             return NotFound();
-        }
 
         UserNameDisplay = string.IsNullOrWhiteSpace(account.FullName) ? account.UserName : account.FullName;
         return Page();

@@ -37,15 +37,11 @@ public class PermissionsModel : PageModel
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Id))
-        {
             return NotFound();
-        }
 
         var permissions = await _clientDetailsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
         if (permissions == null)
-        {
             return NotFound();
-        }
 
         LoadFromModel(permissions);
 
@@ -55,16 +51,12 @@ public class PermissionsModel : PageModel
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Id))
-        {
             return NotFound();
-        }
 
         var result = await _clientDetailsService.UpdateClientPermissionsAsync(
             ClientId.Create(Id), ScopeSet.FromStrings(Input.AllowedScopes), cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (!result.Succeeded)
         {
@@ -78,9 +70,7 @@ public class PermissionsModel : PageModel
 
             var permissions = await _clientDetailsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
             if (permissions == null)
-            {
                 return NotFound();
-            }
 
             ClientNameDisplay = permissions.ClientName;
             IsInteractive = permissions.IsInteractive;

@@ -52,15 +52,11 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         if (!HasUserId)
-        {
             return NotFound();
-        }
 
         var user = await _userDetailsService.GetUserDetailsAsync(Context, cancellationToken);
         if (user == null)
-        {
             return NotFound();
-        }
 
         Account = user;
         return Page();
@@ -69,15 +65,11 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnPostUnlockAsync(CancellationToken cancellationToken)
     {
         if (!HasUserId)
-        {
             return NotFound();
-        }
 
         var result = await _userDetailsService.UnlockUserAsync(TargetUserId, cancellationToken);
         if (result.Status == UserUnlockStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (result.Status == UserUnlockStatus.Failed)
         {
@@ -94,17 +86,13 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnPostAddRoleAsync(string role, CancellationToken cancellationToken)
     {
         if (!HasUserId)
-        {
             return NotFound();
-        }
 
         var result = await _userDetailsService.AddRoleAsync(TargetUserId, role, cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage is "User not found." or "Role not found.")
-            {
                 return NotFound();
-            }
 
             ErrorMessage = result.ErrorMessage;
         }
@@ -119,17 +107,13 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnPostRemoveRoleAsync(string role, CancellationToken cancellationToken)
     {
         if (!HasUserId)
-        {
             return NotFound();
-        }
 
         var result = await _userDetailsService.RemoveRoleAsync(TargetUserId, role, cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage == "User not found.")
-            {
                 return NotFound();
-            }
 
             ErrorMessage = result.ErrorMessage;
         }
@@ -144,17 +128,13 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnPostAddClaimAsync(string claimType, string claimValue, CancellationToken cancellationToken)
     {
         if (!HasUserId)
-        {
             return NotFound();
-        }
 
         var result = await _userDetailsService.AddClaimAsync(TargetUserId, new UserClaim(claimType, claimValue), cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage == "User not found.")
-            {
                 return NotFound();
-            }
 
             ErrorMessage = result.ErrorMessage;
         }
@@ -169,17 +149,13 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnPostRemoveClaimAsync(string claimType, string claimValue, CancellationToken cancellationToken)
     {
         if (!HasUserId)
-        {
             return NotFound();
-        }
 
         var result = await _userDetailsService.RemoveClaimAsync(TargetUserId, new UserClaim(claimType, claimValue), cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage == "User not found.")
-            {
                 return NotFound();
-            }
 
             ErrorMessage = result.ErrorMessage;
         }
@@ -194,17 +170,13 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnPostRevokeUserAccessAsync(CancellationToken cancellationToken)
     {
         if (!HasUserId)
-        {
             return NotFound();
-        }
 
         var result = await _userDetailsService.RevokeUserAccessAsync(Context, cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage == "User not found.")
-            {
                 return NotFound();
-            }
 
             ErrorMessage = result.ErrorMessage;
         }
@@ -222,17 +194,13 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnPostSuspendAsync(CancellationToken cancellationToken)
     {
         if (!HasUserId)
-        {
             return NotFound();
-        }
 
         var result = await _userDetailsService.SuspendUserAsync(Context, cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage == "User not found.")
-            {
                 return NotFound();
-            }
             ErrorMessage = result.ErrorMessage;
         }
         else
@@ -246,9 +214,7 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnPostDeleteAsync(CancellationToken cancellationToken)
     {
         if (!HasUserId)
-        {
             return NotFound();
-        }
 
         if (!string.Equals(DeleteConfirmation?.Trim(), "DELETE", System.StringComparison.Ordinal))
         {
@@ -260,9 +226,7 @@ public class DetailsModel : PageModel
         if (!result.Success)
         {
             if (result.ErrorMessage == "User not found.")
-            {
                 return NotFound();
-            }
             ErrorMessage = result.ErrorMessage;
             return RedirectToUserTab("danger");
         }

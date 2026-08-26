@@ -53,16 +53,12 @@ public class CreateModel : PageModel
             var reveal = await _secretRevealService.ConsumeAsync(
                 new SecretRevealTarget(SecretRevealPurpose.ClientCreated, clientId), IdentityServerProject.Services.SecretReveals.SecretRevealHandle.Create(handle), cancellationToken);
             if (reveal.Status == SecretRevealConsumeStatus.Revealed)
-            {
                 CreatedSecret = reveal.Plaintext;
-            }
         }
         CreatedClientId = clientId;
 
         if (string.IsNullOrWhiteSpace(Input.ClientId) && string.IsNullOrWhiteSpace(CreatedClientId))
-        {
             ApplyPresetDefaults("web");
-        }
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
@@ -89,9 +85,7 @@ public class CreateModel : PageModel
             }
 
             if (result.Errors.Count == 0)
-            {
                 ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Failed to create client.");
-            }
             AvailablePresets = _clientPresetService.GetAvailablePresets();
             await LoadAvailableScopesAsync(cancellationToken);
             return Page();

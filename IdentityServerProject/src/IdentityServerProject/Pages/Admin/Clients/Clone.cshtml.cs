@@ -36,15 +36,11 @@ public class CloneModel : PageModel
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(SourceClientId))
-        {
             return RedirectToPage("./Index");
-        }
 
         var sourceClient = await LoadSourceClientAsync(cancellationToken);
         if (sourceClient == null)
-        {
             return NotFound();
-        }
 
         Input.ClientId = $"{SourceClientId}-clone";
         Input.ClientName = $"{SourceClientName} (Clone)";
@@ -56,22 +52,16 @@ public class CloneModel : PageModel
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(SourceClientId))
-        {
             return RedirectToPage("./Index");
-        }
 
         var sourceClient = await LoadSourceClientAsync(cancellationToken);
         if (sourceClient == null)
-        {
             return NotFound();
-        }
 
         ModelState.Remove("Input.SelectedPreset");
 
         if (!ModelState.IsValid)
-        {
             return Page();
-        }
 
         var result = await _clientCreateService.CloneClientAsync(SourceClientId, Input, cancellationToken);
         if (!result.Success)
@@ -79,9 +69,7 @@ public class CloneModel : PageModel
             AddErrorsToModelState(result.Errors);
 
             if (result.Errors.Count == 0)
-            {
                 ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Failed to clone client.");
-            }
             return Page();
         }
 
@@ -101,9 +89,7 @@ public class CloneModel : PageModel
     {
         var sourceClient = await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(SourceClientId), cancellationToken);
         if (sourceClient != null)
-        {
             SourceClientName = sourceClient.ClientName ?? SourceClientId;
-        }
 
         return sourceClient;
     }

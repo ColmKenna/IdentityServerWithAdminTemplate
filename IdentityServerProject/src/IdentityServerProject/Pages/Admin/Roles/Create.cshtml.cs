@@ -35,9 +35,7 @@ public class CreateModel : PageModel
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
-        {
             return Page();
-        }
 
         var result = await _roleService.CreateRoleAsync(new RoleCreateInputModel
         {

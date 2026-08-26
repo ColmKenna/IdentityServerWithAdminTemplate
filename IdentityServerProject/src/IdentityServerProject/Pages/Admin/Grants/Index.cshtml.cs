@@ -57,15 +57,11 @@ public class IndexModel : PageModel
     public async Task<IActionResult> OnPostRevokeAsync(GrantKey key, CancellationToken cancellationToken)
     {
         if (key.IsEmpty)
-        {
             return NotFound();
-        }
 
         var result = await _grantListService.RevokeGrantAsync(key, cancellationToken);
         if (result == RevokeGrantResult.NotFound)
-        {
             return NotFound();
-        }
 
         SuccessMessage = "Grant revoked successfully.";
         return RedirectToPage(new

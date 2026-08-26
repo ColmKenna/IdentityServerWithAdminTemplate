@@ -40,15 +40,11 @@ public class BasicsModel : PageModel
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Id))
-        {
             return NotFound();
-        }
 
         var client = await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
         if (client == null)
-        {
             return NotFound();
-        }
 
         ClientIdDisplay = client.ClientId;
         Input.ClientName = client.ClientName;
@@ -60,26 +56,20 @@ public class BasicsModel : PageModel
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Id))
-        {
             return NotFound();
-        }
 
         if (!ModelState.IsValid)
         {
             var client = await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
             if (client == null)
-            {
                 return NotFound();
-            }
             ClientIdDisplay = client.ClientId;
             return Page();
         }
 
         var result = await _clientDetailsService.UpdateClientBasicsAsync(ClientId.Create(Id), Input.ClientName, Input.Description, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (!result.Succeeded)
         {

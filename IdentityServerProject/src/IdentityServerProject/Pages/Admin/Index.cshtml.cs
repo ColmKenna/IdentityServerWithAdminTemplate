@@ -32,9 +32,7 @@ public class IndexModel : PageModel
         }
 
         if (string.IsNullOrEmpty(diagnostics.SigningKeyId))
-        {
             issues.Add("No active signing key is configured.");
-        }
 
         if (diagnostics.ReservedClaimHolders.Count > 0)
         {

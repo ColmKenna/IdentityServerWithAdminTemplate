@@ -42,9 +42,7 @@ public class IndexModel : PageModel
     public async Task<IActionResult> OnPostDeleteAsync(string name, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(name))
-        {
             return NotFound();
-        }
 
         var result = await _identityResourceListService.DeleteIdentityResourceAsync(name, cancellationToken);
 

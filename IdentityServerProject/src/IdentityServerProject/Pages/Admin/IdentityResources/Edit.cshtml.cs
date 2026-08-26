@@ -61,15 +61,11 @@ public class EditModel : PageModel
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Name))
-        {
             return NotFound();
-        }
 
         var editor = await _editorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
         if (editor == null)
-        {
             return NotFound();
-        }
 
         Editor = editor;
         Input = CreateInputModel(editor);
@@ -80,17 +76,13 @@ public class EditModel : PageModel
     public async Task<IActionResult> OnPostSaveAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Name))
-        {
             return NotFound();
-        }
 
         if (!ModelState.IsValid)
         {
             var editor = await _editorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
             if (editor == null)
-            {
                 return NotFound();
-            }
             Editor = editor;
             return Page();
         }
@@ -137,9 +129,7 @@ public class EditModel : PageModel
             case IdentityResourceEditOutcome.Protected:
                 var editor = await _editorService.GetForEditAsync(ScopeName.Create(name), cancellationToken);
                 if (editor == null)
-                {
                     return NotFound();
-                }
 
                 Editor = editor;
                 Input = CreateInputModel(editor);

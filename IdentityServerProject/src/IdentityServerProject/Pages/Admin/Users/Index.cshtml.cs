@@ -42,15 +42,11 @@ public class IndexModel : PageModel
     public async Task<IActionResult> OnPostUnlockAsync(string id, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(id))
-        {
             return NotFound();
-        }
 
         var result = await _userListService.UnlockUserAsync(UserId.Create(id), cancellationToken);
         if (result.Status == UserUnlockStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (result.Status == UserUnlockStatus.Failed)
         {

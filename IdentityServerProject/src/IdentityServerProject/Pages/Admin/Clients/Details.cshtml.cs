@@ -26,15 +26,11 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnGetAsync(string id, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(id))
-        {
             return NotFound();
-        }
 
         var client = await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(id), cancellationToken);
         if (client == null)
-        {
             return NotFound();
-        }
 
         Client = client;
         return Page();
@@ -43,15 +39,11 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnPostToggleStatusAsync(string id, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(id))
-        {
             return NotFound();
-        }
 
         var success = await _clientDetailsService.ToggleClientStatusAsync(ClientId.Create(id), cancellationToken);
         if (!success)
-        {
             return NotFound();
-        }
 
         return RedirectToPage(new { id });
     }
@@ -59,9 +51,7 @@ public class DetailsModel : PageModel
     public async Task<IActionResult> OnPostDeleteAsync(string id, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(id))
-        {
             return NotFound();
-        }
 
         if (!string.Equals(DeleteConfirmation?.Trim(), "DELETE", System.StringComparison.Ordinal))
         {
@@ -73,9 +63,7 @@ public class DetailsModel : PageModel
         if (!result.Success)
         {
             if (result.ErrorMessage == "Client not found.")
-            {
                 return NotFound();
-            }
 
             DeleteBlockedMessage = result.ErrorMessage;
             return RedirectToPage(new { id });

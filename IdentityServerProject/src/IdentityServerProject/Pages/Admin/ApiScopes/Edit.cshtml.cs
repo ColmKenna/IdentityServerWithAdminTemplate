@@ -56,15 +56,11 @@ public class EditModel : PageModel
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Name))
-        {
             return NotFound();
-        }
 
         var editor = await _apiScopeEditorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
         if (editor == null)
-        {
             return NotFound();
-        }
 
         Editor = editor;
         Input = new EditInputModel
@@ -83,17 +79,13 @@ public class EditModel : PageModel
     public async Task<IActionResult> OnPostSaveAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Name))
-        {
             return NotFound();
-        }
 
         if (!ModelState.IsValid)
         {
             var editor = await _apiScopeEditorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
             if (editor == null)
-            {
                 return NotFound();
-            }
             Editor = editor;
             return Page();
         }
@@ -109,9 +101,7 @@ public class EditModel : PageModel
                 Input.ShowInDiscoveryDocument),
             cancellationToken);
         if (!success)
-        {
             return NotFound();
-        }
 
         return RedirectToPage(new { name = Name });
     }
@@ -120,9 +110,7 @@ public class EditModel : PageModel
     {
         var success = await _apiScopeEditorService.AddClaimAsync(ScopeName.Create(name), ClaimType.Create(claimType), cancellationToken);
         if (!success)
-        {
             return NotFound();
-        }
 
         return RedirectToPage(new { name });
     }
@@ -131,9 +119,7 @@ public class EditModel : PageModel
     {
         var success = await _apiScopeEditorService.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create(claimType), cancellationToken);
         if (!success)
-        {
             return NotFound();
-        }
 
         return RedirectToPage(new { name });
     }

@@ -48,9 +48,7 @@ public class SecretsModel : PageModel
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Id))
-        {
             return NotFound();
-        }
 
         var handle = SecretRevealHandle;
         if (!string.IsNullOrEmpty(handle))
@@ -58,16 +56,12 @@ public class SecretsModel : PageModel
             var reveal = await _secretRevealService.ConsumeAsync(
                 new SecretRevealTarget(SecretRevealPurpose.ClientSecretGenerated, Id), IdentityServerProject.Services.SecretReveals.SecretRevealHandle.Create(handle), cancellationToken);
             if (reveal.Status == SecretRevealConsumeStatus.Revealed)
-            {
                 GeneratedSecret = reveal.Plaintext;
-            }
         }
 
         var secrets = await _clientDetailsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
         if (secrets == null)
-        {
             return NotFound();
-        }
 
         Client = secrets;
         return Page();
@@ -76,22 +70,16 @@ public class SecretsModel : PageModel
     public async Task<IActionResult> OnPostGenerateAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Id))
-        {
             return NotFound();
-        }
 
         if (!ModelState.IsValid)
-        {
             return await LoadPageAsync(cancellationToken);
-        }
 
         var result = await _clientDetailsService.GenerateClientSecretAsync(ClientId.Create(Id), Description, Expiration, cancellationToken);
         if (!result.Success)
         {
             if (result.Status == AdminMutationStatus.NotFound)
-            {
                 return NotFound();
-            }
 
             foreach (var (field, messages) in result.Errors)
             {
@@ -116,36 +104,30 @@ public class SecretsModel : PageModel
         return RedirectToPage(new { id = Id });
     }
 
-    private async Task<IActionResult> LoadPageAsync(CancellationToken cancellationToken)
-    {
-        var secrets = await _clientDetailsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
-        if (secrets == null)
-        {
-            return NotFound();
-        }
-
-        Client = secrets;
-        return Page();
-    }
-
     public async Task<IActionResult> OnPostRevokeAsync(int secretId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Id))
-        {
             return NotFound();
-        }
 
         var result = await _clientDetailsService.RevokeClientSecretAsync(ClientId.Create(Id), secretId, cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage is "Client not found." or "Secret not found.")
-            {
                 return NotFound();
-            }
 
             RevokeErrorMessage = result.ErrorMessage;
         }
 
         return RedirectToPage(new { id = Id });
+    }
+
+    private async Task<IActionResult> LoadPageAsync(CancellationToken cancellationToken)
+    {
+        var secrets = await _clientDetailsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
+        if (secrets == null)
+            return NotFound();
+
+        Client = secrets;
+        return Page();
     }
 }

@@ -62,15 +62,11 @@ public class AuthenticationModel : PageModel
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Id))
-        {
             return NotFound();
-        }
 
         var authentication = await _clientDetailsService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
         if (authentication == null)
-        {
             return NotFound();
-        }
 
         LoadFromModel(authentication);
 
@@ -80,9 +76,7 @@ public class AuthenticationModel : PageModel
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Id))
-        {
             return NotFound();
-        }
 
         NormalizeCollectionInputs();
         ValidateInput();
@@ -115,9 +109,7 @@ public class AuthenticationModel : PageModel
 
         var result = await _clientDetailsService.UpdateClientAuthenticationAsync(ClientId.Create(Id), input, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (!result.Succeeded)
         {
@@ -170,14 +162,10 @@ public class AuthenticationModel : PageModel
         }
 
         if (UriValidationHelper.GetInvalidHttpUris(Input.RedirectUris, ValidationConstants.MaxClientRedirectUriLength).Any())
-        {
             ModelState.AddModelError("Input.RedirectUris", "Each Redirect URI must be an absolute HTTP or HTTPS URL.");
-        }
 
         if (UriValidationHelper.GetInvalidHttpUris(Input.PostLogoutRedirectUris, ValidationConstants.MaxClientPostLogoutRedirectUriLength).Any())
-        {
             ModelState.AddModelError("Input.PostLogoutRedirectUris", "Each Post-Logout Redirect URI must be an absolute HTTP or HTTPS URL.");
-        }
 
         if (Input.CorsOrigins
             .Where(origin => !string.IsNullOrWhiteSpace(origin))
@@ -203,9 +191,7 @@ public class AuthenticationModel : PageModel
     {
         var authentication = await _clientDetailsService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
         if (authentication == null)
-        {
             return NotFound();
-        }
 
         ClientNameDisplay = authentication.ClientName;
         HasDrifted = authentication.HasDrifted;
@@ -222,6 +208,5 @@ public class AuthenticationModel : PageModel
                 ModelState.AddModelError(key, message);
             }
         }
-
     }
 }

@@ -61,15 +61,11 @@ public class TokenSettingsModel : PageModel
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Id))
-        {
             return NotFound();
-        }
 
         var settings = await _clientDetailsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
         if (settings == null)
-        {
             return NotFound();
-        }
 
         LoadFromModel(settings);
 
@@ -79,9 +75,7 @@ public class TokenSettingsModel : PageModel
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Id))
-        {
             return NotFound();
-        }
 
         if (!ModelState.IsValid)
         {
@@ -109,9 +103,7 @@ public class TokenSettingsModel : PageModel
 
         var result = await _clientDetailsService.UpdateClientTokenSettingsAsync(ClientId.Create(Id), input, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
-        {
             return NotFound();
-        }
 
         if (!result.Succeeded)
         {
@@ -143,9 +135,7 @@ public class TokenSettingsModel : PageModel
     {
         var settings = await _clientDetailsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
         if (settings == null)
-        {
             return NotFound();
-        }
 
         ClientNameDisplay = settings.ClientName;
         return Page();
