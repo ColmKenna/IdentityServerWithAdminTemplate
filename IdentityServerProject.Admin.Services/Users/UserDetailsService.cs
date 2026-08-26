@@ -252,7 +252,7 @@ public partial class UserDetailsService : IUserDetailsService
             return ClaimChangeResult.Failed(message);
         }
 
-        var outcome = await _store.AddClaimAsync(userId, type, claimValue ?? string.Empty, cancellationToken);
+        var outcome = await _store.AddClaimAsync(userId, new UserClaim(type, claimValue ?? string.Empty), cancellationToken);
         switch (outcome.Status)
         {
             case ClaimMutationStatus.AlreadyExists:
@@ -301,7 +301,7 @@ public partial class UserDetailsService : IUserDetailsService
 
         // Deliberately not gated by the Reserved-Claim Guard: removing a claim only ever
         // de-escalates, and reserved claims written before this policy existed need a way out.
-        var outcome = await _store.RemoveClaimAsync(userId, type, claimValue ?? string.Empty, cancellationToken);
+        var outcome = await _store.RemoveClaimAsync(userId, new UserClaim(type, claimValue ?? string.Empty), cancellationToken);
         switch (outcome.Status)
         {
             case ClaimMutationStatus.UserNotFound:

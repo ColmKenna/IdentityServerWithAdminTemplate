@@ -130,10 +130,10 @@ public interface IIdentityUserAdministrationStore
         CancellationToken cancellationToken = default);
 
     Task<ClaimMutationOutcome> AddClaimAsync(
-        UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default);
+        UserId userId, UserClaim claim, CancellationToken cancellationToken = default);
 
     Task<ClaimMutationOutcome> RemoveClaimAsync(
-        UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default);
+        UserId userId, UserClaim claim, CancellationToken cancellationToken = default);
 
     Task<SecurityStampRotationOutcome> RotateSecurityStampAsync(
         UserId userId, UserId? actingUserId, CancellationToken cancellationToken = default);

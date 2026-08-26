@@ -285,8 +285,10 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<ClaimMutationOutcome> AddClaimAsync(
-        UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default)
+        UserId userId, UserClaim claim, CancellationToken cancellationToken = default)
     {
+        var claimType = claim.Type ?? string.Empty;
+        var claimValue = claim.Value ?? string.Empty;
         var userIdStr = userId.Value ?? string.Empty;
         var outcome = new ClaimMutationOutcome(ClaimMutationStatus.UserNotFound, userIdStr, null);
 
@@ -339,8 +341,10 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     }
 
     public async Task<ClaimMutationOutcome> RemoveClaimAsync(
-        UserId userId, string claimType, string claimValue, CancellationToken cancellationToken = default)
+        UserId userId, UserClaim claim, CancellationToken cancellationToken = default)
     {
+        var claimType = claim.Type ?? string.Empty;
+        var claimValue = claim.Value ?? string.Empty;
         var userIdStr = userId.Value ?? string.Empty;
         var outcome = new ClaimMutationOutcome(ClaimMutationStatus.UserNotFound, userIdStr, null);
 
