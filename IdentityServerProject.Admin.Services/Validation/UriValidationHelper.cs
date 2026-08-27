@@ -9,20 +9,14 @@ public static class UriValidationHelper
     public static bool IsValidHttpOrHttpsUri(string? uri, int maxLength)
     {
         if (string.IsNullOrWhiteSpace(uri))
-        {
             return false;
-        }
 
         var trimmed = uri.Trim();
         if (trimmed.Length > maxLength)
-        {
             return false;
-        }
 
         if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var parsed))
-        {
             return false;
-        }
 
         return parsed.Scheme == Uri.UriSchemeHttp || parsed.Scheme == Uri.UriSchemeHttps;
     }
@@ -30,9 +24,7 @@ public static class UriValidationHelper
     public static IEnumerable<string> GetInvalidHttpUris(IEnumerable<string>? uris, int maxLength)
     {
         if (uris == null)
-        {
             return Enumerable.Empty<string>();
-        }
 
         return uris
             .Where(u => !string.IsNullOrWhiteSpace(u))
@@ -43,9 +35,7 @@ public static class UriValidationHelper
     {
         normalizedOrigin = string.Empty;
         if (!IsValidHttpOrHttpsUri(origin, maxLength))
-        {
             return false;
-        }
 
         var parsed = new Uri(origin!.Trim(), UriKind.Absolute);
         if (!string.IsNullOrEmpty(parsed.UserInfo)

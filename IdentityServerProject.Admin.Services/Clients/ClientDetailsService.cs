@@ -53,9 +53,7 @@ public partial class ClientDetailsService : IClientDetailsService
     public async Task<ClientDetailsModel?> GetClientDetailsAsync(ClientId clientId, CancellationToken cancellationToken = default)
     {
         if (clientId.IsEmpty)
-        {
             return null;
-        }
 
         var client = await _configurationDbContext.Clients
             .AsNoTracking()
@@ -69,9 +67,7 @@ public partial class ClientDetailsService : IClientDetailsService
             .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
         if (client == null)
-        {
             return null;
-        }
 
         var grantTypesList = client.AllowedGrantTypes.Select(g => g.GrantType).ToList();
         var grantTypesString = grantTypesList.Count > 0 ? string.Join(", ", grantTypesList) : "None";
@@ -111,9 +107,7 @@ public partial class ClientDetailsService : IClientDetailsService
     private async Task<bool> ToggleClientStatusCoreAsync(string clientId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(clientId))
-        {
             return false;
-        }
 
         var targetName = clientId;
         var found = false;
@@ -354,9 +348,7 @@ public partial class ClientDetailsService : IClientDetailsService
     public async Task<ClientAuthenticationModel?> GetClientAuthenticationAsync(ClientId clientId, CancellationToken cancellationToken = default)
     {
         if (clientId.IsEmpty)
-        {
             return null;
-        }
 
         var client = await _configurationDbContext.Clients
             .AsNoTracking()
@@ -369,9 +361,7 @@ public partial class ClientDetailsService : IClientDetailsService
             .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
         if (client == null)
-        {
             return null;
-        }
 
         var grantTypes = client.AllowedGrantTypes.Select(g => g.GrantType).OrderBy(g => g, StringComparer.Ordinal).ToList();
         var (hasDrifted, driftDetails) = EvaluatePresetDrift(client, grantTypes);
@@ -572,9 +562,7 @@ public partial class ClientDetailsService : IClientDetailsService
     public async Task<ClientPermissionsModel?> GetClientPermissionsAsync(ClientId clientId, CancellationToken cancellationToken = default)
     {
         if (clientId.IsEmpty)
-        {
             return null;
-        }
 
         var client = await _configurationDbContext.Clients
             .AsNoTracking()
@@ -583,9 +571,7 @@ public partial class ClientDetailsService : IClientDetailsService
             .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
         if (client == null)
-        {
             return null;
-        }
 
         var isInteractive = IsInteractiveClient(client);
 
@@ -737,9 +723,7 @@ public partial class ClientDetailsService : IClientDetailsService
     public async Task<ClientSecretsModel?> GetClientSecretsAsync(ClientId clientId, CancellationToken cancellationToken = default)
     {
         if (clientId.IsEmpty)
-        {
             return null;
-        }
 
         var client = await _configurationDbContext.Clients
             .AsNoTracking()
@@ -747,9 +731,7 @@ public partial class ClientDetailsService : IClientDetailsService
             .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
         if (client == null)
-        {
             return null;
-        }
 
         return new ClientSecretsModel
         {
@@ -943,18 +925,14 @@ public partial class ClientDetailsService : IClientDetailsService
     public async Task<ClientTokenSettingsModel?> GetClientTokenSettingsAsync(ClientId clientId, CancellationToken cancellationToken = default)
     {
         if (clientId.IsEmpty)
-        {
             return null;
-        }
 
         var client = await _configurationDbContext.Clients
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
         if (client == null)
-        {
             return null;
-        }
 
         return new ClientTokenSettingsModel
         {
@@ -1006,7 +984,7 @@ public partial class ClientDetailsService : IClientDetailsService
                 errors.AddError("Input.IdentityTokenLifetime",
                     $"Identity Token Lifetime must be between {ValidationConstants.MinIdentityTokenLifetime} and {ValidationConstants.MaxIdentityTokenLifetime} seconds.");
             }
-            
+
             if (input.AllowOfflineAccess)
             {
                 var refresh = input.RefreshToken ?? new RefreshTokenSettings();
@@ -1015,7 +993,7 @@ public partial class ClientDetailsService : IClientDetailsService
                     errors.AddError("Input.AbsoluteRefreshTokenLifetime",
                         $"Absolute Refresh Token Lifetime must be between {ValidationConstants.MinRefreshTokenLifetime} and {ValidationConstants.MaxAbsoluteRefreshTokenLifetime} seconds.");
                 }
-                
+
                 if (!refresh.IsSlidingLifetimeValid)
                 {
                     errors.AddError("Input.SlidingRefreshTokenLifetime",
@@ -1204,9 +1182,7 @@ public partial class ClientDetailsService : IClientDetailsService
     {
         const string marker = "IdentityServerProject.Audit.Client.Failed";
         if (ex.Data.Contains(marker))
-        {
             return;
-        }
 
         ex.Data[marker] = true;
         await _auditWriter.WriteAsync(new AdminAuditEvent(

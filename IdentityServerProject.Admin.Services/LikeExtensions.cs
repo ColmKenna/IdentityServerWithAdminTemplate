@@ -11,9 +11,7 @@ public static class LikeExtensions
     public static string? EscapeLikePattern(string? input)
     {
         if (string.IsNullOrEmpty(input))
-        {
             return input;
-        }
 
         var escaped = new System.Text.StringBuilder(input.Length);
         foreach (var character in input)

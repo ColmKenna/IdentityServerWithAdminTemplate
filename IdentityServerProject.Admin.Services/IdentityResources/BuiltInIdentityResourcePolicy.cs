@@ -78,9 +78,7 @@ public static class BuiltInIdentityResourcePolicy
     public static bool IsInvariantClaim(string? resourceName, string? claimType)
     {
         if (string.IsNullOrWhiteSpace(resourceName) || string.IsNullOrWhiteSpace(claimType))
-        {
             return false;
-        }
 
         return InvariantClaimsByResource.TryGetValue(resourceName.Trim(), out var invariants)
             && invariants.Contains(claimType.Trim(), StringComparer.OrdinalIgnoreCase);

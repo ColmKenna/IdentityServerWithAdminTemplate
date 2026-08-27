@@ -97,9 +97,7 @@ public sealed class ReservedClaimTypePolicy
     {
         var normalized = Normalize(claimType);
         if (normalized.Length == 0)
-        {
             return false;
-        }
 
         return _reservedTypes.Contains(normalized)
             || normalized.StartsWith(AspNetIdentityPrefix, StringComparison.OrdinalIgnoreCase);

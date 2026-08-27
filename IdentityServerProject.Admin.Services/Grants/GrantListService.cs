@@ -230,9 +230,7 @@ public class GrantListService : IGrantListService
     {
         const string marker = "IdentityServerProject.Audit.Grant.Failed";
         if (ex.Data.Contains(marker))
-        {
             return;
-        }
 
         ex.Data[marker] = true;
         await _auditWriter.WriteAsync(new AdminAuditEvent(
@@ -247,16 +245,12 @@ public class GrantListService : IGrantListService
     public static string FormatRelativeExpiration(DateTime? expiration, DateTime utcNow)
     {
         if (!expiration.HasValue)
-        {
             return "Never";
-        }
 
         var diff = expiration.Value - utcNow;
 
         if (diff <= TimeSpan.Zero)
-        {
             return "Expired";
-        }
 
         if (diff.TotalDays >= 1)
         {

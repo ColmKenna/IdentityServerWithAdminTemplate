@@ -19,7 +19,7 @@ public class ScopeUsageService : IScopeUsageService
     public async Task<ScopeUsageCounts> GetClientReferenceCountsAsync(ScopeSet scopeNames, CancellationToken cancellationToken = default)
     {
         var names = scopeNames.ToValues();
-        
+
         var counts = await _configurationDbContext.Clients
             .SelectMany(c => c.AllowedScopes)
             .Where(cs => names.Contains(cs.Scope))

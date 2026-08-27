@@ -121,9 +121,7 @@ public class ApiScopeListService : IApiScopeListService
     private static IQueryable<ApiScope> ApplyFilter(IQueryable<ApiScope> query, string? filter)
     {
         if (string.IsNullOrWhiteSpace(filter))
-        {
             return query;
-        }
 
         var escaped = LikeExtensions.EscapeLikePattern(filter.Trim());
         var pattern = $"%{escaped}%";

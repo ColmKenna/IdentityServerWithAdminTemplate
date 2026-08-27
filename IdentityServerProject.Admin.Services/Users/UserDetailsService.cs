@@ -45,15 +45,11 @@ public partial class UserDetailsService : IUserDetailsService
         var userId = context.Target;
         var currentUserId = context.ActingUser;
         if (userId.IsEmpty)
-        {
             return null;
-        }
 
         var account = await _store.FindUserDetailsAsync(userId, cancellationToken);
         if (account == null)
-        {
             return null;
-        }
 
         var claims = account.Claims
             .Select(c => new UserClaimSummary

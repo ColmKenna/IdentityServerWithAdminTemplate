@@ -94,9 +94,7 @@ public class AuditWriter : IAuditWriter
     private static string? SerializeAuditValue(object? value)
     {
         if (value == null)
-        {
             return null;
-        }
 
         return value is IAuditValue
             ? JsonSerializer.Serialize(value, value.GetType(), AuditJsonOptions.Default)

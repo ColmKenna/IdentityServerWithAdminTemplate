@@ -10,9 +10,7 @@ public static class ScopeValidationHelper
     public static bool IsValidScopeName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-        {
             return false;
-        }
 
         return ValidScopeNameRegex.IsMatch(name);
     }

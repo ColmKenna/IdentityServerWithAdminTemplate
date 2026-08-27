@@ -203,26 +203,20 @@ public sealed class SecretRevealService : ISecretRevealService
     private static void ValidatePurpose(SecretRevealPurpose purpose)
     {
         if (!Enum.IsDefined(purpose))
-        {
             throw new ArgumentOutOfRangeException(nameof(purpose));
-        }
     }
 
     private static bool TryDigestHandle(string? handle, out byte[] digest)
     {
         digest = Array.Empty<byte>();
         if (string.IsNullOrWhiteSpace(handle))
-        {
             return false;
-        }
 
         try
         {
             var rawHandle = WebEncoders.Base64UrlDecode(handle);
             if (rawHandle.Length != 32)
-            {
                 return false;
-            }
 
             digest = SHA256.HashData(rawHandle);
             return true;

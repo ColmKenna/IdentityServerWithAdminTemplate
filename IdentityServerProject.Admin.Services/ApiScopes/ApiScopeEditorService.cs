@@ -324,9 +324,7 @@ public class ApiScopeEditorService : IApiScopeEditorService
     {
         const string marker = "IdentityServerProject.Audit.ApiScope.Failed";
         if (ex.Data.Contains(marker))
-        {
             return;
-        }
 
         ex.Data[marker] = true;
         await _auditWriter.WriteAsync(new AdminAuditEvent(

@@ -13,9 +13,7 @@ public partial class ClientDetailsService
     {
         var grantTypes = entity.AllowedGrantTypes.Select(g => g.GrantType).ToList();
         if (grantTypes.Count == 0)
-        {
             return true;
-        }
 
         return grantTypes.Any(g => g != GrantTypeClientCredentials);
     }
@@ -24,9 +22,7 @@ public partial class ClientDetailsService
     {
         var preset = entity.Properties.FirstOrDefault(p => p.Key == ClientCreateService.PresetPropertyKey)?.Value;
         if (string.IsNullOrWhiteSpace(preset))
-        {
             return (false, null);
-        }
 
         var (expectedPkce, expectedSecret, expectedGrantTypes) = preset switch
         {
@@ -60,15 +56,11 @@ public partial class ClientDetailsService
     private static (bool CanDelete, string? BlockReason) EvaluateDeleteEligibility(Client entity, DateTimeOffset utcNow)
     {
         if (entity.Enabled)
-        {
             return (false, "Client must be disabled before it can be deleted.");
-        }
 
         var disabledAtValue = entity.Properties.FirstOrDefault(p => p.Key == DisabledAtPropertyKey)?.Value;
         if (!DateTime.TryParse(disabledAtValue, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var disabledAt))
-        {
             return (false, $"Client must be disabled for at least {MinimumDisabledDaysBeforeDelete} days before it can be deleted.");
-        }
 
         var daysDisabled = (utcNow.UtcDateTime - disabledAt.ToUniversalTime()).TotalDays;
         if (daysDisabled < MinimumDisabledDaysBeforeDelete)

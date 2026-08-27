@@ -111,9 +111,7 @@ public class DiagnosticsService : IDiagnosticsService
             .ToList();
 
         if (reservedClaimTypes.Count == 0)
-        {
             return new List<ReservedClaimHolder>();
-        }
 
         var holders = await _identityStore.GetClaimHoldersAsync(reservedClaimTypes, cancellationToken);
         return holders.ToList();

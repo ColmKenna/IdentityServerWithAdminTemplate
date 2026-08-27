@@ -144,9 +144,7 @@ public class IdentityResourceListService : IIdentityResourceListService
     private static IQueryable<IdentityResource> ApplyFilter(IQueryable<IdentityResource> query, string? filter)
     {
         if (string.IsNullOrWhiteSpace(filter))
-        {
             return query;
-        }
 
         var escaped = LikeExtensions.EscapeLikePattern(filter.Trim());
         var pattern = $"%{escaped}%";

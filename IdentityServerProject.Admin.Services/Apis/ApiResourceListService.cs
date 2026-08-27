@@ -53,9 +53,7 @@ public class ApiResourceListService : IApiResourceListService
     private static IQueryable<ApiResource> ApplyFilter(IQueryable<ApiResource> query, string? filter)
     {
         if (string.IsNullOrWhiteSpace(filter))
-        {
             return query;
-        }
 
         var escaped = LikeExtensions.EscapeLikePattern(filter.Trim());
         var pattern = $"%{escaped}%";

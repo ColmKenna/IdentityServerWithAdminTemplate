@@ -27,7 +27,7 @@ public partial class ClientCreateService : IClientCreateService
     private readonly IClientConfigurationValidator _clientConfigurationValidator;
 
     public ClientCreateService(
-        ConfigurationDbContext configurationDbContext, 
+        ConfigurationDbContext configurationDbContext,
         IAuditWriter auditWriter,
         IClientConfigurationValidator clientConfigurationValidator)
     {
@@ -88,9 +88,7 @@ public partial class ClientCreateService : IClientCreateService
     private async Task<ClientCreateResult> CloneClientCoreAsync(string sourceClientId, ClientCreateInputModel input, CancellationToken cancellationToken = default)
     {
         if (input == null)
-        {
             throw new ArgumentNullException(nameof(input));
-        }
 
         var sourceClient = await _configurationDbContext.Clients
             .AsNoTracking()
@@ -166,7 +164,7 @@ public partial class ClientCreateService : IClientCreateService
             CibaLifetime = sourceClient.CibaLifetime,
             PollingInterval = sourceClient.PollingInterval,
             CoordinateLifetimeWithUserSession = sourceClient.CoordinateLifetimeWithUserSession,
-            
+
             AllowedGrantTypes = sourceClient.AllowedGrantTypes.Select(g => new ClientGrantType { GrantType = g.GrantType }).ToList(),
             RedirectUris = sourceClient.RedirectUris.Select(u => new ClientRedirectUri { RedirectUri = u.RedirectUri }).ToList(),
             PostLogoutRedirectUris = sourceClient.PostLogoutRedirectUris.Select(u => new ClientPostLogoutRedirectUri { PostLogoutRedirectUri = u.PostLogoutRedirectUri }).ToList(),
@@ -228,9 +226,7 @@ public partial class ClientCreateService : IClientCreateService
     private async Task<ClientCreateResult> CreateClientCoreAsync(ClientCreateInputModel input, CancellationToken cancellationToken = default)
     {
         if (input == null)
-        {
             throw new ArgumentNullException(nameof(input));
-        }
 
         var errors = new ValidationErrorDictionary();
 
@@ -516,9 +512,7 @@ public partial class ClientCreateService : IClientCreateService
     {
         const string marker = "IdentityServerProject.Audit.ClientCreate.Failed";
         if (ex.Data.Contains(marker))
-        {
             return;
-        }
 
         ex.Data[marker] = true;
         await _auditWriter.WriteAsync(new AdminAuditEvent(

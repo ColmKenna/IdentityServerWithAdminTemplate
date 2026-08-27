@@ -55,13 +55,11 @@ public class ClientListService : IClientListService
     private static IQueryable<Client> ApplyFilter(IQueryable<Client> query, string? filter)
     {
         if (string.IsNullOrWhiteSpace(filter))
-        {
             return query;
-        }
 
         var escaped = LikeExtensions.EscapeLikePattern(filter.Trim());
         var pattern = $"%{escaped}%";
-        
+
         return query.Where(c =>
             (c.ClientName != null && EF.Functions.Like(c.ClientName, pattern)) ||
             EF.Functions.Like(c.ClientId, pattern));

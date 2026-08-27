@@ -1,0 +1,7 @@
+root = true
+
+# C# code-style rules. IDE0011 can be fixed automatically with
+# `dotnet format style` or the IDE's "Fix all" action.
+[*.cs]
+csharp_prefer_braces = false:warning
+dotnet_diagnostic.IDE0011.severity = warning

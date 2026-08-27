@@ -36,9 +36,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
     public async Task<ApiResourceEditorModel?> GetForEditAsync(ScopeName name, CancellationToken cancellationToken = default)
     {
         if (name.IsEmpty)
-        {
             return null;
-        }
 
         var entity = await LoadResourceAsync(name.Value.Trim(), asNoTracking: true, cancellationToken);
         return entity == null ? null : MapToEditorModel(entity);
@@ -838,9 +836,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
     {
         const string marker = "IdentityServerProject.Audit.ApiResource.Failed";
         if (ex.Data.Contains(marker))
-        {
             return;
-        }
 
         ex.Data[marker] = true;
         await _auditWriter.WriteAsync(new AdminAuditEvent(
