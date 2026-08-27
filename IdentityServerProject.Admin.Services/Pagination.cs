@@ -1,5 +1,3 @@
-using System;
-
 namespace IdentityServerProject.Services;
 
 public readonly record struct Pagination(int PageNumber, int PageSize, int Skip)

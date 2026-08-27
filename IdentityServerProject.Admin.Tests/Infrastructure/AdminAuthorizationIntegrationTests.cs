@@ -1,14 +1,10 @@
-using System;
-using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 using IdentityServerProject.Data;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Infrastructure;
 

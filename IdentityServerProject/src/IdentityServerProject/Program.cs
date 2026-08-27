@@ -1,4 +1,7 @@
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using IdentityServerProject;
+using IdentityServerProject.Configuration;
 using IdentityServerProject.Data;
 using IdentityServerProject.Data.Adapters;
 using IdentityServerProject.Services.AuditLogs;
@@ -6,13 +9,9 @@ using IdentityServerProject.Services.Diagnostics;
 using IdentityServerProject.Services.SecretReveals;
 using IdentityServerProject.Services.Users;
 using IdentityServerProject.Services.Validation;
-using IdentityServerProject.Configuration;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
 

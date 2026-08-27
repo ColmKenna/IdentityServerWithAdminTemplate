@@ -6,7 +6,6 @@ using IdentityServerProject.Data.Adapters;
 using IdentityServerProject.Services.AuditLogs;
 using IdentityServerProject.Services.SecretReveals;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

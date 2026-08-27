@@ -4,7 +4,6 @@ using AngleSharp.Html.Parser;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
 using Duende.IdentityServer.EntityFramework.Mappers;
-using Duende.IdentityServer.Models;
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Data;
 using IdentityServerProject.Services.AuditLogs;

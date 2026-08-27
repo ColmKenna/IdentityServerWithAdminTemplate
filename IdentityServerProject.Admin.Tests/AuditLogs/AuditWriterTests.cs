@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using IdentityServerProject.Data;
 using IdentityServerProject.Data.Adapters;
 using IdentityServerProject.Services.AuditLogs;
@@ -12,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.AuditLogs;
 

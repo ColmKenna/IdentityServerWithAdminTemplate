@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.SecretReveals;

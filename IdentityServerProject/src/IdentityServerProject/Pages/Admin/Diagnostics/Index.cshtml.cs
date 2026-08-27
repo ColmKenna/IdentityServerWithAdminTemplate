@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Services.Diagnostics;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 

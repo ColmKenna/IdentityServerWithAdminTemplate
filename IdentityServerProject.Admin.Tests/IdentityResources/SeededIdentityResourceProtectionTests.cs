@@ -1,15 +1,11 @@
-using IdentityServerProject.Admin.Tests.Infrastructure;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
-using IdentityServerProject;
+using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Data;
 using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.IdentityResources;
 

@@ -1,7 +1,4 @@
-using System;
 using System.Security.Claims;
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.Users;
 using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.Http;
@@ -11,7 +8,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Moq;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Users;
 

@@ -1,10 +1,8 @@
 extern alias ApiService;
-
+using System.Net;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System.Net;
 using ApiServiceProgram = ApiService::Program;
 
 namespace Sales.Tests;

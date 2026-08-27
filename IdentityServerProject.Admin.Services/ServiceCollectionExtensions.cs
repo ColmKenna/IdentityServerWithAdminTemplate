@@ -1,5 +1,5 @@
-using IdentityServerProject.Services.ApiScopes;
 using IdentityServerProject.Services.Apis;
+using IdentityServerProject.Services.ApiScopes;
 using IdentityServerProject.Services.AuditLogs;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Diagnostics;

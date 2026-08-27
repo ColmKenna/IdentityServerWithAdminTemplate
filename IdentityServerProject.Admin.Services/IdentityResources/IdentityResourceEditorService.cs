@@ -1,10 +1,9 @@
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
-using Microsoft.EntityFrameworkCore;
-
 using IdentityServerProject.Services.AuditLogs;
 using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
+using Microsoft.EntityFrameworkCore;
 
 namespace IdentityServerProject.Services.IdentityResources;
 

@@ -1,14 +1,9 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.IdentityResources;
 using IdentityServerProject.Services.IdentityResources;
 using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Moq;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.IdentityResources;
 

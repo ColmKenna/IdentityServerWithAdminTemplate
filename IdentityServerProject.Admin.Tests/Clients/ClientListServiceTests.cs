@@ -1,14 +1,8 @@
-using IdentityServerProject.Admin.Tests.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
-using IdentityServerProject.Services;
+using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Services.Clients;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Clients;
 

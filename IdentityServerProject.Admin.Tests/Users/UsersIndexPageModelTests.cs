@@ -1,13 +1,8 @@
 using IdentityServerProject.Admin.Tests.Infrastructure;
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.Users;
-using IdentityServerProject.Services;
 using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Moq;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Users;
 

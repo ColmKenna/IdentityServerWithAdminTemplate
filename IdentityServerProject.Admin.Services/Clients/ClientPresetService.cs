@@ -1,8 +1,4 @@
 namespace IdentityServerProject.Services.Clients;
-
-using System.Collections.Generic;
-using System.Linq;
-
 public class ClientPresetService : IClientPresetService
 {
     private static readonly List<ClientPreset> _presets = new()

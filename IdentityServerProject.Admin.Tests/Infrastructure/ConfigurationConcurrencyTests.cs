@@ -1,10 +1,10 @@
+using Duende.IdentityServer.EntityFramework.DbContexts;
+using Duende.IdentityServer.EntityFramework.Mappers;
+using Duende.IdentityServer.Models;
 using IdentityServerProject.Services.Apis;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
-using Duende.IdentityServer.EntityFramework.DbContexts;
-using Duende.IdentityServer.EntityFramework.Mappers;
-using Duende.IdentityServer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -1,4 +1,3 @@
-using System;
 using IdentityServerProject.Services.Users;
 
 namespace IdentityServerProject.Services.SecretReveals;

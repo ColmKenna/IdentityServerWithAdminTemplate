@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
 using IdentityServerProject.Admin.Tests.Infrastructure;
@@ -8,7 +6,6 @@ using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Apis;
 

@@ -1,7 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Microsoft.AspNetCore.Mvc.RazorPages;

@@ -1,6 +1,5 @@
 using IdentityServerProject.Services.Apis;
 using IdentityServerProject.Services.Validation;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Apis;
 

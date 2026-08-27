@@ -1,7 +1,5 @@
-using System.Collections.Generic;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Validation;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Clients;
 

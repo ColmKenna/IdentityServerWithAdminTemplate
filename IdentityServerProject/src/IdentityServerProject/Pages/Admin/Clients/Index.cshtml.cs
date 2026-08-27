@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Configuration;
 using IdentityServerProject.Services;
 using IdentityServerProject.Services.Clients;

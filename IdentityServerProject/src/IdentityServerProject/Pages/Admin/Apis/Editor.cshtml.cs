@@ -1,16 +1,10 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Services.Apis;
 using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.SecretReveals;
 using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace IdentityServerProject.Pages.Admin.Apis;
 

@@ -1,9 +1,5 @@
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Dom;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Infrastructure;
 

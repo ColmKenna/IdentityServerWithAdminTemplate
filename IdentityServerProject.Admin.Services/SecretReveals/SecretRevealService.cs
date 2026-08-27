@@ -1,7 +1,4 @@
-using System;
 using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Services.AuditLogs;
 using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.DataProtection;

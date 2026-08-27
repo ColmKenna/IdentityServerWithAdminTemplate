@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.Services;
 using IdentityServerProject.Services.Users;

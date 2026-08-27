@@ -1,17 +1,11 @@
-using IdentityServerProject.Admin.Tests.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Dom;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
+using IdentityServerProject.Admin.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.ApiScopes;
 

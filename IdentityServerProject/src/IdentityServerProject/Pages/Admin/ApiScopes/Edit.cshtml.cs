@@ -1,6 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Services.ApiScopes;
 using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;

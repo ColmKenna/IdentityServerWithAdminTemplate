@@ -1,12 +1,8 @@
 using IdentityServerProject.Admin.Tests.Infrastructure;
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.ApiScopes;
-using IdentityServerProject.Services;
 using IdentityServerProject.Services.ApiScopes;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.ApiScopes;
 

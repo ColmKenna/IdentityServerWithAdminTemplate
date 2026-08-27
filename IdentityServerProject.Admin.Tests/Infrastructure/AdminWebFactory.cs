@@ -1,13 +1,9 @@
-using System;
-using Microsoft.AspNetCore.DataProtection;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using IdentityServerProject.Data;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;

@@ -1,21 +1,16 @@
-using IdentityServerProject.Admin.Tests.Infrastructure;
-using System.Threading;
-using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.Models;
+using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Pages.Admin.Clients;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.SecretReveals;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Clients;
 

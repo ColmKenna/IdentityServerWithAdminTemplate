@@ -1,14 +1,10 @@
-using IdentityServerProject.Admin.Tests.Infrastructure;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
+using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Data;
 using IdentityServerProject.Services.ApiScopes;
 using IdentityServerProject.Services.AuditLogs;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.ApiScopes;
 

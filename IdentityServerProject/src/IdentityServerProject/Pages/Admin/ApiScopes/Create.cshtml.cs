@@ -1,7 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Threading;
-using System.Threading.Tasks;
-using Duende.IdentityServer.EntityFramework.Entities;
 using IdentityServerProject.Services.ApiScopes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;

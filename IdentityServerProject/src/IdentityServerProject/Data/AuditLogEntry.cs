@@ -1,4 +1,3 @@
-using System;
 using IdentityServerProject.Services.AuditLogs;
 
 namespace IdentityServerProject.Data;

@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.Clients;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.SecretReveals;
@@ -10,7 +8,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Moq;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Clients;
 

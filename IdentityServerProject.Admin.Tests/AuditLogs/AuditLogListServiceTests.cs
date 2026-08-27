@@ -1,13 +1,7 @@
 using IdentityServerProject.Admin.Tests.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using IdentityServerProject.Data;
-using IdentityServerProject.Services;
 using IdentityServerProject.Services.AuditLogs;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.AuditLogs;
 

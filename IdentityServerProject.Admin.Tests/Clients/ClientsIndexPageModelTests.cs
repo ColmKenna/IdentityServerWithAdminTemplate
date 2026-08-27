@@ -1,11 +1,7 @@
 using IdentityServerProject.Admin.Tests.Infrastructure;
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Pages.Admin.Clients;
-using IdentityServerProject.Services;
 using IdentityServerProject.Services.Clients;
 using Moq;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Clients;
 

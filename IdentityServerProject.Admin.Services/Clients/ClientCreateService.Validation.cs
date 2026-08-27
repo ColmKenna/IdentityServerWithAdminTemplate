@@ -1,4 +1,3 @@
-using System;
 using IdentityServerProject.Services.Validation;
 using Microsoft.EntityFrameworkCore;
 

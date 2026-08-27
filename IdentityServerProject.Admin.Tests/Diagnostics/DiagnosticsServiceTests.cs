@@ -1,15 +1,10 @@
-using IdentityServerProject.Admin.Tests.Infrastructure;
-using System;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
-using IdentityServerProject;
+using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Data;
 using IdentityServerProject.Services.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Diagnostics;
 

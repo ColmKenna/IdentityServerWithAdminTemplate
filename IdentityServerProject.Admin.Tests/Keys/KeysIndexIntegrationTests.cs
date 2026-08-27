@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
 using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Dom;
 using Duende.IdentityServer.Models;
@@ -14,7 +9,6 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Keys;
 

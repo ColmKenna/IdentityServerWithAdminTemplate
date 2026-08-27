@@ -1,7 +1,4 @@
-using System;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;

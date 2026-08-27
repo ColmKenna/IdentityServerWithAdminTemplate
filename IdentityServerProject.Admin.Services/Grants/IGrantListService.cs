@@ -1,6 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
-using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Users;
 
 namespace IdentityServerProject.Services.Grants;

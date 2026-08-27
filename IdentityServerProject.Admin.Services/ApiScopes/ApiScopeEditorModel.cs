@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace IdentityServerProject.Services.ApiScopes;
 
 /// <summary>

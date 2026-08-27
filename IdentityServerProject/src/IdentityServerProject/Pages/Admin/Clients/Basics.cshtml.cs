@@ -1,6 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Mvc;

@@ -1,10 +1,5 @@
-using System;
 using System.Data;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Services.SecretReveals;
-using IdentityServerProject.Services.Users;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,6 +1,5 @@
 using Duende.IdentityServer.EntityFramework.Entities;
 using IdentityServerProject.Services.IdentityResources;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.IdentityResources;
 

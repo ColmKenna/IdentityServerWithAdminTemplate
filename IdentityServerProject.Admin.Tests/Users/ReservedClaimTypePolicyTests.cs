@@ -2,7 +2,6 @@ using System.Security.Claims;
 using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Users;
 

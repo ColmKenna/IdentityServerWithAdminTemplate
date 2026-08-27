@@ -1,4 +1,3 @@
-using System;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Users;
 

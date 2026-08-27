@@ -1,12 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using AngleSharp;
-using AngleSharp.Dom;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using IdentityServerProject.Services.Clients;
 using Microsoft.AspNetCore.Identity;
@@ -14,7 +7,6 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Infrastructure;
 

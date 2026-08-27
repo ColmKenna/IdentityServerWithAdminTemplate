@@ -1,13 +1,10 @@
 using IdentityServerProject.Admin.Tests.Infrastructure;
-using System;
-using System.Threading.Tasks;
 using IdentityServerProject.Data;
 using IdentityServerProject.Data.Adapters;
 using IdentityServerProject.Services.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Xunit;
 
 namespace IdentityServerProject.Admin.Tests.Users;
 

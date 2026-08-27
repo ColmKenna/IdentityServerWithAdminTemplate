@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.SecretReveals;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Linq;
 
 namespace IdentityServerProject.Pages.Admin.Clients;
 

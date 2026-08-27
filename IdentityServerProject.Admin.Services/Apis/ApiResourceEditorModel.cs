@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using IdentityServerProject.Services.Secrets;
 
 namespace IdentityServerProject.Services.Apis;
