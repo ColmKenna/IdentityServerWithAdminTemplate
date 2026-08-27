@@ -98,12 +98,7 @@ public partial class ClientCreateService : IClientCreateService
             .FirstOrDefaultAsync(c => c.ClientId == sourceClientId, cancellationToken);
 
         if (sourceClient == null)
-        {
-            await AuditDeniedAsync(AuditReasonCode.NotFound, input.ClientId ?? string.Empty,
-                input.ClientName ?? string.Empty,
-                $"Source client '{sourceClientId}' was not found.", cancellationToken);
-            return ClientCreateResult.Failed("Source client not found.");
-        }
+            return await BuildSourceClientNotFoundResultAsync(sourceClientId, input.ClientId, input.ClientName, cancellationToken);
 
         string? clientId = input.ClientId?.Trim();
         string? clientName = input.ClientName?.Trim();
@@ -114,12 +109,7 @@ public partial class ClientCreateService : IClientCreateService
             .AnyAsync(c => c.ClientId == clientId, cancellationToken);
 
         if (clientIdIsInUse)
-        {
-            await AuditDeniedAsync(AuditReasonCode.NameCollision, clientId!, clientName!,
-                $"A client with ID '{clientId}' already exists.", cancellationToken);
-            return ClientCreateResult.Failed("ClientId", $"A client with ID '{clientId}' already exists.",
-                AdminMutationStatus.Conflict);
-        }
+            return await BuildClientIdInUseResultAsync(clientId!, clientName!, cancellationToken);
 
         var clonedClient = new Client
         {
@@ -196,11 +186,7 @@ public partial class ClientCreateService : IClientCreateService
         await _clientConfigurationValidator.ValidateAsync(validationContext, cancellationToken);
 
         if (!validationContext.IsValid)
-        {
-            await AuditDeniedAsync(AuditReasonCode.ValidationFailed, clientId!, clientName!,
-                validationContext.ErrorMessage ?? "Invalid client configuration.", cancellationToken);
-            return ClientCreateResult.Failed(validationContext.ErrorMessage ?? "Invalid client configuration.");
-        }
+            return await BuildInvalidClientConfigurationResultAsync(clientId!, clientName!, validationContext.ErrorMessage, cancellationToken);
 
         try
         {
@@ -332,24 +318,14 @@ public partial class ClientCreateService : IClientCreateService
         }
 
         if (errors.HasErrors)
-        {
-            await AuditDeniedAsync(AuditReasonCode.ValidationFailed, clientId ?? string.Empty,
-                clientName ?? string.Empty,
-                "Client creation validation failed.", cancellationToken);
-            return ClientCreateResult.Failed(errors);
-        }
+            return await BuildClientCreationValidationFailureResultAsync(clientId, clientName, errors, cancellationToken);
 
         bool clientIdIsInUse = await _configurationDbContext.Clients
             .AsNoTracking()
             .AnyAsync(c => c.ClientId == clientId, cancellationToken);
 
         if (clientIdIsInUse)
-        {
-            await AuditDeniedAsync(AuditReasonCode.NameCollision, clientId!, clientName!,
-                $"A client with ID '{clientId}' already exists.", cancellationToken);
-            return ClientCreateResult.Failed("ClientId", $"A client with ID '{clientId}' already exists.",
-                AdminMutationStatus.Conflict);
-        }
+            return await BuildClientIdInUseResultAsync(clientId!, clientName!, cancellationToken);
 
         var client = new Client
         {
@@ -395,13 +371,7 @@ public partial class ClientCreateService : IClientCreateService
         if (scopes.Count == 0 && input.SelectedPreset != "m2m")
         {
             if (!validSystemScopes.Contains("openid"))
-            {
-                await AuditDeniedAsync(AuditReasonCode.ValidationFailed, clientId!, clientName!,
-                    "Client creation requires the 'openid' identity resource.", cancellationToken);
-                return ClientCreateResult.Failed(
-                    "AllowedScopes",
-                    "The required 'openid' identity resource is not configured.");
-            }
+                return await BuildMissingOpenIdResultAsync(clientId!, clientName!, cancellationToken);
 
             scopes.Add("openid");
             if (validSystemScopes.Contains("profile")) scopes.Add("profile");
@@ -427,11 +397,7 @@ public partial class ClientCreateService : IClientCreateService
         await _clientConfigurationValidator.ValidateAsync(validationContext, cancellationToken);
 
         if (!validationContext.IsValid)
-        {
-            await AuditDeniedAsync(AuditReasonCode.ValidationFailed, clientId!, clientName!,
-                validationContext.ErrorMessage ?? "Invalid client configuration.", cancellationToken);
-            return ClientCreateResult.Failed(validationContext.ErrorMessage ?? "Invalid client configuration.");
-        }
+            return await BuildInvalidClientConfigurationResultAsync(clientId!, clientName!, validationContext.ErrorMessage, cancellationToken);
 
         try
         {
@@ -502,6 +468,47 @@ public partial class ClientCreateService : IClientCreateService
         => _auditWriter.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.Create, AuditOutcome.Denied, reasonCode,
             targetId, targetName, Details: details), cancellationToken);
+
+    private async Task<ClientCreateResult> BuildSourceClientNotFoundResultAsync(
+        string sourceClientId, string? clientId, string? clientName, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditReasonCode.NotFound, clientId ?? string.Empty, clientName ?? string.Empty,
+            $"Source client '{sourceClientId}' was not found.", cancellationToken);
+        return ClientCreateResult.Failed("Source client not found.");
+    }
+
+    private async Task<ClientCreateResult> BuildClientIdInUseResultAsync(string clientId, string clientName, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditReasonCode.NameCollision, clientId, clientName,
+            $"A client with ID '{clientId}' already exists.", cancellationToken);
+        return ClientCreateResult.Failed("ClientId", $"A client with ID '{clientId}' already exists.",
+            AdminMutationStatus.Conflict);
+    }
+
+    private async Task<ClientCreateResult> BuildInvalidClientConfigurationResultAsync(
+        string clientId, string clientName, string? errorMessage, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditReasonCode.ValidationFailed, clientId, clientName,
+            errorMessage ?? "Invalid client configuration.", cancellationToken);
+        return ClientCreateResult.Failed(errorMessage ?? "Invalid client configuration.");
+    }
+
+    private async Task<ClientCreateResult> BuildClientCreationValidationFailureResultAsync(
+        string? clientId, string? clientName, ValidationErrorDictionary errors, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditReasonCode.ValidationFailed, clientId ?? string.Empty, clientName ?? string.Empty,
+            "Client creation validation failed.", cancellationToken);
+        return ClientCreateResult.Failed(errors);
+    }
+
+    private async Task<ClientCreateResult> BuildMissingOpenIdResultAsync(string clientId, string clientName, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditReasonCode.ValidationFailed, clientId, clientName,
+            "Client creation requires the 'openid' identity resource.", cancellationToken);
+        return ClientCreateResult.Failed(
+            "AllowedScopes",
+            "The required 'openid' identity resource is not configured.");
+    }
 
     #endregion
 }

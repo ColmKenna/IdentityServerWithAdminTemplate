@@ -153,11 +153,7 @@ public partial class ClientDetailsService : IClientDetailsService
             });
 
             if (!found)
-            {
-                await AuditDeniedAsync(AuditAction.SetEnabled, AuditReasonCode.NotFound, clientId, clientId,
-                    $"Client '{clientId}' was not found.", cancellationToken);
-                return false;
-            }
+                return await BuildToggleStatusNotFoundResultAsync(clientId, cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.Client, AuditAction.SetEnabled, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
@@ -173,6 +169,13 @@ public partial class ClientDetailsService : IClientDetailsService
         }
     }
 
+    private async Task<bool> BuildToggleStatusNotFoundResultAsync(string clientId, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.SetEnabled, AuditReasonCode.NotFound, clientId, clientId,
+            $"Client '{clientId}' was not found.", cancellationToken);
+        return false;
+    }
+
     public Task<ClientDeleteResult>
         DeleteClientAsync(ClientId clientId, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
@@ -186,12 +189,7 @@ public partial class ClientDetailsService : IClientDetailsService
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(clientId))
-        {
-            await AuditDeniedAsync(AuditAction.Delete, AuditReasonCode.NotFound, clientId, clientId,
-                "Client not found.", cancellationToken);
-            return ClientDeleteResult.Failed(
-                "Client not found.", AuditReasonCode.NotFound, AdminMutationStatus.NotFound);
-        }
+            return await BuildDeleteClientNotFoundResultAsync(clientId, cancellationToken);
 
         string clientName = clientId;
         var outcome = ClientDeleteResult.Failed(
@@ -237,12 +235,7 @@ public partial class ClientDetailsService : IClientDetailsService
             });
 
             if (!outcome.Success)
-            {
-                await AuditDeniedAsync(AuditAction.Delete, AuditReasonCode.From(outcome.ReasonCode), clientId,
-                    clientName,
-                    outcome.ErrorMessage!, cancellationToken);
-                return outcome;
-            }
+                return await BuildDeleteClientFailedResultAsync(clientId, clientName, outcome, cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.Client, AuditAction.Delete, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
@@ -256,6 +249,22 @@ public partial class ClientDetailsService : IClientDetailsService
             await AuditFailedAsync(AuditAction.Delete, clientId, clientName, ex, cancellationToken);
             throw;
         }
+    }
+
+    private async Task<ClientDeleteResult> BuildDeleteClientNotFoundResultAsync(string clientId, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.Delete, AuditReasonCode.NotFound, clientId, clientId,
+            "Client not found.", cancellationToken);
+        return ClientDeleteResult.Failed(
+            "Client not found.", AuditReasonCode.NotFound, AdminMutationStatus.NotFound);
+    }
+
+    private async Task<ClientDeleteResult> BuildDeleteClientFailedResultAsync(
+        string clientId, string clientName, ClientDeleteResult outcome, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.Delete, AuditReasonCode.From(outcome.ReasonCode), clientId, clientName,
+            outcome.ErrorMessage!, cancellationToken);
+        return outcome;
     }
 
     public Task<AdminMutationResult> UpdateClientBasicsAsync(ClientId clientId, string clientName, string? description,
@@ -286,20 +295,12 @@ public partial class ClientDetailsService : IClientDetailsService
             errors.AddError("Input.Description",
                 $"Description cannot exceed {ValidationConstants.MaxDescriptionLength} characters.");
         if (errors.HasErrors)
-        {
-            await AuditDeniedAsync(AuditAction.UpdateBasics, AuditReasonCode.ValidationFailed, clientId, trimmedName,
-                "Client basics validation failed.", cancellationToken);
-            return AdminMutationResult.ValidationFailure(errors);
-        }
+            return await BuildBasicsValidationFailureResultAsync(clientId, trimmedName, errors, cancellationToken);
 
         Client? client = await LoadCompleteClientAsync(clientId, true, cancellationToken);
 
         if (client == null)
-        {
-            await AuditDeniedAsync(AuditAction.UpdateBasics, AuditReasonCode.NotFound, clientId, trimmedName,
-                $"Client '{clientId}' was not found.", cancellationToken);
-            return AdminMutationResult.NotFoundResult();
-        }
+            return await BuildBasicsClientNotFoundResultAsync(clientId, trimmedName, cancellationToken);
 
         try
         {
@@ -308,12 +309,7 @@ public partial class ClientDetailsService : IClientDetailsService
             proposed.Description = trimmedDescription;
             string? validationError = await ValidateClientAsync(proposed, cancellationToken);
             if (validationError != null)
-            {
-                await AuditDeniedAsync(AuditAction.UpdateBasics, AuditReasonCode.ValidationFailed, clientId,
-                    trimmedName,
-                    "Client basics validation failed.", cancellationToken);
-                return AdminMutationResult.ValidationFailure("Input.ClientName", validationError);
-            }
+                return await BuildBasicsInvalidConfigurationResultAsync(clientId, trimmedName, validationError, cancellationToken);
 
             Client trackedClient = await _configurationDbContext.Clients
                 .FirstAsync(c => c.ClientId == clientId, cancellationToken);
@@ -334,6 +330,30 @@ public partial class ClientDetailsService : IClientDetailsService
             await AuditFailedAsync(AuditAction.UpdateBasics, clientId, trimmedName, ex, cancellationToken);
             throw;
         }
+    }
+
+    private async Task<AdminMutationResult> BuildBasicsValidationFailureResultAsync(
+        string clientId, string trimmedName, ValidationErrorDictionary errors, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.UpdateBasics, AuditReasonCode.ValidationFailed, clientId, trimmedName,
+            "Client basics validation failed.", cancellationToken);
+        return AdminMutationResult.ValidationFailure(errors);
+    }
+
+    private async Task<AdminMutationResult> BuildBasicsClientNotFoundResultAsync(
+        string clientId, string trimmedName, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.UpdateBasics, AuditReasonCode.NotFound, clientId, trimmedName,
+            $"Client '{clientId}' was not found.", cancellationToken);
+        return AdminMutationResult.NotFoundResult();
+    }
+
+    private async Task<AdminMutationResult> BuildBasicsInvalidConfigurationResultAsync(
+        string clientId, string trimmedName, string validationError, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.UpdateBasics, AuditReasonCode.ValidationFailed, clientId, trimmedName,
+            "Client basics validation failed.", cancellationToken);
+        return AdminMutationResult.ValidationFailure("Input.ClientName", validationError);
     }
 
     #endregion
@@ -471,12 +491,7 @@ public partial class ClientDetailsService : IClientDetailsService
                 "Back-channel logout URI must be an absolute HTTP or HTTPS URL within the configured length limit.");
 
         if (errors.HasErrors)
-        {
-            await AuditDeniedAsync(AuditAction.UpdateAuthentication, AuditReasonCode.ValidationFailed, clientId,
-                clientId,
-                "Client authentication validation failed.", cancellationToken);
-            return AdminMutationResult.ValidationFailure(errors);
-        }
+            return await BuildAuthenticationValidationFailureResultAsync(clientId, errors, cancellationToken);
 
         var outcome = AdminMutationResult.NotFoundResult();
         string targetName = clientId;
@@ -543,18 +558,30 @@ public partial class ClientDetailsService : IClientDetailsService
         }
 
         if (!outcome.Succeeded)
-        {
-            AuditReasonCode reason = outcome.Status == AdminMutationStatus.NotFound
-                ? AuditReasonCode.NotFound
-                : AuditReasonCode.ValidationFailed;
-            await AuditDeniedAsync(AuditAction.UpdateAuthentication, reason, clientId, targetName,
-                outcome.ErrorMessage ?? "Client authentication validation failed.", cancellationToken);
-            return outcome;
-        }
+            return await BuildAuthenticationFailedResultAsync(clientId, targetName, outcome, cancellationToken);
 
         await _auditWriter.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.UpdateAuthentication, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
             clientId, targetName, Details: "Updated authentication settings"), cancellationToken);
+        return outcome;
+    }
+
+    private async Task<AdminMutationResult> BuildAuthenticationValidationFailureResultAsync(
+        string clientId, ValidationErrorDictionary errors, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.UpdateAuthentication, AuditReasonCode.ValidationFailed, clientId, clientId,
+            "Client authentication validation failed.", cancellationToken);
+        return AdminMutationResult.ValidationFailure(errors);
+    }
+
+    private async Task<AdminMutationResult> BuildAuthenticationFailedResultAsync(
+        string clientId, string targetName, AdminMutationResult outcome, CancellationToken cancellationToken)
+    {
+        AuditReasonCode reason = outcome.Status == AdminMutationStatus.NotFound
+            ? AuditReasonCode.NotFound
+            : AuditReasonCode.ValidationFailed;
+        await AuditDeniedAsync(AuditAction.UpdateAuthentication, reason, clientId, targetName,
+            outcome.ErrorMessage ?? "Client authentication validation failed.", cancellationToken);
         return outcome;
     }
 
@@ -616,21 +643,11 @@ public partial class ClientDetailsService : IClientDetailsService
     {
         clientId = clientId?.Trim() ?? string.Empty;
         if (clientId.Length == 0)
-        {
-            await AuditDeniedAsync(AuditAction.UpdatePermissions, AuditReasonCode.ValidationFailed, clientId, clientId,
-                "Client permissions validation failed.", cancellationToken);
-            return AdminMutationResult.ValidationFailure("Id", "Client ID is required.");
-        }
+            return await BuildPermissionsClientIdRequiredResultAsync(clientId, cancellationToken);
 
         IReadOnlyList<string> requestedScopes = allowedScopes.ToValues();
         if (requestedScopes.Any(scope => scope.Length > ValidationConstants.MaxScopeNameLength))
-        {
-            await AuditDeniedAsync(AuditAction.UpdatePermissions, AuditReasonCode.ValidationFailed, clientId, clientId,
-                "Client permissions validation failed.", cancellationToken);
-            return AdminMutationResult.ValidationFailure(
-                "Input.AllowedScopes",
-                $"Scopes cannot exceed {ValidationConstants.MaxScopeNameLength} characters.");
-        }
+            return await BuildPermissionsScopeTooLongResultAsync(clientId, cancellationToken);
 
         var outcome = AdminMutationResult.NotFoundResult();
         string targetName = clientId;
@@ -708,18 +725,38 @@ public partial class ClientDetailsService : IClientDetailsService
         }
 
         if (!outcome.Succeeded)
-        {
-            AuditReasonCode reason = outcome.Status == AdminMutationStatus.NotFound
-                ? AuditReasonCode.NotFound
-                : AuditReasonCode.ValidationFailed;
-            await AuditDeniedAsync(AuditAction.UpdatePermissions, reason, clientId, targetName,
-                outcome.ErrorMessage ?? "Client permissions validation failed.", cancellationToken);
-            return outcome;
-        }
+            return await BuildPermissionsFailedResultAsync(clientId, targetName, outcome, cancellationToken);
 
         await _auditWriter.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.UpdatePermissions, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
             clientId, targetName, Details: "Updated allowed scopes"), cancellationToken);
+        return outcome;
+    }
+
+    private async Task<AdminMutationResult> BuildPermissionsClientIdRequiredResultAsync(string clientId, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.UpdatePermissions, AuditReasonCode.ValidationFailed, clientId, clientId,
+            "Client permissions validation failed.", cancellationToken);
+        return AdminMutationResult.ValidationFailure("Id", "Client ID is required.");
+    }
+
+    private async Task<AdminMutationResult> BuildPermissionsScopeTooLongResultAsync(string clientId, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.UpdatePermissions, AuditReasonCode.ValidationFailed, clientId, clientId,
+            "Client permissions validation failed.", cancellationToken);
+        return AdminMutationResult.ValidationFailure(
+            "Input.AllowedScopes",
+            $"Scopes cannot exceed {ValidationConstants.MaxScopeNameLength} characters.");
+    }
+
+    private async Task<AdminMutationResult> BuildPermissionsFailedResultAsync(
+        string clientId, string targetName, AdminMutationResult outcome, CancellationToken cancellationToken)
+    {
+        AuditReasonCode reason = outcome.Status == AdminMutationStatus.NotFound
+            ? AuditReasonCode.NotFound
+            : AuditReasonCode.ValidationFailed;
+        await AuditDeniedAsync(AuditAction.UpdatePermissions, reason, clientId, targetName,
+            outcome.ErrorMessage ?? "Client permissions validation failed.", cancellationToken);
         return outcome;
     }
 
@@ -772,30 +809,15 @@ public partial class ClientDetailsService : IClientDetailsService
         DateTime? expiration = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(clientId))
-        {
-            await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.NotFound, clientId, clientId,
-                "Client not found.", cancellationToken);
-            return ClientSecretGenerateResult.Failed("Client not found.");
-        }
+            return await BuildSecretClientNotFoundResultAsync(clientId, cancellationToken);
 
         string? trimmedDescription = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
         if (trimmedDescription != null &&
             trimmedDescription.Length > ValidationConstants.MaxClientSecretDescriptionLength)
-        {
-            string message =
-                $"Secret description cannot exceed {ValidationConstants.MaxClientSecretDescriptionLength} characters.";
-            await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.ValidationFailed, clientId, clientId,
-                message, cancellationToken);
-            return ClientSecretGenerateResult.ValidationFailure("Description", message);
-        }
+            return await BuildSecretDescriptionTooLongResultAsync(clientId, cancellationToken);
 
         if (expiration.HasValue && expiration.Value.ToUniversalTime() <= DateTime.UtcNow)
-        {
-            string message = "Expiration date must be in the future.";
-            await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.ValidationFailed, clientId, clientId,
-                message, cancellationToken);
-            return ClientSecretGenerateResult.ValidationFailure("Expiration", message);
-        }
+            return await BuildSecretExpirationInPastResultAsync(clientId, cancellationToken);
 
         await using IDbContextTransaction transaction =
             await _configurationDbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable,
@@ -807,12 +829,7 @@ public partial class ClientDetailsService : IClientDetailsService
                 .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
 
             if (client == null)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.NotFound, clientId, clientId,
-                    "Client not found.", cancellationToken);
-                return ClientSecretGenerateResult.Failed("Client not found.");
-            }
+                return await BuildSecretGenerationClientNotFoundResultAsync(transaction, clientId, cancellationToken);
 
             string plaintextSecret = CryptoRandom.CreateUniqueId();
             client.ClientSecrets.Add(new ClientSecret
@@ -842,6 +859,39 @@ public partial class ClientDetailsService : IClientDetailsService
         }
     }
 
+    private async Task<ClientSecretGenerateResult> BuildSecretClientNotFoundResultAsync(string clientId, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.NotFound, clientId, clientId,
+            "Client not found.", cancellationToken);
+        return ClientSecretGenerateResult.Failed("Client not found.");
+    }
+
+    private async Task<ClientSecretGenerateResult> BuildSecretDescriptionTooLongResultAsync(string clientId, CancellationToken cancellationToken)
+    {
+        string message =
+            $"Secret description cannot exceed {ValidationConstants.MaxClientSecretDescriptionLength} characters.";
+        await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.ValidationFailed, clientId, clientId,
+            message, cancellationToken);
+        return ClientSecretGenerateResult.ValidationFailure("Description", message);
+    }
+
+    private async Task<ClientSecretGenerateResult> BuildSecretExpirationInPastResultAsync(string clientId, CancellationToken cancellationToken)
+    {
+        const string message = "Expiration date must be in the future.";
+        await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.ValidationFailed, clientId, clientId,
+            message, cancellationToken);
+        return ClientSecretGenerateResult.ValidationFailure("Expiration", message);
+    }
+
+    private async Task<ClientSecretGenerateResult> BuildSecretGenerationClientNotFoundResultAsync(
+        IDbContextTransaction transaction, string clientId, CancellationToken cancellationToken)
+    {
+        await transaction.RollbackAsync(cancellationToken);
+        await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.NotFound, clientId, clientId,
+            "Client not found.", cancellationToken);
+        return ClientSecretGenerateResult.Failed("Client not found.");
+    }
+
     public Task<ClientSecretRevokeResult> RevokeClientSecretAsync(ClientId clientId, int secretId,
         CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
@@ -855,12 +905,7 @@ public partial class ClientDetailsService : IClientDetailsService
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(clientId))
-        {
-            await AuditDeniedAsync(AuditAction.RevokeSecret, AuditReasonCode.NotFound, clientId, clientId,
-                "Client not found.", cancellationToken);
-            return ClientSecretRevokeResult.Failed(
-                "Client not found.", AuditReasonCode.NotFound, AdminMutationStatus.NotFound);
-        }
+            return await BuildRevokeSecretClientNotFoundResultAsync(clientId, cancellationToken);
 
         string targetName = clientId;
         var outcome = ClientSecretRevokeResult.Failed(
@@ -916,12 +961,7 @@ public partial class ClientDetailsService : IClientDetailsService
             });
 
             if (!outcome.Success)
-            {
-                await AuditDeniedAsync(AuditAction.RevokeSecret, AuditReasonCode.From(outcome.ReasonCode), clientId,
-                    targetName,
-                    outcome.ErrorMessage!, cancellationToken);
-                return outcome;
-            }
+                return await BuildRevokeSecretFailedResultAsync(clientId, targetName, outcome, cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.Client, AuditAction.RevokeSecret, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
@@ -935,6 +975,22 @@ public partial class ClientDetailsService : IClientDetailsService
             await AuditFailedAsync(AuditAction.RevokeSecret, clientId, targetName, ex, cancellationToken);
             throw;
         }
+    }
+
+    private async Task<ClientSecretRevokeResult> BuildRevokeSecretClientNotFoundResultAsync(string clientId, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.RevokeSecret, AuditReasonCode.NotFound, clientId, clientId,
+            "Client not found.", cancellationToken);
+        return ClientSecretRevokeResult.Failed(
+            "Client not found.", AuditReasonCode.NotFound, AdminMutationStatus.NotFound);
+    }
+
+    private async Task<ClientSecretRevokeResult> BuildRevokeSecretFailedResultAsync(
+        string clientId, string targetName, ClientSecretRevokeResult outcome, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.RevokeSecret, AuditReasonCode.From(outcome.ReasonCode), clientId, targetName,
+            outcome.ErrorMessage!, cancellationToken);
+        return outcome;
     }
 
     #endregion
@@ -1016,21 +1072,12 @@ public partial class ClientDetailsService : IClientDetailsService
         }
 
         if (errors.HasErrors)
-        {
-            await AuditDeniedAsync(AuditAction.UpdateTokenSettings, AuditReasonCode.ValidationFailed, clientId,
-                clientId,
-                "Client token settings validation failed.", cancellationToken);
-            return AdminMutationResult.ValidationFailure(errors);
-        }
+            return await BuildTokenSettingsValidationFailureResultAsync(clientId, errors, cancellationToken);
 
         Client? client = await LoadCompleteClientAsync(clientId, true, cancellationToken);
 
         if (client == null)
-        {
-            await AuditDeniedAsync(AuditAction.UpdateTokenSettings, AuditReasonCode.NotFound, clientId, clientId,
-                $"Client '{clientId}' was not found.", cancellationToken);
-            return AdminMutationResult.NotFoundResult();
-        }
+            return await BuildTokenSettingsClientNotFoundResultAsync(clientId, cancellationToken);
 
         try
         {
@@ -1050,11 +1097,7 @@ public partial class ClientDetailsService : IClientDetailsService
 
             string? validationError = await ValidateClientAsync(proposed, cancellationToken);
             if (validationError != null)
-            {
-                await AuditDeniedAsync(AuditAction.UpdateTokenSettings, AuditReasonCode.ValidationFailed, clientId,
-                    client.ClientName ?? clientId, "Client token settings validation failed.", cancellationToken);
-                return AdminMutationResult.ValidationFailure("Input.AccessTokenLifetime", validationError);
-            }
+                return await BuildTokenSettingsInvalidConfigurationResultAsync(clientId, client, validationError, cancellationToken);
 
             Client trackedClient = await _configurationDbContext.Clients
                 .FirstAsync(c => c.ClientId == clientId, cancellationToken);
@@ -1112,6 +1155,29 @@ public partial class ClientDetailsService : IClientDetailsService
                 cancellationToken);
             throw;
         }
+    }
+
+    private async Task<AdminMutationResult> BuildTokenSettingsValidationFailureResultAsync(
+        string clientId, ValidationErrorDictionary errors, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.UpdateTokenSettings, AuditReasonCode.ValidationFailed, clientId, clientId,
+            "Client token settings validation failed.", cancellationToken);
+        return AdminMutationResult.ValidationFailure(errors);
+    }
+
+    private async Task<AdminMutationResult> BuildTokenSettingsClientNotFoundResultAsync(string clientId, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.UpdateTokenSettings, AuditReasonCode.NotFound, clientId, clientId,
+            $"Client '{clientId}' was not found.", cancellationToken);
+        return AdminMutationResult.NotFoundResult();
+    }
+
+    private async Task<AdminMutationResult> BuildTokenSettingsInvalidConfigurationResultAsync(
+        string clientId, Client client, string validationError, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.UpdateTokenSettings, AuditReasonCode.ValidationFailed, clientId,
+            client.ClientName ?? clientId, "Client token settings validation failed.", cancellationToken);
+        return AdminMutationResult.ValidationFailure("Input.AccessTokenLifetime", validationError);
     }
 
     #endregion

@@ -218,49 +218,23 @@ public partial class UserDetailsService : IUserDetailsService
     {
         string type = ReservedClaimTypePolicy.Normalize(claimType);
         if (type.Length == 0)
-        {
-            await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, userId, userId,
-                "Claim type is required.", cancellationToken);
-            return ClaimChangeResult.Failed("Claim type is required.");
-        }
+            return await BuildClaimTypeRequiredResultAsync(AuditAction.AddClaim, userId, cancellationToken);
 
         if (type.Length > ValidationConstants.MaxClaimTypeLength)
-        {
-            string message = $"Claim type cannot exceed {ValidationConstants.MaxClaimTypeLength} characters.";
-            await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, userId, userId,
-                message, cancellationToken);
-            return ClaimChangeResult.Failed(message);
-        }
+            return await BuildClaimTypeTooLongResultAsync(userId, cancellationToken);
 
         if (string.IsNullOrWhiteSpace(claimValue))
-        {
-            const string message = "Claim value is required.";
-            await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, userId, userId,
-                message, cancellationToken);
-            return ClaimChangeResult.Failed(message);
-        }
+            return await BuildClaimValueRequiredResultAsync(userId, cancellationToken);
 
         if (claimValue.Length > ValidationConstants.MaxClaimValueLength)
-        {
-            string message = $"Claim value cannot exceed {ValidationConstants.MaxClaimValueLength} characters.";
-            await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, userId, userId,
-                message, cancellationToken);
-            return ClaimChangeResult.Failed(message);
-        }
+            return await BuildClaimValueTooLongResultAsync(userId, cancellationToken);
 
         // Reserved-Claim Guard. A stored claim of a framework-owned type is copied onto the
         // signed-in principal verbatim, so allowing free-text types here would let an
         // administrator mint a role grant that no role-based check can see. See
         // ReservedClaimTypePolicy for the full reasoning.
         if (_reservedClaimTypes.IsReserved(type))
-        {
-            string message =
-                $"'{type}' is a reserved claim type and cannot be assigned here. Roles are granted on the Roles tab; " +
-                "identity and security claims are issued by the framework.";
-            await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ReservedClaimType, userId, userId,
-                message, cancellationToken);
-            return ClaimChangeResult.Failed(message);
-        }
+            return await BuildReservedClaimTypeResultAsync(userId, type, cancellationToken);
 
         ClaimMutationOutcome outcome = await _store.AddClaimAsync(userId,
             new UserClaim(type, claimValue ?? string.Empty), cancellationToken);
@@ -295,6 +269,40 @@ public partial class UserDetailsService : IUserDetailsService
         return ClaimChangeResult.Succeeded();
     }
 
+    private async Task<ClaimChangeResult> BuildClaimTypeTooLongResultAsync(UserId userId, CancellationToken cancellationToken)
+    {
+        string message = $"Claim type cannot exceed {ValidationConstants.MaxClaimTypeLength} characters.";
+        await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, userId, userId,
+            message, cancellationToken);
+        return ClaimChangeResult.Failed(message);
+    }
+
+    private async Task<ClaimChangeResult> BuildClaimValueRequiredResultAsync(UserId userId, CancellationToken cancellationToken)
+    {
+        const string message = "Claim value is required.";
+        await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, userId, userId,
+            message, cancellationToken);
+        return ClaimChangeResult.Failed(message);
+    }
+
+    private async Task<ClaimChangeResult> BuildClaimValueTooLongResultAsync(UserId userId, CancellationToken cancellationToken)
+    {
+        string message = $"Claim value cannot exceed {ValidationConstants.MaxClaimValueLength} characters.";
+        await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ValidationFailed, userId, userId,
+            message, cancellationToken);
+        return ClaimChangeResult.Failed(message);
+    }
+
+    private async Task<ClaimChangeResult> BuildReservedClaimTypeResultAsync(UserId userId, string type, CancellationToken cancellationToken)
+    {
+        string message =
+            $"'{type}' is a reserved claim type and cannot be assigned here. Roles are granted on the Roles tab; " +
+            "identity and security claims are issued by the framework.";
+        await AuditDeniedAsync(AuditAction.AddClaim, AuditReasonCode.ReservedClaimType, userId, userId,
+            message, cancellationToken);
+        return ClaimChangeResult.Failed(message);
+    }
+
     public Task<ClaimChangeResult> RemoveClaimAsync(UserId userId, UserClaim claim,
         CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
@@ -309,11 +317,7 @@ public partial class UserDetailsService : IUserDetailsService
     {
         string type = ReservedClaimTypePolicy.Normalize(claimType);
         if (type.Length == 0)
-        {
-            await AuditDeniedAsync(AuditAction.RemoveClaim, AuditReasonCode.ValidationFailed, userId, userId,
-                "Claim type is required.", cancellationToken);
-            return ClaimChangeResult.Failed("Claim type is required.");
-        }
+            return await BuildClaimTypeRequiredResultAsync(AuditAction.RemoveClaim, userId, cancellationToken);
 
         // Deliberately not gated by the Reserved-Claim Guard: removing a claim only ever
         // de-escalates, and reserved claims written before this policy existed need a way out.
@@ -354,11 +358,7 @@ public partial class UserDetailsService : IUserDetailsService
     {
         UserId userId = context.Target;
         if (string.IsNullOrWhiteSpace(userId))
-        {
-            await AuditDeniedAsync(AuditAction.RevokeUserAccess, AuditReasonCode.NotFound, userId, userId,
-                "User not found.", cancellationToken);
-            return UserAccessRevokeResult.Failed("User not found.");
-        }
+            return await BuildRevokeAccessUserNotFoundResultAsync(userId, cancellationToken);
 
         string targetName = userId.Value;
         int revokedCount = 0;
@@ -370,20 +370,10 @@ public partial class UserDetailsService : IUserDetailsService
             targetName = rotation.TargetName;
 
             if (rotation.Status == SecurityStampRotationStatus.UserNotFound)
-            {
-                await AuditDeniedAsync(AuditAction.RevokeUserAccess, AuditReasonCode.NotFound, userId, userId,
-                    "User not found.", cancellationToken);
-                return UserAccessRevokeResult.Failed("User not found.");
-            }
+                return await BuildRevokeAccessUserNotFoundResultAsync(userId, cancellationToken);
 
             if (rotation.Status == SecurityStampRotationStatus.SelfActionBlocked)
-            {
-                string message =
-                    "You cannot revoke your own access from this page. Ask another administrator to do this if needed.";
-                await AuditDeniedAsync(AuditAction.RevokeUserAccess, AuditReasonCode.SelfAction, userId, targetName,
-                    message, cancellationToken);
-                return UserAccessRevokeResult.Failed(message);
-            }
+                return await BuildRevokeAccessSelfActionResultAsync(userId, targetName, cancellationToken);
 
             IExecutionStrategy grantStrategy = _persistedGrantDbContext.Database.CreateExecutionStrategy();
             await grantStrategy.ExecuteAsync(async () =>
@@ -442,6 +432,22 @@ public partial class UserDetailsService : IUserDetailsService
         return UserAccessRevokeResult.Succeeded(revokedCount, warningMessage);
     }
 
+    private async Task<UserAccessRevokeResult> BuildRevokeAccessUserNotFoundResultAsync(UserId userId, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.RevokeUserAccess, AuditReasonCode.NotFound, userId, userId,
+            "User not found.", cancellationToken);
+        return UserAccessRevokeResult.Failed("User not found.");
+    }
+
+    private async Task<UserAccessRevokeResult> BuildRevokeAccessSelfActionResultAsync(UserId userId, string targetName, CancellationToken cancellationToken)
+    {
+        string message =
+            "You cannot revoke your own access from this page. Ask another administrator to do this if needed.";
+        await AuditDeniedAsync(AuditAction.RevokeUserAccess, AuditReasonCode.SelfAction, userId, targetName,
+            message, cancellationToken);
+        return UserAccessRevokeResult.Failed(message);
+    }
+
     #endregion
 
     #region Account state and deletion
@@ -458,11 +464,7 @@ public partial class UserDetailsService : IUserDetailsService
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(newPassword))
-        {
-            await AuditDeniedAsync(AuditAction.ResetPassword, AuditReasonCode.ValidationFailed, userId, userId,
-                "Password is required.", cancellationToken);
-            return PasswordResetResult.Failed("Password is required.");
-        }
+            return await BuildPasswordRequiredResultAsync(userId, cancellationToken);
 
         PasswordResetOutcome outcome = await _store.ResetPasswordAsync(userId, newPassword, cancellationToken);
         switch (outcome.Status)
@@ -485,6 +487,13 @@ public partial class UserDetailsService : IUserDetailsService
             Details: "Password was reset by administrator"), cancellationToken);
 
         return PasswordResetResult.Succeeded();
+    }
+
+    private async Task<PasswordResetResult> BuildPasswordRequiredResultAsync(UserId userId, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.ResetPassword, AuditReasonCode.ValidationFailed, userId, userId,
+            "Password is required.", cancellationToken);
+        return PasswordResetResult.Failed("Password is required.");
     }
 
     public Task<UserSuspendResult> SuspendUserAsync(UserActionContext context,
@@ -640,4 +649,11 @@ public partial class UserDetailsService : IUserDetailsService
     }
 
     #endregion
+
+    private async Task<ClaimChangeResult> BuildClaimTypeRequiredResultAsync(AuditAction action, UserId userId, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(action, AuditReasonCode.ValidationFailed, userId, userId,
+            "Claim type is required.", cancellationToken);
+        return ClaimChangeResult.Failed("Claim type is required.");
+    }
 }

@@ -227,12 +227,12 @@
                 @if (Model.Client.Enabled)
                 {
                     @:Temporarily disable authentication for this client. All requests for authorization codes, tokens,
-                    and client authentication will immediately fail. This action is fully reversible.
+                    @:and client authentication will immediately fail. This action is fully reversible.
                 }
                 else
                 {
                     @:Enable authentication for this client. Authorization requests, token issuance, and client
-                    authentication will resume normal operation.
+                    @:authentication will resume normal operation.
                 }
             </p>
             <form asp-page-handler="ToggleStatus" asp-route-id="@Model.Client.ClientId" method="post"

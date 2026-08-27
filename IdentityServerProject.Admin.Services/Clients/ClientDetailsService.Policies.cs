@@ -60,13 +60,16 @@ public partial class ClientDetailsService
 
         double daysDisabled = (utcNow.UtcDateTime - disabledAt.ToUniversalTime()).TotalDays;
         if (daysDisabled < MinimumDisabledDaysBeforeDelete)
-        {
-            int daysRemaining = MinimumDisabledDaysBeforeDelete - (int)Math.Floor(daysDisabled);
-            return (false,
-                $"Client has been disabled for {(int)Math.Floor(daysDisabled)} day(s). It can be deleted in {daysRemaining} more day(s) (90-day retention rule).");
-        }
+            return BuildRetentionPeriodBlockedResult(daysDisabled);
 
         return (true, null);
+    }
+
+    private static (bool CanDelete, string? BlockReason) BuildRetentionPeriodBlockedResult(double daysDisabled)
+    {
+        int daysRemaining = MinimumDisabledDaysBeforeDelete - (int)Math.Floor(daysDisabled);
+        return (false,
+            $"Client has been disabled for {(int)Math.Floor(daysDisabled)} day(s). It can be deleted in {daysRemaining} more day(s) (90-day retention rule).");
     }
 
     private static string DeriveClientType(Client entity)

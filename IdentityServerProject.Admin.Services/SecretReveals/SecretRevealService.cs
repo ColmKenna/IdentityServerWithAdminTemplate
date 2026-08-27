@@ -48,26 +48,14 @@ public sealed class SecretRevealService : ISecretRevealService
         string normalizedTarget = NormalizeTarget(targetId);
         ValidatePurpose(purpose);
         if (normalizedTarget.Length == 0)
-        {
-            await AuditAsync(AuditAction.Issue, AuditOutcome.Denied, AuditReasonCode.ValidationFailed,
-                targetId, "Secret reveal target is invalid.", cancellationToken);
-            throw new ArgumentException("A non-empty target ID is required.", nameof(targetId));
-        }
+            await ThrowMissingTargetIdAsync(targetId, cancellationToken);
 
         if (string.IsNullOrEmpty(plaintext))
-        {
-            await AuditAsync(AuditAction.Issue, AuditOutcome.Denied, AuditReasonCode.ValidationFailed,
-                normalizedTarget, "Secret reveal payload is invalid.", cancellationToken);
-            throw new ArgumentException("A non-empty plaintext value is required.", nameof(plaintext));
-        }
+            await ThrowMissingPlaintextAsync(normalizedTarget, cancellationToken);
 
         UserId actorSubjectId = ResolveActorSubjectId();
         if (actorSubjectId.IsEmpty)
-        {
-            await AuditAsync(AuditAction.Issue, AuditOutcome.Denied, AuditReasonCode.WrongContext,
-                normalizedTarget, "Secret reveal issuance requires an authenticated subject.", cancellationToken);
-            throw new InvalidOperationException("An authenticated subject is required to issue a secret reveal.");
-        }
+            await ThrowUnauthenticatedSubjectAsync(normalizedTarget, cancellationToken);
 
         var securityContext = SecretSecurityContext.Create(actorSubjectId, purpose, normalizedTarget);
         DateTimeOffset now = _timeProvider.GetUtcNow();
@@ -110,6 +98,27 @@ public sealed class SecretRevealService : ISecretRevealService
         throw collisionFailure;
     }
 
+    private async Task ThrowMissingTargetIdAsync(string targetId, CancellationToken cancellationToken)
+    {
+        await AuditAsync(AuditAction.Issue, AuditOutcome.Denied, AuditReasonCode.ValidationFailed,
+            targetId, "Secret reveal target is invalid.", cancellationToken);
+        throw new ArgumentException("A non-empty target ID is required.", nameof(targetId));
+    }
+
+    private async Task ThrowMissingPlaintextAsync(string normalizedTarget, CancellationToken cancellationToken)
+    {
+        await AuditAsync(AuditAction.Issue, AuditOutcome.Denied, AuditReasonCode.ValidationFailed,
+            normalizedTarget, "Secret reveal payload is invalid.", cancellationToken);
+        throw new ArgumentException("A non-empty plaintext value is required.", "plaintext");
+    }
+
+    private async Task ThrowUnauthenticatedSubjectAsync(string normalizedTarget, CancellationToken cancellationToken)
+    {
+        await AuditAsync(AuditAction.Issue, AuditOutcome.Denied, AuditReasonCode.WrongContext,
+            normalizedTarget, "Secret reveal issuance requires an authenticated subject.", cancellationToken);
+        throw new InvalidOperationException("An authenticated subject is required to issue a secret reveal.");
+    }
+
     public async Task<SecretRevealConsumeResult> ConsumeAsync(
         SecretRevealTarget target,
         SecretRevealHandle handle,
@@ -123,11 +132,7 @@ public sealed class SecretRevealService : ISecretRevealService
             || normalizedTarget.Length == 0
             || actorSubjectId.IsEmpty
             || !TryDigestHandle(handle.Value, out byte[] digest))
-        {
-            await AuditAsync(AuditAction.Consume, AuditOutcome.Denied, AuditReasonCode.WrongContext,
-                normalizedTarget, "Secret reveal is unavailable.", cancellationToken);
-            return SecretRevealConsumeResult.Unavailable();
-        }
+            return await BuildConsumeUnavailableResultAsync(normalizedTarget, cancellationToken);
 
         var securityContext = SecretSecurityContext.Create(actorSubjectId, purpose, normalizedTarget);
         SecretRevealLookup lookup;
@@ -144,17 +149,7 @@ public sealed class SecretRevealService : ISecretRevealService
         }
 
         if (lookup.Status != SecretRevealLookupStatus.Revealed)
-        {
-            AuditReasonCode unavailableReason = lookup.Status switch
-            {
-                SecretRevealLookupStatus.WrongContext => AuditReasonCode.WrongContext,
-                SecretRevealLookupStatus.Expired => AuditReasonCode.Expired,
-                _ => AuditReasonCode.NotFound
-            };
-            await AuditAsync(AuditAction.Consume, AuditOutcome.Denied, unavailableReason,
-                normalizedTarget, "Secret reveal is unavailable.", cancellationToken);
-            return SecretRevealConsumeResult.Unavailable();
-        }
+            return await BuildLookupUnavailableResultAsync(lookup, normalizedTarget, cancellationToken);
 
         try
         {
@@ -173,6 +168,27 @@ public sealed class SecretRevealService : ISecretRevealService
                 normalizedTarget, "Consumed secret reveal payload could not be unprotected.", cancellationToken);
             return SecretRevealConsumeResult.Unavailable();
         }
+    }
+
+    private async Task<SecretRevealConsumeResult> BuildConsumeUnavailableResultAsync(string normalizedTarget, CancellationToken cancellationToken)
+    {
+        await AuditAsync(AuditAction.Consume, AuditOutcome.Denied, AuditReasonCode.WrongContext,
+            normalizedTarget, "Secret reveal is unavailable.", cancellationToken);
+        return SecretRevealConsumeResult.Unavailable();
+    }
+
+    private async Task<SecretRevealConsumeResult> BuildLookupUnavailableResultAsync(
+        SecretRevealLookup lookup, string normalizedTarget, CancellationToken cancellationToken)
+    {
+        AuditReasonCode unavailableReason = lookup.Status switch
+        {
+            SecretRevealLookupStatus.WrongContext => AuditReasonCode.WrongContext,
+            SecretRevealLookupStatus.Expired => AuditReasonCode.Expired,
+            _ => AuditReasonCode.NotFound
+        };
+        await AuditAsync(AuditAction.Consume, AuditOutcome.Denied, unavailableReason,
+            normalizedTarget, "Secret reveal is unavailable.", cancellationToken);
+        return SecretRevealConsumeResult.Unavailable();
     }
 
     private async Task TryCleanupExpiredAsync(DateTimeOffset now, CancellationToken cancellationToken)
