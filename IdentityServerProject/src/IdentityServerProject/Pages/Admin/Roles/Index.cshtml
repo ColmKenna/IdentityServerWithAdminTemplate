@@ -1,5 +1,5 @@
 @page
-@model IdentityServerProject.Pages.Admin.Roles.IndexModel
+@model IndexModel
 @{
     ViewData["Title"] = "Roles";
     ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
@@ -24,9 +24,11 @@
 }
 
 <div class="panel">
-    <div class="panel-toolbar" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px;">
+    <div class="panel-toolbar"
+         style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px;">
         <form method="get" style="display: flex; gap: 10px;">
-            <input type="text" asp-for="Filter" class="form-control" placeholder="Search roles..." style="width: 250px;" />
+            <input type="text" asp-for="Filter" class="form-control" placeholder="Search roles..."
+                   style="width: 250px;"/>
             <button type="submit" class="btn-secondary">Search</button>
             @if (!string.IsNullOrWhiteSpace(Model.Filter))
             {
@@ -63,12 +65,18 @@
                             <strong>@item.Name</strong>
                             @if (item.IsProtected)
                             {
-                                <span class="badge badge-reserved" style="margin-left: 8px;" title="This role is protected and cannot be deleted.">Protected</span>
+                                <span class="badge badge-reserved" style="margin-left: 8px;"
+                                      title="This role is protected and cannot be deleted.">Protected</span>
                             }
                         </ck-responsive-col>
                         <ck-responsive-col class="actions-cell">
-                            <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" style="display:inline;">
-                                <button type="submit" class="btn-sm btn-secondary text-danger" disabled="@item.IsProtected" title="@(item.IsProtected ? "Cannot delete a protected role." : "Delete role")" onclick="return confirm('Are you sure you want to delete this role?');">Delete</button>
+                            <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id"
+                                  style="display:inline;">
+                                <button type="submit" class="btn-sm btn-secondary text-danger"
+                                        disabled="@item.IsProtected"
+                                        title="@(item.IsProtected ? "Cannot delete a protected role." : "Delete role")"
+                                        onclick="return confirm('Are you sure you want to delete this role?');">Delete
+                                </button>
                             </form>
                         </ck-responsive-col>
                     </ck-responsive-row>
@@ -86,7 +94,8 @@
             }
             else
             {
-                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter" asp-route-PageNumber="@(Model.Roles.PageNumber - 1)">&lsaquo;</a>
+                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
+                   asp-route-PageNumber="@(Model.Roles.PageNumber - 1)">&lsaquo;</a>
             }
             <span class="pagination-page">Page @Model.Roles.PageNumber of @Model.Roles.TotalPages</span>
             @if (!Model.Roles.HasNextPage)
@@ -95,7 +104,8 @@
             }
             else
             {
-                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter" asp-route-PageNumber="@(Model.Roles.PageNumber + 1)">&rsaquo;</a>
+                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
+                   asp-route-PageNumber="@(Model.Roles.PageNumber + 1)">&rsaquo;</a>
             }
         </div>
     </div>
@@ -108,6 +118,7 @@
         padding: 8px 12px;
         font-size: 0.9rem;
     }
+
     .badge-reserved {
         background: var(--danger-soft, #fdecec);
         color: var(--danger, #b3261e);
@@ -117,6 +128,7 @@
         font-size: 0.75rem;
         font-weight: 700;
     }
+
     .text-danger {
         color: var(--danger, #b3261e);
     }

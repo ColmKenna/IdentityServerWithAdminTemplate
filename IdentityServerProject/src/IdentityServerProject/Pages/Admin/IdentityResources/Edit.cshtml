@@ -1,6 +1,6 @@
 @page
 @using IdentityServerProject.Services.IdentityResources
-@model IdentityServerProject.Pages.Admin.IdentityResources.EditModel
+@model EditModel
 @{
     ViewData["Title"] = Model.Editor.Name;
     var isProtected = Model.Editor.IsProtected;
@@ -12,7 +12,8 @@
         <p class="page-sub">Manage display name, description, flags, and user claims for this identity resource.</p>
     </div>
     <a asp-page="./Index" class="back-link">
-        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
@@ -35,49 +36,55 @@
 
         <fieldset class="editor-fieldset" style="border:0; padding:0; margin:0; min-width:0;" disabled="@isProtected">
 
-        <div class="form-field">
-            <label class="form-label" for="resource-name">Name</label>
-            <input class="form-control" id="resource-name" value="@Model.Editor.Name" disabled />
-            <small class="form-text">The unique identifier for this resource. This cannot be changed.</small>
-        </div>
-
-        <div class="form-field">
-            <label class="form-label" for="resource-display-name">Display Name</label>
-            <input class="form-control" id="resource-display-name" asp-for="Input.DisplayName" />
-            <span asp-validation-for="Input.DisplayName" class="field-validation-error"></span>
-        </div>
-
-        <div class="form-field">
-            <label class="form-label" for="resource-description">Description</label>
-            <textarea class="form-control" id="resource-description" rows="3" asp-for="Input.Description"></textarea>
-            <span asp-validation-for="Input.Description" class="field-validation-error"></span>
-        </div>
-
-        <div class="form-group checkbox-grid">
-            <div class="form-check">
-                <input class="form-control" type="checkbox" id="resource-enabled" asp-for="Input.Enabled" />
-                <label class="form-check-label" for="resource-enabled">@Html.DisplayNameFor(m => m.Input.Enabled)</label>
+            <div class="form-field">
+                <label class="form-label" for="resource-name">Name</label>
+                <input class="form-control" id="resource-name" value="@Model.Editor.Name" disabled/>
+                <small class="form-text">The unique identifier for this resource. This cannot be changed.</small>
             </div>
 
-            <div class="form-check">
-                <input class="form-control" type="checkbox" id="resource-required" asp-for="Input.Required" />
-                <label class="form-check-label" for="resource-required">@Html.DisplayNameFor(m => m.Input.Required)</label>
+            <div class="form-field">
+                <label class="form-label" for="resource-display-name">Display Name</label>
+                <input class="form-control" id="resource-display-name" asp-for="Input.DisplayName"/>
+                <span asp-validation-for="Input.DisplayName" class="field-validation-error"></span>
             </div>
 
-            <div class="form-check">
-                <input class="form-control" type="checkbox" id="resource-emphasize" asp-for="Input.Emphasize" />
-                <label class="form-check-label" for="resource-emphasize">@Html.DisplayNameFor(m => m.Input.Emphasize)</label>
+            <div class="form-field">
+                <label class="form-label" for="resource-description">Description</label>
+                <textarea class="form-control" id="resource-description" rows="3"
+                          asp-for="Input.Description"></textarea>
+                <span asp-validation-for="Input.Description" class="field-validation-error"></span>
             </div>
 
-            <div class="form-check">
-                <input class="form-control" type="checkbox" id="resource-show-discovery" asp-for="Input.ShowInDiscoveryDocument" />
-                <label class="form-check-label" for="resource-show-discovery">@Html.DisplayNameFor(m => m.Input.ShowInDiscoveryDocument)</label>
-            </div>
-        </div>
+            <div class="form-group checkbox-grid">
+                <div class="form-check">
+                    <input class="form-control" type="checkbox" id="resource-enabled" asp-for="Input.Enabled"/>
+                    <label class="form-check-label"
+                           for="resource-enabled">@Html.DisplayNameFor(m => m.Input.Enabled)</label>
+                </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn-primary">Save</button>
-        </div>
+                <div class="form-check">
+                    <input class="form-control" type="checkbox" id="resource-required" asp-for="Input.Required"/>
+                    <label class="form-check-label"
+                           for="resource-required">@Html.DisplayNameFor(m => m.Input.Required)</label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-control" type="checkbox" id="resource-emphasize" asp-for="Input.Emphasize"/>
+                    <label class="form-check-label"
+                           for="resource-emphasize">@Html.DisplayNameFor(m => m.Input.Emphasize)</label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-control" type="checkbox" id="resource-show-discovery"
+                           asp-for="Input.ShowInDiscoveryDocument"/>
+                    <label class="form-check-label"
+                           for="resource-show-discovery">@Html.DisplayNameFor(m => m.Input.ShowInDiscoveryDocument)</label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Save</button>
+            </div>
 
         </fieldset>
     </form>
@@ -101,8 +108,10 @@
                     <code class="scope-chip" style="@(isLocked ? "opacity: 0.6;" : "")">@claim</code>
                     @if (!isLocked)
                     {
-                        <form method="post" asp-page-handler="RemoveClaim" asp-route-name="@Model.Editor.Name" asp-route-claimType="@claim" class="scope-chip-form">
-                            <button type="submit" class="action-link action-link-danger" title="Remove @claim">&times;</button>
+                        <form method="post" asp-page-handler="RemoveClaim" asp-route-name="@Model.Editor.Name"
+                              asp-route-claimType="@claim" class="scope-chip-form">
+                            <button type="submit" class="action-link action-link-danger" title="Remove @claim">&times;
+                            </button>
                         </form>
                     }
                     else
@@ -118,13 +127,15 @@
         <div class="empty-state">No claims configured.</div>
     }
 
-    <form method="post" asp-page-handler="AddClaim" asp-route-name="@Model.Editor.Name" class="editor-form editor-subform">
+    <form method="post" asp-page-handler="AddClaim" asp-route-name="@Model.Editor.Name"
+          class="editor-form editor-subform">
         <fieldset class="editor-fieldset" style="border:0; padding:0; margin:0; min-width:0;" disabled="@isProtected">
             <h3 class="section-title">Add a claim type</h3>
             <div class="form-field">
                 <label class="form-label" for="new-claim-type">Claim type</label>
-                <input class="form-control" id="new-claim-type" name="claimType" required />
-                <small class="form-text">Examples: email, phone_number, address, name, given_name, family_name, website, etc.</small>
+                <input class="form-control" id="new-claim-type" name="claimType" required/>
+                <small class="form-text">Examples: email, phone_number, address, name, given_name, family_name, website,
+                    etc.</small>
             </div>
             <div class="form-actions">
                 <button type="submit" class="btn-secondary">Add claim</button>

@@ -24,7 +24,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             configDb.Clients.Add(client.ToEntity());
             await configDb.SaveChangesAsync();
         });
@@ -35,8 +35,9 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientTokenSettingsAsync(ClientId.Create("non-existent-client-id-xyz"));
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientTokenSettingsModel? result =
+                await service.GetClientTokenSettingsAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.Null(result);
         });
     }
@@ -44,7 +45,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetClientTokenSettingsAsync_ExistingClient_ReturnsCurrentSettings()
     {
-        var clientId = "token-settings-" + Guid.NewGuid().ToString("N");
+        string clientId = "token-settings-" + Guid.NewGuid().ToString("N");
         await SeedClientAsync(new Client
         {
             ClientId = clientId,
@@ -57,8 +58,8 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientTokenSettingsAsync(ClientId.Create(clientId));
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientTokenSettingsModel? result = await service.GetClientTokenSettingsAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
             Assert.Equal(3600, result!.AccessTokenLifetime.Seconds);
@@ -71,7 +72,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UpdateClientTokenSettingsAsync_ExistingClient_UpdatesAllFields()
     {
-        var clientId = "token-settings-update-" + Guid.NewGuid().ToString("N");
+        string clientId = "token-settings-update-" + Guid.NewGuid().ToString("N");
         await SeedClientAsync(new Client
         {
             ClientId = clientId,
@@ -92,7 +93,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
 
             var input = new ClientTokenSettingsInputModel
             {
@@ -109,10 +110,11 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
                 }
             };
 
-            var updateResult = await service.UpdateClientTokenSettingsAsync(ClientId.Create(clientId), input);
+            AdminMutationResult updateResult =
+                await service.UpdateClientTokenSettingsAsync(ClientId.Create(clientId), input);
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
-            var result = await service.GetClientTokenSettingsAsync(ClientId.Create(clientId));
+            ClientTokenSettingsModel? result = await service.GetClientTokenSettingsAsync(ClientId.Create(clientId));
             Assert.NotNull(result);
             Assert.Equal(7200, result!.AccessTokenLifetime.Seconds);
             Assert.Equal(600, result.IdentityTokenLifetime.Seconds);
@@ -123,10 +125,10 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
             Assert.Equal(172800, result.RefreshToken.AbsoluteLifetime.Seconds);
             Assert.Equal(72000, result.RefreshToken.SlidingLifetime.Seconds);
 
-            var audit = await sp.GetRequiredService<ApplicationDbContext>().AuditLogEntries
+            AuditLogEntry audit = await sp.GetRequiredService<ApplicationDbContext>().AuditLogEntries
                 .SingleAsync(entry => entry.Category == AuditCategory.Client
-                    && entry.Action == AuditAction.UpdateTokenSettings
-                    && entry.TargetId == clientId);
+                                      && entry.Action == AuditAction.UpdateTokenSettings
+                                      && entry.TargetId == clientId);
             Assert.Contains("AccessTokenLifetime", audit.OldValuesJson);
             Assert.Contains("SlidingLifetime", audit.NewValuesJson);
             Assert.DoesNotContain("Secret", audit.NewValuesJson, StringComparison.OrdinalIgnoreCase);
@@ -137,7 +139,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UpdateClientTokenSettingsAsync_DisablingOfflineAccess_RetainsRefreshConfiguration()
     {
-        var clientId = "token-settings-disable-" + Guid.NewGuid().ToString("N");
+        string clientId = "token-settings-disable-" + Guid.NewGuid().ToString("N");
         await SeedClientAsync(new Client
         {
             ClientId = clientId,
@@ -155,23 +157,24 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientTokenSettingsAsync(ClientId.Create(clientId), new ClientTokenSettingsInputModel
-            {
-                AccessTokenLifetime = TokenLifetime.FromSeconds(3600),
-                IdentityTokenLifetime = TokenLifetime.FromSeconds(300),
-                AllowOfflineAccess = false,
-                RefreshToken = new RefreshTokenSettings
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            AdminMutationResult result = await service.UpdateClientTokenSettingsAsync(ClientId.Create(clientId),
+                new ClientTokenSettingsInputModel
                 {
-                    Usage = TokenUsage.ReUse,
-                    Expiration = TokenExpiration.Absolute,
-                    AbsoluteLifetime = TokenLifetime.FromSeconds(60),
-                    SlidingLifetime = TokenLifetime.FromSeconds(60)
-                }
-            });
+                    AccessTokenLifetime = TokenLifetime.FromSeconds(3600),
+                    IdentityTokenLifetime = TokenLifetime.FromSeconds(300),
+                    AllowOfflineAccess = false,
+                    RefreshToken = new RefreshTokenSettings
+                    {
+                        Usage = TokenUsage.ReUse,
+                        Expiration = TokenExpiration.Absolute,
+                        AbsoluteLifetime = TokenLifetime.FromSeconds(60),
+                        SlidingLifetime = TokenLifetime.FromSeconds(60)
+                    }
+                });
 
             Assert.True(result.Succeeded, result.ErrorMessage);
-            var saved = await service.GetClientTokenSettingsAsync(ClientId.Create(clientId));
+            ClientTokenSettingsModel? saved = await service.GetClientTokenSettingsAsync(ClientId.Create(clientId));
             Assert.NotNull(saved);
             Assert.False(saved!.AllowOfflineAccess);
             Assert.Equal(TokenUsage.OneTimeOnly, saved.RefreshToken.Usage);
@@ -186,12 +189,13 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientTokenSettingsAsync(ClientId.Create("non-existent-client-id-abc"), new ClientTokenSettingsInputModel
-            {
-                AccessTokenLifetime = TokenLifetime.FromSeconds(3600),
-                IdentityTokenLifetime = TokenLifetime.FromSeconds(300)
-            });
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            AdminMutationResult result = await service.UpdateClientTokenSettingsAsync(
+                ClientId.Create("non-existent-client-id-abc"), new ClientTokenSettingsInputModel
+                {
+                    AccessTokenLifetime = TokenLifetime.FromSeconds(3600),
+                    IdentityTokenLifetime = TokenLifetime.FromSeconds(300)
+                });
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
     }
@@ -204,7 +208,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
         int identityLifetime,
         string expectedField)
     {
-        var clientId = "token-settings-invalid-" + Guid.NewGuid().ToString("N");
+        string clientId = "token-settings-invalid-" + Guid.NewGuid().ToString("N");
         await SeedClientAsync(new Client
         {
             ClientId = clientId,
@@ -219,17 +223,19 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientTokenSettingsAsync(ClientId.Create(clientId), new ClientTokenSettingsInputModel
-            {
-                AccessTokenLifetime = TokenLifetime.FromSeconds(accessLifetime),
-                IdentityTokenLifetime = TokenLifetime.FromSeconds(identityLifetime)
-            });
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            AdminMutationResult result = await service.UpdateClientTokenSettingsAsync(ClientId.Create(clientId),
+                new ClientTokenSettingsInputModel
+                {
+                    AccessTokenLifetime = TokenLifetime.FromSeconds(accessLifetime),
+                    IdentityTokenLifetime = TokenLifetime.FromSeconds(identityLifetime)
+                });
 
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
             Assert.True(result.Errors.ContainsKey(expectedField));
 
-            var persisted = await sp.GetRequiredService<ConfigurationDbContext>().Clients
+            Duende.IdentityServer.EntityFramework.Entities.Client persisted = await sp
+                .GetRequiredService<ConfigurationDbContext>().Clients
                 .AsNoTracking().SingleAsync(client => client.ClientId == clientId);
             Assert.Equal(3600, persisted.AccessTokenLifetime);
             Assert.Equal(300, persisted.IdentityTokenLifetime);

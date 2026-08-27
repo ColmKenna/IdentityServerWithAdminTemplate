@@ -19,10 +19,8 @@ public class ErrorModel : PageModel
     {
         RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
 
-        var statusCodeReExecuteFeature = HttpContext.Features.Get<IStatusCodeReExecuteFeature>();
-        if (statusCodeReExecuteFeature != null)
-        {
-            ErrorStatusCode = HttpContext.Response.StatusCode;
-        }
+        IStatusCodeReExecuteFeature? statusCodeReExecuteFeature =
+            HttpContext.Features.Get<IStatusCodeReExecuteFeature>();
+        if (statusCodeReExecuteFeature != null) ErrorStatusCode = HttpContext.Response.StatusCode;
     }
 }

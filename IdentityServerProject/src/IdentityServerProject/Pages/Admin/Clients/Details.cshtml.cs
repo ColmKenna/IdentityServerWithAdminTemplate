@@ -15,18 +15,17 @@ public class DetailsModel : PageModel
 
     public ClientDetailsModel Client { get; private set; } = default!;
 
-    [TempData]
-    public string? DeleteBlockedMessage { get; set; }
+    [TempData] public string? DeleteBlockedMessage { get; set; }
 
-    [BindProperty]
-    public string? DeleteConfirmation { get; set; }
+    [BindProperty] public string? DeleteConfirmation { get; set; }
 
     public async Task<IActionResult> OnGetAsync(string id, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(id))
             return NotFound();
 
-        var client = await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(id), cancellationToken);
+        ClientDetailsModel? client =
+            await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(id), cancellationToken);
         if (client == null)
             return NotFound();
 
@@ -39,7 +38,7 @@ public class DetailsModel : PageModel
         if (string.IsNullOrWhiteSpace(id))
             return NotFound();
 
-        var success = await _clientDetailsService.ToggleClientStatusAsync(ClientId.Create(id), cancellationToken);
+        bool success = await _clientDetailsService.ToggleClientStatusAsync(ClientId.Create(id), cancellationToken);
         if (!success)
             return NotFound();
 
@@ -51,13 +50,14 @@ public class DetailsModel : PageModel
         if (string.IsNullOrWhiteSpace(id))
             return NotFound();
 
-        if (!string.Equals(DeleteConfirmation?.Trim(), "DELETE", System.StringComparison.Ordinal))
+        if (!string.Equals(DeleteConfirmation?.Trim(), "DELETE", StringComparison.Ordinal))
         {
             DeleteBlockedMessage = "Type DELETE exactly to confirm permanent deletion.";
             return RedirectToPage(new { id });
         }
 
-        var result = await _clientDetailsService.DeleteClientAsync(ClientId.Create(id), cancellationToken);
+        ClientDeleteResult result =
+            await _clientDetailsService.DeleteClientAsync(ClientId.Create(id), cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage == "Client not found.")

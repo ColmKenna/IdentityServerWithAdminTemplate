@@ -5,6 +5,7 @@ using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Diagnostics;
 using IdentityServerProject.Services.Grants;
 using IdentityServerProject.Services.IdentityResources;
+using IdentityServerProject.Services.Roles;
 using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.SecretReveals;
 using IdentityServerProject.Services.Users;
@@ -12,11 +13,11 @@ using IdentityServerProject.Services.Users;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Registers every IdentityServer admin-console service the Razor Pages host consumes. The host is
-/// still responsible for registering an implementation of each persistence port this library
-/// defines (<see cref="IIdentityUserAdministrationStore"/>, <see cref="IAdminAuditStore"/>,
-/// <see cref="ISecretRevealStore"/>, <see cref="IIdentityDiagnosticsStore"/>) before resolving any
-/// of these services from the container.
+///     Registers every IdentityServer admin-console service the Razor Pages host consumes. The host is
+///     still responsible for registering an implementation of each persistence port this library
+///     defines (<see cref="IIdentityUserAdministrationStore" />, <see cref="IAdminAuditStore" />,
+///     <see cref="ISecretRevealStore" />, <see cref="IIdentityDiagnosticsStore" />) before resolving any
+///     of these services from the container.
 /// </summary>
 public static class IdentityServerAdminServicesCollectionExtensions
 {
@@ -43,7 +44,7 @@ public static class IdentityServerAdminServicesCollectionExtensions
         services.AddScoped<IAuditWriter, AuditWriter>();
         services.AddScoped<IDiagnosticsService, DiagnosticsService>();
         services.AddScoped<ISecretRevealService, SecretRevealService>();
-        services.AddScoped<IdentityServerProject.Services.Roles.IRoleService, IdentityServerProject.Services.Roles.RoleService>();
+        services.AddScoped<IRoleService, RoleService>();
 
         return services;
     }

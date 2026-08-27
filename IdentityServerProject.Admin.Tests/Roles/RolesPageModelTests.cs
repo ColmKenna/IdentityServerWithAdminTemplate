@@ -15,8 +15,10 @@ namespace IdentityServerProject.Admin.Tests.Roles;
 
 public class RolesPageModelTests
 {
+    private readonly IOptions<AdminConsoleOptions> _options = Options.Create(new AdminConsoleOptions
+        { DefaultPageSize = 10 });
+
     private readonly Mock<IRoleService> _roleServiceMock = new();
-    private readonly IOptions<AdminConsoleOptions> _options = Options.Create(new AdminConsoleOptions { DefaultPageSize = 10 });
 
     private static (PageContext PageContext, TempDataDictionary TempData) CreatePageContext()
     {
@@ -45,10 +47,11 @@ public class RolesPageModelTests
             PageSize = 10
         };
 
-        _roleServiceMock.Setup(s => s.GetRolesAsync(new ListQuery("test", Pagination.From(2, 10)), It.IsAny<CancellationToken>()))
+        _roleServiceMock.Setup(s =>
+                s.GetRolesAsync(new ListQuery("test", Pagination.From(2, 10)), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
-        var (pageContext, tempData) = CreatePageContext();
+        (PageContext pageContext, TempDataDictionary tempData) = CreatePageContext();
         var model = new IndexModel(_roleServiceMock.Object, _options)
         {
             PageContext = pageContext,
@@ -68,7 +71,7 @@ public class RolesPageModelTests
         _roleServiceMock.Setup(s => s.DeleteRoleAsync(RoleId.Create("role-1"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
-        var (pageContext, tempData) = CreatePageContext();
+        (PageContext pageContext, TempDataDictionary tempData) = CreatePageContext();
         var model = new IndexModel(_roleServiceMock.Object, _options)
         {
             PageContext = pageContext,
@@ -77,9 +80,9 @@ public class RolesPageModelTests
             PageNumber = 1
         };
 
-        var result = await model.OnPostDeleteAsync("role-1", CancellationToken.None);
+        IActionResult result = await model.OnPostDeleteAsync("role-1", CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Null(redirect.PageName); // Redirects to same page with route values
         Assert.Equal("Role successfully deleted.", model.StatusMessage);
     }
@@ -90,23 +93,23 @@ public class RolesPageModelTests
         _roleServiceMock.Setup(s => s.DeleteRoleAsync(RoleId.Create("sysadmin"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.DeniedResult(string.Empty, "Cannot delete protected role."));
 
-        var (pageContext, tempData) = CreatePageContext();
+        (PageContext pageContext, TempDataDictionary tempData) = CreatePageContext();
         var model = new IndexModel(_roleServiceMock.Object, _options)
         {
             PageContext = pageContext,
             TempData = tempData
         };
 
-        var result = await model.OnPostDeleteAsync("sysadmin", CancellationToken.None);
+        IActionResult result = await model.OnPostDeleteAsync("sysadmin", CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("Cannot delete protected role.", model.ErrorMessage);
     }
 
     [Fact]
     public async Task CreateModel_OnPostAsync_InvalidModelState_ReturnsPage()
     {
-        var (pageContext, tempData) = CreatePageContext();
+        (PageContext pageContext, TempDataDictionary tempData) = CreatePageContext();
         var model = new CreateModel(_roleServiceMock.Object)
         {
             PageContext = pageContext,
@@ -114,10 +117,11 @@ public class RolesPageModelTests
         };
         model.ModelState.AddModelError("Input.Name", "Name is required.");
 
-        var result = await model.OnPostAsync(CancellationToken.None);
+        IActionResult result = await model.OnPostAsync(CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
-        _roleServiceMock.Verify(s => s.CreateRoleAsync(It.IsAny<RoleCreateInputModel>(), It.IsAny<CancellationToken>()), Times.Never);
+        _roleServiceMock.Verify(s => s.CreateRoleAsync(It.IsAny<RoleCreateInputModel>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -126,7 +130,7 @@ public class RolesPageModelTests
         _roleServiceMock.Setup(s => s.CreateRoleAsync(It.IsAny<RoleCreateInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(RoleCreateResult.Failed("Role already exists."));
 
-        var (pageContext, tempData) = CreatePageContext();
+        (PageContext pageContext, TempDataDictionary tempData) = CreatePageContext();
         var model = new CreateModel(_roleServiceMock.Object)
         {
             PageContext = pageContext,
@@ -134,7 +138,7 @@ public class RolesPageModelTests
             Input = new CreateModel.InputModel { Name = "ExistingRole" }
         };
 
-        var result = await model.OnPostAsync(CancellationToken.None);
+        IActionResult result = await model.OnPostAsync(CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
         Assert.True(model.ModelState.ContainsKey(string.Empty));
@@ -147,7 +151,7 @@ public class RolesPageModelTests
         _roleServiceMock.Setup(s => s.CreateRoleAsync(It.IsAny<RoleCreateInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(RoleCreateResult.Succeeded(RoleId.Create("new-role-id")));
 
-        var (pageContext, tempData) = CreatePageContext();
+        (PageContext pageContext, TempDataDictionary tempData) = CreatePageContext();
         var model = new CreateModel(_roleServiceMock.Object)
         {
             PageContext = pageContext,
@@ -155,9 +159,9 @@ public class RolesPageModelTests
             Input = new CreateModel.InputModel { Name = "SuperUser" }
         };
 
-        var result = await model.OnPostAsync(CancellationToken.None);
+        IActionResult result = await model.OnPostAsync(CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("./Index", redirect.PageName);
         Assert.Equal("Role 'SuperUser' was successfully created.", tempData["StatusMessage"]);
     }

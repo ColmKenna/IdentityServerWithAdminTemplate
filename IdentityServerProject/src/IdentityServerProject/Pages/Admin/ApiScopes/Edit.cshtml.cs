@@ -13,8 +13,7 @@ public class EditInputModel
     [Display(Name = "Display Name")]
     public string? DisplayName { get; set; }
 
-    [StringLength(1000)]
-    public string? Description { get; set; }
+    [StringLength(1000)] public string? Description { get; set; }
 
     public bool Enabled { get; set; } = true;
 
@@ -37,18 +36,16 @@ public class EditModel : PageModel
 
     // Bound from the query string only (never form body) so a tampered hidden/posted
     // field can never redirect a save/claim edit onto a different scope's row.
-    [FromQuery]
-    public string Name { get; set; } = string.Empty;
+    [FromQuery] public string Name { get; set; } = string.Empty;
 
-    [BindProperty]
-    public EditInputModel Input { get; set; } = new();
+    [BindProperty] public EditInputModel Input { get; set; } = new();
 
     public ApiScopeEditorModel Editor { get; private set; } = new()
     {
         Name = string.Empty,
         DisplayName = null,
         Description = null,
-        Claims = new(),
+        Claims = new List<string>()
     };
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
@@ -56,7 +53,8 @@ public class EditModel : PageModel
         if (string.IsNullOrWhiteSpace(Name))
             return NotFound();
 
-        var editor = await _apiScopeEditorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
+        ApiScopeEditorModel? editor =
+            await _apiScopeEditorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
         if (editor == null)
             return NotFound();
 
@@ -68,7 +66,7 @@ public class EditModel : PageModel
             Enabled = editor.Enabled,
             Required = editor.Required,
             Emphasize = editor.Emphasize,
-            ShowInDiscoveryDocument = editor.ShowInDiscoveryDocument,
+            ShowInDiscoveryDocument = editor.ShowInDiscoveryDocument
         };
 
         return Page();
@@ -81,14 +79,15 @@ public class EditModel : PageModel
 
         if (!ModelState.IsValid)
         {
-            var editor = await _apiScopeEditorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
+            ApiScopeEditorModel? editor =
+                await _apiScopeEditorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
             if (editor == null)
                 return NotFound();
             Editor = editor;
             return Page();
         }
 
-        var success = await _apiScopeEditorService.UpdateBasicsAsync(
+        bool success = await _apiScopeEditorService.UpdateBasicsAsync(
             new UpdateApiScopeBasicsCommand(
                 ScopeName.Create(Name),
                 Input.DisplayName,
@@ -104,18 +103,22 @@ public class EditModel : PageModel
         return RedirectToPage(new { name = Name });
     }
 
-    public async Task<IActionResult> OnPostAddClaimAsync(string name, string claimType, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnPostAddClaimAsync(string name, string claimType,
+        CancellationToken cancellationToken)
     {
-        var success = await _apiScopeEditorService.AddClaimAsync(ScopeName.Create(name), ClaimType.Create(claimType), cancellationToken);
+        bool success = await _apiScopeEditorService.AddClaimAsync(ScopeName.Create(name), ClaimType.Create(claimType),
+            cancellationToken);
         if (!success)
             return NotFound();
 
         return RedirectToPage(new { name });
     }
 
-    public async Task<IActionResult> OnPostRemoveClaimAsync(string name, string claimType, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnPostRemoveClaimAsync(string name, string claimType,
+        CancellationToken cancellationToken)
     {
-        var success = await _apiScopeEditorService.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create(claimType), cancellationToken);
+        bool success = await _apiScopeEditorService.RemoveClaimAsync(ScopeName.Create(name),
+            ClaimType.Create(claimType), cancellationToken);
         if (!success)
             return NotFound();
 

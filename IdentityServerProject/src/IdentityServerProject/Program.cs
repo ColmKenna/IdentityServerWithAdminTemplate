@@ -1,11 +1,14 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using Duende.IdentityServer.EntityFramework.DbContexts;
+using Duende.IdentityServer.EntityFramework.Options;
 using IdentityServerProject;
 using IdentityServerProject.Configuration;
 using IdentityServerProject.Data;
 using IdentityServerProject.Data.Adapters;
 using IdentityServerProject.Services.AuditLogs;
 using IdentityServerProject.Services.Diagnostics;
+using IdentityServerProject.Services.Roles;
 using IdentityServerProject.Services.SecretReveals;
 using IdentityServerProject.Services.Users;
 using IdentityServerProject.Services.Validation;
@@ -13,7 +16,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
@@ -22,27 +25,25 @@ builder.AddSqlServerDbContext<ApplicationDbContext>("IdentityDb");
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddHttpContextAccessor();
 
-var dataProtection = builder.Services
+IDataProtectionBuilder dataProtection = builder.Services
     .AddDataProtection()
     .SetApplicationName("IdentityServerProject")
     .PersistKeysToDbContext<ApplicationDbContext>();
 
 if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing"))
 {
-    var certificatePath = builder.Configuration["DataProtection:CertificatePath"];
-    var certificatePassword = builder.Configuration["DataProtection:CertificatePassword"];
+    string? certificatePath = builder.Configuration["DataProtection:CertificatePath"];
+    string? certificatePassword = builder.Configuration["DataProtection:CertificatePassword"];
     if (string.IsNullOrWhiteSpace(certificatePath) || string.IsNullOrWhiteSpace(certificatePassword))
-    {
         throw new InvalidOperationException(
             "DataProtection:CertificatePath and DataProtection:CertificatePassword are required outside Development.");
-    }
 
-    var resolvedCertificatePath = Path.IsPathRooted(certificatePath)
+    string resolvedCertificatePath = Path.IsPathRooted(certificatePath)
         ? certificatePath
         : Path.Combine(builder.Environment.ContentRootPath, certificatePath);
     try
     {
-        var certificate = X509CertificateLoader.LoadPkcs12FromFile(
+        X509Certificate2 certificate = X509CertificateLoader.LoadPkcs12FromFile(
             resolvedCertificatePath,
             certificatePassword,
             X509KeyStorageFlags.EphemeralKeySet);
@@ -85,11 +86,11 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 var razorClientUri = AbsoluteHttpUri.Create(builder.Configuration["Clients:RazorClientUri"]
-    ?? "https://localhost"); // Fallback for design-time tools
+                                            ?? "https://localhost"); // Fallback for design-time tools
 var blazorClientUri = AbsoluteHttpUri.Create(builder.Configuration["Clients:BlazorClientUri"]
-    ?? "https://localhost"); // Fallback for design-time tools
+                                             ?? "https://localhost"); // Fallback for design-time tools
 
-var isBuilder = builder.Services
+IIdentityServerBuilder isBuilder = builder.Services
     .AddIdentityServer(options =>
     {
         options.EmitStaticAudienceClaim = true;
@@ -101,7 +102,8 @@ var isBuilder = builder.Services
     .AddConfigurationStore(options =>
     {
         options.ConfigureDbContext = db => db.UseSqlServer(
-            builder.Configuration.GetConnectionString("IdentityConfigDb") ?? "Server=(localdb)\\mssqllocaldb;Database=IdentityConfigDb_DesignTime;Trusted_Connection=True;MultipleActiveResultSets=true",
+            builder.Configuration.GetConnectionString("IdentityConfigDb") ??
+            "Server=(localdb)\\mssqllocaldb;Database=IdentityConfigDb_DesignTime;Trusted_Connection=True;MultipleActiveResultSets=true",
             sql => sql
                 .MigrationsAssembly(typeof(Program).Assembly.FullName)
                 .EnableRetryOnFailure());
@@ -109,51 +111,47 @@ var isBuilder = builder.Services
     .AddOperationalStore(options =>
     {
         options.ConfigureDbContext = db => db.UseSqlServer(
-            builder.Configuration.GetConnectionString("IdentityOperationalDb") ?? "Server=(localdb)\\mssqllocaldb;Database=IdentityOperationalDb_DesignTime;Trusted_Connection=True;MultipleActiveResultSets=true",
+            builder.Configuration.GetConnectionString("IdentityOperationalDb") ??
+            "Server=(localdb)\\mssqllocaldb;Database=IdentityOperationalDb_DesignTime;Trusted_Connection=True;MultipleActiveResultSets=true",
             sql => sql
                 .MigrationsAssembly(typeof(Program).Assembly.FullName)
                 .EnableRetryOnFailure());
     });
 
 if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
-{
-    isBuilder.AddDeveloperSigningCredential(persistKey: false);
-}
+    isBuilder.AddDeveloperSigningCredential(false);
 else
 {
-    var certPath = builder.Configuration["IdentityServer:SigningCertificatePath"];
-    var certPassword = builder.Configuration["IdentityServer:SigningCertificatePassword"];
+    string? certPath = builder.Configuration["IdentityServer:SigningCertificatePath"];
+    string? certPassword = builder.Configuration["IdentityServer:SigningCertificatePassword"];
     if (!string.IsNullOrWhiteSpace(certPath) && !string.IsNullOrWhiteSpace(certPassword))
     {
-        var resolvedCertPath = Path.IsPathRooted(certPath)
+        string resolvedCertPath = Path.IsPathRooted(certPath)
             ? certPath
             : Path.Combine(builder.Environment.ContentRootPath, certPath);
-        var cert = X509CertificateLoader.LoadPkcs12FromFile(resolvedCertPath, certPassword, X509KeyStorageFlags.EphemeralKeySet);
+        X509Certificate2 cert =
+            X509CertificateLoader.LoadPkcs12FromFile(resolvedCertPath, certPassword,
+                X509KeyStorageFlags.EphemeralKeySet);
         isBuilder.AddSigningCredential(cert);
     }
     else
-    {
-        isBuilder.AddDeveloperSigningCredential(persistKey: true);
-    }
+        isBuilder.AddDeveloperSigningCredential();
 }
 
 builder.Services.AddHealthChecks()
-    .AddDbContextCheck<Duende.IdentityServer.EntityFramework.DbContexts.ConfigurationDbContext>("ConfigurationDb")
-    .AddDbContextCheck<Duende.IdentityServer.EntityFramework.DbContexts.PersistedGrantDbContext>("OperationalDb");
+    .AddDbContextCheck<ConfigurationDbContext>("ConfigurationDb")
+    .AddDbContextCheck<PersistedGrantDbContext>("OperationalDb");
 
 // Required for dotnet ef CLI tools to instantiate DbContexts at design time
-builder.Services.AddSingleton(new Duende.IdentityServer.EntityFramework.Options.ConfigurationStoreOptions());
-builder.Services.AddSingleton(new Duende.IdentityServer.EntityFramework.Options.OperationalStoreOptions());
+builder.Services.AddSingleton(new ConfigurationStoreOptions());
+builder.Services.AddSingleton(new OperationalStoreOptions());
 
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("SysAdminOnly", policy => policy.RequireRole(Config.SysAdminRole));
 });
 
-builder.Services.AddRazorPages(options =>
-{
-    options.Conventions.AuthorizeFolder("/Admin", "SysAdminOnly");
-});
+builder.Services.AddRazorPages(options => { options.Conventions.AuthorizeFolder("/Admin", "SysAdminOnly"); });
 
 builder.Services.AddIdentityServerAdminServices();
 
@@ -161,16 +159,16 @@ builder.Services.AddIdentityServerAdminServices();
 // stays free of any reference to ApplicationDbContext/ApplicationUser; these are the only classes
 // that bridge the two.
 builder.Services.AddScoped<IIdentityUserAdministrationStore, EfIdentityUserAdministrationStore>();
-builder.Services.AddScoped<IdentityServerProject.Services.Roles.IRoleAdministrationStore, EfRoleAdministrationStore>();
+builder.Services.AddScoped<IRoleAdministrationStore, EfRoleAdministrationStore>();
 builder.Services.AddScoped<IAdminAuditStore, EfAdminAuditStore>();
 builder.Services.AddScoped<ISecretRevealStore, EfSecretRevealStore>();
 builder.Services.AddScoped<IIdentityDiagnosticsStore, EfIdentityDiagnosticsStore>();
 
 builder.Services.AddScoped<IDatabaseSchemaReadinessValidator, DatabaseSchemaReadinessValidator>();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
-await using (var scope = app.Services.CreateAsyncScope())
+await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
 {
     // Deployment applies reviewed migration bundles. The web process only verifies
     // readiness and must do so before any environment-specific seed operation.
@@ -178,8 +176,8 @@ await using (var scope = app.Services.CreateAsyncScope())
         .GetRequiredService<IDatabaseSchemaReadinessValidator>()
         .EnsureReadyAsync();
 
-    var sysAdminEmail = app.Configuration["Seed:SysAdminEmail"] ?? "admin@sales.local";
-    var sysAdminPassword = app.Configuration["Seed:SysAdminPassword"] ?? "Password123!";
+    string sysAdminEmail = app.Configuration["Seed:SysAdminEmail"] ?? "admin@sales.local";
+    string sysAdminPassword = app.Configuration["Seed:SysAdminPassword"] ?? "Password123!";
 
     await SeedData.SeedSysAdminAsync(
         scope.ServiceProvider.GetRequiredService<ApplicationDbContext>(),
@@ -191,31 +189,31 @@ await using (var scope = app.Services.CreateAsyncScope())
 
 await DevelopmentSeeder.SeedIfDevelopmentAsync(app.Environment, async () =>
 {
-    using var scope = app.Services.CreateScope();
-    var services = scope.ServiceProvider;
+    using IServiceScope scope = app.Services.CreateScope();
+    IServiceProvider services = scope.ServiceProvider;
 
-    var identityDb = services.GetRequiredService<ApplicationDbContext>();
-    var configDb = scope.ServiceProvider.GetRequiredService<Duende.IdentityServer.EntityFramework.DbContexts.ConfigurationDbContext>();
-    var operationalDb = scope.ServiceProvider.GetRequiredService<Duende.IdentityServer.EntityFramework.DbContexts.PersistedGrantDbContext>();
+    ApplicationDbContext identityDb = services.GetRequiredService<ApplicationDbContext>();
+    ConfigurationDbContext configDb = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+    PersistedGrantDbContext operationalDb = scope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>();
 
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+    UserManager<ApplicationUser> userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    RoleManager<IdentityRole> roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-    var razorClientSecret = app.Configuration["Clients:RazorSecret"]
-        ?? "DefaultRazorSecretForDevelopment";
-    var blazorClientSecret = app.Configuration["Clients:BlazorSecret"]
-        ?? "DefaultBlazorSecretForDevelopment";
-    var sysAdminPassword = app.Configuration["Seed:SysAdminPassword"]
-        ?? "Password123!";
-    var sysAdminEmail = app.Configuration["Seed:SysAdminEmail"]
-        ?? "admin@sales.local";
-    var testUserPassword = app.Configuration["Seed:TestUserPassword"]
-        ?? "Password123!";
+    string razorClientSecret = app.Configuration["Clients:RazorSecret"]
+                               ?? "DefaultRazorSecretForDevelopment";
+    string blazorClientSecret = app.Configuration["Clients:BlazorSecret"]
+                                ?? "DefaultBlazorSecretForDevelopment";
+    string sysAdminPassword = app.Configuration["Seed:SysAdminPassword"]
+                              ?? "Password123!";
+    string sysAdminEmail = app.Configuration["Seed:SysAdminEmail"]
+                           ?? "admin@sales.local";
+    string testUserPassword = app.Configuration["Seed:TestUserPassword"]
+                              ?? "Password123!";
 
     var seedClients = new List<SeedClientSpec>
     {
         new("razorclient", "Sales Razor Client", razorClientUri, razorClientSecret),
-        new("blazorclient", "Sales Blazor Client", blazorClientUri, blazorClientSecret),
+        new("blazorclient", "Sales Blazor Client", blazorClientUri, blazorClientSecret)
     };
 
     await SeedData.SeedAsync(

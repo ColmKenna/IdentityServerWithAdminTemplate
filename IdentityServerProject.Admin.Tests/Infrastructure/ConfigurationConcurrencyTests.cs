@@ -23,12 +23,12 @@ public sealed class ConfigurationConcurrencyTests
     [Fact]
     public async Task ConcurrentApiResourceCreation_ReturnsOneSuccessAndOneStableConflict()
     {
-        var name = $"task05-api-race-{Guid.NewGuid():N}";
+        string name = $"task05-api-race-{Guid.NewGuid():N}";
         using var start = new Barrier(3);
-        var attempts = Enumerable.Range(0, 2).Select(index => Task.Run(async () =>
+        Task<SaveApiResourceBasicsResult>[] attempts = Enumerable.Range(0, 2).Select(index => Task.Run(async () =>
         {
-            await using var scope = _factory.Services.CreateAsyncScope();
-            var service = scope.ServiceProvider.GetRequiredService<IApiResourceEditorService>();
+            await using AsyncServiceScope scope = _factory.Services.CreateAsyncScope();
+            IApiResourceEditorService service = scope.ServiceProvider.GetRequiredService<IApiResourceEditorService>();
             start.SignalAndWait();
             return await service.SaveBasicsAsync(new SaveApiResourceBasicsCommand(
                 null,
@@ -38,20 +38,20 @@ public sealed class ConfigurationConcurrencyTests
         })).ToArray();
 
         start.SignalAndWait();
-        var results = await Task.WhenAll(attempts);
+        SaveApiResourceBasicsResult[] results = await Task.WhenAll(attempts);
 
         Assert.Single(results, result => result.Status == AdminMutationStatus.Succeeded);
         Assert.Single(results, result => result.Status == AdminMutationStatus.Conflict
-            && result.Errors.ContainsKey("Basics.Name"));
+                                         && result.Errors.ContainsKey("Basics.Name"));
     }
 
     [Fact]
     public async Task ConcurrentClientCreation_ReturnsOneSuccessAndOneStableConflict()
     {
-        var clientId = $"task05-client-race-{Guid.NewGuid():N}";
+        string clientId = $"task05-client-race-{Guid.NewGuid():N}";
         await _factory.RunInScopeAsync(async services =>
         {
-            var db = services.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext db = services.GetRequiredService<ConfigurationDbContext>();
             if (!await db.IdentityResources.AnyAsync(resource => resource.Name == "openid"))
             {
                 db.IdentityResources.Add(new IdentityResource("openid", new[] { "sub" }).ToEntity());
@@ -59,10 +59,10 @@ public sealed class ConfigurationConcurrencyTests
             }
         });
         using var start = new Barrier(3);
-        var attempts = Enumerable.Range(0, 2).Select(index => Task.Run(async () =>
+        Task<ClientCreateResult>[] attempts = Enumerable.Range(0, 2).Select(index => Task.Run(async () =>
         {
-            await using var scope = _factory.Services.CreateAsyncScope();
-            var service = scope.ServiceProvider.GetRequiredService<IClientCreateService>();
+            await using AsyncServiceScope scope = _factory.Services.CreateAsyncScope();
+            IClientCreateService service = scope.ServiceProvider.GetRequiredService<IClientCreateService>();
             start.SignalAndWait();
             return await service.CreateClientAsync(new ClientCreateInputModel
             {
@@ -77,10 +77,10 @@ public sealed class ConfigurationConcurrencyTests
         })).ToArray();
 
         start.SignalAndWait();
-        var results = await Task.WhenAll(attempts);
+        ClientCreateResult[] results = await Task.WhenAll(attempts);
 
         Assert.Single(results, result => result.Status == AdminMutationStatus.Succeeded);
         Assert.Single(results, result => result.Status == AdminMutationStatus.Conflict
-            && result.Errors.ContainsKey("ClientId"));
+                                         && result.Errors.ContainsKey("ClientId"));
     }
 }

@@ -18,7 +18,7 @@ public class IdentityResourcesIndexPageModelTests
         {
             Items = new List<IdentityResourceListItem>
             {
-                new IdentityResourceListItem
+                new()
                 {
                     Name = "openid",
                     DisplayName = "OpenID",
@@ -38,7 +38,8 @@ public class IdentityResourcesIndexPageModelTests
         };
 
         mockService
-            .Setup(s => s.GetIdentityResourcesAsync(new ListQuery(null, DefaultPagination), It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetIdentityResourcesAsync(new ListQuery(null, DefaultPagination),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole);
@@ -53,13 +54,16 @@ public class IdentityResourcesIndexPageModelTests
     {
         var mockService = new Mock<IIdentityResourceListService>();
         mockService
-            .Setup(s => s.GetIdentityResourcesAsync(new ListQuery("profile", DefaultPagination), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ListResult<IdentityResourceListItem>.Empty(1, TestOptions.PageSize));
+            .Setup(s => s.GetIdentityResourcesAsync(new ListQuery("profile", DefaultPagination),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ListResult<IdentityResourceListItem>.Empty());
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole) { Filter = "profile" };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mockService.Verify(s => s.GetIdentityResourcesAsync(new ListQuery("profile", DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(
+            s => s.GetIdentityResourcesAsync(new ListQuery("profile", DefaultPagination),
+                It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -72,9 +76,9 @@ public class IdentityResourcesIndexPageModelTests
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole);
 
-        var result = await model.OnPostDeleteAsync("openid", CancellationToken.None);
+        IActionResult result = await model.OnPostDeleteAsync("openid", CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.NotNull(model.DeleteErrorMessage);
         Assert.Contains("openid", model.DeleteErrorMessage);
     }
@@ -89,7 +93,7 @@ public class IdentityResourcesIndexPageModelTests
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole);
 
-        var result = await model.OnPostDeleteAsync("nonexistent", CancellationToken.None);
+        IActionResult result = await model.OnPostDeleteAsync("nonexistent", CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }

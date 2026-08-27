@@ -1,8 +1,10 @@
 using System.Net;
 using AngleSharp;
 using AngleSharp.Dom;
+using AngleSharp.Html.Dom;
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Services.ApiScopes;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -10,46 +12,49 @@ using Moq;
 namespace IdentityServerProject.Admin.Tests.ApiScopes;
 
 /// <summary>
-/// Full HTTP pipeline tests for GET /Admin/ApiScopes, asserting on the rendered HTML via AngleSharp.
-/// Each test builds its own factory/client with <see cref="IApiScopeListService"/> replaced by a
-/// mock so the rendered markup is fully controlled and independent of database state.
+///     Full HTTP pipeline tests for GET /Admin/ApiScopes, asserting on the rendered HTML via AngleSharp.
+///     Each test builds its own factory/client with <see cref="IApiScopeListService" /> replaced by a
+///     mock so the rendered markup is fully controlled and independent of database state.
 /// </summary>
 public class ApiScopesIndexIntegrationTests : IDisposable
 {
     private readonly List<IDisposable> _disposables = new();
+
+    public void Dispose()
+    {
+        foreach (IDisposable disposable in _disposables) disposable.Dispose();
+    }
 
     private HttpClient CreateClient(IApiScopeListService apiScopeListService, bool allowAutoRedirect = true)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
 
-        var factory = baseFactory.WithWebHostBuilder(builder =>
+        WebApplicationFactory<Program> factory = baseFactory.WithWebHostBuilder(builder =>
         {
-            builder.ConfigureTestServices(services =>
-            {
-                services.AddSingleton(apiScopeListService);
-            });
+            builder.ConfigureTestServices(services => { services.AddSingleton(apiScopeListService); });
         });
         _disposables.Add(factory);
 
-        return factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        return factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = allowAutoRedirect
         });
     }
 
-    private static async Task<(string Token, string Cookie)> ExtractAntiForgeryTokenAndCookieAsync(HttpClient httpClient, string pageUrl)
+    private static async Task<(string Token, string Cookie)> ExtractAntiForgeryTokenAndCookieAsync(
+        HttpClient httpClient, string pageUrl)
     {
-        var response = await httpClient.GetAsync(pageUrl);
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await httpClient.GetAsync(pageUrl);
+        IDocument document = await GetDocumentAsync(response);
 
-        var tokenInput = document.QuerySelector("input[name='__RequestVerificationToken']") as AngleSharp.Html.Dom.IHtmlInputElement;
+        var tokenInput = document.QuerySelector("input[name='__RequestVerificationToken']") as IHtmlInputElement;
         Assert.NotNull(tokenInput);
 
-        var token = tokenInput!.Value;
+        string token = tokenInput!.Value;
 
-        var cookies = response.Headers.GetValues("Set-Cookie");
-        var cookie = cookies.FirstOrDefault(c => c.StartsWith(".AspNetCore.Antiforgery"));
+        IEnumerable<string> cookies = response.Headers.GetValues("Set-Cookie");
+        string? cookie = cookies.FirstOrDefault(c => c.StartsWith(".AspNetCore.Antiforgery"));
         Assert.NotNull(cookie);
 
         return (token, cookie!);
@@ -68,7 +73,7 @@ public class ApiScopesIndexIntegrationTests : IDisposable
         Items = Array.Empty<ApiScopeListItem>(),
         TotalCount = 0,
         PageNumber = pageNumber,
-        PageSize = pageSize,
+        PageSize = pageSize
     };
 
     private static ApiScopeListItem MakeItem(string suffix, bool enabled = true, int referenceCount = 0) => new()
@@ -76,13 +81,13 @@ public class ApiScopesIndexIntegrationTests : IDisposable
         Name = $"scope-{suffix}",
         DisplayName = $"Scope {suffix}",
         Enabled = enabled,
-        ClientReferenceCount = referenceCount,
+        ClientReferenceCount = referenceCount
     };
 
     private static async Task<IDocument> GetDocumentAsync(HttpResponseMessage response)
     {
-        var content = await response.Content.ReadAsStringAsync();
-        var context = BrowsingContext.New(AngleSharp.Configuration.Default);
+        string content = await response.Content.ReadAsStringAsync();
+        IBrowsingContext context = BrowsingContext.New(AngleSharp.Configuration.Default);
         return await context.OpenAsync(req => req.Content(content));
     }
 
@@ -91,9 +96,9 @@ public class ApiScopesIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_ReturnsSuccessStatusCode()
     {
-        var client = CreateClient(MockService(EmptyResult()).Object);
+        HttpClient client = CreateClient(MockService(EmptyResult()).Object);
 
-        var response = await client.GetAsync("/Admin/ApiScopes");
+        HttpResponseMessage response = await client.GetAsync("/Admin/ApiScopes");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -101,13 +106,13 @@ public class ApiScopesIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_RendersAdminLayoutSidebarWithApiScopesNavItemActive()
     {
-        var client = CreateClient(MockService(EmptyResult()).Object);
+        HttpClient client = CreateClient(MockService(EmptyResult()).Object);
 
-        var response = await client.GetAsync("/Admin/ApiScopes");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/ApiScopes");
+        IDocument document = await GetDocumentAsync(response);
 
         Assert.NotNull(document.QuerySelector("aside.sidebar"));
-        var navItem = document.QuerySelector("a[href*='/Admin/ApiScopes']");
+        IElement? navItem = document.QuerySelector("a[href*='/Admin/ApiScopes']");
         Assert.NotNull(navItem);
         Assert.Contains("active", navItem!.ClassList);
     }
@@ -115,10 +120,10 @@ public class ApiScopesIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_RendersPageTitleAndSubtitle()
     {
-        var client = CreateClient(MockService(EmptyResult()).Object);
+        HttpClient client = CreateClient(MockService(EmptyResult()).Object);
 
-        var response = await client.GetAsync("/Admin/ApiScopes");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/ApiScopes");
+        IDocument document = await GetDocumentAsync(response);
 
         Assert.Equal("API Scopes", document.QuerySelector("h1.page-title")?.TextContent.Trim());
         Assert.Equal(
@@ -129,10 +134,10 @@ public class ApiScopesIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_RendersTableColumnHeaders()
     {
-        var client = CreateClient(MockService(EmptyResult()).Object);
+        HttpClient client = CreateClient(MockService(EmptyResult()).Object);
 
-        var response = await client.GetAsync("/Admin/ApiScopes");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/ApiScopes");
+        IDocument document = await GetDocumentAsync(response);
 
         var headers = document.QuerySelectorAll("ck-responsive-col-head").Select(h => h.TextContent.Trim()).ToList();
         Assert.Equal(new[] { "Name", "Display Name", "Referenced By", "Status", "Actions" }, headers);
@@ -146,17 +151,17 @@ public class ApiScopesIndexIntegrationTests : IDisposable
             Items = new[] { MakeItem("alpha", referenceCount: 3), MakeItem("beta") },
             TotalCount = 2,
             PageNumber = 1,
-            PageSize = 10,
+            PageSize = 10
         };
-        var client = CreateClient(MockService(result).Object);
+        HttpClient client = CreateClient(MockService(result).Object);
 
-        var response = await client.GetAsync("/Admin/ApiScopes");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/ApiScopes");
+        IDocument document = await GetDocumentAsync(response);
 
-        var rows = document.QuerySelectorAll("ck-responsive-row");
+        IHtmlCollection<IElement> rows = document.QuerySelectorAll("ck-responsive-row");
         Assert.Equal(2, rows.Length);
 
-        var firstRowText = rows[0].TextContent;
+        string firstRowText = rows[0].TextContent;
         Assert.Contains("scope-alpha", firstRowText);
         Assert.Contains("Scope alpha", firstRowText);
         Assert.Contains("3 clients", firstRowText);
@@ -167,17 +172,17 @@ public class ApiScopesIndexIntegrationTests : IDisposable
     {
         var result = new ListResult<ApiScopeListItem>
         {
-            Items = new[] { MakeItem("on", enabled: true) },
+            Items = new[] { MakeItem("on") },
             TotalCount = 1,
             PageNumber = 1,
-            PageSize = 10,
+            PageSize = 10
         };
-        var client = CreateClient(MockService(result).Object);
+        HttpClient client = CreateClient(MockService(result).Object);
 
-        var response = await client.GetAsync("/Admin/ApiScopes");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/ApiScopes");
+        IDocument document = await GetDocumentAsync(response);
 
-        var badge = document.QuerySelector(".status-badge");
+        IElement? badge = document.QuerySelector(".status-badge");
         Assert.NotNull(badge);
         Assert.Contains("Enabled", badge!.TextContent);
         Assert.Contains("enabled", badge.ClassList);
@@ -188,17 +193,17 @@ public class ApiScopesIndexIntegrationTests : IDisposable
     {
         var result = new ListResult<ApiScopeListItem>
         {
-            Items = new[] { MakeItem("off", enabled: false) },
+            Items = new[] { MakeItem("off", false) },
             TotalCount = 1,
             PageNumber = 1,
-            PageSize = 10,
+            PageSize = 10
         };
-        var client = CreateClient(MockService(result).Object);
+        HttpClient client = CreateClient(MockService(result).Object);
 
-        var response = await client.GetAsync("/Admin/ApiScopes");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/ApiScopes");
+        IDocument document = await GetDocumentAsync(response);
 
-        var badge = document.QuerySelector(".status-badge");
+        IElement? badge = document.QuerySelector(".status-badge");
         Assert.NotNull(badge);
         Assert.Contains("Disabled", badge!.TextContent);
         Assert.Contains("disabled", badge.ClassList);
@@ -207,12 +212,12 @@ public class ApiScopesIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_NoApiScopesExist_RendersEmptyStateMessage()
     {
-        var client = CreateClient(MockService(EmptyResult()).Object);
+        HttpClient client = CreateClient(MockService(EmptyResult()).Object);
 
-        var response = await client.GetAsync("/Admin/ApiScopes");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/ApiScopes");
+        IDocument document = await GetDocumentAsync(response);
 
-        var emptyState = document.QuerySelector(".empty-state");
+        IElement? emptyState = document.QuerySelector(".empty-state");
         Assert.NotNull(emptyState);
         Assert.Empty(document.QuerySelectorAll("ck-responsive-row"));
     }
@@ -222,12 +227,12 @@ public class ApiScopesIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_RendersDeleteModalDialog()
     {
-        var client = CreateClient(MockService(EmptyResult()).Object);
+        HttpClient client = CreateClient(MockService(EmptyResult()).Object);
 
-        var response = await client.GetAsync("/Admin/ApiScopes");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/ApiScopes");
+        IDocument document = await GetDocumentAsync(response);
 
-        var dialog = document.QuerySelector("dialog#delete-scope-modal");
+        IElement? dialog = document.QuerySelector("dialog#delete-scope-modal");
         Assert.NotNull(dialog);
         Assert.NotNull(dialog!.QuerySelector("form[method='post']"));
     }
@@ -240,14 +245,14 @@ public class ApiScopesIndexIntegrationTests : IDisposable
             Items = new[] { MakeItem("referenced", referenceCount: 4) },
             TotalCount = 1,
             PageNumber = 1,
-            PageSize = 10,
+            PageSize = 10
         };
-        var client = CreateClient(MockService(result).Object);
+        HttpClient client = CreateClient(MockService(result).Object);
 
-        var response = await client.GetAsync("/Admin/ApiScopes");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/ApiScopes");
+        IDocument document = await GetDocumentAsync(response);
 
-        var deleteButton = document.QuerySelector("[data-action='delete-scope']");
+        IElement? deleteButton = document.QuerySelector("[data-action='delete-scope']");
         Assert.NotNull(deleteButton);
         Assert.Equal("scope-referenced", deleteButton!.GetAttribute("data-delete-name"));
         Assert.Equal("4", deleteButton.GetAttribute("data-reference-count"));
@@ -258,12 +263,12 @@ public class ApiScopesIndexIntegrationTests : IDisposable
     [Fact]
     public async Task PostDelete_ScopeUnreferenced_DeletesAndRedirectsToIndex()
     {
-        var mock = MockService(EmptyResult());
+        Mock<IApiScopeListService> mock = MockService(EmptyResult());
         mock.Setup(s => s.DeleteApiScopeAsync("scope-alpha", It.IsAny<CancellationToken>()))
             .ReturnsAsync(ApiScopeDeleteResult.Deleted);
-        var client = CreateClient(mock.Object, allowAutoRedirect: false);
+        HttpClient client = CreateClient(mock.Object, false);
 
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/ApiScopes");
+        (string token, string cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/ApiScopes");
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/Admin/ApiScopes?handler=Delete");
         request.Headers.Add("Cookie", cookie);
@@ -271,10 +276,10 @@ public class ApiScopesIndexIntegrationTests : IDisposable
         {
             ["__RequestVerificationToken"] = token,
             ["name"] = "scope-alpha",
-            ["PageNumber"] = "1",
+            ["PageNumber"] = "1"
         });
 
-        var response = await client.SendAsync(request);
+        HttpResponseMessage response = await client.SendAsync(request);
 
         mock.Verify(s => s.DeleteApiScopeAsync("scope-alpha", It.IsAny<CancellationToken>()), Times.Once);
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
@@ -283,12 +288,12 @@ public class ApiScopesIndexIntegrationTests : IDisposable
     [Fact]
     public async Task PostDelete_ScopeBlocked_RedirectsWithoutDeletingAndSurfacesErrorMessage()
     {
-        var mock = MockService(EmptyResult());
+        Mock<IApiScopeListService> mock = MockService(EmptyResult());
         mock.Setup(s => s.DeleteApiScopeAsync("scope-inuse", It.IsAny<CancellationToken>()))
             .ReturnsAsync(ApiScopeDeleteResult.Blocked);
-        var client = CreateClient(mock.Object, allowAutoRedirect: false);
+        HttpClient client = CreateClient(mock.Object, false);
 
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/ApiScopes");
+        (string token, string cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/ApiScopes");
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/Admin/ApiScopes?handler=Delete");
         request.Headers.Add("Cookie", cookie);
@@ -296,28 +301,20 @@ public class ApiScopesIndexIntegrationTests : IDisposable
         {
             ["__RequestVerificationToken"] = token,
             ["name"] = "scope-inuse",
-            ["PageNumber"] = "1",
+            ["PageNumber"] = "1"
         });
 
-        var response = await client.SendAsync(request);
+        HttpResponseMessage response = await client.SendAsync(request);
 
         mock.Verify(s => s.DeleteApiScopeAsync("scope-inuse", It.IsAny<CancellationToken>()), Times.Once);
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
 
         var followUpRequest = new HttpRequestMessage(HttpMethod.Get, response.Headers.Location);
         followUpRequest.Headers.Add("Cookie", cookie);
-        var redirected = await client.SendAsync(followUpRequest);
-        var document = await GetDocumentAsync(redirected);
-        var alert = document.QuerySelector(".alert-error");
+        HttpResponseMessage redirected = await client.SendAsync(followUpRequest);
+        IDocument document = await GetDocumentAsync(redirected);
+        IElement? alert = document.QuerySelector(".alert-error");
         Assert.NotNull(alert);
         Assert.Contains("scope-inuse", alert!.TextContent);
-    }
-
-    public void Dispose()
-    {
-        foreach (var disposable in _disposables)
-        {
-            disposable.Dispose();
-        }
     }
 }

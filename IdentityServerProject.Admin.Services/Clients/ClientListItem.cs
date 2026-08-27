@@ -1,7 +1,7 @@
 namespace IdentityServerProject.Services.Clients;
 
 /// <summary>
-/// A single row projected for display on the Admin &gt; Clients list page.
+///     A single row projected for display on the Admin &gt; Clients list page.
 /// </summary>
 public sealed class ClientListItem
 {

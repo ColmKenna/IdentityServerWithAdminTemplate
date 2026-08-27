@@ -6,8 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace IdentityServerProject.Admin.Tests.Users;
 
 /// <summary>
-/// Integration tests for <see cref="UserListService"/> exercised against the
-/// shared SQLite in-memory database provided by <see cref="AdminWebFactory"/>.
+///     Integration tests for <see cref="UserListService" /> exercised against the
+///     shared SQLite in-memory database provided by <see cref="AdminWebFactory" />.
 /// </summary>
 public class UserListServiceTests : IClassFixture<AdminWebFactory>
 {
@@ -29,14 +29,14 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
         EmailConfirmed = true,
         LockoutEnabled = true,
         LockoutEnd = lockedOut ? DateTimeOffset.UtcNow.AddDays(1) : null,
-        SecurityStamp = Guid.NewGuid().ToString("D"),
+        SecurityStamp = Guid.NewGuid().ToString("D")
     };
 
     private async Task SeedAsync(params ApplicationUser[] users)
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ApplicationDbContext>();
+            ApplicationDbContext db = sp.GetRequiredService<ApplicationDbContext>();
             db.Users.AddRange(users);
             await db.SaveChangesAsync();
         });
@@ -45,16 +45,17 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetUsersAsync_FilterMatchesUserName_ReturnsOnlyMatchingUser()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedAsync(MakeUser(tag, "alpha"), MakeUser(tag, "beta"));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IUserListService>();
+            IUserListService service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync(new ListQuery($"{tag}-username-alpha", Pagination.From(1, 10)));
+            ListResult<UserListItem> result =
+                await service.GetUsersAsync(new ListQuery($"{tag}-username-alpha", Pagination.From(1, 10)));
 
-            var item = Assert.Single(result.Items);
+            UserListItem item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-user-alpha", item.Id);
         });
     }
@@ -62,16 +63,17 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetUsersAsync_FilterMatchesEmail_ReturnsOnlyMatchingUser()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedAsync(MakeUser(tag, "gamma"), MakeUser(tag, "delta"));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IUserListService>();
+            IUserListService service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync(new ListQuery($"{tag}-email-delta", Pagination.From(1, 10)));
+            ListResult<UserListItem> result =
+                await service.GetUsersAsync(new ListQuery($"{tag}-email-delta", Pagination.From(1, 10)));
 
-            var item = Assert.Single(result.Items);
+            UserListItem item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-user-delta", item.Id);
         });
     }
@@ -79,16 +81,16 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetUsersAsync_Pagination_ReturnsCorrectPageAndTotalCount()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedAsync(
             MakeUser(tag, "1"), MakeUser(tag, "2"), MakeUser(tag, "3"),
             MakeUser(tag, "4"), MakeUser(tag, "5"));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IUserListService>();
+            IUserListService service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync(new ListQuery(tag, Pagination.From(2, 2)));
+            ListResult<UserListItem> result = await service.GetUsersAsync(new ListQuery(tag, Pagination.From(2, 2)));
 
             Assert.Equal(2, result.Items.Count);
             Assert.Equal(5, result.TotalCount);
@@ -99,14 +101,14 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetUsersAsync_PageNumberBeyondLastPage_ReturnsEmptyItemsWithCorrectTotalCount()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedAsync(MakeUser(tag, "1"), MakeUser(tag, "2"));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IUserListService>();
+            IUserListService service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync(new ListQuery(tag, Pagination.From(99, 10)));
+            ListResult<UserListItem> result = await service.GetUsersAsync(new ListQuery(tag, Pagination.From(99, 10)));
 
             Assert.Empty(result.Items);
             Assert.Equal(2, result.TotalCount);
@@ -117,14 +119,14 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetUsersAsync_UserLockedOut_MapsIsLockedOutTrue()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        await SeedAsync(MakeUser(tag, "locked", lockedOut: true));
+        string tag = Guid.NewGuid().ToString("N");
+        await SeedAsync(MakeUser(tag, "locked", true));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IUserListService>();
+            IUserListService service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.GetUsersAsync(new ListQuery(tag, Pagination.From(1, 10)));
+            ListResult<UserListItem> result = await service.GetUsersAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.True(Assert.Single(result.Items).IsLockedOut);
         });
@@ -133,19 +135,20 @@ public class UserListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UnlockUserAsync_LockedUser_ClearsLockoutEnd()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var user = MakeUser(tag, "unlocktarget", lockedOut: true);
+        string tag = Guid.NewGuid().ToString("N");
+        ApplicationUser user = MakeUser(tag, "unlocktarget", true);
         await SeedAsync(user);
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IUserListService>();
+            IUserListService service = sp.GetRequiredService<IUserListService>();
 
-            var result = await service.UnlockUserAsync(UserId.Create(user.Id));
+            UserUnlockResult result = await service.UnlockUserAsync(UserId.Create(user.Id));
 
             Assert.Equal(UserUnlockStatus.Succeeded, result.Status);
 
-            var listResult = await service.GetUsersAsync(new ListQuery(tag, Pagination.From(1, 10)));
+            ListResult<UserListItem> listResult =
+                await service.GetUsersAsync(new ListQuery(tag, Pagination.From(1, 10)));
             Assert.False(Assert.Single(listResult.Items).IsLockedOut);
         });
     }

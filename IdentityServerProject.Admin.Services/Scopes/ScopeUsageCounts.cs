@@ -1,8 +1,8 @@
 namespace IdentityServerProject.Services.Scopes;
 
 /// <summary>
-/// Immutable client-reference counts indexed by a strongly typed scope name.
-/// Missing scopes have no client references.
+///     Immutable client-reference counts indexed by a strongly typed scope name.
+///     Missing scopes have no client references.
 /// </summary>
 public sealed class ScopeUsageCounts
 {
@@ -14,5 +14,5 @@ public sealed class ScopeUsageCounts
         _counts = counts.ToDictionary(pair => pair.Key, pair => pair.Value);
     }
 
-    public int this[ScopeName scope] => _counts.TryGetValue(scope, out var count) ? count : 0;
+    public int this[ScopeName scope] => _counts.TryGetValue(scope, out int count) ? count : 0;
 }

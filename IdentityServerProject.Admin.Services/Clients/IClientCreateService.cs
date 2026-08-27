@@ -35,22 +35,41 @@ public class ClientCreateResult
     public string? ClientId { get; init; }
     public IReadOnlyDictionary<string, string[]> Errors { get; init; } = ValidationErrorDictionary.Empty;
 
-    public static ClientCreateResult Failed(string errorMessage, AdminMutationStatus status = AdminMutationStatus.ValidationFailed) =>
-        new() { Status = status, Success = false, ErrorMessage = errorMessage, Errors = new ValidationErrorDictionary().AddError(string.Empty, errorMessage) };
+    public static ClientCreateResult Failed(string errorMessage,
+        AdminMutationStatus status = AdminMutationStatus.ValidationFailed) =>
+        new()
+        {
+            Status = status, Success = false, ErrorMessage = errorMessage,
+            Errors = new ValidationErrorDictionary().AddError(string.Empty, errorMessage)
+        };
 
-    public static ClientCreateResult Failed(string field, string errorMessage, AdminMutationStatus status = AdminMutationStatus.ValidationFailed) =>
-        new() { Status = status, Success = false, ErrorMessage = errorMessage, Errors = new ValidationErrorDictionary().AddError(field, errorMessage) };
+    public static ClientCreateResult Failed(string field, string errorMessage,
+        AdminMutationStatus status = AdminMutationStatus.ValidationFailed) =>
+        new()
+        {
+            Status = status, Success = false, ErrorMessage = errorMessage,
+            Errors = new ValidationErrorDictionary().AddError(field, errorMessage)
+        };
 
-    public static ClientCreateResult Failed(IReadOnlyDictionary<string, string[]> errors, AdminMutationStatus status = AdminMutationStatus.ValidationFailed) =>
+    public static ClientCreateResult Failed(IReadOnlyDictionary<string, string[]> errors,
+        AdminMutationStatus status = AdminMutationStatus.ValidationFailed) =>
         new() { Status = status, Success = false, ErrorMessage = "Validation failed.", Errors = errors };
 
     public static ClientCreateResult Succeeded(string clientId, string? plaintextSecret = null) =>
-        new() { Status = AdminMutationStatus.Succeeded, Success = true, ClientId = clientId, PlaintextSecret = plaintextSecret };
+        new()
+        {
+            Status = AdminMutationStatus.Succeeded, Success = true, ClientId = clientId,
+            PlaintextSecret = plaintextSecret
+        };
 }
 
 public interface IClientCreateService
 {
-    Task<ClientCreateResult> CreateClientAsync(ClientCreateInputModel input, CancellationToken cancellationToken = default);
-    Task<ClientCreateResult> CloneClientAsync(string sourceClientId, ClientCreateInputModel input, CancellationToken cancellationToken = default);
+    Task<ClientCreateResult> CreateClientAsync(ClientCreateInputModel input,
+        CancellationToken cancellationToken = default);
+
+    Task<ClientCreateResult> CloneClientAsync(string sourceClientId, ClientCreateInputModel input,
+        CancellationToken cancellationToken = default);
+
     Task<List<string>> GetAvailableScopesAsync(CancellationToken cancellationToken = default);
 }

@@ -1,16 +1,18 @@
 namespace IdentityServerProject.Services.Validation;
 
 /// <summary>
-/// Represents a validated and normalized CORS origin (scheme + authority without path, query, or fragment).
+///     Represents a validated and normalized CORS origin (scheme + authority without path, query, or fragment).
 /// </summary>
 public readonly record struct CorsOrigin
 {
-    public string Value { get; }
-
     public CorsOrigin(string value)
     {
         Value = value ?? string.Empty;
     }
+
+    public string Value { get; }
+
+    public bool IsEmpty => string.IsNullOrWhiteSpace(Value);
 
     public static CorsOrigin Create(string value) => new(value);
 
@@ -23,10 +25,11 @@ public readonly record struct CorsOrigin
             return false;
         }
 
-        if (!UriValidationHelper.TryNormalizeCorsOrigin(candidate, maxLength, out var normalizedOrigin))
+        if (!UriValidationHelper.TryNormalizeCorsOrigin(candidate, maxLength, out string normalizedOrigin))
         {
             origin = default;
-            errorMessage = $"CORS origin '{candidate}' must contain only an HTTP or HTTPS scheme, host, and optional port.";
+            errorMessage =
+                $"CORS origin '{candidate}' must contain only an HTTP or HTTPS scheme, host, and optional port.";
             return false;
         }
 
@@ -34,8 +37,6 @@ public readonly record struct CorsOrigin
         errorMessage = null;
         return true;
     }
-
-    public bool IsEmpty => string.IsNullOrWhiteSpace(Value);
 
     public static implicit operator string(CorsOrigin origin) => origin.Value ?? string.Empty;
     public static explicit operator CorsOrigin(string value) => Create(value);

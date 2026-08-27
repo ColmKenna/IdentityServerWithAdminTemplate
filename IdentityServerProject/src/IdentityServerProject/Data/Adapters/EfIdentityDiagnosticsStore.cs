@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace IdentityServerProject.Data.Adapters;
 
 /// <summary>
-/// EF-backed <see cref="IIdentityDiagnosticsStore"/> adapter against <see cref="ApplicationDbContext"/>.
+///     EF-backed <see cref="IIdentityDiagnosticsStore" /> adapter against <see cref="ApplicationDbContext" />.
 /// </summary>
 public sealed class EfIdentityDiagnosticsStore : IIdentityDiagnosticsStore
 {
@@ -19,7 +19,8 @@ public sealed class EfIdentityDiagnosticsStore : IIdentityDiagnosticsStore
     public Task<bool> CanConnectAsync(CancellationToken cancellationToken = default) =>
         _dbContext.Database.CanConnectAsync(cancellationToken);
 
-    public async Task<IReadOnlyList<string>> GetDistinctUserClaimTypesAsync(CancellationToken cancellationToken = default) =>
+    public async Task<IReadOnlyList<string>> GetDistinctUserClaimTypesAsync(
+        CancellationToken cancellationToken = default) =>
         await _dbContext.UserClaims
             .AsNoTracking()
             .Where(c => c.ClaimType != null)

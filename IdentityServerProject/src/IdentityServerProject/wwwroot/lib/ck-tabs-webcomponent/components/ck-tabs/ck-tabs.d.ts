@@ -3,7 +3,9 @@
  */
 export declare class CKTab extends HTMLElement {
     constructor();
+
     connectedCallback(): void;
+
     /**
      * Gets the label text for this tab
      */
@@ -12,6 +14,7 @@ export declare class CKTab extends HTMLElement {
      * Sets the label text for this tab
      */
     set label(value: string);
+
     /**
      * Gets whether this tab is currently active
      */
@@ -21,6 +24,7 @@ export declare class CKTab extends HTMLElement {
      */
     set active(value: boolean);
 }
+
 /**
  * Container element that manages tab state and presentation
  */
@@ -28,8 +32,11 @@ export declare class CKTabs extends HTMLElement {
     private shadow;
     private currentActiveIndex;
     private styleSheet?;
+
     constructor();
+
     connectedCallback(): void;
+
     /**
      * Creates and applies styles using Constructable Stylesheet Pattern with fallback
      */
@@ -50,22 +57,27 @@ export declare class CKTabs extends HTMLElement {
      * Escapes HTML to prevent XSS
      */
     private escapeHtml;
+
     /**
      * Gets the currently active tab element
      */
     getActiveTab(): CKTab | undefined;
+
     /**
      * Gets the index of the currently active tab
      */
     getActiveIndex(): number;
+
     /**
      * Activates a tab by index
      */
     activateTab(index: number): void;
+
     /**
      * Adds a new tab programmatically
      */
     addTab(label: string, content: string, active?: boolean): CKTab;
+
     /**
      * Removes a tab by index
      */

@@ -5,6 +5,7 @@ using AngleSharp.Dom;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using IdentityServerProject.Admin.Tests.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -16,17 +17,19 @@ public class KeysIndexIntegrationTests : IDisposable
 {
     private readonly List<IDisposable> _disposables = new();
 
+    public void Dispose()
+    {
+        foreach (IDisposable disposable in _disposables) disposable.Dispose();
+    }
+
     private HttpClient CreateClient(IKeyMaterialService keyMaterialService)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
 
-        var factory = baseFactory.WithWebHostBuilder(builder =>
+        WebApplicationFactory<Program> factory = baseFactory.WithWebHostBuilder(builder =>
         {
-            builder.ConfigureTestServices(services =>
-            {
-                services.AddSingleton(keyMaterialService);
-            });
+            builder.ConfigureTestServices(services => { services.AddSingleton(keyMaterialService); });
         });
         _disposables.Add(factory);
 
@@ -35,8 +38,8 @@ public class KeysIndexIntegrationTests : IDisposable
 
     private static async Task<IDocument> GetDocumentAsync(HttpResponseMessage response)
     {
-        var content = await response.Content.ReadAsStringAsync();
-        var context = BrowsingContext.New(AngleSharp.Configuration.Default);
+        string content = await response.Content.ReadAsStringAsync();
+        IBrowsingContext context = BrowsingContext.New(AngleSharp.Configuration.Default);
         return await context.OpenAsync(req => req.Content(content));
     }
 
@@ -57,13 +60,13 @@ public class KeysIndexIntegrationTests : IDisposable
                 }
             });
 
-        var client = CreateClient(mock.Object);
-        var response = await client.GetAsync("/Admin/Keys");
+        HttpClient client = CreateClient(mock.Object);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Keys");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var document = await GetDocumentAsync(response);
+        IDocument document = await GetDocumentAsync(response);
 
-        var table = document.QuerySelector("ck-responsive-table");
+        IElement? table = document.QuerySelector("ck-responsive-table");
         Assert.NotNull(table);
         Assert.Contains("test-rsa-key-1", document.Body?.TextContent);
         Assert.Contains("RS256", document.Body?.TextContent);
@@ -76,22 +79,14 @@ public class KeysIndexIntegrationTests : IDisposable
         mock.Setup(s => s.GetValidationKeysAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<SecurityKeyInfo>());
 
-        var client = CreateClient(mock.Object);
-        var response = await client.GetAsync("/Admin/Keys");
+        HttpClient client = CreateClient(mock.Object);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Keys");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var document = await GetDocumentAsync(response);
+        IDocument document = await GetDocumentAsync(response);
 
-        var emptyState = document.QuerySelector(".empty-state");
+        IElement? emptyState = document.QuerySelector(".empty-state");
         Assert.NotNull(emptyState);
         Assert.Contains("No keys found", emptyState!.TextContent);
-    }
-
-    public void Dispose()
-    {
-        foreach (var disposable in _disposables)
-        {
-            disposable.Dispose();
-        }
     }
 }

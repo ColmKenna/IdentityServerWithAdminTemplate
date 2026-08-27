@@ -1,7 +1,7 @@
 namespace IdentityServerProject.Services.ApiScopes;
 
 /// <summary>
-/// Outcome of an attempt to delete an API scope.
+///     Outcome of an attempt to delete an API scope.
 /// </summary>
 public enum ApiScopeDeleteResult
 {
@@ -9,7 +9,7 @@ public enum ApiScopeDeleteResult
     NotFound,
 
     /// <summary>
-    /// The scope is still referenced by at least one client's AllowedScopes and was not deleted.
+    ///     The scope is still referenced by at least one client's AllowedScopes and was not deleted.
     /// </summary>
-    Blocked,
+    Blocked
 }

@@ -105,19 +105,27 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
     {
         var validationErrors = ApiResourceBasicsValidationErrors.Validate(name, displayName, description);
         if (validationErrors.HasErrors)
-        {
-            await AuditDeniedAsync(
-                action,
-                AuditReasonCode.ValidationFailed,
-                name,
-                displayName ?? name,
-                "API Resource validation failed.",
-                cancellationToken);
-
-            return SaveApiResourceBasicsResult.ValidationFailure(validationErrors);
-        }
+            return await BuildValidationFailureResultAsync(action, name, displayName, validationErrors, cancellationToken);
 
         return null;
+    }
+
+    private async Task<SaveApiResourceBasicsResult?> BuildValidationFailureResultAsync(
+        AuditAction action,
+        string name,
+        string? displayName,
+        ApiResourceBasicsValidationErrors validationErrors,
+        CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(
+            action,
+            AuditReasonCode.ValidationFailed,
+            name,
+            displayName ?? name,
+            "API Resource validation failed.",
+            cancellationToken);
+
+        return SaveApiResourceBasicsResult.ValidationFailure(validationErrors);
     }
 
     private async Task<SaveApiResourceBasicsResult?> CheckNameCollisionAsync(
@@ -145,39 +153,48 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         CancellationToken cancellationToken)
     {
         if (originalName == null)
-        {
-            _configurationDbContext.ApiResources.Add(new ApiResource
-            {
-                Name = name,
-                DisplayName = displayName,
-                Description = description,
-                Enabled = true,
-            });
-
-            return null;
-        }
+            return HandleResourceCreation(name, displayName, description);
 
         var entity = await _configurationDbContext.ApiResources
             .FirstOrDefaultAsync(r => r.Name == originalName, cancellationToken);
 
         if (entity == null)
-        {
-            await AuditDeniedAsync(
-                action,
-                AuditReasonCode.NotFound,
-                originalName,
-                originalName,
-                $"API Resource '{originalName}' was not found.",
-                cancellationToken);
-
-            return SaveApiResourceBasicsResult.NotFoundResult();
-        }
+            return await BuildNotFoundResultAsync(action, originalName, cancellationToken);
 
         entity.Name = name;
         entity.DisplayName = displayName;
         entity.Description = description;
 
         return null;
+    }
+
+    private SaveApiResourceBasicsResult? HandleResourceCreation(string name, string? displayName, string? description)
+    {
+        _configurationDbContext.ApiResources.Add(new ApiResource
+        {
+            Name = name,
+            DisplayName = displayName,
+            Description = description,
+            Enabled = true,
+        });
+
+        return null;
+    }
+
+    private async Task<SaveApiResourceBasicsResult?> BuildNotFoundResultAsync(
+        AuditAction action,
+        string originalName,
+        CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(
+            action,
+            AuditReasonCode.NotFound,
+            originalName,
+            originalName,
+            $"API Resource '{originalName}' was not found.",
+            cancellationToken);
+
+        return SaveApiResourceBasicsResult.NotFoundResult();
     }
 
     private async Task<SaveApiResourceBasicsResult> PersistBasicsAsync(
@@ -266,19 +283,11 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         }
 
         if (errors.HasErrors)
-        {
-            await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.ValidationFailed, name, name,
-                "API Resource secret validation failed.", cancellationToken);
-            return ApiResourceAddSecretResult.ValidationFailure(errors);
-        }
+            return await BuildSecretValidationFailureResultAsync(name, errors, cancellationToken);
 
         var entity = await LoadResourceAsync(name, asNoTracking: false, cancellationToken);
         if (entity == null)
-        {
-            await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.NotFound, name, name,
-                $"API Resource '{name}' was not found.", cancellationToken);
-            return ApiResourceAddSecretResult.NotFound;
-        }
+            return await BuildSecretNotFoundResultAsync(name, cancellationToken);
 
         try
         {
@@ -307,6 +316,21 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             await AuditFailedAsync(AuditAction.GenerateSecret, name, name, ex, cancellationToken);
             throw;
         }
+    }
+
+    private async Task<ApiResourceAddSecretResult> BuildSecretNotFoundResultAsync(string name, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.NotFound, name, name,
+            $"API Resource '{name}' was not found.", cancellationToken);
+        return ApiResourceAddSecretResult.NotFound;
+    }
+
+    private async Task<ApiResourceAddSecretResult> BuildSecretValidationFailureResultAsync(
+        string name, ValidationErrorDictionary errors, CancellationToken cancellationToken)
+    {
+        await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.ValidationFailed, name, name,
+            "API Resource secret validation failed.", cancellationToken);
+        return ApiResourceAddSecretResult.ValidationFailure(errors);
     }
 
     public Task<AdminMutationResult> RevokeSecretAsync(ScopeName name, int secretId, CancellationToken cancellationToken = default) =>
@@ -767,9 +791,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
             .AsQueryable();
 
         if (asNoTracking)
-        {
             query = query.AsNoTracking();
-        }
 
         return await query.FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
     }

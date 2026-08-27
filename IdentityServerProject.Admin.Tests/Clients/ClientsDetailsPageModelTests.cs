@@ -25,7 +25,7 @@ public class ClientsDetailsPageModelTests
         CorsOriginsCount = 0,
         SecretsCount = 1,
         AllowedScopesCount = 3,
-        AllowedScopes = new() { "openid", "profile", "coop.market.api" }
+        AllowedScopes = new List<string> { "openid", "profile", "coop.market.api" }
     };
 
     [Fact]
@@ -38,7 +38,7 @@ public class ClientsDetailsPageModelTests
 
         var pageModel = new DetailsModel(mockService.Object);
 
-        var result = await pageModel.OnGetAsync("coop.market.razor", CancellationToken.None);
+        IActionResult result = await pageModel.OnGetAsync("coop.market.razor", CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
         Assert.NotNull(pageModel.Client);
@@ -56,7 +56,7 @@ public class ClientsDetailsPageModelTests
 
         var pageModel = new DetailsModel(mockService.Object);
 
-        var result = await pageModel.OnGetAsync("non-existent", CancellationToken.None);
+        IActionResult result = await pageModel.OnGetAsync("non-existent", CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -71,11 +71,13 @@ public class ClientsDetailsPageModelTests
 
         var pageModel = new DetailsModel(mockService.Object);
 
-        var result = await pageModel.OnPostToggleStatusAsync("coop.market.razor", CancellationToken.None);
+        IActionResult result = await pageModel.OnPostToggleStatusAsync("coop.market.razor", CancellationToken.None);
 
-        mockService.Verify(s => s.ToggleClientStatusAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(
+            s => s.ToggleClientStatusAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()),
+            Times.Once);
 
-        var redirectResult = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirectResult = Assert.IsType<RedirectToPageResult>(result);
         Assert.Null(redirectResult.PageName); // Redirects to current page
         Assert.Equal("coop.market.razor", redirectResult.RouteValues?["id"]);
     }
@@ -90,7 +92,7 @@ public class ClientsDetailsPageModelTests
 
         var pageModel = new DetailsModel(mockService.Object);
 
-        var result = await pageModel.OnPostToggleStatusAsync("non-existent", CancellationToken.None);
+        IActionResult result = await pageModel.OnPostToggleStatusAsync("non-existent", CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -104,7 +106,7 @@ public class ClientsDetailsPageModelTests
 
         var pageModel = new DetailsModel(mockService.Object);
 
-        var result = await pageModel.OnPostDeleteAsync("  ", CancellationToken.None);
+        IActionResult result = await pageModel.OnPostDeleteAsync("  ", CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
         mockService.Verify(
@@ -122,7 +124,7 @@ public class ClientsDetailsPageModelTests
 
         var pageModel = new DetailsModel(mockService.Object) { DeleteConfirmation = "DELETE" };
 
-        var result = await pageModel.OnPostDeleteAsync("coop.market.razor", CancellationToken.None);
+        IActionResult result = await pageModel.OnPostDeleteAsync("coop.market.razor", CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
         Assert.Null(pageModel.DeleteBlockedMessage);
@@ -131,7 +133,8 @@ public class ClientsDetailsPageModelTests
     [Fact]
     public async Task OnPostDeleteAsync_BlockedByRetentionRule_SetsMessageAndRedirectsToDetails()
     {
-        const string blockReason = "Client has been disabled for 3 day(s). It can be deleted in 87 more day(s) (90-day retention rule).";
+        const string blockReason =
+            "Client has been disabled for 3 day(s). It can be deleted in 87 more day(s) (90-day retention rule).";
         var mockService = new Mock<IClientDetailsService>();
         mockService
             .Setup(s => s.DeleteClientAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()))
@@ -139,9 +142,9 @@ public class ClientsDetailsPageModelTests
 
         var pageModel = new DetailsModel(mockService.Object) { DeleteConfirmation = "DELETE" };
 
-        var result = await pageModel.OnPostDeleteAsync("coop.market.razor", CancellationToken.None);
+        IActionResult result = await pageModel.OnPostDeleteAsync("coop.market.razor", CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Null(redirect.PageName); // Redirects back to the current Details page
         Assert.Equal("coop.market.razor", redirect.RouteValues?["id"]);
         Assert.Equal(blockReason, pageModel.DeleteBlockedMessage);
@@ -157,9 +160,9 @@ public class ClientsDetailsPageModelTests
 
         var pageModel = new DetailsModel(mockService.Object) { DeleteConfirmation = " DELETE " };
 
-        var result = await pageModel.OnPostDeleteAsync("coop.market.razor", CancellationToken.None);
+        IActionResult result = await pageModel.OnPostDeleteAsync("coop.market.razor", CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("./Index", redirect.PageName);
         mockService.Verify(
             s => s.DeleteClientAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()),
@@ -176,9 +179,9 @@ public class ClientsDetailsPageModelTests
         var mockService = new Mock<IClientDetailsService>();
         var pageModel = new DetailsModel(mockService.Object) { DeleteConfirmation = confirmation };
 
-        var result = await pageModel.OnPostDeleteAsync("coop.market.razor", CancellationToken.None);
+        IActionResult result = await pageModel.OnPostDeleteAsync("coop.market.razor", CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("coop.market.razor", redirect.RouteValues?["id"]);
         Assert.Equal("Type DELETE exactly to confirm permanent deletion.", pageModel.DeleteBlockedMessage);
         mockService.Verify(

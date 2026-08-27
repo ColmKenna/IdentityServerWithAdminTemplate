@@ -17,7 +17,7 @@ public class AuditLogsIndexPageModelTests
         {
             Items = new List<AuditLogListItem>
             {
-                new AuditLogListItem
+                new()
                 {
                     Id = 1,
                     Timestamp = DateTime.UtcNow,
@@ -27,7 +27,7 @@ public class AuditLogsIndexPageModelTests
                     TargetName = "client-123",
                     Outcome = AuditOutcome.Succeeded,
                     IsSuccess = true,
-                    Details = "Deleted via Admin UI",
+                    Details = "Deleted via Admin UI"
                 }
             },
             TotalCount = 1,
@@ -36,7 +36,8 @@ public class AuditLogsIndexPageModelTests
         };
 
         mockService
-            .Setup(s => s.GetAuditLogEntriesAsync(It.Is<AuditLogFilter>(filter => filter.ActorSubjectId == null), DefaultPagination, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetAuditLogEntriesAsync(It.Is<AuditLogFilter>(filter => filter.ActorSubjectId == null),
+                DefaultPagination, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole);
@@ -59,7 +60,7 @@ public class AuditLogsIndexPageModelTests
                 filter.Action == AuditAction.Update &&
                 filter.Outcome == AuditOutcome.Succeeded &&
                 filter.CorrelationId == "correlation-123"), page2, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ListResult<AuditLogListItem>.Empty(2, TestOptions.PageSize));
+            .ReturnsAsync(ListResult<AuditLogListItem>.Empty(2));
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole)
         {
@@ -70,15 +71,16 @@ public class AuditLogsIndexPageModelTests
                 Category = AuditCategory.Client,
                 Action = AuditAction.Update,
                 Outcome = AuditOutcome.Succeeded,
-                CorrelationId = "correlation-123",
+                CorrelationId = "correlation-123"
             },
-            PageNumber = 2,
+            PageNumber = 2
         };
 
         await model.OnGetAsync(CancellationToken.None);
 
         mockService.Verify(s => s.GetAuditLogEntriesAsync(It.Is<AuditLogFilter>(filter =>
-            filter.ActorSubjectId == "admin-123" && filter.TargetId == "client-123"), page2, It.IsAny<CancellationToken>()), Times.Once);
+                filter.ActorSubjectId == "admin-123" && filter.TargetId == "client-123"), page2,
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -86,17 +88,20 @@ public class AuditLogsIndexPageModelTests
     {
         var mockService = new Mock<IAuditLogListService>();
         mockService
-            .Setup(s => s.GetAuditLogEntriesAsync(It.IsAny<AuditLogFilter>(), DefaultPagination, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ListResult<AuditLogListItem>.Empty(1, TestOptions.PageSize));
+            .Setup(s => s.GetAuditLogEntriesAsync(It.IsAny<AuditLogFilter>(), DefaultPagination,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ListResult<AuditLogListItem>.Empty());
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole)
         {
-            PageNumber = 0,
+            PageNumber = 0
         };
 
         await model.OnGetAsync(CancellationToken.None);
 
         Assert.Equal(1, model.PageNumber);
-        mockService.Verify(s => s.GetAuditLogEntriesAsync(It.IsAny<AuditLogFilter>(), DefaultPagination, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(
+            s => s.GetAuditLogEntriesAsync(It.IsAny<AuditLogFilter>(), DefaultPagination,
+                It.IsAny<CancellationToken>()), Times.Once);
     }
 }

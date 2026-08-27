@@ -10,10 +10,10 @@ using Microsoft.Extensions.DependencyInjection;
 namespace IdentityServerProject.Admin.Tests.ApiScopes;
 
 /// <summary>
-/// Exercises <see cref="ApiScopeEditorService"/> against a real (SQLite in-memory)
-/// <see cref="ConfigurationDbContext"/> resolved from the shared <see cref="AdminWebFactory"/> DI container.
-/// Every test seeds with a unique tag embedded in the scope name so assertions are
-/// unaffected by data left behind by other tests sharing the same connection.
+///     Exercises <see cref="ApiScopeEditorService" /> against a real (SQLite in-memory)
+///     <see cref="ConfigurationDbContext" /> resolved from the shared <see cref="AdminWebFactory" /> DI container.
+///     Every test seeds with a unique tag embedded in the scope name so assertions are
+///     unaffected by data left behind by other tests sharing the same connection.
 /// </summary>
 public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
 {
@@ -28,7 +28,7 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             configDb.ApiScopes.Add(scope);
             await configDb.SaveChangesAsync();
         });
@@ -39,21 +39,21 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetForEditAsync_ScopeExists_ReturnsPopulatedModelWithClaims()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var name = $"{tag}-scope";
+        string tag = Guid.NewGuid().ToString("N");
+        string name = $"{tag}-scope";
         await SeedApiScopeAsync(new ApiScope
         {
             Name = name,
             DisplayName = "Display",
             Description = "Desc",
-            UserClaims = new List<ApiScopeClaim> { new ApiScopeClaim { Type = "email" } },
+            UserClaims = new List<ApiScopeClaim> { new() { Type = "email" } }
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
 
-            var editor = await service.GetForEditAsync(ScopeName.Create(name));
+            ApiScopeEditorModel? editor = await service.GetForEditAsync(ScopeName.Create(name));
 
             Assert.NotNull(editor);
             Assert.Equal(name, editor.Name);
@@ -68,9 +68,9 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
 
-            var editor = await service.GetForEditAsync(ScopeName.Create(Guid.NewGuid().ToString("N")));
+            ApiScopeEditorModel? editor = await service.GetForEditAsync(ScopeName.Create(Guid.NewGuid().ToString("N")));
 
             Assert.Null(editor);
         });
@@ -81,23 +81,23 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UpdateBasicsAsync_ScopeExists_UpdatesDisplayNameAndDescriptionButNotName()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var name = $"{tag}-scope";
+        string tag = Guid.NewGuid().ToString("N");
+        string name = $"{tag}-scope";
         await SeedApiScopeAsync(new ApiScope { Name = name, DisplayName = "Old", Description = "Old desc" });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
 
-            var success = await service.UpdateBasicsAsync(name, "New", "New desc", true, false, false, true);
+            bool success = await service.UpdateBasicsAsync(name, "New", "New desc", true, false, false, true);
 
             Assert.True(success);
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
-            var scope = await configDb.ApiScopes.SingleAsync(s => s.Name == name);
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ApiScope scope = await configDb.ApiScopes.SingleAsync(s => s.Name == name);
 
             Assert.Equal(name, scope.Name);
             Assert.Equal("New", scope.DisplayName);
@@ -110,9 +110,10 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
 
-            var success = await service.UpdateBasicsAsync(Guid.NewGuid().ToString("N"), "New", "New desc", true, false, false, true);
+            bool success = await service.UpdateBasicsAsync(Guid.NewGuid().ToString("N"), "New", "New desc", true, false,
+                false, true);
 
             Assert.False(success);
         });
@@ -123,23 +124,23 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task AddClaimAsync_NewClaimType_AddsClaim()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var name = $"{tag}-scope";
+        string tag = Guid.NewGuid().ToString("N");
+        string name = $"{tag}-scope";
         await SeedApiScopeAsync(new ApiScope { Name = name });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
 
-            var success = await service.AddClaimAsync(ScopeName.Create(name), ClaimType.Create("email"));
+            bool success = await service.AddClaimAsync(ScopeName.Create(name), ClaimType.Create("email"));
 
             Assert.True(success);
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
-            var scope = await configDb.ApiScopes.Include(s => s.UserClaims).SingleAsync(s => s.Name == name);
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ApiScope scope = await configDb.ApiScopes.Include(s => s.UserClaims).SingleAsync(s => s.Name == name);
 
             Assert.Contains(scope.UserClaims, c => c.Type == "email");
         });
@@ -148,23 +149,24 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task AddClaimAsync_DuplicateClaimType_IsNoOp()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var name = $"{tag}-scope";
-        await SeedApiScopeAsync(new ApiScope { Name = name, UserClaims = new List<ApiScopeClaim> { new ApiScopeClaim { Type = "email" } } });
+        string tag = Guid.NewGuid().ToString("N");
+        string name = $"{tag}-scope";
+        await SeedApiScopeAsync(new ApiScope
+            { Name = name, UserClaims = new List<ApiScopeClaim> { new() { Type = "email" } } });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
 
-            var success = await service.AddClaimAsync(ScopeName.Create(name), ClaimType.Create("email"));
+            bool success = await service.AddClaimAsync(ScopeName.Create(name), ClaimType.Create("email"));
 
             Assert.True(success);
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
-            var scope = await configDb.ApiScopes.Include(s => s.UserClaims).SingleAsync(s => s.Name == name);
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ApiScope scope = await configDb.ApiScopes.Include(s => s.UserClaims).SingleAsync(s => s.Name == name);
 
             Assert.Single(scope.UserClaims);
         });
@@ -175,9 +177,10 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
 
-            var success = await service.AddClaimAsync(ScopeName.Create(Guid.NewGuid().ToString("N")), ClaimType.Create("email"));
+            bool success = await service.AddClaimAsync(ScopeName.Create(Guid.NewGuid().ToString("N")),
+                ClaimType.Create("email"));
 
             Assert.False(success);
         });
@@ -188,23 +191,24 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task RemoveClaimAsync_ExistingClaimType_RemovesClaim()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var name = $"{tag}-scope";
-        await SeedApiScopeAsync(new ApiScope { Name = name, UserClaims = new List<ApiScopeClaim> { new ApiScopeClaim { Type = "email" } } });
+        string tag = Guid.NewGuid().ToString("N");
+        string name = $"{tag}-scope";
+        await SeedApiScopeAsync(new ApiScope
+            { Name = name, UserClaims = new List<ApiScopeClaim> { new() { Type = "email" } } });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
 
-            var success = await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("email"));
+            bool success = await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("email"));
 
             Assert.True(success);
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
-            var scope = await configDb.ApiScopes.Include(s => s.UserClaims).SingleAsync(s => s.Name == name);
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ApiScope scope = await configDb.ApiScopes.Include(s => s.UserClaims).SingleAsync(s => s.Name == name);
 
             Assert.Empty(scope.UserClaims);
         });
@@ -213,15 +217,15 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task RemoveClaimAsync_ClaimTypeNotPresent_ReturnsFalse()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var name = $"{tag}-scope";
+        string tag = Guid.NewGuid().ToString("N");
+        string name = $"{tag}-scope";
         await SeedApiScopeAsync(new ApiScope { Name = name });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
 
-            var success = await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("email"));
+            bool success = await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("email"));
 
             Assert.False(success);
         });
@@ -232,9 +236,10 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
 
-            var success = await service.RemoveClaimAsync(ScopeName.Create(Guid.NewGuid().ToString("N")), ClaimType.Create("email"));
+            bool success = await service.RemoveClaimAsync(ScopeName.Create(Guid.NewGuid().ToString("N")),
+                ClaimType.Create("email"));
 
             Assert.False(success);
         });
@@ -243,15 +248,15 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task CreateAsync_NewScope_PersistsTheSuppliedDisplayFieldsAndEnablesIt()
     {
-        var name = $"{Guid.NewGuid():N}-scope";
+        string name = $"{Guid.NewGuid():N}-scope";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
-            var result = await service.CreateAsync(name, "Scope display", "Scope description");
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
+            AdminMutationResult result = await service.CreateAsync(name, "Scope display", "Scope description");
 
             Assert.True(result.Succeeded, result.ErrorMessage);
-            var editor = await service.GetForEditAsync(ScopeName.Create(name));
+            ApiScopeEditorModel? editor = await service.GetForEditAsync(ScopeName.Create(name));
             Assert.NotNull(editor);
             Assert.Equal("Scope display", editor!.DisplayName);
             Assert.Equal("Scope description", editor.Description);
@@ -262,15 +267,15 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task CreateAsync_NameUsedByAnIdentityResource_ReturnsFailureWithoutCreatingAScope()
     {
-        var name = $"{Guid.NewGuid():N}-shared";
+        string name = $"{Guid.NewGuid():N}-shared";
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
             db.IdentityResources.Add(new IdentityResource { Name = name });
             await db.SaveChangesAsync();
 
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
-            var result = await service.CreateAsync(name, "Scope display", null);
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
+            AdminMutationResult result = await service.CreateAsync(name, "Scope display", null);
 
             Assert.False(result.Succeeded);
             Assert.Equal("An identity resource with this name already exists.", result.ErrorMessage);
@@ -278,5 +283,3 @@ public class ApiScopeEditorServiceTests : IClassFixture<AdminWebFactory>
         });
     }
 }
-
-

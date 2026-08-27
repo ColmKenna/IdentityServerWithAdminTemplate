@@ -1,4 +1,5 @@
 namespace IdentityServerProject.Services.Clients;
+
 public record ClientPreset(
     string Id,
     string Name,

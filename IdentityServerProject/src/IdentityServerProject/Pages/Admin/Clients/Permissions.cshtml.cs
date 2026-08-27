@@ -20,11 +20,9 @@ public class PermissionsModel : PageModel
         _clientDetailsService = clientDetailsService;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public string Id { get; set; } = string.Empty;
+    [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
-    [BindProperty]
-    public PermissionsInputModel Input { get; set; } = new();
+    [BindProperty] public PermissionsInputModel Input { get; set; } = new();
 
     public string ClientNameDisplay { get; private set; } = string.Empty;
     public bool IsInteractive { get; private set; }
@@ -36,7 +34,8 @@ public class PermissionsModel : PageModel
         if (string.IsNullOrWhiteSpace(Id))
             return NotFound();
 
-        var permissions = await _clientDetailsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
+        ClientPermissionsModel? permissions =
+            await _clientDetailsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
         if (permissions == null)
             return NotFound();
 
@@ -50,22 +49,19 @@ public class PermissionsModel : PageModel
         if (string.IsNullOrWhiteSpace(Id))
             return NotFound();
 
-        var result = await _clientDetailsService.UpdateClientPermissionsAsync(
+        AdminMutationResult result = await _clientDetailsService.UpdateClientPermissionsAsync(
             ClientId.Create(Id), ScopeSet.FromStrings(Input.AllowedScopes), cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
             return NotFound();
 
         if (!result.Succeeded)
         {
-            foreach (var (key, messages) in result.Errors)
-            {
-                foreach (var message in messages)
-                {
-                    ModelState.AddModelError(key, message);
-                }
-            }
+            foreach ((string key, string[] messages) in result.Errors)
+            foreach (string message in messages)
+                ModelState.AddModelError(key, message);
 
-            var permissions = await _clientDetailsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
+            ClientPermissionsModel? permissions =
+                await _clientDetailsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
             if (permissions == null)
                 return NotFound();
 

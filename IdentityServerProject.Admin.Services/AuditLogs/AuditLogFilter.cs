@@ -1,7 +1,7 @@
 namespace IdentityServerProject.Services.AuditLogs;
 
 /// <summary>
-/// Structured optional filters for the read-only administration audit trail.
+///     Structured optional filters for the read-only administration audit trail.
 /// </summary>
 public sealed class AuditLogFilter
 {

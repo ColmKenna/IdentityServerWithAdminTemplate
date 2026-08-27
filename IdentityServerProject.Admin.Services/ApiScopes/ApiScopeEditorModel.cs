@@ -1,7 +1,7 @@
 namespace IdentityServerProject.Services.ApiScopes;
 
 /// <summary>
-/// Full detail view of a single API scope for the Admin &gt; API Scopes edit page.
+///     Full detail view of a single API scope for the Admin &gt; API Scopes edit page.
 /// </summary>
 public sealed class ApiScopeEditorModel
 {

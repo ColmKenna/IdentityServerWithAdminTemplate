@@ -1,9 +1,11 @@
 using System.Net;
 using AngleSharp;
 using AngleSharp.Dom;
+using AngleSharp.Html.Dom;
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Validation;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -14,21 +16,23 @@ public class ClientsBasicsIntegrationTests : IDisposable
 {
     private readonly List<IDisposable> _disposables = new();
 
+    public void Dispose()
+    {
+        foreach (IDisposable disposable in _disposables) disposable.Dispose();
+    }
+
     private HttpClient CreateClient(IClientDetailsService clientDetailsService, bool allowAutoRedirect = true)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
 
-        var factory = baseFactory.WithWebHostBuilder(builder =>
+        WebApplicationFactory<Program> factory = baseFactory.WithWebHostBuilder(builder =>
         {
-            builder.ConfigureTestServices(services =>
-            {
-                services.AddSingleton(clientDetailsService);
-            });
+            builder.ConfigureTestServices(services => { services.AddSingleton(clientDetailsService); });
         });
         _disposables.Add(factory);
 
-        return factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        return factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = allowAutoRedirect
         });
@@ -51,15 +55,17 @@ public class ClientsBasicsIntegrationTests : IDisposable
         CorsOriginsCount = 0,
         SecretsCount = 1,
         AllowedScopesCount = 3,
-        AllowedScopes = new() { "openid", "profile", "coop.market.api" }
+        AllowedScopes = new List<string> { "openid", "profile", "coop.market.api" }
     };
 
     private static IClientDetailsService MockService(ClientDetailsModel? details = null, bool updateSuccess = true)
     {
         var mock = new Mock<IClientDetailsService>();
         mock.Setup(s => s.GetClientDetailsAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ClientId id, CancellationToken _) => id.Value == "non-existent" ? null : (details ?? SampleClientDetails(id.Value)));
-        mock.Setup(s => s.UpdateClientBasicsAsync(It.IsAny<ClientId>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, CancellationToken _) =>
+                id.Value == "non-existent" ? null : details ?? SampleClientDetails(id.Value));
+        mock.Setup(s => s.UpdateClientBasicsAsync(It.IsAny<ClientId>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(updateSuccess
                 ? AdminMutationResult.Success()
                 : AdminMutationResult.ValidationFailure("Input.ClientName", "Update failed."));
@@ -68,23 +74,24 @@ public class ClientsBasicsIntegrationTests : IDisposable
 
     private static async Task<IDocument> GetDocumentAsync(HttpResponseMessage response)
     {
-        var content = await response.Content.ReadAsStringAsync();
-        var context = BrowsingContext.New(AngleSharp.Configuration.Default);
+        string content = await response.Content.ReadAsStringAsync();
+        IBrowsingContext context = BrowsingContext.New(AngleSharp.Configuration.Default);
         return await context.OpenAsync(req => req.Content(content));
     }
 
-    private static async Task<(string Token, string Cookie)> ExtractAntiForgeryTokenAndCookieAsync(HttpClient httpClient, string pageUrl)
+    private static async Task<(string Token, string Cookie)> ExtractAntiForgeryTokenAndCookieAsync(
+        HttpClient httpClient, string pageUrl)
     {
-        var response = await httpClient.GetAsync(pageUrl);
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await httpClient.GetAsync(pageUrl);
+        IDocument document = await GetDocumentAsync(response);
 
-        var tokenInput = document.QuerySelector("input[name='__RequestVerificationToken']") as AngleSharp.Html.Dom.IHtmlInputElement;
+        var tokenInput = document.QuerySelector("input[name='__RequestVerificationToken']") as IHtmlInputElement;
         Assert.NotNull(tokenInput);
 
-        var token = tokenInput!.Value;
+        string token = tokenInput!.Value;
 
-        var cookies = response.Headers.GetValues("Set-Cookie");
-        var cookie = cookies.FirstOrDefault(c => c.StartsWith(".AspNetCore.Antiforgery"));
+        IEnumerable<string> cookies = response.Headers.GetValues("Set-Cookie");
+        string? cookie = cookies.FirstOrDefault(c => c.StartsWith(".AspNetCore.Antiforgery"));
         Assert.NotNull(cookie);
 
         return (token, cookie!);
@@ -93,24 +100,24 @@ public class ClientsBasicsIntegrationTests : IDisposable
     [Fact]
     public async Task Get_ExistingClient_Returns200OK_WithFormAndDisabledClientId()
     {
-        var details = SampleClientDetails("test-client");
-        var service = MockService(details);
-        var httpClient = CreateClient(service);
+        ClientDetailsModel details = SampleClientDetails("test-client");
+        IClientDetailsService service = MockService(details);
+        HttpClient httpClient = CreateClient(service);
 
-        var response = await httpClient.GetAsync("/Admin/Clients/Basics/test-client");
+        HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/Basics/test-client");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var document = await GetDocumentAsync(response);
-        
-        var clientNameInput = document.QuerySelector("input[name='Input.ClientName']") as AngleSharp.Html.Dom.IHtmlInputElement;
+        IDocument document = await GetDocumentAsync(response);
+
+        var clientNameInput = document.QuerySelector("input[name='Input.ClientName']") as IHtmlInputElement;
         Assert.NotNull(clientNameInput);
         Assert.Equal("Co-op Market Razor Client", clientNameInput!.Value);
 
-        var descriptionArea = document.QuerySelector("textarea[name='Input.Description']") as AngleSharp.Html.Dom.IHtmlTextAreaElement;
+        var descriptionArea = document.QuerySelector("textarea[name='Input.Description']") as IHtmlTextAreaElement;
         Assert.NotNull(descriptionArea);
         Assert.Equal("Original Description", descriptionArea!.Value);
 
-        var clientIdInput = document.QuerySelector("input[disabled]") as AngleSharp.Html.Dom.IHtmlInputElement;
+        var clientIdInput = document.QuerySelector("input[disabled]") as IHtmlInputElement;
         Assert.NotNull(clientIdInput);
         Assert.Equal("test-client", clientIdInput!.Value);
     }
@@ -118,10 +125,10 @@ public class ClientsBasicsIntegrationTests : IDisposable
     [Fact]
     public async Task Get_NonExistentClient_ReturnsNotFound()
     {
-        var service = MockService();
-        var httpClient = CreateClient(service);
+        IClientDetailsService service = MockService();
+        HttpClient httpClient = CreateClient(service);
 
-        var response = await httpClient.GetAsync("/Admin/Clients/Basics/non-existent");
+        HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/Basics/non-existent");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -131,11 +138,13 @@ public class ClientsBasicsIntegrationTests : IDisposable
         var mock = new Mock<IClientDetailsService>();
         mock.Setup(s => s.GetClientDetailsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleClientDetails("test-client"));
-        mock.Setup(s => s.UpdateClientBasicsAsync(ClientId.Create("test-client"), "Updated Name", "Updated Desc", It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.UpdateClientBasicsAsync(ClientId.Create("test-client"), "Updated Name", "Updated Desc",
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
-        var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/Basics/test-client");
+        HttpClient httpClient = CreateClient(mock.Object, false);
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/Basics/test-client");
 
         var formValues = new Dictionary<string, string>
         {
@@ -150,20 +159,23 @@ public class ClientsBasicsIntegrationTests : IDisposable
         };
         request.Headers.Add("Cookie", cookie);
 
-        var response = await httpClient.SendAsync(request);
+        HttpResponseMessage response = await httpClient.SendAsync(request);
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal("/Admin/Clients/Details/test-client", response.Headers.Location?.OriginalString);
 
-        mock.Verify(s => s.UpdateClientBasicsAsync(ClientId.Create("test-client"), "Updated Name", "Updated Desc", It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(
+            s => s.UpdateClientBasicsAsync(ClientId.Create("test-client"), "Updated Name", "Updated Desc",
+                It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Post_InvalidData_ReturnsFormWithValidationError()
     {
-        var details = SampleClientDetails("test-client");
-        var service = MockService(details);
-        var httpClient = CreateClient(service, allowAutoRedirect: false);
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/Basics/test-client");
+        ClientDetailsModel details = SampleClientDetails("test-client");
+        IClientDetailsService service = MockService(details);
+        HttpClient httpClient = CreateClient(service, false);
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/Basics/test-client");
 
         var formValues = new Dictionary<string, string>
         {
@@ -178,21 +190,11 @@ public class ClientsBasicsIntegrationTests : IDisposable
         };
         request.Headers.Add("Cookie", cookie);
 
-        var response = await httpClient.SendAsync(request);
+        HttpResponseMessage response = await httpClient.SendAsync(request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var document = await GetDocumentAsync(response);
-        var summary = document.QuerySelector(".validation-summary");
+        IDocument document = await GetDocumentAsync(response);
+        IElement? summary = document.QuerySelector(".validation-summary");
         Assert.NotNull(summary);
     }
-
-    public void Dispose()
-    {
-        foreach (var disposable in _disposables)
-        {
-            disposable.Dispose();
-        }
-    }
 }
-
-

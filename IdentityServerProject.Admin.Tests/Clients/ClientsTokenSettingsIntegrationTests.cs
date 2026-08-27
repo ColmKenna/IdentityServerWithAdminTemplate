@@ -5,6 +5,7 @@ using Duende.IdentityServer.Models;
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Validation;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -15,21 +16,23 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
 {
     private readonly List<IDisposable> _disposables = new();
 
+    public void Dispose()
+    {
+        foreach (IDisposable disposable in _disposables) disposable.Dispose();
+    }
+
     private HttpClient CreateClient(IClientDetailsService clientDetailsService, bool allowAutoRedirect = true)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
 
-        var factory = baseFactory.WithWebHostBuilder(builder =>
+        WebApplicationFactory<Program> factory = baseFactory.WithWebHostBuilder(builder =>
         {
-            builder.ConfigureTestServices(services =>
-            {
-                services.AddSingleton(clientDetailsService);
-            });
+            builder.ConfigureTestServices(services => { services.AddSingleton(clientDetailsService); });
         });
         _disposables.Add(factory);
 
-        return factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        return factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = allowAutoRedirect
         });
@@ -45,12 +48,15 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         AllowOfflineAccess = true
     };
 
-    private static IClientDetailsService MockService(ClientTokenSettingsModel? details = null, bool updateSuccess = true)
+    private static IClientDetailsService MockService(ClientTokenSettingsModel? details = null,
+        bool updateSuccess = true)
     {
         var mock = new Mock<IClientDetailsService>();
         mock.Setup(s => s.GetClientTokenSettingsAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ClientId id, CancellationToken _) => id.Value == "non-existent" ? null : (details ?? SampleSettings(id.Value)));
-        mock.Setup(s => s.UpdateClientTokenSettingsAsync(It.IsAny<ClientId>(), It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, CancellationToken _) =>
+                id.Value == "non-existent" ? null : details ?? SampleSettings(id.Value));
+        mock.Setup(s => s.UpdateClientTokenSettingsAsync(It.IsAny<ClientId>(),
+                It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ClientId id, ClientTokenSettingsInputModel _, CancellationToken _) =>
                 id.Value == "non-existent"
                     ? AdminMutationResult.NotFoundResult()
@@ -62,22 +68,23 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
 
     private static async Task<IDocument> GetDocumentAsync(HttpResponseMessage response)
     {
-        var content = await response.Content.ReadAsStringAsync();
-        var context = BrowsingContext.New(AngleSharp.Configuration.Default);
+        string content = await response.Content.ReadAsStringAsync();
+        IBrowsingContext context = BrowsingContext.New(AngleSharp.Configuration.Default);
         return await context.OpenAsync(req => req.Content(content));
     }
 
-    private static async Task<(string Token, string Cookie)> ExtractAntiForgeryTokenAndCookieAsync(HttpClient client, string pageUrl)
+    private static async Task<(string Token, string Cookie)> ExtractAntiForgeryTokenAndCookieAsync(HttpClient client,
+        string pageUrl)
     {
-        var getResponse = await client.GetAsync(pageUrl);
+        HttpResponseMessage getResponse = await client.GetAsync(pageUrl);
         getResponse.EnsureSuccessStatusCode();
 
-        var document = await GetDocumentAsync(getResponse);
-        var tokenInput = document.QuerySelector("input[name='__RequestVerificationToken']");
-        var token = tokenInput?.GetAttribute("value") ?? string.Empty;
+        IDocument document = await GetDocumentAsync(getResponse);
+        IElement? tokenInput = document.QuerySelector("input[name='__RequestVerificationToken']");
+        string token = tokenInput?.GetAttribute("value") ?? string.Empty;
 
-        var setCookieHeaders = getResponse.Headers.GetValues("Set-Cookie");
-        var cookieHeader = string.Join("; ", setCookieHeaders.Select(h => h.Split(';')[0]));
+        IEnumerable<string> setCookieHeaders = getResponse.Headers.GetValues("Set-Cookie");
+        string cookieHeader = string.Join("; ", setCookieHeaders.Select(h => h.Split(';')[0]));
 
         return (token, cookieHeader);
     }
@@ -85,13 +92,13 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
     [Fact]
     public async Task Get_ExistingClient_Returns200WithForm()
     {
-        var httpClient = CreateClient(MockService());
+        HttpClient httpClient = CreateClient(MockService());
 
-        var response = await httpClient.GetAsync("/Admin/Clients/TokenSettings/test-client");
+        HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/TokenSettings/test-client");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var document = await GetDocumentAsync(response);
-        var heading = document.QuerySelector("h1, h2");
+        IDocument document = await GetDocumentAsync(response);
+        IElement? heading = document.QuerySelector("h1, h2");
         Assert.NotNull(heading);
         Assert.Contains("Token Settings", heading!.TextContent);
     }
@@ -99,15 +106,17 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
     [Fact]
     public async Task Get_ExistingClient_PopulatesCurrentValues()
     {
-        var httpClient = CreateClient(MockService());
+        HttpClient httpClient = CreateClient(MockService());
 
-        var response = await httpClient.GetAsync("/Admin/Clients/TokenSettings/test-client");
+        HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/TokenSettings/test-client");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var document = await GetDocumentAsync(response);
+        IDocument document = await GetDocumentAsync(response);
 
-        var accessLifetime = document.QuerySelector("input[name='Input.AccessTokenLifetime']")?.GetAttribute("value");
-        var identityLifetime = document.QuerySelector("input[name='Input.IdentityTokenLifetime']")?.GetAttribute("value");
+        string? accessLifetime =
+            document.QuerySelector("input[name='Input.AccessTokenLifetime']")?.GetAttribute("value");
+        string? identityLifetime =
+            document.QuerySelector("input[name='Input.IdentityTokenLifetime']")?.GetAttribute("value");
 
         Assert.Equal("3600", accessLifetime);
         Assert.Equal("300", identityLifetime);
@@ -116,9 +125,9 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
     [Fact]
     public async Task Get_NonExistentClient_Returns404()
     {
-        var httpClient = CreateClient(MockService());
+        HttpClient httpClient = CreateClient(MockService());
 
-        var response = await httpClient.GetAsync("/Admin/Clients/TokenSettings/non-existent");
+        HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/TokenSettings/non-existent");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -129,11 +138,13 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         var mock = new Mock<IClientDetailsService>();
         mock.Setup(s => s.GetClientTokenSettingsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleSettings());
-        mock.Setup(s => s.UpdateClientTokenSettingsAsync(ClientId.Create("test-client"), It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.UpdateClientTokenSettingsAsync(ClientId.Create("test-client"),
+                It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
-        var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/TokenSettings/test-client");
+        HttpClient httpClient = CreateClient(mock.Object, false);
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/TokenSettings/test-client");
 
         var formValues = new Dictionary<string, string>
         {
@@ -154,7 +165,7 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         };
         request.Headers.Add("Cookie", cookie);
 
-        var response = await httpClient.SendAsync(request);
+        HttpResponseMessage response = await httpClient.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal("/Admin/Clients/Details/test-client", response.Headers.Location?.OriginalString);
@@ -162,14 +173,14 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         mock.Verify(s => s.UpdateClientTokenSettingsAsync(
             ClientId.Create("test-client"),
             It.Is<ClientTokenSettingsInputModel>(m => m.AccessTokenLifetime == 7200
-                && m.IdentityTokenLifetime == 600
-                && m.RequireConsent
-                && m.AllowOfflineAccess
-                && m.RefreshToken != null
-                && m.RefreshToken.Usage == TokenUsage.OneTimeOnly
-                && m.RefreshToken.Expiration == TokenExpiration.Absolute
-                && m.RefreshToken.AbsoluteLifetime == 172800
-                && m.RefreshToken.SlidingLifetime == 72000),
+                                                      && m.IdentityTokenLifetime == 600
+                                                      && m.RequireConsent
+                                                      && m.AllowOfflineAccess
+                                                      && m.RefreshToken != null
+                                                      && m.RefreshToken.Usage == TokenUsage.OneTimeOnly
+                                                      && m.RefreshToken.Expiration == TokenExpiration.Absolute
+                                                      && m.RefreshToken.AbsoluteLifetime == 172800
+                                                      && m.RefreshToken.SlidingLifetime == 72000),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -180,8 +191,9 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         mock.Setup(s => s.GetClientTokenSettingsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleSettings());
 
-        var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/TokenSettings/test-client");
+        HttpClient httpClient = CreateClient(mock.Object, false);
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/TokenSettings/test-client");
 
         var formValues = new Dictionary<string, string>
         {
@@ -196,14 +208,16 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         };
         request.Headers.Add("Cookie", cookie);
 
-        var response = await httpClient.SendAsync(request);
+        HttpResponseMessage response = await httpClient.SendAsync(request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var document = await GetDocumentAsync(response);
-        var summary = document.QuerySelector(".validation-summary");
+        IDocument document = await GetDocumentAsync(response);
+        IElement? summary = document.QuerySelector(".validation-summary");
         Assert.NotNull(summary);
 
-        mock.Verify(s => s.UpdateClientTokenSettingsAsync(It.IsAny<ClientId>(), It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()), Times.Never);
+        mock.Verify(
+            s => s.UpdateClientTokenSettingsAsync(It.IsAny<ClientId>(), It.IsAny<ClientTokenSettingsInputModel>(),
+                It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -213,8 +227,9 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         mock.Setup(s => s.GetClientTokenSettingsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleSettings());
 
-        var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/TokenSettings/test-client");
+        HttpClient httpClient = CreateClient(mock.Object, false);
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/TokenSettings/test-client");
 
         var formValues = new Dictionary<string, string>
         {
@@ -229,21 +244,24 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         };
         request.Headers.Add("Cookie", cookie);
 
-        var response = await httpClient.SendAsync(request);
+        HttpResponseMessage response = await httpClient.SendAsync(request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var document = await GetDocumentAsync(response);
-        var summary = document.QuerySelector(".validation-summary");
+        IDocument document = await GetDocumentAsync(response);
+        IElement? summary = document.QuerySelector(".validation-summary");
         Assert.NotNull(summary);
 
-        mock.Verify(s => s.UpdateClientTokenSettingsAsync(It.IsAny<ClientId>(), It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()), Times.Never);
+        mock.Verify(
+            s => s.UpdateClientTokenSettingsAsync(It.IsAny<ClientId>(), It.IsAny<ClientTokenSettingsInputModel>(),
+                It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task Post_IdentityTokenLifetimeOutOfRange_ReturnsValidationErrorWithLifetimesTabActive()
     {
-        var httpClient = CreateClient(MockService(), allowAutoRedirect: false);
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/TokenSettings/test-client");
+        HttpClient httpClient = CreateClient(MockService(), false);
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/TokenSettings/test-client");
 
         var formValues = new Dictionary<string, string>
         {
@@ -258,11 +276,11 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         };
         request.Headers.Add("Cookie", cookie);
 
-        var response = await httpClient.SendAsync(request);
+        HttpResponseMessage response = await httpClient.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var document = await GetDocumentAsync(response);
-        var activeTab = document.QuerySelector("#client-token-settings-tabs > ck-tab[active]");
+        IDocument document = await GetDocumentAsync(response);
+        IElement? activeTab = document.QuerySelector("#client-token-settings-tabs > ck-tab[active]");
         Assert.NotNull(activeTab);
         Assert.Equal("Token Lifetimes", activeTab!.GetAttribute("label"));
     }
@@ -270,8 +288,9 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
     [Fact]
     public async Task Post_NonExistentClient_ReturnsNotFound()
     {
-        var httpClient = CreateClient(MockService(), allowAutoRedirect: false);
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/TokenSettings/test-client");
+        HttpClient httpClient = CreateClient(MockService(), false);
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/TokenSettings/test-client");
 
         var formValues = new Dictionary<string, string>
         {
@@ -286,15 +305,7 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         };
         request.Headers.Add("Cookie", cookie);
 
-        var response = await httpClient.SendAsync(request);
+        HttpResponseMessage response = await httpClient.SendAsync(request);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    public void Dispose()
-    {
-        foreach (var disposable in _disposables)
-        {
-            disposable.Dispose();
-        }
     }
 }

@@ -10,7 +10,8 @@ public class RoleCreateResult
 
     public static RoleCreateResult Succeeded(RoleId roleId) => new() { Success = true, RoleId = roleId };
 
-    public static RoleCreateResult Failed(string errorMessage) => new() { Success = false, ErrorMessage = errorMessage };
+    public static RoleCreateResult Failed(string errorMessage) =>
+        new() { Success = false, ErrorMessage = errorMessage };
 }
 
 public interface IRoleService

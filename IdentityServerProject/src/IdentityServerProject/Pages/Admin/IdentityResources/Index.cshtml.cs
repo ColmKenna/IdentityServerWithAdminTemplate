@@ -18,23 +18,22 @@ public class IndexModel : PageModel
         _options = options.Value;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public int PageNumber { get; set; } = 1;
+    [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
 
-    [BindProperty(SupportsGet = true)]
-    public string? Filter { get; set; }
+    [BindProperty(SupportsGet = true)] public string? Filter { get; set; }
 
     public ListResult<IdentityResourceListItem> IdentityResources { get; private set; } = default!;
 
-    [TempData]
-    public string? DeleteErrorMessage { get; set; }
+    [TempData] public string? DeleteErrorMessage { get; set; }
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         var pagination = Pagination.From(PageNumber, _options.DefaultPageSize);
         PageNumber = pagination.PageNumber;
 
-        IdentityResources = await _identityResourceListService.GetIdentityResourcesAsync(new ListQuery(Filter, pagination), cancellationToken);
+        IdentityResources =
+            await _identityResourceListService.GetIdentityResourcesAsync(new ListQuery(Filter, pagination),
+                cancellationToken);
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(string name, CancellationToken cancellationToken)
@@ -42,7 +41,8 @@ public class IndexModel : PageModel
         if (string.IsNullOrWhiteSpace(name))
             return NotFound();
 
-        var result = await _identityResourceListService.DeleteIdentityResourceAsync(name, cancellationToken);
+        IdentityResourceDeleteResult result =
+            await _identityResourceListService.DeleteIdentityResourceAsync(name, cancellationToken);
 
         switch (result)
         {

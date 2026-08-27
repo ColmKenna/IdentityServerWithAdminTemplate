@@ -1,4 +1,5 @@
 namespace IdentityServerProject.Services.Clients;
+
 public interface IClientPresetService
 {
     IReadOnlyList<ClientPreset> GetAvailablePresets();

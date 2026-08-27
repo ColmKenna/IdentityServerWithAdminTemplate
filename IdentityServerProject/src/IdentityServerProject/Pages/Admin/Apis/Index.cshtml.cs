@@ -18,11 +18,9 @@ public class IndexModel : PageModel
         _options = options.Value;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public string? Filter { get; set; }
+    [BindProperty(SupportsGet = true)] public string? Filter { get; set; }
 
-    [BindProperty(SupportsGet = true)]
-    public int PageNumber { get; set; } = 1;
+    [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
 
     public ListResult<ApiResourceListItem> ApiResources { get; private set; } = default!;
 
@@ -31,6 +29,7 @@ public class IndexModel : PageModel
         var pagination = Pagination.From(PageNumber, _options.DefaultPageSize);
         PageNumber = pagination.PageNumber;
 
-        ApiResources = await _apiResourceListService.GetApiResourcesAsync(new ListQuery(Filter, pagination), cancellationToken);
+        ApiResources =
+            await _apiResourceListService.GetApiResourcesAsync(new ListQuery(Filter, pagination), cancellationToken);
     }
 }

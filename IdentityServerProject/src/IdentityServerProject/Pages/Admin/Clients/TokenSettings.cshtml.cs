@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Duende.IdentityServer.Models;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Mvc;
@@ -8,16 +9,17 @@ namespace IdentityServerProject.Pages.Admin.Clients;
 
 public class TokenSettingsInputModel
 {
-    [Range(ValidationConstants.MinAccessTokenLifetime, ValidationConstants.MaxAccessTokenLifetime, ErrorMessage = "Access Token Lifetime must be between 60 and 86400 seconds (1 minute to 24 hours).")]
+    [Range(ValidationConstants.MinAccessTokenLifetime, ValidationConstants.MaxAccessTokenLifetime,
+        ErrorMessage = "Access Token Lifetime must be between 60 and 86400 seconds (1 minute to 24 hours).")]
     [Display(Name = "Access Token Lifetime (seconds)")]
     public int AccessTokenLifetime { get; set; }
 
-    [Range(ValidationConstants.MinIdentityTokenLifetime, ValidationConstants.MaxIdentityTokenLifetime, ErrorMessage = "Identity Token Lifetime must be between 60 and 3600 seconds (1 minute to 1 hour).")]
+    [Range(ValidationConstants.MinIdentityTokenLifetime, ValidationConstants.MaxIdentityTokenLifetime,
+        ErrorMessage = "Identity Token Lifetime must be between 60 and 3600 seconds (1 minute to 1 hour).")]
     [Display(Name = "Identity Token Lifetime (seconds)")]
     public int IdentityTokenLifetime { get; set; }
 
-    [Display(Name = "Require Consent")]
-    public bool RequireConsent { get; set; }
+    [Display(Name = "Require Consent")] public bool RequireConsent { get; set; }
 
     [Display(Name = "Allow Offline Access")]
     public bool AllowOfflineAccess { get; set; }
@@ -44,11 +46,9 @@ public class TokenSettingsModel : PageModel
         _clientDetailsService = clientDetailsService;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public string Id { get; set; } = string.Empty;
+    [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
-    [BindProperty]
-    public TokenSettingsInputModel Input { get; set; } = new();
+    [BindProperty] public TokenSettingsInputModel Input { get; set; } = new();
 
     public string ClientNameDisplay { get; private set; } = string.Empty;
     public int ActiveTabIndex { get; private set; }
@@ -58,7 +58,8 @@ public class TokenSettingsModel : PageModel
         if (string.IsNullOrWhiteSpace(Id))
             return NotFound();
 
-        var settings = await _clientDetailsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
+        ClientTokenSettingsModel? settings =
+            await _clientDetailsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
         if (settings == null)
             return NotFound();
 
@@ -76,7 +77,9 @@ public class TokenSettingsModel : PageModel
         {
             ActiveTabIndex = ModelState.Keys.Any(key =>
                 key.StartsWith("Input.RequireConsent", StringComparison.Ordinal) ||
-                key.StartsWith("Input.AllowOfflineAccess", StringComparison.Ordinal)) ? 1 : 0;
+                key.StartsWith("Input.AllowOfflineAccess", StringComparison.Ordinal))
+                ? 1
+                : 0;
 
             return await ReloadPageAsync(cancellationToken);
         }
@@ -89,14 +92,15 @@ public class TokenSettingsModel : PageModel
             AllowOfflineAccess = Input.AllowOfflineAccess,
             RefreshToken = new RefreshTokenSettings
             {
-                Usage = (Duende.IdentityServer.Models.TokenUsage)Input.RefreshTokenUsage,
-                Expiration = (Duende.IdentityServer.Models.TokenExpiration)Input.RefreshTokenExpiration,
+                Usage = (TokenUsage)Input.RefreshTokenUsage,
+                Expiration = (TokenExpiration)Input.RefreshTokenExpiration,
                 AbsoluteLifetime = TokenLifetime.FromSeconds(Input.AbsoluteRefreshTokenLifetime),
                 SlidingLifetime = TokenLifetime.FromSeconds(Input.SlidingRefreshTokenLifetime)
             }
         };
 
-        var result = await _clientDetailsService.UpdateClientTokenSettingsAsync(ClientId.Create(Id), input, cancellationToken);
+        AdminMutationResult result =
+            await _clientDetailsService.UpdateClientTokenSettingsAsync(ClientId.Create(Id), input, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
             return NotFound();
 
@@ -105,7 +109,9 @@ public class TokenSettingsModel : PageModel
             AddErrorsToModelState(result.Errors);
             ActiveTabIndex = result.Errors.Keys.Any(key =>
                 key.StartsWith("Input.RequireConsent", StringComparison.Ordinal) ||
-                key.StartsWith("Input.AllowOfflineAccess", StringComparison.Ordinal)) ? 1 : 0;
+                key.StartsWith("Input.AllowOfflineAccess", StringComparison.Ordinal))
+                ? 1
+                : 0;
             return await ReloadPageAsync(cancellationToken);
         }
 
@@ -128,7 +134,8 @@ public class TokenSettingsModel : PageModel
 
     private async Task<IActionResult> ReloadPageAsync(CancellationToken cancellationToken)
     {
-        var settings = await _clientDetailsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
+        ClientTokenSettingsModel? settings =
+            await _clientDetailsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
         if (settings == null)
             return NotFound();
 
@@ -138,12 +145,8 @@ public class TokenSettingsModel : PageModel
 
     private void AddErrorsToModelState(IReadOnlyDictionary<string, string[]> errors)
     {
-        foreach (var (key, messages) in errors)
-        {
-            foreach (var message in messages)
-            {
-                ModelState.AddModelError(key, message);
-            }
-        }
+        foreach ((string key, string[] messages) in errors)
+        foreach (string message in messages)
+            ModelState.AddModelError(key, message);
     }
 }

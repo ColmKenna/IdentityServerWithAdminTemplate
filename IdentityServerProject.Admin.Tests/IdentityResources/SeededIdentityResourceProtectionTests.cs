@@ -10,12 +10,12 @@ using Microsoft.Extensions.DependencyInjection;
 namespace IdentityServerProject.Admin.Tests.IdentityResources;
 
 /// <summary>
-/// Covers the seed half of the protection: <c>NonEditable</c> was previously read in five places
-/// and written in none, so it defaulted to <c>false</c> on every seeded row.
+///     Covers the seed half of the protection: <c>NonEditable</c> was previously read in five places
+///     and written in none, so it defaulted to <c>false</c> on every seeded row.
 /// </summary>
 /// <remarks>
-/// Each test gets its own factory (and therefore its own database), because these tests run the
-/// real seeder and assert on the exact contents of the identity resource table.
+///     Each test gets its own factory (and therefore its own database), because these tests run the
+///     real seeder and assert on the exact contents of the identity resource table.
 /// </remarks>
 public class SeededIdentityResourceProtectionTests
 {
@@ -26,7 +26,7 @@ public class SeededIdentityResourceProtectionTests
             var clients = new List<SeedClientSpec>
             {
                 new("razorclient", "Sales Razor Client", AbsoluteHttpUri.Create("https://localhost:5001"), "secret"),
-                new("blazorclient", "Sales Blazor Client", AbsoluteHttpUri.Create("https://localhost:5002"), "secret"),
+                new("blazorclient", "Sales Blazor Client", AbsoluteHttpUri.Create("https://localhost:5002"), "secret")
             };
 
             await SeedData.SeedAsync(
@@ -36,9 +36,9 @@ public class SeededIdentityResourceProtectionTests
                 sp.GetRequiredService<UserManager<ApplicationUser>>(),
                 sp.GetRequiredService<RoleManager<IdentityRole>>(),
                 clients,
-                sysAdminEmail: "admin@sales.local",
-                sysAdminPassword: "Password123!",
-                testUserPassword: "Password123!");
+                "admin@sales.local",
+                "Password123!",
+                "Password123!");
         });
     }
 
@@ -47,7 +47,7 @@ public class SeededIdentityResourceProtectionTests
         IdentityResource? resource = null;
         await factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             resource = await configDb.IdentityResources
                 .AsNoTracking()
                 .Include(r => r.UserClaims)
@@ -62,7 +62,7 @@ public class SeededIdentityResourceProtectionTests
         using var factory = new AdminWebFactory();
         await SeedAsync(factory);
 
-        var openId = await LoadAsync(factory, "openid");
+        IdentityResource? openId = await LoadAsync(factory, "openid");
 
         Assert.NotNull(openId);
         Assert.True(openId!.NonEditable);
@@ -80,7 +80,7 @@ public class SeededIdentityResourceProtectionTests
         using var factory = new AdminWebFactory();
         await SeedAsync(factory);
 
-        var resource = await LoadAsync(factory, name);
+        IdentityResource? resource = await LoadAsync(factory, name);
 
         Assert.NotNull(resource);
         Assert.False(resource!.NonEditable);
@@ -95,21 +95,21 @@ public class SeededIdentityResourceProtectionTests
 
         await factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             configDb.IdentityResources.Add(new IdentityResource
             {
                 Name = "openid",
                 DisplayName = "Your user identifier",
                 Enabled = true,
                 NonEditable = false,
-                UserClaims = new List<IdentityResourceClaim> { new() { Type = "sub" } },
+                UserClaims = new List<IdentityResourceClaim> { new() { Type = "sub" } }
             });
             await configDb.SaveChangesAsync();
         });
 
         await SeedAsync(factory);
 
-        var openId = await LoadAsync(factory, "openid");
+        IdentityResource? openId = await LoadAsync(factory, "openid");
         Assert.NotNull(openId);
         Assert.True(openId!.NonEditable);
     }
@@ -123,7 +123,7 @@ public class SeededIdentityResourceProtectionTests
 
         await factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             Assert.Equal(1, await configDb.IdentityResources.CountAsync(r => r.Name == "openid"));
         });
 

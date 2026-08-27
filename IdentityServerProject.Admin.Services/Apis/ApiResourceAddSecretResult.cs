@@ -3,9 +3,9 @@ using IdentityServerProject.Services.Validation;
 namespace IdentityServerProject.Services.Apis;
 
 /// <summary>
-/// Result of generating a new API resource secret. <see cref="PlaintextSecret"/> is the
-/// only time the raw secret value is ever available — it is hashed before storage and
-/// cannot be recovered afterwards.
+///     Result of generating a new API resource secret. <see cref="PlaintextSecret" /> is the
+///     only time the raw secret value is ever available — it is hashed before storage and
+///     cannot be recovered afterwards.
 /// </summary>
 public sealed class ApiResourceAddSecretResult
 {

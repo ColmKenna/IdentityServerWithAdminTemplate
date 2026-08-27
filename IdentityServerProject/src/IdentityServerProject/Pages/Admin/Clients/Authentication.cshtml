@@ -1,5 +1,5 @@
 @page "{id}"
-@model IdentityServerProject.Pages.Admin.Clients.AuthenticationModel
+@model AuthenticationModel
 @{
     ViewData["Title"] = "Configure Client Authentication";
     ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
@@ -18,29 +18,32 @@
     </div>
 </div>
 
-<partial name="_ClientEditorTabs" model="new ClientEditorTabsModel(Model.Id, ClientEditorTab.Authentication)" />
+<partial name="_ClientEditorTabs" model="new ClientEditorTabsModel(Model.Id, ClientEditorTab.Authentication)"/>
 
 @if (Model.HasDrifted)
 {
-    <div class="panel alert-panel alert-warning" style="border-left: 5px solid #b8860b; background: #fdf6e3; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 10px;">
-        <span class="drift-badge" style="background:#b8860b; color:#fff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:0.03em; white-space:nowrap;">Drifted from preset</span>
+    <div class="panel alert-panel alert-warning"
+         style="border-left: 5px solid #b8860b; background: #fdf6e3; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 10px;">
+        <span class="drift-badge"
+              style="background:#b8860b; color:#fff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:0.03em; white-space:nowrap;">Drifted from preset</span>
         <span style="font-size: 13px; color: #6b5106;">@Model.DriftDetails</span>
     </div>
 }
 
 <form method="post" id="edit-client-authentication-form">
-    <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger" role="alert" style="display: @(ViewData.ModelState.IsValid ? "none" : "block"); margin-bottom: 20px;"></div>
+    <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger" role="alert"
+         style="display: @(ViewData.ModelState.IsValid ? "none" : "block"); margin-bottom: 20px;"></div>
 
     <ck-tabs id="client-authentication-tabs" class="client-editor-tabs">
         <ck-tab label="Authentication &amp; Grant Types" active="@(Model.ActiveTabIndex == 0 ? "active" : null)">
             <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 18px;">
                 <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" asp-for="Input.RequirePkce" />
+                    <input type="checkbox" asp-for="Input.RequirePkce"/>
                     <span>Require PKCE (Proof Key for Code Exchange)</span>
                 </label>
 
                 <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" asp-for="Input.RequireClientSecret" />
+                    <input type="checkbox" asp-for="Input.RequireClientSecret"/>
                     <span>Require Client Secret</span>
                 </label>
             </div>
@@ -49,23 +52,29 @@
                 <label class="form-label">Allowed Grant Types <span class="required">*</span></label>
                 <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px;">
                     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                        <input type="checkbox" name="Input.GrantTypes" value="authorization_code" @(Model.Input.GrantTypes.Contains("authorization_code") ? "checked" : "") />
+                        <input type="checkbox" name="Input.GrantTypes" value="authorization_code"
+                               @(Model.Input.GrantTypes.Contains("authorization_code") ? "checked" : "")/>
                         <code>authorization_code</code>
                     </label>
                     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                        <input type="checkbox" name="Input.GrantTypes" value="client_credentials" @(Model.Input.GrantTypes.Contains("client_credentials") ? "checked" : "") />
+                        <input type="checkbox" name="Input.GrantTypes" value="client_credentials"
+                               @(Model.Input.GrantTypes.Contains("client_credentials") ? "checked" : "")/>
                         <code>client_credentials</code>
                     </label>
                     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                        <input type="checkbox" name="Input.GrantTypes" value="hybrid" @(Model.Input.GrantTypes.Contains("hybrid") ? "checked" : "") />
+                        <input type="checkbox" name="Input.GrantTypes" value="hybrid"
+                               @(Model.Input.GrantTypes.Contains("hybrid") ? "checked" : "")/>
                         <code>hybrid</code>
                     </label>
                     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                        <input type="checkbox" name="Input.GrantTypes" value="implicit" @(Model.Input.GrantTypes.Contains("implicit") ? "checked" : "") />
+                        <input type="checkbox" name="Input.GrantTypes" value="implicit"
+                               @(Model.Input.GrantTypes.Contains("implicit") ? "checked" : "")/>
                         <code>implicit</code>
                     </label>
                     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                        <input type="checkbox" name="Input.GrantTypes" value="urn:ietf:params:oauth:grant-type:device_code" @(Model.Input.GrantTypes.Contains("urn:ietf:params:oauth:grant-type:device_code") ? "checked" : "") />
+                        <input type="checkbox" name="Input.GrantTypes"
+                               value="urn:ietf:params:oauth:grant-type:device_code"
+                               @(Model.Input.GrantTypes.Contains("urn:ietf:params:oauth:grant-type:device_code") ? "checked" : "")/>
                         <code>device_code</code>
                     </label>
                 </div>
@@ -79,8 +88,10 @@
                     @if (Model.Input.RedirectUris.Count == 0)
                     {
                         <div class="uri-input-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                            <input type="url" name="Input.RedirectUris" class="form-control" placeholder="https://localhost:5001/signin-oidc" />
-                            <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;</button>
+                            <input type="url" name="Input.RedirectUris" class="form-control"
+                                   placeholder="https://localhost:5001/signin-oidc"/>
+                            <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;
+                            </button>
                         </div>
                     }
                     else
@@ -88,24 +99,32 @@
                         foreach (var uri in Model.Input.RedirectUris)
                         {
                             <div class="uri-input-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                <input type="url" name="Input.RedirectUris" class="form-control" value="@uri" placeholder="https://localhost:5001/signin-oidc" />
-                                <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;</button>
+                                <input type="url" name="Input.RedirectUris" class="form-control" value="@uri"
+                                       placeholder="https://localhost:5001/signin-oidc"/>
+                                <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;
+                                </button>
                             </div>
                         }
                     }
                 </div>
-                <button type="button" class="btn-secondary btn-sm" onclick="addUriRow('redirect-uris-container', 'Input.RedirectUris', 'https://localhost:5001/signin-oidc')">+ Add Redirect URI</button>
+                <button type="button" class="btn-secondary btn-sm"
+                        onclick="addUriRow('redirect-uris-container', 'Input.RedirectUris', 'https://localhost:5001/signin-oidc')">
+                    + Add Redirect URI
+                </button>
             </div>
 
             <div class="form-group" style="margin-bottom: 20px;">
                 <label class="form-label">Post-Logout Redirect URIs</label>
-                <span asp-validation-for="Input.PostLogoutRedirectUris" class="text-danger field-validation-error"></span>
+                <span asp-validation-for="Input.PostLogoutRedirectUris"
+                      class="text-danger field-validation-error"></span>
                 <div id="post-logout-uris-container">
                     @if (Model.Input.PostLogoutRedirectUris.Count == 0)
                     {
                         <div class="uri-input-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                            <input type="url" name="Input.PostLogoutRedirectUris" class="form-control" placeholder="https://localhost:5001/signout-callback-oidc" />
-                            <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;</button>
+                            <input type="url" name="Input.PostLogoutRedirectUris" class="form-control"
+                                   placeholder="https://localhost:5001/signout-callback-oidc"/>
+                            <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;
+                            </button>
                         </div>
                     }
                     else
@@ -113,13 +132,18 @@
                         foreach (var uri in Model.Input.PostLogoutRedirectUris)
                         {
                             <div class="uri-input-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                <input type="url" name="Input.PostLogoutRedirectUris" class="form-control" value="@uri" placeholder="https://localhost:5001/signout-callback-oidc" />
-                                <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;</button>
+                                <input type="url" name="Input.PostLogoutRedirectUris" class="form-control" value="@uri"
+                                       placeholder="https://localhost:5001/signout-callback-oidc"/>
+                                <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;
+                                </button>
                             </div>
                         }
                     }
                 </div>
-                <button type="button" class="btn-secondary btn-sm" onclick="addUriRow('post-logout-uris-container', 'Input.PostLogoutRedirectUris', 'https://localhost:5001/signout-callback-oidc')">+ Add Post-Logout URI</button>
+                <button type="button" class="btn-secondary btn-sm"
+                        onclick="addUriRow('post-logout-uris-container', 'Input.PostLogoutRedirectUris', 'https://localhost:5001/signout-callback-oidc')">
+                    + Add Post-Logout URI
+                </button>
             </div>
 
             <div class="form-group" style="margin-bottom: 10px;">
@@ -129,8 +153,10 @@
                     @if (Model.Input.CorsOrigins.Count == 0)
                     {
                         <div class="uri-input-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                            <input type="url" name="Input.CorsOrigins" class="form-control" placeholder="https://localhost:5001" />
-                            <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;</button>
+                            <input type="url" name="Input.CorsOrigins" class="form-control"
+                                   placeholder="https://localhost:5001"/>
+                            <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;
+                            </button>
                         </div>
                     }
                     else
@@ -138,25 +164,33 @@
                         foreach (var origin in Model.Input.CorsOrigins)
                         {
                             <div class="uri-input-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                <input type="url" name="Input.CorsOrigins" class="form-control" value="@origin" placeholder="https://localhost:5001" />
-                                <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;</button>
+                                <input type="url" name="Input.CorsOrigins" class="form-control" value="@origin"
+                                       placeholder="https://localhost:5001"/>
+                                <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;
+                                </button>
                             </div>
                         }
                     }
                 </div>
-                <button type="button" class="btn-secondary btn-sm" onclick="addUriRow('cors-origins-container', 'Input.CorsOrigins', 'https://localhost:5001')">+ Add CORS Origin</button>
+                <button type="button" class="btn-secondary btn-sm"
+                        onclick="addUriRow('cors-origins-container', 'Input.CorsOrigins', 'https://localhost:5001')">+
+                    Add CORS Origin
+                </button>
             </div>
 
-            <hr style="border: 0; border-top: 1px solid var(--border, #e6e8eb); margin: 24px 0;" />
+            <hr style="border: 0; border-top: 1px solid var(--border, #e6e8eb); margin: 24px 0;"/>
             <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 16px;">Logout Channels</h3>
 
             <div class="form-group" style="margin-bottom: 20px;">
                 <label asp-for="Input.FrontChannelLogoutUri" class="form-label">Front-channel Logout URI</label>
-                <input asp-for="Input.FrontChannelLogoutUri" type="url" class="form-control" placeholder="https://localhost:5001/signout-frontchannel" />
-                <span asp-validation-for="Input.FrontChannelLogoutUri" class="text-danger field-validation-error"></span>
+                <input asp-for="Input.FrontChannelLogoutUri" type="url" class="form-control"
+                       placeholder="https://localhost:5001/signout-frontchannel"/>
+                <span asp-validation-for="Input.FrontChannelLogoutUri"
+                      class="text-danger field-validation-error"></span>
                 <div style="margin-top: 8px;">
-                    <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" asp-for="Input.FrontChannelLogoutSessionRequired" />
+                    <label class="checkbox-label"
+                           style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" asp-for="Input.FrontChannelLogoutSessionRequired"/>
                         <span>Front-channel Logout Session Required</span>
                     </label>
                 </div>
@@ -164,11 +198,13 @@
 
             <div class="form-group" style="margin-bottom: 20px;">
                 <label asp-for="Input.BackChannelLogoutUri" class="form-label">Back-channel Logout URI</label>
-                <input asp-for="Input.BackChannelLogoutUri" type="url" class="form-control" placeholder="https://localhost:5001/signout-backchannel" />
+                <input asp-for="Input.BackChannelLogoutUri" type="url" class="form-control"
+                       placeholder="https://localhost:5001/signout-backchannel"/>
                 <span asp-validation-for="Input.BackChannelLogoutUri" class="text-danger field-validation-error"></span>
                 <div style="margin-top: 8px;">
-                    <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" asp-for="Input.BackChannelLogoutSessionRequired" />
+                    <label class="checkbox-label"
+                           style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" asp-for="Input.BackChannelLogoutSessionRequired"/>
                         <span>Back-channel Logout Session Required</span>
                     </label>
                 </div>
@@ -188,6 +224,7 @@
         font-size: 0.9rem;
         color: var(--ink, #17191c);
     }
+
     .form-control {
         width: 100%;
         max-width: 450px;
@@ -196,11 +233,12 @@
         padding: 8px 12px;
         font-size: 0.9rem;
     }
+
     .required {
         color: #c8433b;
     }
 </style>
 
 @section Scripts {
-<script src="~/js/client-uri-rows.js" asp-append-version="true"></script>
+    <script src="~/js/client-uri-rows.js" asp-append-version="true"></script>
 }

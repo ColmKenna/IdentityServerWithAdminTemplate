@@ -7,42 +7,41 @@
 //   dotnet user-secrets set "Parameters:seed-test-user-password" "<a strong password>"
 
 using Microsoft.Extensions.Configuration;
+using Projects;
 
-var builder = DistributedApplication.CreateBuilder(args);
+IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
-var sqlPort = builder.Configuration.GetValue<int?>("SqlServer:Port");
+int? sqlPort = builder.Configuration.GetValue<int?>("SqlServer:Port");
 
 if (string.IsNullOrEmpty(builder.Configuration["Parameters:sql-password"]))
-{
     throw new InvalidOperationException(
         "Missing required secret 'Parameters:sql-password'. Set it with: " +
         "dotnet user-secrets set \"Parameters:sql-password\" \"<password>\" (run from Sales.AppHost).");
-}
 
-var sqlPassword = builder.AddParameter("sql-password", secret: true);
-var razorClientSecret = builder.AddParameter("razor-client-secret", secret: true);
-var blazorClientSecret = builder.AddParameter("blazor-client-secret", secret: true);
-var sysAdminPassword = builder.AddParameter("seed-sysadmin-password", secret: true);
-var testUserPassword = builder.AddParameter("seed-test-user-password", secret: true);
+IResourceBuilder<ParameterResource> sqlPassword = builder.AddParameter("sql-password", true);
+IResourceBuilder<ParameterResource> razorClientSecret = builder.AddParameter("razor-client-secret", true);
+IResourceBuilder<ParameterResource> blazorClientSecret = builder.AddParameter("blazor-client-secret", true);
+IResourceBuilder<ParameterResource> sysAdminPassword = builder.AddParameter("seed-sysadmin-password", true);
+IResourceBuilder<ParameterResource> testUserPassword = builder.AddParameter("seed-test-user-password", true);
 
-var sqlServer = builder.AddSqlServer("sqlserver", sqlPassword, port: sqlPort)
+IResourceBuilder<SqlServerServerResource> sqlServer = builder.AddSqlServer("sqlserver", sqlPassword, sqlPort)
     .WithDataVolume();
 
-var identityDb = sqlServer.AddDatabase("IdentityDb");
-var identityConfigDb = sqlServer.AddDatabase("IdentityConfigDb");
-var identityOperationalDb = sqlServer.AddDatabase("IdentityOperationalDb");
-var salesDb = sqlServer.AddDatabase("SalesDb");
+IResourceBuilder<SqlServerDatabaseResource> identityDb = sqlServer.AddDatabase("IdentityDb");
+IResourceBuilder<SqlServerDatabaseResource> identityConfigDb = sqlServer.AddDatabase("IdentityConfigDb");
+IResourceBuilder<SqlServerDatabaseResource> identityOperationalDb = sqlServer.AddDatabase("IdentityOperationalDb");
+IResourceBuilder<SqlServerDatabaseResource> salesDb = sqlServer.AddDatabase("SalesDb");
 
-var wasmClient = builder.AddProject<Projects.Sales_WasmClient>("wasmclient")
+IResourceBuilder<ProjectResource> wasmClient = builder.AddProject<Sales_WasmClient>("wasmclient")
     .WithExternalHttpEndpoints()
-    .WithHttpsEndpoint(port: 5002, name: "https");
+    .WithHttpsEndpoint(5002, name: "https");
 
-var identityServer = builder.AddProject<Projects.IdentityServerProject>("identityserver")
+IResourceBuilder<ProjectResource> identityServer = builder.AddProject<IdentityServerProject>("identityserver")
     .WithReference(identityDb)
     .WithReference(identityConfigDb)
     .WithReference(identityOperationalDb)
     .WaitFor(sqlServer)
-    .WithHttpsEndpoint(port: 5001, name: "https")
+    .WithHttpsEndpoint(5001, name: "https")
     .WithEnvironment("Clients__RazorClientUri", "https://localhost:5001")
     .WithEnvironment("Clients__BlazorClientUri", wasmClient.GetEndpoint("https"))
     .WithEnvironment("Clients__RazorSecret", razorClientSecret)
@@ -50,12 +49,12 @@ var identityServer = builder.AddProject<Projects.IdentityServerProject>("identit
     .WithEnvironment("Seed__SysAdminPassword", sysAdminPassword)
     .WithEnvironment("Seed__TestUserPassword", testUserPassword);
 
-var apiService = builder.AddProject<Projects.Sales_ApiService>("apiservice")
+IResourceBuilder<ProjectResource> apiService = builder.AddProject<Sales_ApiService>("apiservice")
     .WithReference(salesDb)
     .WithReference(identityServer)
     .WaitFor(sqlServer)
     .WaitFor(identityServer)
-    .WithHttpsEndpoint(port: 5004, name: "https")
+    .WithHttpsEndpoint(5004, name: "https")
     .WithHttpHealthCheck("/health");
 
 wasmClient

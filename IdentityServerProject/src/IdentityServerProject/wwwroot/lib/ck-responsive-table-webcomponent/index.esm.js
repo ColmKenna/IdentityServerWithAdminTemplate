@@ -10,17 +10,18 @@ if ('adoptedStyleSheets' in document &&
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(baseCSS);
     document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
-}
-else {
+} else {
     const styleFallback = document.createElement('style');
     styleFallback.textContent = baseCSS;
     document.head.appendChild(styleFallback);
 }
+
 class CkResponsiveTable extends HTMLElement {
     constructor() {
         super(...arguments);
         this.__initialized = false;
     }
+
     connectedCallback() {
         if (this.__initialized)
             return;
@@ -30,7 +31,7 @@ class CkResponsiveTable extends HTMLElement {
         const breakpoint = (this.getAttribute('mobile-breakpoint') || '600px').trim();
         // create table element and copy attributes
         const table = document.createElement('table');
-        for (const { name, value } of Array.from(this.attributes)) {
+        for (const {name, value} of Array.from(this.attributes)) {
             table.setAttribute(name, value ?? '');
         }
         // give this table a unique scoped class so we can inject per-table CSS
@@ -91,8 +92,7 @@ class CkResponsiveTable extends HTMLElement {
             const sheet = new CSSStyleSheet();
             sheet.replaceSync(perTableCSS);
             document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
-        }
-        else {
+        } else {
             const styleEl = document.createElement('style');
             styleEl.textContent = perTableCSS;
             document.head.appendChild(styleEl);
@@ -112,7 +112,7 @@ class CkResponsiveTable extends HTMLElement {
                     ? `mobile-align-${mobileAlign}`
                     : null;
                 const noLabel = (col.getAttribute('mobile-no-label') || '').toLowerCase() === 'true';
-                return { label: span, alignClass, mobileAlignClass, noLabel };
+                return {label: span, alignClass, mobileAlignClass, noLabel};
             });
             const thead = document.createElement('thead');
             if (ckThead.getAttribute('class'))
@@ -192,6 +192,7 @@ class CkResponsiveTable extends HTMLElement {
         this.replaceWith(table);
     }
 }
+
 CkResponsiveTable._counter = 0;
 customElements.define('ck-responsive-table', CkResponsiveTable);
 // Define placeholder elements to avoid "unknown element" warnings
@@ -207,5 +208,5 @@ definePlaceholder('ck-responsive-tbody');
 definePlaceholder('ck-responsive-row');
 definePlaceholder('ck-responsive-col');
 
-export { CkResponsiveTable };
+export {CkResponsiveTable};
 //# sourceMappingURL=index.esm.js.map

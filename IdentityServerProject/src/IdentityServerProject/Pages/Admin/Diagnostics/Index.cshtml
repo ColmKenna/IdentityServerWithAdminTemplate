@@ -1,5 +1,5 @@
 @page
-@model IdentityServerProject.Pages.Admin.Diagnostics.IndexModel
+@model IndexModel
 @{
     ViewData["Title"] = "Diagnostics";
 }
@@ -7,7 +7,8 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">Diagnostics</h1>
-        <p class="page-sub">Read-only view of IdentityServer store health, active signing credentials, and reserved-claim exposure.</p>
+        <p class="page-sub">Read-only view of IdentityServer store health, active signing credentials, and
+            reserved-claim exposure.</p>
     </div>
 </div>
 
@@ -17,10 +18,12 @@
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
         @foreach (var store in Model.Diagnostics.StoreHealth)
         {
-            <div class="panel" id="store-health-@store.Name.Replace(" ", "-").ToLowerInvariant()" style="padding: 16px; border: 1px solid var(--line-soft, #dde3e8);">
+            <div class="panel" id="store-health-@store.Name.Replace(" ", "-").ToLowerInvariant()"
+                 style="padding: 16px; border: 1px solid var(--line-soft, #dde3e8);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <strong>@store.Name</strong>
-                    <span class="status-badge @(store.IsHealthy ? "enabled" : "disabled")">@(store.IsHealthy ? "Healthy" : "Degraded")</span>
+                    <span
+                        class="status-badge @(store.IsHealthy ? "enabled" : "disabled")">@(store.IsHealthy ? "Healthy" : "Degraded")</span>
                 </div>
                 <div class="text-muted" style="font-size: 0.85rem;">@store.Detail</div>
             </div>
@@ -46,7 +49,8 @@
             @foreach (var holder in Model.Diagnostics.ReservedClaimHolders)
             {
                 <li style="display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line-soft, #eef1f3);">
-                    <a asp-page="/Admin/Users/Details" asp-route-id="@holder.UserId" asp-route-tab="claims">@holder.UserName</a>
+                    <a asp-page="/Admin/Users/Details" asp-route-id="@holder.UserId"
+                       asp-route-tab="claims">@holder.UserName</a>
                     <code>@holder.ClaimType</code> = <code>@holder.ClaimValue</code>
                 </li>
             }
@@ -57,11 +61,13 @@
 <div class="panel" style="padding: 28px;">
     <h2 class="panel-title" style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700;">Signing Credentials</h2>
 
-    <div class="field-group" style="display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line-soft, #eef1f3);">
+    <div class="field-group"
+         style="display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line-soft, #eef1f3);">
         <span class="field-label" style="font-weight: 600; min-width: 140px; color: var(--text-dim, #8b9096);">Active Key ID:</span>
         <code id="active-signing-key-id">@(Model.Diagnostics.SigningKeyId ?? "—")</code>
     </div>
-    <div class="field-group" style="display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line-soft, #eef1f3);">
+    <div class="field-group"
+         style="display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line-soft, #eef1f3);">
         <span class="field-label" style="font-weight: 600; min-width: 140px; color: var(--text-dim, #8b9096);">Algorithm:</span>
         <code>@(Model.Diagnostics.SigningAlgorithm ?? "—")</code>
     </div>

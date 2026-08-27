@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import {readFile} from 'node:fs/promises';
 import test from 'node:test';
-import { JSDOM } from 'jsdom';
+import {JSDOM} from 'jsdom';
 
 const projectRoot = new URL('../', import.meta.url);
 
@@ -18,7 +18,7 @@ function createDom(body, url = 'https://admin.test/Admin') {
 
 async function executeDomReadyScript(dom, script) {
     const ready = new Promise(resolve => {
-        dom.window.document.addEventListener('DOMContentLoaded', resolve, { once: true });
+        dom.window.document.addEventListener('DOMContentLoaded', resolve, {once: true});
     });
 
     dom.window.eval(script);
@@ -45,7 +45,7 @@ test('admin shell persists sidebar state and filters responsive table rows', asy
 
     const filter = dom.window.document.querySelector('[data-table]');
     filter.value = 'grace';
-    filter.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+    filter.dispatchEvent(new dom.window.Event('input', {bubbles: true}));
     assert.equal(dom.window.document.getElementById('ada').style.display, 'none');
     assert.equal(dom.window.document.getElementById('grace').style.display, '');
 });
@@ -83,8 +83,12 @@ test('admin shell populates scope deletion dialog and closes generic dialogs', a
     const dialog = dom.window.document.querySelector('dialog');
     let opened = false;
     let closed = false;
-    dialog.showModal = () => { opened = true; };
-    dialog.close = () => { closed = true; };
+    dialog.showModal = () => {
+        opened = true;
+    };
+    dialog.close = () => {
+        closed = true;
+    };
 
     await executeDomReadyScript(dom, script);
     dom.window.document.querySelector('[data-action="delete-scope"]').click();
@@ -108,10 +112,13 @@ test('user details tabs update browser history and follow popstate navigation', 
             <ck-tab data-tab="claims"></ck-tab>
         </ck-tabs>
     `, 'https://admin.test/Admin/Users/Details/user-1?tab=roles');
-    dom.window.customElements.define('ck-tabs', class extends dom.window.HTMLElement {});
+    dom.window.customElements.define('ck-tabs', class extends dom.window.HTMLElement {
+    });
     const tabs = dom.window.document.getElementById('user-details-tabs');
     let activatedTabIndex = null;
-    tabs.activateTab = index => { activatedTabIndex = index; };
+    tabs.activateTab = index => {
+        activatedTabIndex = index;
+    };
 
     dom.window.eval(tabQueryScript);
     await executeDomReadyScript(dom, script);
@@ -119,7 +126,7 @@ test('user details tabs update browser history and follow popstate navigation', 
 
     const claimsTab = tabs.querySelector('[data-tab="claims"]');
     tabs.dispatchEvent(new dom.window.CustomEvent('tab-selected', {
-        detail: { selectedTab: claimsTab }
+        detail: {selectedTab: claimsTab}
     }));
     assert.equal(dom.window.location.search, '?tab=claims');
 
@@ -141,7 +148,9 @@ test('API editor modal carries the selected secret id and enforces exact confirm
     `);
     const dialog = dom.window.document.querySelector('dialog');
     let opened = false;
-    dialog.showModal = () => { opened = true; };
+    dialog.showModal = () => {
+        opened = true;
+    };
 
     dom.window.eval(tabQueryScript);
     await executeDomReadyScript(dom, script);
@@ -155,7 +164,7 @@ test('API editor modal carries the selected secret id and enforces exact confirm
     assert.equal(submit.disabled, true);
 
     confirmation.value = 'REVOKE';
-    confirmation.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+    confirmation.dispatchEvent(new dom.window.Event('input', {bubbles: true}));
     assert.equal(submit.disabled, false);
 });
 
@@ -172,7 +181,9 @@ test('grant revocation dialog copies the selected grant details', async () => {
     `);
     const dialog = dom.window.document.querySelector('dialog');
     let opened = false;
-    dialog.showModal = () => { opened = true; };
+    dialog.showModal = () => {
+        opened = true;
+    };
 
     await executeDomReadyScript(dom, script);
     dom.window.document.querySelector('[data-action="revoke-grant"]').click();
@@ -198,7 +209,8 @@ test('identity resource dialog blocks deletion for referenced resources', async 
         </dialog>
     `);
     const dialog = dom.window.document.querySelector('dialog');
-    dialog.showModal = () => {};
+    dialog.showModal = () => {
+    };
 
     await executeDomReadyScript(dom, script);
     dom.window.document.querySelector('[data-action="delete-resource"]').click();

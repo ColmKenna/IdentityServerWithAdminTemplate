@@ -17,7 +17,7 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        var keys = await _keyMaterialService.GetValidationKeysAsync(cancellationToken);
+        IReadOnlyCollection<SecurityKeyInfo> keys = await _keyMaterialService.GetValidationKeysAsync(cancellationToken);
         Keys = keys.ToList();
     }
 }

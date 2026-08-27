@@ -18,16 +18,13 @@ public class IndexModel : PageModel
         _options = options.Value;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public int PageNumber { get; set; } = 1;
+    [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
 
-    [BindProperty(SupportsGet = true)]
-    public string? Filter { get; set; }
+    [BindProperty(SupportsGet = true)] public string? Filter { get; set; }
 
     public ListResult<ApiScopeListItem> ApiScopes { get; private set; } = default!;
 
-    [TempData]
-    public string? DeleteErrorMessage { get; set; }
+    [TempData] public string? DeleteErrorMessage { get; set; }
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
@@ -42,7 +39,7 @@ public class IndexModel : PageModel
         if (string.IsNullOrWhiteSpace(name))
             return NotFound();
 
-        var result = await _apiScopeListService.DeleteApiScopeAsync(name, cancellationToken);
+        ApiScopeDeleteResult result = await _apiScopeListService.DeleteApiScopeAsync(name, cancellationToken);
 
         switch (result)
         {

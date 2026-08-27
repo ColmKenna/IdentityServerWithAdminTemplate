@@ -1,7 +1,7 @@
 namespace IdentityServerProject.Services.Apis;
 
 /// <summary>
-/// A single row projected for display on the Admin &gt; API Resources list page.
+///     A single row projected for display on the Admin &gt; API Resources list page.
 /// </summary>
 public sealed class ApiResourceListItem
 {

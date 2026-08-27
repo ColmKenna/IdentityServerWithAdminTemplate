@@ -1,18 +1,20 @@
 using Duende.IdentityServer.EntityFramework.DbContexts;
+using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using IdentityServerProject.Services.Users;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 
 namespace IdentityServerProject.Services.Diagnostics;
 
 public class DiagnosticsService : IDiagnosticsService
 {
-    private readonly IIdentityDiagnosticsStore _identityStore;
     private readonly ConfigurationDbContext _configurationDbContext;
-    private readonly PersistedGrantDbContext _persistedGrantDbContext;
+    private readonly IIdentityDiagnosticsStore _identityStore;
     private readonly IKeyMaterialService _keyMaterialService;
-    private readonly ReservedClaimTypePolicy _reservedClaimTypes;
     private readonly ILogger<DiagnosticsService> _logger;
+    private readonly PersistedGrantDbContext _persistedGrantDbContext;
+    private readonly ReservedClaimTypePolicy _reservedClaimTypes;
 
     public DiagnosticsService(
         IIdentityDiagnosticsStore identityStore,
@@ -37,14 +39,17 @@ public class DiagnosticsService : IDiagnosticsService
             StoreHealth =
             {
                 await CheckStoreAsync("Identity Store", _identityStore.CanConnectAsync, _logger, cancellationToken),
-                await CheckStoreAsync("Configuration Store", _configurationDbContext.Database.CanConnectAsync, _logger, cancellationToken),
-                await CheckStoreAsync("Operational Store", _persistedGrantDbContext.Database.CanConnectAsync, _logger, cancellationToken)
+                await CheckStoreAsync("Configuration Store", _configurationDbContext.Database.CanConnectAsync, _logger,
+                    cancellationToken),
+                await CheckStoreAsync("Operational Store", _persistedGrantDbContext.Database.CanConnectAsync, _logger,
+                    cancellationToken)
             }
         };
 
         try
         {
-            var signingCredential = await _keyMaterialService.GetSigningCredentialsAsync(allowedAlgorithms: null, cancellationToken);
+            SigningCredentials? signingCredential =
+                await _keyMaterialService.GetSigningCredentialsAsync(null, cancellationToken);
             model.SigningKeyId = signingCredential?.Key.KeyId;
             model.SigningAlgorithm = signingCredential?.Algorithm;
         }
@@ -57,13 +62,14 @@ public class DiagnosticsService : IDiagnosticsService
 
         try
         {
-            var validationKeys = await _keyMaterialService.GetValidationKeysAsync(cancellationToken);
+            IReadOnlyCollection<SecurityKeyInfo> validationKeys =
+                await _keyMaterialService.GetValidationKeysAsync(cancellationToken);
             model.ActiveValidationKeys = validationKeys
                 .Select(k => new SigningKeySummary
                 {
                     KeyId = k.Key.KeyId ?? "(unknown)",
                     Algorithm = k.SigningAlgorithm,
-                    IsX509Certificate = k.Key is Microsoft.IdentityModel.Tokens.X509SecurityKey
+                    IsX509Certificate = k.Key is X509SecurityKey
                 })
                 .ToList();
         }
@@ -87,19 +93,20 @@ public class DiagnosticsService : IDiagnosticsService
     }
 
     /// <summary>
-    /// Reports user claims whose type the admin claim editor refuses to create — claims written
-    /// before that guard existed, or outside the admin UI.
+    ///     Reports user claims whose type the admin claim editor refuses to create — claims written
+    ///     before that guard existed, or outside the admin UI.
     /// </summary>
     /// <remarks>
-    /// The reserved check is ordinal case-insensitive with a prefix rule, which no provider
-    /// translates to SQL reliably (SQLite compares strings case-sensitively by default, SQL Server
-    /// follows the column collation). So the distinct claim types are read first — a small set
-    /// whatever the row count — filtered in memory against the authoritative policy, and only the
-    /// matching types are then fetched with their holders.
+    ///     The reserved check is ordinal case-insensitive with a prefix rule, which no provider
+    ///     translates to SQL reliably (SQLite compares strings case-sensitively by default, SQL Server
+    ///     follows the column collation). So the distinct claim types are read first — a small set
+    ///     whatever the row count — filtered in memory against the authoritative policy, and only the
+    ///     matching types are then fetched with their holders.
     /// </remarks>
     private async Task<List<ReservedClaimHolder>> FindReservedClaimHoldersAsync(CancellationToken cancellationToken)
     {
-        var distinctClaimTypes = await _identityStore.GetDistinctUserClaimTypesAsync(cancellationToken);
+        IReadOnlyList<string> distinctClaimTypes =
+            await _identityStore.GetDistinctUserClaimTypesAsync(cancellationToken);
 
         var reservedClaimTypes = distinctClaimTypes
             .Where(t => _reservedClaimTypes.IsReserved(t))
@@ -108,7 +115,8 @@ public class DiagnosticsService : IDiagnosticsService
         if (reservedClaimTypes.Count == 0)
             return new List<ReservedClaimHolder>();
 
-        var holders = await _identityStore.GetClaimHoldersAsync(reservedClaimTypes, cancellationToken);
+        IReadOnlyList<ReservedClaimHolder> holders =
+            await _identityStore.GetClaimHoldersAsync(reservedClaimTypes, cancellationToken);
         return holders.ToList();
     }
 
@@ -120,7 +128,7 @@ public class DiagnosticsService : IDiagnosticsService
     {
         try
         {
-            var connected = await canConnect(cancellationToken);
+            bool connected = await canConnect(cancellationToken);
             return new StoreHealthStatus
             {
                 Name = name,

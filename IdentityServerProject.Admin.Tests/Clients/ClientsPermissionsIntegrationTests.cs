@@ -1,10 +1,12 @@
 using System.Net;
 using AngleSharp;
 using AngleSharp.Dom;
+using AngleSharp.Html.Dom;
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -15,21 +17,23 @@ public class ClientsPermissionsIntegrationTests : IDisposable
 {
     private readonly List<IDisposable> _disposables = new();
 
+    public void Dispose()
+    {
+        foreach (IDisposable disposable in _disposables) disposable.Dispose();
+    }
+
     private HttpClient CreateClient(IClientDetailsService clientDetailsService, bool allowAutoRedirect = true)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
 
-        var factory = baseFactory.WithWebHostBuilder(builder =>
+        WebApplicationFactory<Program> factory = baseFactory.WithWebHostBuilder(builder =>
         {
-            builder.ConfigureTestServices(services =>
-            {
-                services.AddSingleton(clientDetailsService);
-            });
+            builder.ConfigureTestServices(services => { services.AddSingleton(clientDetailsService); });
         });
         _disposables.Add(factory);
 
-        return factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        return factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = allowAutoRedirect
         });
@@ -59,8 +63,11 @@ public class ClientsPermissionsIntegrationTests : IDisposable
     {
         var mock = new Mock<IClientDetailsService>();
         mock.Setup(s => s.GetClientPermissionsAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ClientId id, CancellationToken _) => id.Value == "non-existent" ? null : (details ?? SampleInteractivePermissions(id.Value)));
-        mock.Setup(s => s.UpdateClientPermissionsAsync(It.IsAny<ClientId>(), It.IsAny<ScopeSet>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ClientId id, CancellationToken _) =>
+                id.Value == "non-existent" ? null : details ?? SampleInteractivePermissions(id.Value));
+        mock.Setup(s =>
+                s.UpdateClientPermissionsAsync(It.IsAny<ClientId>(), It.IsAny<ScopeSet>(),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync((ClientId id, ScopeSet _, CancellationToken _) =>
                 id.Value == "non-existent"
                     ? AdminMutationResult.NotFoundResult()
@@ -72,23 +79,24 @@ public class ClientsPermissionsIntegrationTests : IDisposable
 
     private static async Task<IDocument> GetDocumentAsync(HttpResponseMessage response)
     {
-        var content = await response.Content.ReadAsStringAsync();
-        var context = BrowsingContext.New(AngleSharp.Configuration.Default);
+        string content = await response.Content.ReadAsStringAsync();
+        IBrowsingContext context = BrowsingContext.New(AngleSharp.Configuration.Default);
         return await context.OpenAsync(req => req.Content(content));
     }
 
-    private static async Task<(string Token, string Cookie)> ExtractAntiForgeryTokenAndCookieAsync(HttpClient httpClient, string pageUrl)
+    private static async Task<(string Token, string Cookie)> ExtractAntiForgeryTokenAndCookieAsync(
+        HttpClient httpClient, string pageUrl)
     {
-        var response = await httpClient.GetAsync(pageUrl);
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await httpClient.GetAsync(pageUrl);
+        IDocument document = await GetDocumentAsync(response);
 
-        var tokenInput = document.QuerySelector("input[name='__RequestVerificationToken']") as AngleSharp.Html.Dom.IHtmlInputElement;
+        var tokenInput = document.QuerySelector("input[name='__RequestVerificationToken']") as IHtmlInputElement;
         Assert.NotNull(tokenInput);
 
-        var token = tokenInput!.Value;
+        string token = tokenInput!.Value;
 
-        var cookies = response.Headers.GetValues("Set-Cookie");
-        var cookie = cookies.FirstOrDefault(c => c.StartsWith(".AspNetCore.Antiforgery"));
+        IEnumerable<string> cookies = response.Headers.GetValues("Set-Cookie");
+        string? cookie = cookies.FirstOrDefault(c => c.StartsWith(".AspNetCore.Antiforgery"));
         Assert.NotNull(cookie);
 
         return (token, cookie!);
@@ -97,25 +105,29 @@ public class ClientsPermissionsIntegrationTests : IDisposable
     [Fact]
     public async Task Get_InteractiveClient_RendersOpenIdCheckedAndDisabled()
     {
-        var httpClient = CreateClient(MockService(SampleInteractivePermissions()));
+        HttpClient httpClient = CreateClient(MockService(SampleInteractivePermissions()));
 
-        var response = await httpClient.GetAsync("/Admin/Clients/Permissions/test-client");
+        HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/Permissions/test-client");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var document = await GetDocumentAsync(response);
+        IDocument document = await GetDocumentAsync(response);
 
-        var openIdCheckbox = document.QuerySelectorAll("input[type='checkbox']")
-            .OfType<AngleSharp.Html.Dom.IHtmlInputElement>()
-            .FirstOrDefault(cb => cb.NextElementSibling?.TextContent.Trim() == "openid" || cb.ParentElement?.TextContent.Contains("openid") == true);
+        IHtmlInputElement? openIdCheckbox = document.QuerySelectorAll("input[type='checkbox']")
+            .OfType<IHtmlInputElement>()
+            .FirstOrDefault(cb =>
+                cb.NextElementSibling?.TextContent.Trim() == "openid" ||
+                cb.ParentElement?.TextContent.Contains("openid") == true);
         Assert.NotNull(openIdCheckbox);
         Assert.True(openIdCheckbox!.IsChecked);
         Assert.True(openIdCheckbox.IsDisabled);
 
         // Disabled checkbox won't post, so a hidden input carries the enforced value.
-        var hiddenOpenId = document.QuerySelector("input[type='hidden'][name='Input.AllowedScopes'][value='openid']");
+        IElement? hiddenOpenId =
+            document.QuerySelector("input[type='hidden'][name='Input.AllowedScopes'][value='openid']");
         Assert.NotNull(hiddenOpenId);
 
-        var profileCheckbox = document.QuerySelector("input[name='Input.AllowedScopes'][value='profile']") as AngleSharp.Html.Dom.IHtmlInputElement;
+        var profileCheckbox =
+            document.QuerySelector("input[name='Input.AllowedScopes'][value='profile']") as IHtmlInputElement;
         Assert.NotNull(profileCheckbox);
         Assert.True(profileCheckbox!.IsChecked);
     }
@@ -123,16 +135,18 @@ public class ClientsPermissionsIntegrationTests : IDisposable
     [Fact]
     public async Task Get_M2MClient_DoesNotRenderIdentityResourcesSection()
     {
-        var httpClient = CreateClient(MockService(SampleM2MPermissions()));
+        HttpClient httpClient = CreateClient(MockService(SampleM2MPermissions()));
 
-        var response = await httpClient.GetAsync("/Admin/Clients/Permissions/test-m2m-client");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/Permissions/test-m2m-client");
+        IDocument document = await GetDocumentAsync(response);
 
-        var panelHeadings = document.QuerySelectorAll("form h2.panel-title").Select(h => h.TextContent.Trim());
+        IEnumerable<string> panelHeadings =
+            document.QuerySelectorAll("form h2.panel-title").Select(h => h.TextContent.Trim());
         Assert.DoesNotContain("Identity Resources", panelHeadings);
         Assert.Null(document.QuerySelector("input[name='Input.AllowedScopes'][value='openid']"));
 
-        var apiScopeCheckbox = document.QuerySelector("input[name='Input.AllowedScopes'][value='coop.market.api']") as AngleSharp.Html.Dom.IHtmlInputElement;
+        var apiScopeCheckbox =
+            document.QuerySelector("input[name='Input.AllowedScopes'][value='coop.market.api']") as IHtmlInputElement;
         Assert.NotNull(apiScopeCheckbox);
         Assert.True(apiScopeCheckbox!.IsChecked);
     }
@@ -140,9 +154,9 @@ public class ClientsPermissionsIntegrationTests : IDisposable
     [Fact]
     public async Task Get_NonExistentClient_ReturnsNotFound()
     {
-        var httpClient = CreateClient(MockService());
+        HttpClient httpClient = CreateClient(MockService());
 
-        var response = await httpClient.GetAsync("/Admin/Clients/Permissions/non-existent");
+        HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/Permissions/non-existent");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -152,11 +166,14 @@ public class ClientsPermissionsIntegrationTests : IDisposable
         var mock = new Mock<IClientDetailsService>();
         mock.Setup(s => s.GetClientPermissionsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleInteractivePermissions());
-        mock.Setup(s => s.UpdateClientPermissionsAsync(ClientId.Create("test-client"), It.IsAny<ScopeSet>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s =>
+                s.UpdateClientPermissionsAsync(ClientId.Create("test-client"), It.IsAny<ScopeSet>(),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
-        var httpClient = CreateClient(mock.Object, allowAutoRedirect: false);
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/Permissions/test-client");
+        HttpClient httpClient = CreateClient(mock.Object, false);
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/Permissions/test-client");
 
         var content = new MultipartFormDataContent();
         content.Add(new StringContent(token), "__RequestVerificationToken");
@@ -169,22 +186,25 @@ public class ClientsPermissionsIntegrationTests : IDisposable
         };
         request.Headers.Add("Cookie", cookie);
 
-        var response = await httpClient.SendAsync(request);
+        HttpResponseMessage response = await httpClient.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal("/Admin/Clients/Details/test-client", response.Headers.Location?.OriginalString);
 
         mock.Verify(s => s.UpdateClientPermissionsAsync(
             ClientId.Create("test-client"),
-            It.Is<ScopeSet>(scopes => scopes.Contains(ScopeName.Create("coop.market.admin")) && !scopes.Contains(ScopeName.Create("coop.market.api"))),
+            It.Is<ScopeSet>(scopes =>
+                scopes.Contains(ScopeName.Create("coop.market.admin")) &&
+                !scopes.Contains(ScopeName.Create("coop.market.api"))),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Post_NonExistentClient_ReturnsNotFound()
     {
-        var httpClient = CreateClient(MockService(), allowAutoRedirect: false);
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/Permissions/test-client");
+        HttpClient httpClient = CreateClient(MockService(), false);
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/Permissions/test-client");
 
         var content = new MultipartFormDataContent();
         content.Add(new StringContent(token), "__RequestVerificationToken");
@@ -196,16 +216,8 @@ public class ClientsPermissionsIntegrationTests : IDisposable
         };
         request.Headers.Add("Cookie", cookie);
 
-        var response = await httpClient.SendAsync(request);
+        HttpResponseMessage response = await httpClient.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    public void Dispose()
-    {
-        foreach (var disposable in _disposables)
-        {
-            disposable.Dispose();
-        }
     }
 }

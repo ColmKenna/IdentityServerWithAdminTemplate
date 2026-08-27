@@ -17,9 +17,9 @@ public class SigningKeySummary
 }
 
 /// <summary>
-/// A stored user claim whose type the admin claim editor refuses to create. Such a claim is
-/// copied onto the signed-in principal verbatim, so a role-typed one grants privilege that no
-/// role-based check — including the Last-Admin Guard — can see.
+///     A stored user claim whose type the admin claim editor refuses to create. Such a claim is
+///     copied onto the signed-in principal verbatim, so a role-typed one grants privilege that no
+///     role-based check — including the Last-Admin Guard — can see.
 /// </summary>
 public class ReservedClaimHolder
 {
@@ -37,15 +37,15 @@ public class DiagnosticsModel
     public List<SigningKeySummary> ActiveValidationKeys { get; set; } = new();
 
     /// <summary>
-    /// Users holding a reserved-type user claim. Empty is the expected state.
+    ///     Users holding a reserved-type user claim. Empty is the expected state.
     /// </summary>
     public List<ReservedClaimHolder> ReservedClaimHolders { get; set; } = new();
 }
 
 /// <summary>
-/// Reads read-only diagnostics: connectivity health of the Identity/Configuration/Operational
-/// stores, the currently active IdentityServer signing credential material, and any user claims
-/// of a reserved (framework-owned) type.
+///     Reads read-only diagnostics: connectivity health of the Identity/Configuration/Operational
+///     stores, the currently active IdentityServer signing credential material, and any user claims
+///     of a reserved (framework-owned) type.
 /// </summary>
 public interface IDiagnosticsService
 {

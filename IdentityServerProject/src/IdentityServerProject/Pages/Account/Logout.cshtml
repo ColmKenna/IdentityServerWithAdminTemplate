@@ -1,5 +1,5 @@
 @page
-@model IdentityServerProject.Pages.Account.LogoutModel
+@model LogoutModel
 @{
     ViewData["Title"] = Model.ShowLogoutPrompt ? "Logout" : "Logged out";
 }
@@ -9,7 +9,7 @@
     <h1>Logout</h1>
     <p>Would you like to log out of your account?</p>
     <form method="post">
-        <input type="hidden" asp-for="LogoutId" />
+        <input type="hidden" asp-for="LogoutId"/>
         <button type="submit" class="btn btn-primary">Yes, Logout</button>
     </form>
 }

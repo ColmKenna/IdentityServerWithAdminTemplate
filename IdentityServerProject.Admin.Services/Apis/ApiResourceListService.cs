@@ -17,13 +17,14 @@ public class ApiResourceListService : IApiResourceListService
         ListQuery query,
         CancellationToken cancellationToken = default)
     {
-        var pagination = query.Pagination.Normalize();
+        Pagination pagination = query.Pagination.Normalize();
 
-        var dbQuery = ApplyFilter(_configurationDbContext.ApiResources.AsNoTracking(), query.Filter);
+        IQueryable<ApiResource> dbQuery =
+            ApplyFilter(_configurationDbContext.ApiResources.AsNoTracking(), query.Filter);
 
-        var totalCount = await dbQuery.CountAsync(cancellationToken);
+        int totalCount = await dbQuery.CountAsync(cancellationToken);
 
-        var items = await dbQuery
+        List<ApiResourceListItem> items = await dbQuery
             .OrderBy(r => r.Name)
             .ThenBy(r => r.DisplayName)
             .Skip(pagination.Skip)
@@ -33,7 +34,7 @@ public class ApiResourceListService : IApiResourceListService
                 Name = r.Name,
                 DisplayName = r.DisplayName,
                 ScopeCount = r.Scopes.Count,
-                Enabled = r.Enabled,
+                Enabled = r.Enabled
             })
             .ToListAsync(cancellationToken);
 
@@ -42,7 +43,7 @@ public class ApiResourceListService : IApiResourceListService
             Items = items,
             TotalCount = totalCount,
             PageNumber = pagination.PageNumber,
-            PageSize = pagination.PageSize,
+            PageSize = pagination.PageSize
         };
     }
 
@@ -51,8 +52,8 @@ public class ApiResourceListService : IApiResourceListService
         if (string.IsNullOrWhiteSpace(filter))
             return query;
 
-        var escaped = LikeExtensions.EscapeLikePattern(filter.Trim());
-        var pattern = $"%{escaped}%";
+        string? escaped = LikeExtensions.EscapeLikePattern(filter.Trim());
+        string pattern = $"%{escaped}%";
 
         return query.Where(r =>
             EF.Functions.Like(r.Name, pattern) ||

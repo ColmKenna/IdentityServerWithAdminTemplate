@@ -1,5 +1,5 @@
 @page
-@model IdentityServerProject.Pages.Admin.ApiScopes.EditModel
+@model EditModel
 @{
     ViewData["Title"] = Model.Editor.Name;
 }
@@ -10,7 +10,8 @@
         <p class="page-sub">Manage display name, description, and claims for this API scope.</p>
     </div>
     <a asp-page="./Index" class="back-link">
-        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
@@ -24,13 +25,13 @@
 
         <div class="form-field">
             <label class="form-label" for="scope-name">Name</label>
-            <input class="form-control" id="scope-name" value="@Model.Editor.Name" disabled />
+            <input class="form-control" id="scope-name" value="@Model.Editor.Name" disabled/>
             <small class="form-text">The unique identifier for this scope. This cannot be changed.</small>
         </div>
 
         <div class="form-field">
             <label class="form-label" for="scope-display-name">Display name</label>
-            <input class="form-control" id="scope-display-name" asp-for="Input.DisplayName" />
+            <input class="form-control" id="scope-display-name" asp-for="Input.DisplayName"/>
             <span asp-validation-for="Input.DisplayName" class="field-validation-error"></span>
         </div>
 
@@ -52,7 +53,8 @@
             <input class="form-check-input" type="checkbox" asp-for="Input.Required" id="scope-required">
             <label class="form-check-label" for="scope-required">
                 Required
-                <small class="d-block text-muted">Specifies whether the user can de-select the scope on the consent screen.</small>
+                <small class="d-block text-muted">Specifies whether the user can de-select the scope on the consent
+                    screen.</small>
             </label>
         </div>
 
@@ -60,15 +62,18 @@
             <input class="form-check-input" type="checkbox" asp-for="Input.Emphasize" id="scope-emphasize">
             <label class="form-check-label" for="scope-emphasize">
                 Emphasize
-                <small class="d-block text-muted">Specifies whether the consent screen will emphasize this scope.</small>
+                <small class="d-block text-muted">Specifies whether the consent screen will emphasize this
+                    scope.</small>
             </label>
         </div>
 
         <div class="form-field form-check">
-            <input class="form-check-input" type="checkbox" asp-for="Input.ShowInDiscoveryDocument" id="scope-show-in-discovery">
+            <input class="form-check-input" type="checkbox" asp-for="Input.ShowInDiscoveryDocument"
+                   id="scope-show-in-discovery">
             <label class="form-check-label" for="scope-show-in-discovery">
                 Show in Discovery Document
-                <small class="d-block text-muted">Specifies whether this scope is shown in the discovery document.</small>
+                <small class="d-block text-muted">Specifies whether this scope is shown in the discovery
+                    document.</small>
             </label>
         </div>
 
@@ -84,7 +89,8 @@
         <div class="scope-chips-row editor-scope-list">
             @foreach (var claim in Model.Editor.Claims)
             {
-                <form method="post" asp-page-handler="RemoveClaim" asp-route-name="@Model.Editor.Name" asp-route-claimType="@claim" class="scope-chip-form">
+                <form method="post" asp-page-handler="RemoveClaim" asp-route-name="@Model.Editor.Name"
+                      asp-route-claimType="@claim" class="scope-chip-form">
                     <code class="scope-chip">@claim</code>
                     <button type="submit" class="action-link action-link-danger" title="Remove @claim">&times;</button>
                 </form>
@@ -96,11 +102,12 @@
         <div class="empty-state">No claims configured.</div>
     }
 
-    <form method="post" asp-page-handler="AddClaim" asp-route-name="@Model.Editor.Name" class="editor-form editor-subform">
+    <form method="post" asp-page-handler="AddClaim" asp-route-name="@Model.Editor.Name"
+          class="editor-form editor-subform">
         <h3 class="section-title">Add a claim type</h3>
         <div class="form-field">
             <label class="form-label" for="new-claim-type">Claim type</label>
-            <input class="form-control" id="new-claim-type" name="claimType" required />
+            <input class="form-control" id="new-claim-type" name="claimType" required/>
         </div>
         <div class="form-actions">
             <button type="submit" class="btn-secondary">Add claim</button>

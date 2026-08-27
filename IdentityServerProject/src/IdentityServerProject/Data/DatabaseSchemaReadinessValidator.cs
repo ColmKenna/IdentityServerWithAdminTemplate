@@ -9,15 +9,15 @@ public interface IDatabaseSchemaReadinessValidator
 }
 
 /// <summary>
-/// Performs a read-only migration-history check. Schema changes remain a deployment
-/// responsibility; the web process fails closed and never calls Migrate/EnsureCreated.
+///     Performs a read-only migration-history check. Schema changes remain a deployment
+///     responsibility; the web process fails closed and never calls Migrate/EnsureCreated.
 /// </summary>
 public sealed class DatabaseSchemaReadinessValidator : IDatabaseSchemaReadinessValidator
 {
     private readonly ApplicationDbContext _applicationDb;
     private readonly ConfigurationDbContext _configurationDb;
-    private readonly PersistedGrantDbContext _operationalDb;
     private readonly ILogger<DatabaseSchemaReadinessValidator> _logger;
+    private readonly PersistedGrantDbContext _operationalDb;
 
     public DatabaseSchemaReadinessValidator(
         ApplicationDbContext applicationDb,
@@ -34,8 +34,10 @@ public sealed class DatabaseSchemaReadinessValidator : IDatabaseSchemaReadinessV
     public async Task EnsureReadyAsync(CancellationToken cancellationToken = default)
     {
         await EnsureContextReadyAsync(_applicationDb, nameof(ApplicationDbContext), "identity", cancellationToken);
-        await EnsureContextReadyAsync(_configurationDb, nameof(ConfigurationDbContext), "configuration", cancellationToken);
-        await EnsureContextReadyAsync(_operationalDb, nameof(PersistedGrantDbContext), "operational", cancellationToken);
+        await EnsureContextReadyAsync(_configurationDb, nameof(ConfigurationDbContext), "configuration",
+            cancellationToken);
+        await EnsureContextReadyAsync(_operationalDb, nameof(PersistedGrantDbContext), "operational",
+            cancellationToken);
     }
 
     private async Task EnsureContextReadyAsync(
@@ -61,10 +63,7 @@ public sealed class DatabaseSchemaReadinessValidator : IDatabaseSchemaReadinessV
                 ex);
         }
 
-        if (pending.Count == 0)
-        {
-            return;
-        }
+        if (pending.Count == 0) return;
 
         _logger.LogCritical(
             "Startup aborted because {DbContext} has {PendingMigrationCount} pending migration(s).",

@@ -3,9 +3,9 @@ using IdentityServerProject.Services.Users;
 namespace IdentityServerProject.Services.AuditLogs;
 
 /// <summary>
-/// A single admin audit event ready for persistence. Host-owned equivalent of the
-/// <c>AuditLogEntry</c> EF entity, kept free of any host/data-layer type so the library never
-/// references it directly.
+///     A single admin audit event ready for persistence. Host-owned equivalent of the
+///     <c>AuditLogEntry</c> EF entity, kept free of any host/data-layer type so the library never
+///     references it directly.
 /// </summary>
 public sealed record AuditLogRecord(
     DateTime Timestamp,
@@ -25,8 +25,8 @@ public sealed record AuditLogRecord(
     string? Details);
 
 /// <summary>
-/// Host-owned persistence for the admin audit trail: durable writes and the filtered,
-/// paged reads behind the Admin &gt; Audit Log list page.
+///     Host-owned persistence for the admin audit trail: durable writes and the filtered,
+///     paged reads behind the Admin &gt; Audit Log list page.
 /// </summary>
 public interface IAdminAuditStore
 {

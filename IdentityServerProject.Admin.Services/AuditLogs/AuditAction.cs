@@ -5,10 +5,11 @@ using System.Text.Json.Serialization;
 namespace IdentityServerProject.Services.AuditLogs;
 
 /// <summary>
-/// Strongly typed domain value object representing an audit log action.
+///     Strongly typed domain value object representing an audit log action.
 /// </summary>
 [JsonConverter(typeof(AuditActionJsonConverter))]
-public readonly record struct AuditAction(string Value) : IComparable<AuditAction>, IEquatable<AuditAction>, IParsable<AuditAction>
+public readonly record struct AuditAction(string Value)
+    : IComparable<AuditAction>, IEquatable<AuditAction>, IParsable<AuditAction>
 {
     public static readonly AuditAction Empty = new(string.Empty);
 
@@ -55,14 +56,6 @@ public readonly record struct AuditAction(string Value) : IComparable<AuditActio
 
     public bool IsEmpty => string.IsNullOrWhiteSpace(Value);
 
-    public static AuditAction From(string? value) => new(value?.Trim() ?? string.Empty);
-
-    public static implicit operator string(AuditAction action) => action.Value ?? string.Empty;
-
-    public static explicit operator AuditAction(string? value) => From(value);
-
-    public override string ToString() => Value ?? string.Empty;
-
     public int CompareTo(AuditAction other) => string.Compare(Value, other.Value, StringComparison.OrdinalIgnoreCase);
 
     public static AuditAction Parse(string s, IFormatProvider? provider = null) => From(s);
@@ -79,6 +72,14 @@ public readonly record struct AuditAction(string Value) : IComparable<AuditActio
         return true;
     }
 
+    public static AuditAction From(string? value) => new(value?.Trim() ?? string.Empty);
+
+    public static implicit operator string(AuditAction action) => action.Value ?? string.Empty;
+
+    public static explicit operator AuditAction(string? value) => From(value);
+
+    public override string ToString() => Value ?? string.Empty;
+
     public static bool TryParse([NotNullWhen(true)] string? s, out AuditAction result) =>
         TryParse(s, null, out result);
 }
@@ -92,8 +93,6 @@ public sealed class AuditActionJsonConverter : JsonConverter<AuditAction>
             : AuditAction.Empty;
     }
 
-    public override void Write(Utf8JsonWriter writer, AuditAction value, JsonSerializerOptions options)
-    {
+    public override void Write(Utf8JsonWriter writer, AuditAction value, JsonSerializerOptions options) =>
         writer.WriteStringValue(value.Value ?? string.Empty);
-    }
 }

@@ -1,243 +1,243 @@
 document.addEventListener('DOMContentLoaded', initializeAdminPage);
 
 function initializeAdminPage() {
-  const sidebar = initializeSidebar();
+    const sidebar = initializeSidebar();
 
-  initializeSidebarGroups(sidebar.setCollapsed);
-  initializeUserMenu();
-  initializeTooltips(sidebar.burger);
-  initializeTableFiltering();
-  initializeScopeDeletionDialog();
-  initializeDialogCloseButtons();
-  initializeEditorTabs();
+    initializeSidebarGroups(sidebar.setCollapsed);
+    initializeUserMenu();
+    initializeTooltips(sidebar.burger);
+    initializeTableFiltering();
+    initializeScopeDeletionDialog();
+    initializeDialogCloseButtons();
+    initializeEditorTabs();
 }
 
 function initializeSidebar() {
-  const storageKey = 'admin_sidebar_collapsed';
+    const storageKey = 'admin_sidebar_collapsed';
 
-  function setCollapsed(collapsed) {
-    document.body.classList.toggle('collapsed', collapsed);
+    function setCollapsed(collapsed) {
+        document.body.classList.toggle('collapsed', collapsed);
+
+        try {
+            localStorage.setItem(storageKey, String(collapsed));
+        } catch {
+        }
+    }
 
     try {
-      localStorage.setItem(storageKey, String(collapsed));
+        if (localStorage.getItem(storageKey) === 'true') {
+            document.body.classList.add('collapsed');
+        }
     } catch {
     }
-  }
 
-  try {
-    if (localStorage.getItem(storageKey) === 'true') {
-      document.body.classList.add('collapsed');
+    const burger = document.getElementById('burger');
+    if (burger) {
+        burger.addEventListener('click', () => {
+            setCollapsed(!document.body.classList.contains('collapsed'));
+        });
     }
-  } catch {
-  }
 
-  const burger = document.getElementById('burger');
-  if (burger) {
-    burger.addEventListener('click', () => {
-      setCollapsed(!document.body.classList.contains('collapsed'));
-    });
-  }
-
-  return { burger, setCollapsed };
+    return {burger, setCollapsed};
 }
 
 function initializeSidebarGroups(setCollapsed) {
-  document.querySelectorAll('.group-toggle').forEach(button => {
-    button.addEventListener('click', () => {
-      const group = button.parentElement;
+    document.querySelectorAll('.group-toggle').forEach(button => {
+        button.addEventListener('click', () => {
+            const group = button.parentElement;
 
-      if (document.body.classList.contains('collapsed') && window.innerWidth > 760) {
-        setCollapsed(false);
-        group.classList.add('open');
-        return;
-      }
+            if (document.body.classList.contains('collapsed') && window.innerWidth > 760) {
+                setCollapsed(false);
+                group.classList.add('open');
+                return;
+            }
 
-      group.classList.toggle('open');
+            group.classList.toggle('open');
+        });
     });
-  });
 }
 
 function initializeUserMenu() {
-  const userMenu = document.getElementById('userMenu');
-  const userButton = document.getElementById('userBtn');
+    const userMenu = document.getElementById('userMenu');
+    const userButton = document.getElementById('userBtn');
 
-  if (!userMenu || !userButton) {
-    return;
-  }
-
-  userButton.addEventListener('click', () => {
-    const isOpen = userMenu.classList.toggle('open');
-    userButton.setAttribute('aria-expanded', String(isOpen));
-  });
-
-  document.addEventListener('click', event => {
-    if (!userMenu.contains(event.target)) {
-      userMenu.classList.remove('open');
-      userButton.setAttribute('aria-expanded', 'false');
+    if (!userMenu || !userButton) {
+        return;
     }
-  });
 
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') {
-      userMenu.classList.remove('open');
-      userButton.setAttribute('aria-expanded', 'false');
-    }
-  });
+    userButton.addEventListener('click', () => {
+        const isOpen = userMenu.classList.toggle('open');
+        userButton.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    document.addEventListener('click', event => {
+        if (!userMenu.contains(event.target)) {
+            userMenu.classList.remove('open');
+            userButton.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+            userMenu.classList.remove('open');
+            userButton.setAttribute('aria-expanded', 'false');
+        }
+    });
 }
 
 function initializeTooltips(burger) {
-  const tooltip = document.createElement('div');
-  tooltip.className = 'tip';
-  document.body.appendChild(tooltip);
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tip';
+    document.body.appendChild(tooltip);
 
-  let tooltipTarget;
+    let tooltipTarget;
 
-  function hideTooltip() {
-    tooltip.style.display = 'none';
-    tooltipTarget = null;
-  }
-
-  function showTooltip(target) {
-    if (!document.body.classList.contains('collapsed') || window.innerWidth <= 760 || !target.dataset.tip) {
-      return;
+    function hideTooltip() {
+        tooltip.style.display = 'none';
+        tooltipTarget = null;
     }
 
-    tooltipTarget = target;
-    tooltip.textContent = target.dataset.tip;
-    tooltip.style.display = 'block';
+    function showTooltip(target) {
+        if (!document.body.classList.contains('collapsed') || window.innerWidth <= 760 || !target.dataset.tip) {
+            return;
+        }
 
-    const targetBounds = target.getBoundingClientRect();
-    tooltip.style.top = `${targetBounds.top + targetBounds.height / 2 - tooltip.offsetHeight / 2}px`;
-    tooltip.style.left = `${targetBounds.right + 8}px`;
-  }
+        tooltipTarget = target;
+        tooltip.textContent = target.dataset.tip;
+        tooltip.style.display = 'block';
 
-  document.querySelectorAll('[data-tip]').forEach(element => {
-    element.addEventListener('mouseenter', () => showTooltip(element));
-    element.addEventListener('mouseleave', hideTooltip);
-    element.addEventListener('focus', () => showTooltip(element));
-    element.addEventListener('blur', hideTooltip);
-  });
+        const targetBounds = target.getBoundingClientRect();
+        tooltip.style.top = `${targetBounds.top + targetBounds.height / 2 - tooltip.offsetHeight / 2}px`;
+        tooltip.style.left = `${targetBounds.right + 8}px`;
+    }
 
-  if (burger) {
-    burger.addEventListener('click', hideTooltip);
-  }
+    document.querySelectorAll('[data-tip]').forEach(element => {
+        element.addEventListener('mouseenter', () => showTooltip(element));
+        element.addEventListener('mouseleave', hideTooltip);
+        element.addEventListener('focus', () => showTooltip(element));
+        element.addEventListener('blur', hideTooltip);
+    });
 
-  document.querySelector('.sidebar-scroll')?.addEventListener('scroll', hideTooltip);
+    if (burger) {
+        burger.addEventListener('click', hideTooltip);
+    }
+
+    document.querySelector('.sidebar-scroll')?.addEventListener('scroll', hideTooltip);
 }
 
 function initializeTableFiltering() {
-  document.querySelectorAll('input[data-table]').forEach(input => {
-    const table = document.querySelector(`.${input.dataset.table}`);
+    document.querySelectorAll('input[data-table]').forEach(input => {
+        const table = document.querySelector(`.${input.dataset.table}`);
 
-    if (!table) {
-      return;
-    }
+        if (!table) {
+            return;
+        }
 
-    input.addEventListener('input', () => {
-      const filterText = input.value.toLowerCase();
+        input.addEventListener('input', () => {
+            const filterText = input.value.toLowerCase();
 
-      table.querySelectorAll('ck-responsive-row').forEach(row => {
-        row.style.display = row.textContent.toLowerCase().includes(filterText) ? '' : 'none';
-      });
+            table.querySelectorAll('ck-responsive-row').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(filterText) ? '' : 'none';
+            });
+        });
     });
-  });
 }
 
 function initializeScopeDeletionDialog() {
-  document.querySelectorAll('[data-action="delete-scope"]').forEach(button => {
-    button.addEventListener('click', () => {
-      const dialog = document.getElementById('delete-scope-modal');
-      if (!dialog) {
-        return;
-      }
+    document.querySelectorAll('[data-action="delete-scope"]').forEach(button => {
+        button.addEventListener('click', () => {
+            const dialog = document.getElementById('delete-scope-modal');
+            if (!dialog) {
+                return;
+            }
 
-      const scopeName = button.dataset.deleteName || '';
-      const referenceCount = parseInt(button.dataset.referenceCount || '0', 10);
-      const isReferenced = referenceCount > 0;
+            const scopeName = button.dataset.deleteName || '';
+            const referenceCount = parseInt(button.dataset.referenceCount || '0', 10);
+            const isReferenced = referenceCount > 0;
 
-      dialog.querySelector('#delete-scope-modal-name-input').value = scopeName;
-      dialog.querySelector('#delete-scope-modal-name-text').textContent = scopeName;
-      dialog.querySelector('#delete-scope-modal-blocked-name-text').textContent = scopeName;
-      dialog.querySelector('#delete-scope-modal-blocked-count').textContent = referenceCount;
-      dialog.querySelector('#delete-scope-modal-message').hidden = isReferenced;
-      dialog.querySelector('#delete-scope-modal-blocked-message').hidden = !isReferenced;
-      dialog.querySelector('#delete-scope-modal-confirm').disabled = isReferenced;
+            dialog.querySelector('#delete-scope-modal-name-input').value = scopeName;
+            dialog.querySelector('#delete-scope-modal-name-text').textContent = scopeName;
+            dialog.querySelector('#delete-scope-modal-blocked-name-text').textContent = scopeName;
+            dialog.querySelector('#delete-scope-modal-blocked-count').textContent = referenceCount;
+            dialog.querySelector('#delete-scope-modal-message').hidden = isReferenced;
+            dialog.querySelector('#delete-scope-modal-blocked-message').hidden = !isReferenced;
+            dialog.querySelector('#delete-scope-modal-confirm').disabled = isReferenced;
 
-      dialog.showModal();
+            dialog.showModal();
+        });
     });
-  });
 }
 
 function initializeDialogCloseButtons() {
-  document.querySelectorAll('[data-action="close-modal"]').forEach(button => {
-    button.addEventListener('click', () => button.closest('dialog').close());
-  });
+    document.querySelectorAll('[data-action="close-modal"]').forEach(button => {
+        button.addEventListener('click', () => button.closest('dialog').close());
+    });
 }
 
 function initializeEditorTabs() {
-  const tabElements = document.querySelectorAll('.client-editor-tabs, .api-resource-editor-tabs, .user-details-tabs');
+    const tabElements = document.querySelectorAll('.client-editor-tabs, .api-resource-editor-tabs, .user-details-tabs');
 
-  if (tabElements.length === 0 || !window.customElements) {
-    return;
-  }
-
-  window.customElements.whenDefined('ck-tabs').then(() => {
-    tabElements.forEach(tabElement => {
-      const shadowRoot = tabElement.shadowRoot;
-      if (!shadowRoot) {
+    if (tabElements.length === 0 || !window.customElements) {
         return;
-      }
+    }
 
-      if (!shadowRoot.querySelector('[data-panel-height-fix]')) {
-        const style = document.createElement('style');
-        style.dataset.panelHeightFix = '';
-        style.textContent = '.panel[style*="display: none"] { display: block !important; position: absolute !important; visibility: hidden !important; pointer-events: none !important; }';
-        shadowRoot.appendChild(style);
-      }
+    window.customElements.whenDefined('ck-tabs').then(() => {
+        tabElements.forEach(tabElement => {
+            const shadowRoot = tabElement.shadowRoot;
+            if (!shadowRoot) {
+                return;
+            }
 
-      equalizeTabHeights(tabElement);
+            if (!shadowRoot.querySelector('[data-panel-height-fix]')) {
+                const style = document.createElement('style');
+                style.dataset.panelHeightFix = '';
+                style.textContent = '.panel[style*="display: none"] { display: block !important; position: absolute !important; visibility: hidden !important; pointer-events: none !important; }';
+                shadowRoot.appendChild(style);
+            }
+
+            equalizeTabHeights(tabElement);
+        });
+
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => tabElements.forEach(equalizeTabHeights), 150);
+        });
     });
-
-    let resizeTimeout;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => tabElements.forEach(equalizeTabHeights), 150);
-    });
-  });
 }
 
 function equalizeTabHeights(tabElement) {
-  const panels = tabElement.shadowRoot?.querySelectorAll('.panel');
-  if (!panels || panels.length < 2) {
-    return;
-  }
-
-  panels.forEach(panel => panel.style.removeProperty('min-height'));
-
-  const panelHeights = Array.from(panels, panel => {
-    const originalStyle = panel.getAttribute('style');
-    const isHidden = getComputedStyle(panel).display === 'none';
-
-    if (isHidden) {
-      panel.style.setProperty('display', 'block', 'important');
-      panel.style.setProperty('position', 'absolute', 'important');
-      panel.style.setProperty('visibility', 'hidden', 'important');
-      panel.style.setProperty('pointer-events', 'none', 'important');
+    const panels = tabElement.shadowRoot?.querySelectorAll('.panel');
+    if (!panels || panels.length < 2) {
+        return;
     }
 
-    const height = panel.scrollHeight;
+    panels.forEach(panel => panel.style.removeProperty('min-height'));
 
-    if (isHidden) {
-      if (originalStyle === null) {
-        panel.removeAttribute('style');
-      } else {
-        panel.setAttribute('style', originalStyle);
-      }
-    }
+    const panelHeights = Array.from(panels, panel => {
+        const originalStyle = panel.getAttribute('style');
+        const isHidden = getComputedStyle(panel).display === 'none';
 
-    return height;
-  });
+        if (isHidden) {
+            panel.style.setProperty('display', 'block', 'important');
+            panel.style.setProperty('position', 'absolute', 'important');
+            panel.style.setProperty('visibility', 'hidden', 'important');
+            panel.style.setProperty('pointer-events', 'none', 'important');
+        }
 
-  const maximumHeight = Math.max(...panelHeights);
-  panels.forEach(panel => panel.style.setProperty('min-height', `${maximumHeight}px`, 'important'));
+        const height = panel.scrollHeight;
+
+        if (isHidden) {
+            if (originalStyle === null) {
+                panel.removeAttribute('style');
+            } else {
+                panel.setAttribute('style', originalStyle);
+            }
+        }
+
+        return height;
+    });
+
+    const maximumHeight = Math.max(...panelHeights);
+    panels.forEach(panel => panel.style.setProperty('min-height', `${maximumHeight}px`, 'important'));
 }

@@ -7,11 +7,11 @@ public static class UriValidationHelper
         if (string.IsNullOrWhiteSpace(uri))
             return false;
 
-        var trimmed = uri.Trim();
+        string trimmed = uri.Trim();
         if (trimmed.Length > maxLength)
             return false;
 
-        if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var parsed))
+        if (!Uri.TryCreate(trimmed, UriKind.Absolute, out Uri? parsed))
             return false;
 
         return parsed.Scheme == Uri.UriSchemeHttp || parsed.Scheme == Uri.UriSchemeHttps;
@@ -38,9 +38,7 @@ public static class UriValidationHelper
             || parsed.AbsolutePath != "/"
             || !string.IsNullOrEmpty(parsed.Query)
             || !string.IsNullOrEmpty(parsed.Fragment))
-        {
             return false;
-        }
 
         normalizedOrigin = parsed.GetLeftPart(UriPartial.Authority);
         return normalizedOrigin.Length <= maxLength;

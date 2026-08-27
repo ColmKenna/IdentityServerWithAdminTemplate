@@ -1,5 +1,5 @@
 @page
-@model IdentityServerProject.Pages.Admin.Clients.IndexModel
+@model IndexModel
 @{
     ViewData["Title"] = "Clients";
 }
@@ -10,7 +10,11 @@
         <p class="page-sub">OAuth/OIDC client applications registered with IdentityServer</p>
     </div>
     <a id="new-client-link" class="btn-primary" asp-page="./Create">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
         New client
     </a>
 </div>
@@ -18,7 +22,8 @@
 <div class="panel">
     <form method="get" class="list-filter" role="search">
         <label class="visually-hidden" for="client-filter">Filter clients</label>
-        <input asp-for="Filter" id="client-filter" class="form-control" type="search" placeholder="Filter by name or client ID" />
+        <input asp-for="Filter" id="client-filter" class="form-control" type="search"
+               placeholder="Filter by name or client ID"/>
         <button type="submit" class="btn-secondary">Filter</button>
     </form>
 
@@ -35,15 +40,18 @@
             {
                 <ck-responsive-row>
                     <ck-responsive-col class="client-name">
-                        <a asp-page="./Details" asp-route-id="@clientItem.ClientId" class="client-title-link">@clientItem.ClientName</a>
+                        <a asp-page="./Details" asp-route-id="@clientItem.ClientId"
+                           class="client-title-link">@clientItem.ClientName</a>
                     </ck-responsive-col>
                     <ck-responsive-col><code>@clientItem.ClientId</code></ck-responsive-col>
                     <ck-responsive-col>@clientItem.ClientType</ck-responsive-col>
                     <ck-responsive-col>
-                        <span class="status-badge @(clientItem.Enabled ? "enabled" : "disabled")">@(clientItem.Enabled ? "Enabled" : "Disabled")</span>
+                        <span
+                            class="status-badge @(clientItem.Enabled ? "enabled" : "disabled")">@(clientItem.Enabled ? "Enabled" : "Disabled")</span>
                     </ck-responsive-col>
                     <ck-responsive-col class="actions-cell">
-                        <a asp-page="./Details" asp-route-id="@clientItem.ClientId" class="action-link">Manage &rarr;</a>
+                        <a asp-page="./Details" asp-route-id="@clientItem.ClientId" class="action-link">Manage
+                            &rarr;</a>
                     </ck-responsive-col>
                 </ck-responsive-row>
             }
@@ -64,7 +72,8 @@
             }
             else
             {
-                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter" asp-route-PageNumber="@(Model.Clients.PageNumber - 1)">&lsaquo;</a>
+                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
+                   asp-route-PageNumber="@(Model.Clients.PageNumber - 1)">&lsaquo;</a>
             }
             <span class="pagination-page">Page @Model.Clients.PageNumber of @Model.Clients.TotalPages</span>
             @if (!Model.Clients.HasNextPage)
@@ -73,7 +82,8 @@
             }
             else
             {
-                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter" asp-route-PageNumber="@(Model.Clients.PageNumber + 1)">&rsaquo;</a>
+                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
+                   asp-route-PageNumber="@(Model.Clients.PageNumber + 1)">&rsaquo;</a>
             }
         </div>
     </div>

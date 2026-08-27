@@ -1,5 +1,5 @@
 @page
-@model IdentityServerProject.Pages.Admin.IdentityResources.CreateModel
+@model CreateModel
 @{
     ViewData["Title"] = "Create Identity Resource";
 }
@@ -10,7 +10,8 @@
         <p class="page-sub">Add a new OpenID Connect identity resource with optional template quick-fill.</p>
     </div>
     <a asp-page="./Index" class="back-link">
-        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
@@ -59,14 +60,15 @@
 
         <div class="form-field">
             <label class="form-label" for="resource-name">Resource Name *</label>
-            <input class="form-control" id="resource-name" asp-for="Input.Name" />
+            <input class="form-control" id="resource-name" asp-for="Input.Name"/>
             <span asp-validation-for="Input.Name" class="field-validation-error"></span>
-            <small class="form-text">A unique identifier for this resource (e.g., 'profile', 'email', 'custom.resource').</small>
+            <small class="form-text">A unique identifier for this resource (e.g., 'profile', 'email',
+                'custom.resource').</small>
         </div>
 
         <div class="form-field">
             <label class="form-label" for="resource-display-name">Display Name</label>
-            <input class="form-control" id="resource-display-name" asp-for="Input.DisplayName" />
+            <input class="form-control" id="resource-display-name" asp-for="Input.DisplayName"/>
             <span asp-validation-for="Input.DisplayName" class="field-validation-error"></span>
         </div>
 
@@ -78,29 +80,32 @@
 
         <div class="form-group checkbox-grid">
             <div class="form-check">
-                <input class="form-control" type="checkbox" id="resource-enabled" asp-for="Input.Enabled" />
+                <input class="form-control" type="checkbox" id="resource-enabled" asp-for="Input.Enabled"/>
                 <label class="form-check-label" for="resource-enabled">Enabled</label>
             </div>
 
             <div class="form-check">
-                <input class="form-control" type="checkbox" id="resource-required" asp-for="Input.Required" />
+                <input class="form-control" type="checkbox" id="resource-required" asp-for="Input.Required"/>
                 <label class="form-check-label" for="resource-required">Required</label>
             </div>
 
             <div class="form-check">
-                <input class="form-control" type="checkbox" id="resource-emphasize" asp-for="Input.Emphasize" />
+                <input class="form-control" type="checkbox" id="resource-emphasize" asp-for="Input.Emphasize"/>
                 <label class="form-check-label" for="resource-emphasize">Emphasize</label>
             </div>
 
             <div class="form-check">
-                <input class="form-control" type="checkbox" id="resource-show-discovery" asp-for="Input.ShowInDiscoveryDocument" checked />
+                <input class="form-control" type="checkbox" id="resource-show-discovery"
+                       asp-for="Input.ShowInDiscoveryDocument" checked/>
                 <label class="form-check-label" for="resource-show-discovery">Show in Discovery</label>
             </div>
         </div>
 
         <h3 class="section-title">User Claims</h3>
         <div id="claims-container" class="claims-container">
-            <div id="no-claims-message" class="page-sub">No claims selected. Choose a template or enter claims manually below.</div>
+            <div id="no-claims-message" class="page-sub">No claims selected. Choose a template or enter claims manually
+                below.
+            </div>
             <div id="claims-list" style="display: none;">
                 <div class="claims-list-flex">
                     <!-- Claims will be inserted here by JavaScript -->

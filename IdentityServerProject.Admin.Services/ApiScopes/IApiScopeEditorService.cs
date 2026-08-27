@@ -15,8 +15,8 @@ public sealed record UpdateApiScopeBasicsCommand(
     bool ShowInDiscoveryDocument);
 
 /// <summary>
-/// Reads and mutates a single API scope for the Admin &gt; API Scopes edit page.
-/// The scope's Name is immutable through this service — there is no rename operation.
+///     Reads and mutates a single API scope for the Admin &gt; API Scopes edit page.
+///     The scope's Name is immutable through this service — there is no rename operation.
 /// </summary>
 public interface IApiScopeEditorService
 {
@@ -25,7 +25,7 @@ public interface IApiScopeEditorService
     Task<bool> UpdateBasicsAsync(UpdateApiScopeBasicsCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Creates a new API scope. Returns failure if a scope or identity resource with the same name already exists.
+    ///     Creates a new API scope. Returns failure if a scope or identity resource with the same name already exists.
     /// </summary>
     Task<AdminMutationResult> CreateAsync(
         string name,
@@ -34,14 +34,14 @@ public interface IApiScopeEditorService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Loads a single API scope by name for editing. Returns null if <paramref name="name"/>
-    /// does not resolve to an existing API scope.
+    ///     Loads a single API scope by name for editing. Returns null if <paramref name="name" />
+    ///     does not resolve to an existing API scope.
     /// </summary>
     Task<ApiScopeEditorModel?> GetForEditAsync(ScopeName name, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Updates the display name and description of an existing API scope. Returns false if
-    /// <paramref name="name"/> does not resolve to an existing API scope.
+    ///     Updates the display name and description of an existing API scope. Returns false if
+    ///     <paramref name="name" /> does not resolve to an existing API scope.
     /// </summary>
     Task<bool> UpdateBasicsAsync(
         string name,

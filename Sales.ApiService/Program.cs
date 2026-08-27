@@ -7,15 +7,16 @@ const string SysAdminRole = "SysAdmin";
 const string ApiScopePolicy = "ApiScope";
 const string SysAdminPolicy = "SysAdmin";
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
 
 builder.AddSqlServerDbContext<SalesDbContext>("SalesDb");
 
-var identityServerAuthority = builder.Configuration["services:identityserver:https:0"]
-    ?? throw new InvalidOperationException("Configuration value 'services:identityserver:https:0' is required (Aspire service discovery reference to 'identityserver').");
+string identityServerAuthority = builder.Configuration["services:identityserver:https:0"]
+                                 ?? throw new InvalidOperationException(
+                                     "Configuration value 'services:identityserver:https:0' is required (Aspire service discovery reference to 'identityserver').");
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -47,25 +48,26 @@ builder.Services.AddSwaggerGen(options =>
             {
                 AuthorizationUrl = new Uri($"{identityServerAuthority}/connect/authorize"),
                 TokenUrl = new Uri($"{identityServerAuthority}/connect/token"),
-                Scopes = new Dictionary<string, string> { [ApiScope] = "Access the Sales API" },
-            },
-        },
+                Scopes = new Dictionary<string, string> { [ApiScope] = "Access the Sales API" }
+            }
+        }
     });
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" } },
+            new OpenApiSecurityScheme
+                { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" } },
             [ApiScope]
-        },
+        }
     });
 });
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<SalesDbContext>();
+    using IServiceScope scope = app.Services.CreateScope();
+    SalesDbContext db = scope.ServiceProvider.GetRequiredService<SalesDbContext>();
     await db.Database.EnsureCreatedAsync();
 }
 
@@ -86,24 +88,25 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-string[] summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"];
+string[] summaries =
+    ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"];
 
 app.MapGet("/", () => "API service is running. Navigate to /weatherforecast to see sample data.");
 
 app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.RequireAuthorization(ApiScopePolicy);
+    {
+        WeatherForecast[] forecast = Enumerable.Range(1, 5).Select(index =>
+                new WeatherForecast
+                (
+                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+                    Random.Shared.Next(-20, 55),
+                    summaries[Random.Shared.Next(summaries.Length)]
+                ))
+            .ToArray();
+        return forecast;
+    })
+    .WithName("GetWeatherForecast")
+    .RequireAuthorization(ApiScopePolicy);
 
 app.MapGet("/admin/ping", () => Results.Ok(new { message = "pong, admin" }))
     .WithName("AdminPing")

@@ -1,4 +1,6 @@
 global using IdentityServerProject.Services;
+using IdentityServerProject.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace IdentityServerProject.Admin.Tests.Infrastructure;
 
@@ -6,9 +8,9 @@ public static class TestOptions
 {
     public const int PageSize = 10;
 
-    public static Microsoft.Extensions.Options.IOptions<IdentityServerProject.Configuration.AdminConsoleOptions> AdminConsole { get; } =
-        Microsoft.Extensions.Options.Options.Create(new IdentityServerProject.Configuration.AdminConsoleOptions
+    public static IOptions<AdminConsoleOptions> AdminConsole { get; } =
+        Options.Create(new AdminConsoleOptions
         {
-            DefaultPageSize = PageSize,
+            DefaultPageSize = PageSize
         });
 }

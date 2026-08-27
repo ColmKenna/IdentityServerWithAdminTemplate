@@ -20,7 +20,8 @@ public sealed record AdminMutationResult(
         new(AdminMutationStatus.Succeeded, ValidationErrorDictionary.Empty);
 
     public static AdminMutationResult NotFoundResult() =>
-        new(AdminMutationStatus.NotFound, new ValidationErrorDictionary().AddError(string.Empty, "The requested resource was not found."));
+        new(AdminMutationStatus.NotFound,
+            new ValidationErrorDictionary().AddError(string.Empty, "The requested resource was not found."));
 
     public static AdminMutationResult ConflictResult(string field, string message) =>
         new(AdminMutationStatus.Conflict, new ValidationErrorDictionary().AddError(field, message));

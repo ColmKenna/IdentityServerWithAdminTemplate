@@ -1,11 +1,13 @@
 using Duende.IdentityServer.EntityFramework.DbContexts;
+using Duende.IdentityServer.EntityFramework.Entities;
 using Duende.IdentityServer.EntityFramework.Mappers;
-using Duende.IdentityServer.Models;
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Validation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Client = Duende.IdentityServer.Models.Client;
+using IdentityResource = Duende.IdentityServer.Models.IdentityResource;
 
 namespace IdentityServerProject.Admin.Tests.Clients;
 
@@ -22,7 +24,7 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
             if (!await db.IdentityResources.AnyAsync(resource => resource.Name == "openid"))
             {
                 db.IdentityResources.Add(new IdentityResource("openid", new[] { "sub" }).ToEntity());
@@ -36,7 +38,7 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
     public async Task Should_CreateClient_WithPresetDefaults_AndGenerateHashedSecret()
     {
         await SeedIdentityScopesAsync();
-        var clientId = $"test-web-{Guid.NewGuid():N}";
+        string clientId = $"test-web-{Guid.NewGuid():N}";
         var input = new ClientCreateInputModel
         {
             ClientId = clientId,
@@ -55,7 +57,7 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
         ClientCreateResult result = default!;
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientCreateService>();
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
             result = await service.CreateClientAsync(input);
         });
 
@@ -66,8 +68,8 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
         // Verify entity in database
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            var client = await db.Clients
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            Duende.IdentityServer.EntityFramework.Entities.Client? client = await db.Clients
                 .Include(c => c.AllowedGrantTypes)
                 .Include(c => c.RedirectUris)
                 .Include(c => c.PostLogoutRedirectUris)
@@ -92,7 +94,7 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task Should_FailCreation_When_ClientIdAlreadyExists()
     {
-        var clientId = $"dup-client-{Guid.NewGuid():N}";
+        string clientId = $"dup-client-{Guid.NewGuid():N}";
         var input = new ClientCreateInputModel
         {
             ClientId = clientId,
@@ -105,8 +107,8 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientCreateService>();
-            var initialResult = await service.CreateClientAsync(input);
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
+            ClientCreateResult initialResult = await service.CreateClientAsync(input);
             Assert.True(initialResult.Success);
         });
 
@@ -114,7 +116,7 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
         ClientCreateResult dupResult = default!;
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientCreateService>();
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
             dupResult = await service.CreateClientAsync(input);
         });
 
@@ -126,7 +128,7 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
     public async Task Should_CreatePublicClient_WithoutSecret_When_RequireSecretIsFalse()
     {
         await SeedIdentityScopesAsync();
-        var clientId = $"test-spa-{Guid.NewGuid():N}";
+        string clientId = $"test-spa-{Guid.NewGuid():N}";
         var input = new ClientCreateInputModel
         {
             ClientId = clientId,
@@ -142,7 +144,7 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
         ClientCreateResult result = default!;
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientCreateService>();
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
             result = await service.CreateClientAsync(input);
         });
 
@@ -151,8 +153,8 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            var client = await db.Clients
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            Duende.IdentityServer.EntityFramework.Entities.Client? client = await db.Clients
                 .Include(c => c.ClientSecrets)
                 .Include(c => c.AllowedCorsOrigins)
                 .FirstOrDefaultAsync(c => c.ClientId == clientId);
@@ -167,7 +169,7 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task Should_PersistSelectedPresetAsClientProperty_When_ClientCreated()
     {
-        var clientId = $"test-preset-{Guid.NewGuid():N}";
+        string clientId = $"test-preset-{Guid.NewGuid():N}";
         var input = new ClientCreateInputModel
         {
             ClientId = clientId,
@@ -180,20 +182,21 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientCreateService>();
-            var result = await service.CreateClientAsync(input);
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
+            ClientCreateResult result = await service.CreateClientAsync(input);
             Assert.True(result.Success);
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            var client = await db.Clients
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            Duende.IdentityServer.EntityFramework.Entities.Client? client = await db.Clients
                 .Include(c => c.Properties)
                 .FirstOrDefaultAsync(c => c.ClientId == clientId);
 
             Assert.NotNull(client);
-            var presetProperty = client!.Properties.FirstOrDefault(p => p.Key == ClientCreateService.PresetPropertyKey);
+            ClientProperty? presetProperty =
+                client!.Properties.FirstOrDefault(p => p.Key == ClientCreateService.PresetPropertyKey);
             Assert.NotNull(presetProperty);
             Assert.Equal("m2m", presetProperty!.Value);
         });
@@ -203,13 +206,13 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
     public async Task CloneClientAsync_CopiesConfigurationButGeneratesANewSecret()
     {
         await SeedIdentityScopesAsync();
-        var tag = Guid.NewGuid().ToString("N");
-        var sourceClientId = $"clone-source-{tag}";
-        var clonedClientId = $"clone-target-{tag}";
+        string tag = Guid.NewGuid().ToString("N");
+        string sourceClientId = $"clone-source-{tag}";
+        string clonedClientId = $"clone-target-{tag}";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
             db.Clients.Add(new Client
             {
                 ClientId = sourceClientId,
@@ -232,7 +235,7 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
         ClientCreateResult result = default!;
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientCreateService>();
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
             result = await service.CloneClientAsync(sourceClientId, new ClientCreateInputModel
             {
                 ClientId = clonedClientId,
@@ -247,8 +250,8 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            var clone = await db.Clients
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            Duende.IdentityServer.EntityFramework.Entities.Client clone = await db.Clients
                 .AsNoTracking()
                 .Include(client => client.AllowedGrantTypes)
                 .Include(client => client.RedirectUris)
@@ -267,9 +270,11 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
             Assert.Equal(1234, clone.AccessTokenLifetime);
             Assert.Equal("authorization_code", Assert.Single(clone.AllowedGrantTypes).GrantType);
             Assert.Equal("https://source.example/signin", Assert.Single(clone.RedirectUris).RedirectUri);
-            Assert.Equal("https://source.example/signout", Assert.Single(clone.PostLogoutRedirectUris).PostLogoutRedirectUri);
+            Assert.Equal("https://source.example/signout",
+                Assert.Single(clone.PostLogoutRedirectUris).PostLogoutRedirectUri);
             Assert.Equal("https://source.example", Assert.Single(clone.AllowedCorsOrigins).Origin);
-            Assert.Equal(new[] { "openid", "profile" }, clone.AllowedScopes.Select(scope => scope.Scope).OrderBy(scope => scope));
+            Assert.Equal(new[] { "openid", "profile" },
+                clone.AllowedScopes.Select(scope => scope.Scope).OrderBy(scope => scope));
             Assert.Equal("source-value", clone.Properties.Single(property => property.Key == "source-property").Value);
             Assert.NotEqual(result.PlaintextSecret, Assert.Single(clone.ClientSecrets).Value);
         });
@@ -278,12 +283,12 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task CloneClientAsync_MissingSource_ReturnsTheCurrentValidationFailureResult()
     {
-        var targetClientId = $"clone-missing-target-{Guid.NewGuid():N}";
+        string targetClientId = $"clone-missing-target-{Guid.NewGuid():N}";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientCreateService>();
-            var result = await service.CloneClientAsync("missing-source", new ClientCreateInputModel
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
+            ClientCreateResult result = await service.CloneClientAsync("missing-source", new ClientCreateInputModel
             {
                 ClientId = targetClientId,
                 ClientName = "Target client"
@@ -298,23 +303,24 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task CloneClientAsync_ExistingTarget_ReturnsConflictWithoutReplacingIt()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var sourceClientId = $"clone-duplicate-source-{tag}";
-        var targetClientId = $"clone-duplicate-target-{tag}";
+        string tag = Guid.NewGuid().ToString("N");
+        string sourceClientId = $"clone-duplicate-source-{tag}";
+        string targetClientId = $"clone-duplicate-target-{tag}";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
             db.Clients.AddRange(
                 new Client { ClientId = sourceClientId, ClientName = "Source", RequireClientSecret = false }.ToEntity(),
-                new Client { ClientId = targetClientId, ClientName = "Existing target", RequireClientSecret = false }.ToEntity());
+                new Client { ClientId = targetClientId, ClientName = "Existing target", RequireClientSecret = false }
+                    .ToEntity());
             await db.SaveChangesAsync();
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientCreateService>();
-            var result = await service.CloneClientAsync(sourceClientId, new ClientCreateInputModel
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
+            ClientCreateResult result = await service.CloneClientAsync(sourceClientId, new ClientCreateInputModel
             {
                 ClientId = targetClientId,
                 ClientName = "Replacement target"
@@ -326,8 +332,9 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            var target = await db.Clients.AsNoTracking().SingleAsync(client => client.ClientId == targetClientId);
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            Duende.IdentityServer.EntityFramework.Entities.Client target =
+                await db.Clients.AsNoTracking().SingleAsync(client => client.ClientId == targetClientId);
             Assert.Equal("Existing target", target.ClientName);
         });
     }

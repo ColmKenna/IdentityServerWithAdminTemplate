@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Claims;
 using IdentityServerProject.Data;
 using IdentityServerProject.Data.Adapters;
@@ -12,14 +13,14 @@ using Microsoft.Extensions.Time.Testing;
 namespace IdentityServerProject.Admin.Tests.AuditLogs;
 
 /// <summary>
-/// Unit tests for <see cref="AuditWriter"/> constructed directly (not via <c>AdminWebFactory</c>)
-/// so actor/time/persistence collaborators can be fully controlled.
+///     Unit tests for <see cref="AuditWriter" /> constructed directly (not via <c>AdminWebFactory</c>)
+///     so actor/time/persistence collaborators can be fully controlled.
 /// </summary>
 public class AuditWriterTests : IDisposable
 {
     private readonly SqliteConnection _connection;
-    private readonly ServiceProvider _provider;
     private readonly RecordingLogger<AuditWriter> _logger = new();
+    private readonly ServiceProvider _provider;
 
     public AuditWriterTests()
     {
@@ -31,8 +32,14 @@ public class AuditWriterTests : IDisposable
         services.AddScoped<IAdminAuditStore, EfAdminAuditStore>();
         _provider = services.BuildServiceProvider();
 
-        using var scope = _provider.CreateScope();
+        using IServiceScope scope = _provider.CreateScope();
         scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.EnsureCreated();
+    }
+
+    public void Dispose()
+    {
+        _provider.Dispose();
+        _connection.Dispose();
     }
 
     private AuditWriter CreateWriter(HttpContext? httpContext, TimeProvider? timeProvider = null)
@@ -47,8 +54,8 @@ public class AuditWriterTests : IDisposable
 
     private async Task<AuditLogEntry> GetOnlyEntryAsync()
     {
-        using var scope = _provider.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        using IServiceScope scope = _provider.CreateScope();
+        ApplicationDbContext db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         return await db.AuditLogEntries.SingleAsync();
     }
 
@@ -56,15 +63,12 @@ public class AuditWriterTests : IDisposable
     {
         var context = new DefaultHttpContext();
         context.TraceIdentifier = "trace-123";
-        if (ip != null)
-        {
-            context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse(ip);
-        }
+        if (ip != null) context.Connection.RemoteIpAddress = IPAddress.Parse(ip);
 
         var identity = new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, subjectId),
-            new Claim(ClaimTypes.Name, name),
+            new Claim(ClaimTypes.Name, name)
         }, "TestAuth");
         context.User = new ClaimsPrincipal(identity);
         return context;
@@ -73,13 +77,13 @@ public class AuditWriterTests : IDisposable
     [Fact]
     public async Task WriteAsync_AuthenticatedActor_EnrichesActorSubjectIdAndName()
     {
-        var context = MakeAuthenticatedHttpContext("user-42", "alice@sales.local");
-        var writer = CreateWriter(context);
+        HttpContext context = MakeAuthenticatedHttpContext("user-42", "alice@sales.local");
+        AuditWriter writer = CreateWriter(context);
 
         await writer.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
-        var entry = await GetOnlyEntryAsync();
+        AuditLogEntry entry = await GetOnlyEntryAsync();
         Assert.Equal("user-42", entry.ActorSubjectId);
         Assert.Equal("alice@sales.local", entry.ActorName);
     }
@@ -90,24 +94,24 @@ public class AuditWriterTests : IDisposable
         var context = new DefaultHttpContext();
         var identity = new ClaimsIdentity(new[] { new Claim("sub", "subject-from-sub-claim") }, "TestAuth");
         context.User = new ClaimsPrincipal(identity);
-        var writer = CreateWriter(context);
+        AuditWriter writer = CreateWriter(context);
 
         await writer.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
-        var entry = await GetOnlyEntryAsync();
+        AuditLogEntry entry = await GetOnlyEntryAsync();
         Assert.Equal("subject-from-sub-claim", entry.ActorSubjectId);
     }
 
     [Fact]
     public async Task WriteAsync_NoHttpContext_DoesNotThrowAndLeavesActorEmpty()
     {
-        var writer = CreateWriter(httpContext: null);
+        AuditWriter writer = CreateWriter(null);
 
         await writer.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
-        var entry = await GetOnlyEntryAsync();
+        AuditLogEntry entry = await GetOnlyEntryAsync();
         Assert.Equal(string.Empty, entry.ActorSubjectId);
         Assert.Equal(string.Empty, entry.ActorName);
     }
@@ -116,25 +120,25 @@ public class AuditWriterTests : IDisposable
     public async Task WriteAsync_UnauthenticatedUser_LeavesActorEmpty()
     {
         var context = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity()) };
-        var writer = CreateWriter(context);
+        AuditWriter writer = CreateWriter(context);
 
         await writer.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
-        var entry = await GetOnlyEntryAsync();
+        AuditLogEntry entry = await GetOnlyEntryAsync();
         Assert.Equal(string.Empty, entry.ActorSubjectId);
     }
 
     [Fact]
     public async Task WriteAsync_EnrichesCorrelationIdAndIpAddressFromHttpContext()
     {
-        var context = MakeAuthenticatedHttpContext("user-1", "bob@sales.local", ip: "198.51.100.5");
-        var writer = CreateWriter(context);
+        HttpContext context = MakeAuthenticatedHttpContext("user-1", "bob@sales.local", "198.51.100.5");
+        AuditWriter writer = CreateWriter(context);
 
         await writer.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
-        var entry = await GetOnlyEntryAsync();
+        AuditLogEntry entry = await GetOnlyEntryAsync();
         Assert.Equal("trace-123", entry.CorrelationId);
         Assert.Equal("198.51.100.5", entry.IpAddress);
     }
@@ -144,12 +148,12 @@ public class AuditWriterTests : IDisposable
     {
         var fixedInstant = new DateTimeOffset(2026, 3, 1, 12, 0, 0, TimeSpan.Zero);
         var fakeTime = new FakeTimeProvider(fixedInstant);
-        var writer = CreateWriter(httpContext: null, timeProvider: fakeTime);
+        AuditWriter writer = CreateWriter(null, fakeTime);
 
         await writer.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
-        var entry = await GetOnlyEntryAsync();
+        AuditLogEntry entry = await GetOnlyEntryAsync();
         Assert.Equal(fixedInstant.UtcDateTime, entry.Timestamp);
     }
 
@@ -159,12 +163,12 @@ public class AuditWriterTests : IDisposable
     [InlineData(AuditOutcome.Failed, false)]
     public async Task WriteAsync_DerivesIsSuccessFromOutcome(AuditOutcome outcome, bool expectedIsSuccess)
     {
-        var writer = CreateWriter(httpContext: null);
+        AuditWriter writer = CreateWriter(null);
 
         await writer.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.Create, outcome, AuditReasonCode.Succeeded));
 
-        var entry = await GetOnlyEntryAsync();
+        AuditLogEntry entry = await GetOnlyEntryAsync();
         Assert.Equal(outcome, entry.Outcome);
         Assert.Equal(expectedIsSuccess, entry.IsSuccess);
     }
@@ -172,14 +176,14 @@ public class AuditWriterTests : IDisposable
     [Fact]
     public async Task WriteAsync_SerializesOldAndNewValues()
     {
-        var writer = CreateWriter(httpContext: null);
+        AuditWriter writer = CreateWriter(null);
 
         await writer.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.UpdateBasics, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
             OldValues: new AllowedAuditValue("old-name"),
             NewValues: new AllowedAuditValue("new-name")));
 
-        var entry = await GetOnlyEntryAsync();
+        AuditLogEntry entry = await GetOnlyEntryAsync();
         Assert.Contains("old-name", entry.OldValuesJson);
         Assert.Contains("new-name", entry.NewValuesJson);
     }
@@ -187,12 +191,12 @@ public class AuditWriterTests : IDisposable
     [Fact]
     public async Task WriteAsync_NullOldAndNewValues_PersistsNullJson()
     {
-        var writer = CreateWriter(httpContext: null);
+        AuditWriter writer = CreateWriter(null);
 
         await writer.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded));
 
-        var entry = await GetOnlyEntryAsync();
+        AuditLogEntry entry = await GetOnlyEntryAsync();
         Assert.Null(entry.OldValuesJson);
         Assert.Null(entry.NewValuesJson);
     }
@@ -201,7 +205,7 @@ public class AuditWriterTests : IDisposable
     public async Task WriteAsync_ArbitraryValueObjects_AreRedactedFromPersistenceAndTelemetry()
     {
         const string forbidden = "submitted-password-or-secret";
-        var writer = CreateWriter(httpContext: null);
+        AuditWriter writer = CreateWriter(null);
 
         await writer.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client,
@@ -211,10 +215,11 @@ public class AuditWriterTests : IDisposable
             OldValues: new { Password = forbidden },
             NewValues: new { Secret = forbidden }));
 
-        var entry = await GetOnlyEntryAsync();
+        AuditLogEntry entry = await GetOnlyEntryAsync();
         Assert.Equal("{\"redacted\":true}", entry.OldValuesJson);
         Assert.Equal("{\"redacted\":true}", entry.NewValuesJson);
-        Assert.DoesNotContain(forbidden, string.Join(Environment.NewLine, _logger.Entries.Select(item => item.Message)));
+        Assert.DoesNotContain(forbidden,
+            string.Join(Environment.NewLine, _logger.Entries.Select(item => item.Message)));
     }
 
     [Fact]
@@ -227,7 +232,7 @@ public class AuditWriterTests : IDisposable
         var services = new ServiceCollection();
         services.AddDbContext<ApplicationDbContext>(o => o.UseSqlite(brokenConnection));
         services.AddScoped<IAdminAuditStore, EfAdminAuditStore>();
-        using var brokenProvider = services.BuildServiceProvider();
+        using ServiceProvider brokenProvider = services.BuildServiceProvider();
         // Deliberately do NOT call EnsureCreated() - AuditLogEntries table does not exist.
 
         var logger = new RecordingLogger<AuditWriter>();
@@ -237,13 +242,14 @@ public class AuditWriterTests : IDisposable
             new HttpContextAccessorStub(null),
             TimeProvider.System);
 
-        var exception = await Record.ExceptionAsync(() => writer.WriteAsync(new AdminAuditEvent(
+        Exception? exception = await Record.ExceptionAsync(() => writer.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.Create, AuditOutcome.Denied, AuditReasonCode.NotFound,
-            TargetId: "client-1", Details: "not found")));
+            "client-1", Details: "not found")));
 
         Assert.Null(exception);
         Assert.Contains(logger.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("Client/Create"));
-        Assert.Contains(logger.Entries, e => e.Level == LogLevel.Error && e.Message.Contains("Failed to persist audit log entry"));
+        Assert.Contains(logger.Entries,
+            e => e.Level == LogLevel.Error && e.Message.Contains("Failed to persist audit log entry"));
     }
 
     [Fact]
@@ -254,7 +260,7 @@ public class AuditWriterTests : IDisposable
         var services = new ServiceCollection();
         services.AddDbContext<ApplicationDbContext>(o => o.UseSqlite(brokenConnection));
         services.AddScoped<IAdminAuditStore, EfAdminAuditStore>();
-        using var brokenProvider = services.BuildServiceProvider();
+        using ServiceProvider brokenProvider = services.BuildServiceProvider();
 
         var writer = new AuditWriter(
             brokenProvider.GetRequiredService<IServiceScopeFactory>(),
@@ -262,7 +268,7 @@ public class AuditWriterTests : IDisposable
             new HttpContextAccessorStub(null),
             TimeProvider.System);
 
-        var exception = await Record.ExceptionAsync(() => writer.WriteAsync(new AdminAuditEvent(
+        Exception? exception = await Record.ExceptionAsync(() => writer.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded)));
 
         Assert.Null(exception);
@@ -287,15 +293,13 @@ public class AuditWriterTests : IDisposable
         Assert.Contains(logger.Entries, e => e.Level == expectedLevel);
     }
 
-    public void Dispose()
-    {
-        _provider.Dispose();
-        _connection.Dispose();
-    }
-
     private sealed class HttpContextAccessorStub : IHttpContextAccessor
     {
-        public HttpContextAccessorStub(HttpContext? context) => HttpContext = context;
+        public HttpContextAccessorStub(HttpContext? context)
+        {
+            HttpContext = context;
+        }
+
         public HttpContext? HttpContext { get; set; }
     }
 
@@ -309,15 +313,16 @@ public class AuditWriterTests : IDisposable
 
         public bool IsEnabled(LogLevel logLevel) => true;
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-        {
-            Entries.Add((logLevel, formatter(state, exception)));
-        }
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter) => Entries.Add((logLevel, formatter(state, exception)));
 
         private sealed class NullScope : IDisposable
         {
             public static readonly NullScope Instance = new();
-            public void Dispose() { }
+
+            public void Dispose()
+            {
+            }
         }
     }
 }

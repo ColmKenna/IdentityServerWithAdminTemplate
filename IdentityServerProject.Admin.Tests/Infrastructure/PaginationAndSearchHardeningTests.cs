@@ -34,8 +34,6 @@ public class PaginationAndSearchHardeningTests
     [InlineData("100%", "100[%]")]
     [InlineData("user_name", "user[_]name")]
     [InlineData("[type]", "[[]type[]]")]
-    public void EscapeLikePattern_ProducesLiteralSqlServerPattern(string input, string expected)
-    {
+    public void EscapeLikePattern_ProducesLiteralSqlServerPattern(string input, string expected) =>
         Assert.Equal(expected, LikeExtensions.EscapeLikePattern(input));
-    }
 }

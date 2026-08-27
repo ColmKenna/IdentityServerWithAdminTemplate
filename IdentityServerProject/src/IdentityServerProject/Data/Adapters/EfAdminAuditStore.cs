@@ -6,8 +6,8 @@ using Microsoft.EntityFrameworkCore;
 namespace IdentityServerProject.Data.Adapters;
 
 /// <summary>
-/// EF-backed <see cref="IAdminAuditStore"/> adapter: durable writes and filtered, paged reads
-/// against <see cref="ApplicationDbContext"/>.
+///     EF-backed <see cref="IAdminAuditStore" /> adapter: durable writes and filtered, paged reads
+///     against <see cref="ApplicationDbContext" />.
 /// </summary>
 public sealed class EfAdminAuditStore : IAdminAuditStore
 {
@@ -50,11 +50,11 @@ public sealed class EfAdminAuditStore : IAdminAuditStore
     {
         pagination = pagination.Normalize();
 
-        var query = ApplyFilter(_dbContext.AuditLogEntries.AsNoTracking(), filter);
+        IQueryable<AuditLogEntry> query = ApplyFilter(_dbContext.AuditLogEntries.AsNoTracking(), filter);
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        int totalCount = await query.CountAsync(cancellationToken);
 
-        var pageEntities = await query
+        List<AuditLogEntry> pageEntities = await query
             .OrderByDescending(e => e.Timestamp)
             .Skip(pagination.Skip)
             .Take(pagination.PageSize)
@@ -67,7 +67,7 @@ public sealed class EfAdminAuditStore : IAdminAuditStore
             Items = items,
             TotalCount = totalCount,
             PageNumber = pagination.PageNumber,
-            PageSize = pagination.PageSize,
+            PageSize = pagination.PageSize
         };
     }
 
@@ -77,36 +77,33 @@ public sealed class EfAdminAuditStore : IAdminAuditStore
 
         if (!string.IsNullOrWhiteSpace(filter.ActorSubjectId))
         {
-            var actorSubjectId = LikeExtensions.EscapeLikePattern(filter.ActorSubjectId.Trim());
+            string? actorSubjectId = LikeExtensions.EscapeLikePattern(filter.ActorSubjectId.Trim());
             query = query.Where(e => EF.Functions.Like(e.ActorSubjectId, $"%{actorSubjectId}%"));
         }
 
         if (!string.IsNullOrWhiteSpace(filter.TargetId))
         {
-            var targetId = LikeExtensions.EscapeLikePattern(filter.TargetId.Trim());
+            string? targetId = LikeExtensions.EscapeLikePattern(filter.TargetId.Trim());
             query = query.Where(e => e.TargetId != null && EF.Functions.Like(e.TargetId, $"%{targetId}%"));
         }
 
         if (filter.Category.HasValue && !filter.Category.Value.IsEmpty)
         {
-            var category = filter.Category.Value.Value.Trim();
+            string category = filter.Category.Value.Value.Trim();
             query = query.Where(e => e.Category == category);
         }
 
         if (filter.Action.HasValue && !filter.Action.Value.IsEmpty)
         {
-            var action = filter.Action.Value.Value.Trim();
+            string action = filter.Action.Value.Value.Trim();
             query = query.Where(e => e.Action == action);
         }
 
-        if (filter.Outcome.HasValue)
-        {
-            query = query.Where(e => e.Outcome == filter.Outcome.Value);
-        }
+        if (filter.Outcome.HasValue) query = query.Where(e => e.Outcome == filter.Outcome.Value);
 
         if (!string.IsNullOrWhiteSpace(filter.CorrelationId))
         {
-            var correlationId = filter.CorrelationId.Trim();
+            string correlationId = filter.CorrelationId.Trim();
             query = query.Where(e => e.CorrelationId == correlationId);
         }
 
@@ -130,6 +127,6 @@ public sealed class EfAdminAuditStore : IAdminAuditStore
         TargetName = entity.TargetName,
         Details = entity.Details,
         OldValuesJson = entity.OldValuesJson,
-        NewValuesJson = entity.NewValuesJson,
+        NewValuesJson = entity.NewValuesJson
     };
 }

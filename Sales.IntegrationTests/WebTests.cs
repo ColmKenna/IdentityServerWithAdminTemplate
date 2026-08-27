@@ -1,4 +1,5 @@
 using Aspire.Hosting.Testing;
+using Projects;
 
 namespace Sales.Tests;
 
@@ -7,8 +8,8 @@ public class WebTests
     [Fact]
     public async Task AppHostDefinesTheCurrentDistributedApplicationResources()
     {
-        var cancellationToken = TestContext.Current.CancellationToken;
-        var args = new[]
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        string[] args = new[]
         {
             "--Parameters:sql-password=Integration_Only_Password!1",
             "--Parameters:razor-client-secret=integration-razor-secret",
@@ -17,9 +18,10 @@ public class WebTests
             "--Parameters:seed-test-user-password=Integration_User_Password!1"
         };
 
-        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Sales_AppHost>(
-            args,
-            cancellationToken);
+        IDistributedApplicationTestingBuilder appHost =
+            await DistributedApplicationTestingBuilder.CreateAsync<Sales_AppHost>(
+                args,
+                cancellationToken);
         var resourceNames = appHost.Resources.Select(resource => resource.Name).ToHashSet(StringComparer.Ordinal);
 
         Assert.Contains("sqlserver", resourceNames);

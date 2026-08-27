@@ -1,5 +1,5 @@
 @page "{id}"
-@model IdentityServerProject.Pages.Admin.Clients.TokenSettingsModel
+@model TokenSettingsModel
 @{
     ViewData["Title"] = "Configure Client Token Settings";
     ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
@@ -18,50 +18,55 @@
     </div>
 </div>
 
-<partial name="_ClientEditorTabs" model="new ClientEditorTabsModel(Model.Id, ClientEditorTab.TokenSettings)" />
+<partial name="_ClientEditorTabs" model="new ClientEditorTabsModel(Model.Id, ClientEditorTab.TokenSettings)"/>
 
 <form method="post" id="edit-client-token-settings-form">
-    <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger" role="alert" style="display: @(ViewData.ModelState.IsValid ? "none" : "block"); margin-bottom: 20px;"></div>
+    <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger" role="alert"
+         style="display: @(ViewData.ModelState.IsValid ? "none" : "block"); margin-bottom: 20px;"></div>
 
     <ck-tabs id="client-token-settings-tabs" class="client-editor-tabs">
         <ck-tab label="Token Lifetimes" active="@(Model.ActiveTabIndex == 0 ? "active" : null)">
             <div class="form-field">
                 <label asp-for="Input.AccessTokenLifetime" class="form-label">Access Token Lifetime (seconds)</label>
-                <input asp-for="Input.AccessTokenLifetime" type="number" min="60" max="86400" class="form-control" />
+                <input asp-for="Input.AccessTokenLifetime" type="number" min="60" max="86400" class="form-control"/>
                 <span asp-validation-for="Input.AccessTokenLifetime" class="text-danger field-validation-error"></span>
                 <small class="form-text">Between 60 and 86400 seconds (1 minute to 24 hours).</small>
             </div>
 
             <div class="form-field">
-                <label asp-for="Input.IdentityTokenLifetime" class="form-label">Identity Token Lifetime (seconds)</label>
-                <input asp-for="Input.IdentityTokenLifetime" type="number" min="60" max="3600" class="form-control" />
-                <span asp-validation-for="Input.IdentityTokenLifetime" class="text-danger field-validation-error"></span>
+                <label asp-for="Input.IdentityTokenLifetime" class="form-label">Identity Token Lifetime
+                    (seconds)</label>
+                <input asp-for="Input.IdentityTokenLifetime" type="number" min="60" max="3600" class="form-control"/>
+                <span asp-validation-for="Input.IdentityTokenLifetime"
+                      class="text-danger field-validation-error"></span>
                 <small class="form-text">Between 60 and 3600 seconds (1 minute to 1 hour).</small>
             </div>
         </ck-tab>
         <ck-tab label="Consent &amp; Offline Access" active="@(Model.ActiveTabIndex == 1 ? "active" : null)">
             <div style="display: flex; gap: 24px; flex-wrap: wrap;">
                 <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" asp-for="Input.RequireConsent" />
+                    <input type="checkbox" asp-for="Input.RequireConsent"/>
                     <span>Require Consent</span>
                 </label>
 
                 <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" asp-for="Input.AllowOfflineAccess" id="allow-offline-access" />
+                    <input type="checkbox" asp-for="Input.AllowOfflineAccess" id="allow-offline-access"/>
                     <span>Allow Offline Access (Refresh Tokens)</span>
                 </label>
             </div>
 
-            <div id="refresh-token-settings" style="margin-top: 24px; border-top: 1px solid var(--border, #e6e8eb); padding-top: 24px; display: none;">
+            <div id="refresh-token-settings"
+                 style="margin-top: 24px; border-top: 1px solid var(--border, #e6e8eb); padding-top: 24px; display: none;">
                 <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 16px;">Refresh Token Policies</h3>
-                
+
                 <div class="form-field">
                     <label asp-for="Input.RefreshTokenUsage" class="form-label">Refresh Token Usage</label>
                     <select asp-for="Input.RefreshTokenUsage" class="form-control">
                         <option value="0">ReUse (0)</option>
                         <option value="1">OneTime (1)</option>
                     </select>
-                    <small class="form-text">ReUse: the refresh token handle will stay the same when refreshing tokens.<br/>OneTime: the refresh token handle will be updated when refreshing tokens.</small>
+                    <small class="form-text">ReUse: the refresh token handle will stay the same when refreshing
+                        tokens.<br/>OneTime: the refresh token handle will be updated when refreshing tokens.</small>
                 </div>
 
                 <div class="form-field">
@@ -70,19 +75,26 @@
                         <option value="0">Sliding (0)</option>
                         <option value="1">Absolute (1)</option>
                     </select>
-                    <small class="form-text">Absolute: the refresh token will expire on a fixed point in time.<br/>Sliding: when refreshing the token, the lifetime of the refresh token will be renewed.</small>
+                    <small class="form-text">Absolute: the refresh token will expire on a fixed point in time.<br/>Sliding:
+                        when refreshing the token, the lifetime of the refresh token will be renewed.</small>
                 </div>
 
                 <div class="form-field">
-                    <label asp-for="Input.AbsoluteRefreshTokenLifetime" class="form-label">Absolute Refresh Token Lifetime (seconds)</label>
-                    <input asp-for="Input.AbsoluteRefreshTokenLifetime" type="number" min="60" max="31536000" class="form-control" />
-                    <span asp-validation-for="Input.AbsoluteRefreshTokenLifetime" class="text-danger field-validation-error"></span>
+                    <label asp-for="Input.AbsoluteRefreshTokenLifetime" class="form-label">Absolute Refresh Token
+                        Lifetime (seconds)</label>
+                    <input asp-for="Input.AbsoluteRefreshTokenLifetime" type="number" min="60" max="31536000"
+                           class="form-control"/>
+                    <span asp-validation-for="Input.AbsoluteRefreshTokenLifetime"
+                          class="text-danger field-validation-error"></span>
                 </div>
 
                 <div class="form-field">
-                    <label asp-for="Input.SlidingRefreshTokenLifetime" class="form-label">Sliding Refresh Token Lifetime (seconds)</label>
-                    <input asp-for="Input.SlidingRefreshTokenLifetime" type="number" min="60" max="15552000" class="form-control" />
-                    <span asp-validation-for="Input.SlidingRefreshTokenLifetime" class="text-danger field-validation-error"></span>
+                    <label asp-for="Input.SlidingRefreshTokenLifetime" class="form-label">Sliding Refresh Token Lifetime
+                        (seconds)</label>
+                    <input asp-for="Input.SlidingRefreshTokenLifetime" type="number" min="60" max="15552000"
+                           class="form-control"/>
+                    <span asp-validation-for="Input.SlidingRefreshTokenLifetime"
+                          class="text-danger field-validation-error"></span>
                 </div>
             </div>
         </ck-tab>
@@ -101,6 +113,7 @@
         gap: 6px;
         margin-bottom: 20px;
     }
+
     .form-control {
         width: 100%;
         max-width: 250px;
@@ -109,16 +122,19 @@
         padding: 10px 14px;
         font-size: 0.95rem;
     }
+
     .form-label {
         font-weight: 600;
         font-size: 0.9rem;
         color: var(--ink, #17191c);
     }
+
     .form-text {
         font-size: 0.825rem;
         color: var(--text-dim, #8b9096);
         margin-top: 2px;
     }
+
     .field-validation-error {
         font-size: 0.85rem;
         color: #c8433b;
@@ -131,7 +147,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             const checkbox = document.getElementById('allow-offline-access');
             const panel = document.getElementById('refresh-token-settings');
-            
+
             function togglePanel() {
                 if (checkbox.checked) {
                     panel.style.display = 'block';

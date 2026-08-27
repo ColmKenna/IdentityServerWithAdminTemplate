@@ -4,7 +4,7 @@ using IdentityServerProject.Services.Validation;
 namespace IdentityServerProject.Services.Clients;
 
 /// <summary>
-/// Cohesive domain representation of refresh token behavior and lifetimes.
+///     Cohesive domain representation of refresh token behavior and lifetimes.
 /// </summary>
 public sealed record RefreshTokenSettings
 {

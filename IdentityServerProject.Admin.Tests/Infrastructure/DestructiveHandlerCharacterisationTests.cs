@@ -1,8 +1,14 @@
 using System.Net;
 using AngleSharp;
+using AngleSharp.Dom;
+using AngleSharp.Html.Dom;
+using Duende.IdentityServer.EntityFramework.DbContexts;
+using Duende.IdentityServer.EntityFramework.Entities;
 using Duende.IdentityServer.EntityFramework.Mappers;
+using IdentityServerProject.Data;
 using IdentityServerProject.Services.Clients;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,29 +17,31 @@ using Moq;
 namespace IdentityServerProject.Admin.Tests.Infrastructure;
 
 /// <summary>
-/// Characterisation test suite for destructive admin handlers (WI-09).
-/// Locks in current behavior for destructive handlers before refactoring/re-skinning begins (WI-01..WI-07).
-/// All tests adhere to the Should_ExpectedBehaviour_When_Condition naming convention.
+///     Characterisation test suite for destructive admin handlers (WI-09).
+///     Locks in current behavior for destructive handlers before refactoring/re-skinning begins (WI-01..WI-07).
+///     All tests adhere to the Should_ExpectedBehaviour_When_Condition naming convention.
 /// </summary>
 public class DestructiveHandlerCharacterisationTests : IDisposable
 {
     private readonly List<IDisposable> _disposables = new();
+
+    public void Dispose()
+    {
+        foreach (IDisposable disposable in _disposables) disposable.Dispose();
+    }
 
     private HttpClient CreateClient(IClientDetailsService clientDetailsService, bool allowAutoRedirect = true)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
 
-        var factory = baseFactory.WithWebHostBuilder(builder =>
+        WebApplicationFactory<Program> factory = baseFactory.WithWebHostBuilder(builder =>
         {
-            builder.ConfigureTestServices(services =>
-            {
-                services.AddSingleton(clientDetailsService);
-            });
+            builder.ConfigureTestServices(services => { services.AddSingleton(clientDetailsService); });
         });
         _disposables.Add(factory);
 
-        return factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        return factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = allowAutoRedirect
         });
@@ -56,22 +64,23 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         CorsOriginsCount = 0,
         SecretsCount = 1,
         AllowedScopesCount = 3,
-        AllowedScopes = new() { "openid", "profile", "coop.market.api" }
+        AllowedScopes = new List<string> { "openid", "profile", "coop.market.api" }
     };
 
-    private static async Task<(string Token, string Cookie)> ExtractAntiForgeryTokenAndCookieAsync(HttpClient httpClient, string pageUrl)
+    private static async Task<(string Token, string Cookie)> ExtractAntiForgeryTokenAndCookieAsync(
+        HttpClient httpClient, string pageUrl)
     {
-        var response = await httpClient.GetAsync(pageUrl);
-        var content = await response.Content.ReadAsStringAsync();
-        var context = BrowsingContext.New(AngleSharp.Configuration.Default);
-        var document = await context.OpenAsync(req => req.Content(content));
+        HttpResponseMessage response = await httpClient.GetAsync(pageUrl);
+        string content = await response.Content.ReadAsStringAsync();
+        IBrowsingContext context = BrowsingContext.New(AngleSharp.Configuration.Default);
+        IDocument document = await context.OpenAsync(req => req.Content(content));
 
-        var tokenInput = document.QuerySelector("input[name='__RequestVerificationToken']") as AngleSharp.Html.Dom.IHtmlInputElement;
+        var tokenInput = document.QuerySelector("input[name='__RequestVerificationToken']") as IHtmlInputElement;
         Assert.NotNull(tokenInput);
 
-        var token = tokenInput!.Value;
-        var cookies = response.Headers.GetValues("Set-Cookie");
-        var cookie = cookies.FirstOrDefault(c => c.StartsWith(".AspNetCore.Antiforgery"));
+        string token = tokenInput!.Value;
+        IEnumerable<string> cookies = response.Headers.GetValues("Set-Cookie");
+        string? cookie = cookies.FirstOrDefault(c => c.StartsWith(".AspNetCore.Antiforgery"));
         Assert.NotNull(cookie);
 
         return (token, cookie!);
@@ -83,28 +92,34 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
     public async Task Should_ToggleEnabledState_When_OnPostToggleStatusExecuted()
     {
         var mockService = new Mock<IClientDetailsService>();
-        mockService.Setup(s => s.GetClientDetailsAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(SampleClientDetails("coop.market.razor", enabled: true));
-        mockService.Setup(s => s.ToggleClientStatusAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()))
+        mockService.Setup(s =>
+                s.GetClientDetailsAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(SampleClientDetails());
+        mockService.Setup(s =>
+                s.ToggleClientStatusAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var client = CreateClient(mockService.Object, allowAutoRedirect: false);
+        HttpClient client = CreateClient(mockService.Object, false);
 
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/Clients/Details/coop.market.razor");
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/Clients/Details/coop.market.razor");
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "/Admin/Clients/Details/coop.market.razor?handler=ToggleStatus");
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            "/Admin/Clients/Details/coop.market.razor?handler=ToggleStatus");
         request.Headers.Add("Cookie", cookie);
         request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["__RequestVerificationToken"] = token
         });
 
-        var response = await client.SendAsync(request);
+        HttpResponseMessage response = await client.SendAsync(request);
 
         // Asserts redirection back to Details page on successful toggle
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal("/Admin/Clients/Details/coop.market.razor", response.Headers.Location?.OriginalString);
-        mockService.Verify(s => s.ToggleClientStatusAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(
+            s => s.ToggleClientStatusAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -112,25 +127,30 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
     {
         var mockService = new Mock<IClientDetailsService>();
         mockService.Setup(s => s.GetClientDetailsAsync(ClientId.Create("existing-id"), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(SampleClientDetails("existing-id", enabled: true));
-        mockService.Setup(s => s.ToggleClientStatusAsync(ClientId.Create("non-existent-id"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(SampleClientDetails("existing-id"));
+        mockService.Setup(s =>
+                s.ToggleClientStatusAsync(ClientId.Create("non-existent-id"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var client = CreateClient(mockService.Object, allowAutoRedirect: false);
+        HttpClient client = CreateClient(mockService.Object, false);
 
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/Clients/Details/existing-id");
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/Clients/Details/existing-id");
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "/Admin/Clients/Details/non-existent-id?handler=ToggleStatus");
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            "/Admin/Clients/Details/non-existent-id?handler=ToggleStatus");
         request.Headers.Add("Cookie", cookie);
         request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["__RequestVerificationToken"] = token
         });
 
-        var response = await client.SendAsync(request);
+        HttpResponseMessage response = await client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        mockService.Verify(s => s.ToggleClientStatusAsync(ClientId.Create("non-existent-id"), It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(
+            s => s.ToggleClientStatusAsync(ClientId.Create("non-existent-id"), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -141,21 +161,25 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
 
-        var tag = Guid.NewGuid().ToString("N");
-        var clientId = $"{tag}-confidential-single-secret-client";
+        string tag = Guid.NewGuid().ToString("N");
+        string clientId = $"{tag}-confidential-single-secret-client";
         int secretId = 0;
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<Duende.IdentityServer.EntityFramework.DbContexts.ConfigurationDbContext>();
-            var entity = new Duende.IdentityServer.EntityFramework.Entities.Client
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            var entity = new Client
             {
                 ClientId = clientId,
                 ClientName = "Confidential Single Secret Client",
                 RequireClientSecret = true,
-                ClientSecrets = new List<Duende.IdentityServer.EntityFramework.Entities.ClientSecret>
+                ClientSecrets = new List<ClientSecret>
                 {
-                    new() { Description = "Only secret", Value = "hashed-value", Type = "SharedSecret", Created = DateTime.UtcNow }
+                    new()
+                    {
+                        Description = "Only secret", Value = "hashed-value", Type = "SharedSecret",
+                        Created = DateTime.UtcNow
+                    }
                 }
             };
             configDb.Clients.Add(entity);
@@ -163,12 +187,13 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
             secretId = entity.ClientSecrets.Single().Id;
         });
 
-        var client = baseFactory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        HttpClient client = baseFactory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
         });
 
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, $"/Admin/Clients/Secrets/{clientId}");
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(client, $"/Admin/Clients/Secrets/{clientId}");
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"/Admin/Clients/Secrets/{clientId}?handler=Revoke");
         request.Headers.Add("Cookie", cookie);
@@ -178,7 +203,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
             ["secretId"] = secretId.ToString()
         });
 
-        var response = await client.SendAsync(request);
+        HttpResponseMessage response = await client.SendAsync(request);
 
         // Blocked: redirected back to the Secrets page (not a hard failure), and the secret still exists.
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
@@ -186,8 +211,8 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var secrets = await service.GetClientSecretsAsync(ClientId.Create(clientId));
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientSecretsModel? secrets = await service.GetClientSecretsAsync(ClientId.Create(clientId));
             Assert.NotNull(secrets);
             Assert.Single(secrets!.Secrets);
         });
@@ -201,18 +226,18 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
 
-        var tag = Guid.NewGuid().ToString("N");
-        var clientId = $"{tag}-recently-disabled-client";
+        string tag = Guid.NewGuid().ToString("N");
+        string clientId = $"{tag}-recently-disabled-client";
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var configDb = sp.GetRequiredService<Duende.IdentityServer.EntityFramework.DbContexts.ConfigurationDbContext>();
-            configDb.Clients.Add(new Duende.IdentityServer.EntityFramework.Entities.Client
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            configDb.Clients.Add(new Client
             {
                 ClientId = clientId,
                 ClientName = "Recently Disabled Client",
-                Enabled = true,
+                Enabled = true
             });
             await configDb.SaveChangesAsync();
 
@@ -220,12 +245,13 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
             await service.ToggleClientStatusAsync(ClientId.Create(clientId));
         });
 
-        var client = baseFactory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        HttpClient client = baseFactory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
         });
 
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, $"/Admin/Clients/Details/{clientId}");
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(client, $"/Admin/Clients/Details/{clientId}");
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"/Admin/Clients/Details/{clientId}?handler=Delete");
         request.Headers.Add("Cookie", cookie);
@@ -234,7 +260,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
             ["__RequestVerificationToken"] = token
         });
 
-        var response = await client.SendAsync(request);
+        HttpResponseMessage response = await client.SendAsync(request);
 
         // Blocked: redirected back to Details rather than to Index, and the client still exists.
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
@@ -242,8 +268,8 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var stillExists = await service.GetClientDetailsAsync(ClientId.Create(clientId));
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsModel? stillExists = await service.GetClientDetailsAsync(ClientId.Create(clientId));
             Assert.NotNull(stillExists);
         });
     }
@@ -261,18 +287,18 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
 
-        var tag = Guid.NewGuid().ToString("N");
-        var roleName = $"{tag}-sysadmin";
+        string tag = Guid.NewGuid().ToString("N");
+        string roleName = $"{tag}-sysadmin";
         string userId = null!;
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            var userManager = sp.GetRequiredService<UserManager<IdentityServerProject.Data.ApplicationUser>>();
-            var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
+            UserManager<ApplicationUser> userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+            RoleManager<IdentityRole> roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
 
             await roleManager.CreateAsync(new IdentityRole(roleName));
 
-            var user = new IdentityServerProject.Data.ApplicationUser
+            var user = new ApplicationUser
             {
                 UserName = $"{tag}-sole-admin",
                 Email = $"{tag}-sole-admin@sales.local",
@@ -283,12 +309,13 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
             userId = user.Id;
         });
 
-        var client = baseFactory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        HttpClient client = baseFactory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
         });
 
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, $"/Admin/Users/Details?id={userId}&tab=roles");
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(client, $"/Admin/Users/Details?id={userId}&tab=roles");
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"/Admin/Users/Details?id={userId}&handler=RemoveRole");
         request.Headers.Add("Cookie", cookie);
@@ -298,7 +325,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
             ["role"] = roleName
         });
 
-        var response = await client.SendAsync(request);
+        HttpResponseMessage response = await client.SendAsync(request);
 
         // Successful role changes redirect back to the Roles tab.
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
@@ -306,8 +333,8 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            var userManager = sp.GetRequiredService<UserManager<IdentityServerProject.Data.ApplicationUser>>();
-            var user = await userManager.FindByIdAsync(userId);
+            UserManager<ApplicationUser> userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+            ApplicationUser? user = await userManager.FindByIdAsync(userId);
             Assert.NotNull(user);
             Assert.False(await userManager.IsInRoleAsync(user!, roleName));
         });
@@ -323,12 +350,12 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         _disposables.Add(baseFactory);
 
         const string selfUserId = "admin-test-id";
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            var userManager = sp.GetRequiredService<UserManager<IdentityServerProject.Data.ApplicationUser>>();
-            var user = new IdentityServerProject.Data.ApplicationUser
+            UserManager<ApplicationUser> userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = new ApplicationUser
             {
                 Id = selfUserId,
                 UserName = $"admin-{tag}@sales.local",
@@ -337,8 +364,8 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
             };
             await userManager.CreateAsync(user, "Password123!");
 
-            var grantDb = sp.GetRequiredService<Duende.IdentityServer.EntityFramework.DbContexts.PersistedGrantDbContext>();
-            grantDb.PersistedGrants.Add(new Duende.IdentityServer.EntityFramework.Entities.PersistedGrant
+            PersistedGrantDbContext grantDb = sp.GetRequiredService<PersistedGrantDbContext>();
+            grantDb.PersistedGrants.Add(new PersistedGrant
             {
                 Key = $"{tag}-self-grant",
                 Type = "user_consent",
@@ -351,21 +378,23 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
             await grantDb.SaveChangesAsync();
         });
 
-        var client = baseFactory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        HttpClient client = baseFactory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
         });
 
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, $"/Admin/Users/Details?id={selfUserId}&tab=access");
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(client, $"/Admin/Users/Details?id={selfUserId}&tab=access");
 
-        var request = new HttpRequestMessage(HttpMethod.Post, $"/Admin/Users/Details?id={selfUserId}&handler=RevokeUserAccess");
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"/Admin/Users/Details?id={selfUserId}&handler=RevokeUserAccess");
         request.Headers.Add("Cookie", cookie);
         request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["__RequestVerificationToken"] = token
         });
 
-        var response = await client.SendAsync(request);
+        HttpResponseMessage response = await client.SendAsync(request);
 
         // Blocked: redirected back to the Access & grants tab, and the grant still exists.
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
@@ -373,8 +402,8 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            var grantDb = sp.GetRequiredService<Duende.IdentityServer.EntityFramework.DbContexts.PersistedGrantDbContext>();
-            var stillExists = await grantDb.PersistedGrants.AnyAsync(g => g.SubjectId == selfUserId);
+            PersistedGrantDbContext grantDb = sp.GetRequiredService<PersistedGrantDbContext>();
+            bool stillExists = await grantDb.PersistedGrants.AnyAsync(g => g.SubjectId == selfUserId);
             Assert.True(stillExists);
         });
     }
@@ -398,29 +427,31 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<Duende.IdentityServer.EntityFramework.DbContexts.ConfigurationDbContext>();
-            var entity = new Duende.IdentityServer.Models.IdentityResources.OpenId().ToEntity();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            IdentityResource entity = new Duende.IdentityServer.Models.IdentityResources.OpenId().ToEntity();
             entity.NonEditable = true;
             configDb.IdentityResources.Add(entity);
             await configDb.SaveChangesAsync();
         });
 
-        var client = baseFactory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        HttpClient client = baseFactory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
         });
 
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/IdentityResources/Edit?name=openid");
+        (string token, string cookie) =
+            await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/IdentityResources/Edit?name=openid");
 
-        var removeRequest = new HttpRequestMessage(HttpMethod.Post, "/Admin/IdentityResources/Edit?name=openid&handler=RemoveClaim");
+        var removeRequest = new HttpRequestMessage(HttpMethod.Post,
+            "/Admin/IdentityResources/Edit?name=openid&handler=RemoveClaim");
         removeRequest.Headers.Add("Cookie", cookie);
         removeRequest.Content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["__RequestVerificationToken"] = token,
-            ["claimType"] = "sub",
+            ["claimType"] = "sub"
         });
 
-        var removeResponse = await client.SendAsync(removeRequest);
+        HttpResponseMessage removeResponse = await client.SendAsync(removeRequest);
 
         Assert.Equal(HttpStatusCode.OK, removeResponse.StatusCode);
         Assert.DoesNotContain("Location", removeResponse.Headers.Select(h => h.Key));
@@ -432,15 +463,15 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         deleteRequest.Content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["__RequestVerificationToken"] = token,
-            ["name"] = "openid",
+            ["name"] = "openid"
         });
 
         await client.SendAsync(deleteRequest);
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<Duende.IdentityServer.EntityFramework.DbContexts.ConfigurationDbContext>();
-            var resource = await configDb.IdentityResources
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            IdentityResource? resource = await configDb.IdentityResources
                 .Include(r => r.UserClaims)
                 .FirstOrDefaultAsync(r => r.Name == "openid");
 
@@ -456,29 +487,29 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         using var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
 
-        var scopeName = $"api-inuse-{Guid.NewGuid():N}";
+        string scopeName = $"api-inuse-{Guid.NewGuid():N}";
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<Duende.IdentityServer.EntityFramework.DbContexts.ConfigurationDbContext>();
-            configDb.ApiScopes.Add(new Duende.IdentityServer.EntityFramework.Entities.ApiScope { Name = scopeName, DisplayName = "In Use API" });
-            configDb.Clients.Add(new Duende.IdentityServer.EntityFramework.Entities.Client
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            configDb.ApiScopes.Add(new ApiScope { Name = scopeName, DisplayName = "In Use API" });
+            configDb.Clients.Add(new Client
             {
                 ClientId = "consumer-client",
                 ClientName = "Consumer",
-                AllowedScopes = new List<Duende.IdentityServer.EntityFramework.Entities.ClientScope>
+                AllowedScopes = new List<ClientScope>
                 {
-                    new Duende.IdentityServer.EntityFramework.Entities.ClientScope { Scope = scopeName }
+                    new() { Scope = scopeName }
                 }
             });
             await configDb.SaveChangesAsync();
         });
 
-        var client = baseFactory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        HttpClient client = baseFactory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
         });
 
-        var (token, cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/ApiScopes");
+        (string token, string cookie) = await ExtractAntiForgeryTokenAndCookieAsync(client, "/Admin/ApiScopes");
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/Admin/ApiScopes?handler=Delete");
         request.Headers.Add("Cookie", cookie);
@@ -486,30 +517,23 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         {
             ["__RequestVerificationToken"] = token,
             ["name"] = scopeName,
-            ["PageNumber"] = "1",
+            ["PageNumber"] = "1"
         });
 
-        var response = await client.SendAsync(request);
+        HttpResponseMessage response = await client.SendAsync(request);
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<Duende.IdentityServer.EntityFramework.DbContexts.ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             Assert.True(await configDb.ApiScopes.AnyAsync(s => s.Name == scopeName));
-            
-            var consumerClient = await configDb.Clients.Include(c => c.AllowedScopes).FirstOrDefaultAsync(c => c.ClientId == "consumer-client");
+
+            Client? consumerClient = await configDb.Clients.Include(c => c.AllowedScopes)
+                .FirstOrDefaultAsync(c => c.ClientId == "consumer-client");
             Assert.NotNull(consumerClient);
             Assert.Contains(consumerClient.AllowedScopes, cs => cs.Scope == scopeName);
         });
     }
 
     #endregion
-
-    public void Dispose()
-    {
-        foreach (var disposable in _disposables)
-        {
-            disposable.Dispose();
-        }
-    }
 }

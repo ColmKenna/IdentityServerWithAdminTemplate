@@ -1,9 +1,11 @@
 using System.Net;
 using AngleSharp;
+using AngleSharp.Dom;
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Data;
 using IdentityServerProject.Services.AuditLogs;
 using IdentityServerProject.Services.Users;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -14,17 +16,19 @@ public class AuditLogsIndexIntegrationTests : IDisposable
 {
     private readonly List<IDisposable> _disposables = new();
 
+    public void Dispose()
+    {
+        foreach (IDisposable disposable in _disposables) disposable.Dispose();
+    }
+
     private HttpClient CreateClientWithMockedService(IAuditLogListService auditLogListService)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
 
-        var factory = baseFactory.WithWebHostBuilder(builder =>
+        WebApplicationFactory<Program> factory = baseFactory.WithWebHostBuilder(builder =>
         {
-            builder.ConfigureTestServices(services =>
-            {
-                services.AddSingleton(auditLogListService);
-            });
+            builder.ConfigureTestServices(services => { services.AddSingleton(auditLogListService); });
         });
         _disposables.Add(factory);
 
@@ -34,12 +38,15 @@ public class AuditLogsIndexIntegrationTests : IDisposable
     private static IAuditLogListService MockService(ListResult<AuditLogListItem> result)
     {
         var mock = new Mock<IAuditLogListService>();
-        mock.Setup(s => s.GetAuditLogEntriesAsync(It.IsAny<AuditLogFilter>(), It.IsAny<Pagination>(), It.IsAny<CancellationToken>()))
+        mock.Setup(s =>
+                s.GetAuditLogEntriesAsync(It.IsAny<AuditLogFilter>(), It.IsAny<Pagination>(),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         return mock.Object;
     }
 
-    private static AuditLogListItem MakeItem(int id, string actor, string action, string target, string details, DateTime timestamp) => new()
+    private static AuditLogListItem MakeItem(int id, string actor, string action, string target, string details,
+        DateTime timestamp) => new()
     {
         Id = id,
         Timestamp = timestamp,
@@ -56,24 +63,18 @@ public class AuditLogsIndexIntegrationTests : IDisposable
         CorrelationId = "correlation-id",
         IpAddress = "192.0.2.10",
         OldValuesJson = "{\"Enabled\":false}",
-        NewValuesJson = "<script>alert('unsafe')</script>",
+        NewValuesJson = "<script>alert('unsafe')</script>"
     };
-
-    public void Dispose()
-    {
-        foreach (var disposable in _disposables)
-        {
-            disposable.Dispose();
-        }
-    }
 
     [Fact]
     public async Task GetIndex_Returns200_AndRendersAuditLogTable()
     {
-        var item1 = MakeItem(1, "admin@sales.local", "ClientDeleted", "client-1", "Deleted via Admin UI", DateTime.UtcNow.AddHours(-1));
-        var item2 = MakeItem(2, "admin2@sales.local", "UserUnlocked", "user-2", "Unlocked account", DateTime.UtcNow.AddHours(-2));
+        AuditLogListItem item1 = MakeItem(1, "admin@sales.local", "ClientDeleted", "client-1", "Deleted via Admin UI",
+            DateTime.UtcNow.AddHours(-1));
+        AuditLogListItem item2 = MakeItem(2, "admin2@sales.local", "UserUnlocked", "user-2", "Unlocked account",
+            DateTime.UtcNow.AddHours(-2));
 
-        var service = MockService(new ListResult<AuditLogListItem>
+        IAuditLogListService service = MockService(new ListResult<AuditLogListItem>
         {
             Items = new[] { item1, item2 },
             TotalCount = 2,
@@ -81,19 +82,19 @@ public class AuditLogsIndexIntegrationTests : IDisposable
             PageSize = 10
         });
 
-        var client = CreateClientWithMockedService(service);
+        HttpClient client = CreateClientWithMockedService(service);
 
-        var response = await client.GetAsync("/Admin/AuditLogs");
+        HttpResponseMessage response = await client.GetAsync("/Admin/AuditLogs");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var content = await response.Content.ReadAsStringAsync();
-        var context = BrowsingContext.New(AngleSharp.Configuration.Default);
-        var document = await context.OpenAsync(req => req.Content(content));
+        string content = await response.Content.ReadAsStringAsync();
+        IBrowsingContext context = BrowsingContext.New(AngleSharp.Configuration.Default);
+        IDocument document = await context.OpenAsync(req => req.Content(content));
 
         Assert.NotNull(document.QuerySelector("h1.page-title"));
         Assert.Equal("Audit Log", document.QuerySelector("h1.page-title")?.TextContent?.Trim());
 
-        var rows = document.QuerySelectorAll("ck-responsive-row");
+        IHtmlCollection<IElement> rows = document.QuerySelectorAll("ck-responsive-row");
         Assert.Equal(2, rows.Length);
 
         Assert.Contains("admin@sales.local", rows[0].TextContent);
@@ -111,17 +112,17 @@ public class AuditLogsIndexIntegrationTests : IDisposable
     [Fact]
     public async Task GetIndex_WhenNoItems_RendersEmptyState()
     {
-        var service = MockService(ListResult<AuditLogListItem>.Empty(1, 10));
-        var client = CreateClientWithMockedService(service);
+        IAuditLogListService service = MockService(ListResult<AuditLogListItem>.Empty());
+        HttpClient client = CreateClientWithMockedService(service);
 
-        var response = await client.GetAsync("/Admin/AuditLogs");
+        HttpResponseMessage response = await client.GetAsync("/Admin/AuditLogs");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var content = await response.Content.ReadAsStringAsync();
-        var context = BrowsingContext.New(AngleSharp.Configuration.Default);
-        var document = await context.OpenAsync(req => req.Content(content));
+        string content = await response.Content.ReadAsStringAsync();
+        IBrowsingContext context = BrowsingContext.New(AngleSharp.Configuration.Default);
+        IDocument document = await context.OpenAsync(req => req.Content(content));
 
-        var emptyState = document.QuerySelector(".empty-state");
+        IElement? emptyState = document.QuerySelector(".empty-state");
         Assert.NotNull(emptyState);
         Assert.Equal("No audit log entries found.", emptyState?.TextContent?.Trim());
     }
@@ -129,15 +130,15 @@ public class AuditLogsIndexIntegrationTests : IDisposable
     [Fact]
     public async Task GetIndex_RendersStructuredFilterInputs()
     {
-        var service = MockService(ListResult<AuditLogListItem>.Empty(1, 10));
-        var client = CreateClientWithMockedService(service);
+        IAuditLogListService service = MockService(ListResult<AuditLogListItem>.Empty());
+        HttpClient client = CreateClientWithMockedService(service);
 
-        var response = await client.GetAsync("/Admin/AuditLogs");
+        HttpResponseMessage response = await client.GetAsync("/Admin/AuditLogs");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var content = await response.Content.ReadAsStringAsync();
-        var context = BrowsingContext.New(AngleSharp.Configuration.Default);
-        var document = await context.OpenAsync(req => req.Content(content));
+        string content = await response.Content.ReadAsStringAsync();
+        IBrowsingContext context = BrowsingContext.New(AngleSharp.Configuration.Default);
+        IDocument document = await context.OpenAsync(req => req.Content(content));
 
         Assert.NotNull(document.QuerySelector("ck-responsive-table"));
         Assert.NotNull(document.QuerySelector("input[name='Filter.ActorSubjectId']"));
@@ -158,13 +159,12 @@ public class AuditLogsIndexIntegrationTests : IDisposable
         var factory = new AdminWebFactory();
         _disposables.Add(factory);
 
-        var tag = $"audit-e2e-{Guid.NewGuid():N}";
+        string tag = $"audit-e2e-{Guid.NewGuid():N}";
 
         await factory.RunInScopeAsync(async sp =>
         {
-            var dbContext = sp.GetRequiredService<ApplicationDbContext>();
-            for (var i = 1; i <= 3; i++)
-            {
+            ApplicationDbContext dbContext = sp.GetRequiredService<ApplicationDbContext>();
+            for (int i = 1; i <= 3; i++)
                 dbContext.AuditLogEntries.Add(new AuditLogEntry
                 {
                     ActorName = $"{tag}-actor",
@@ -174,9 +174,8 @@ public class AuditLogsIndexIntegrationTests : IDisposable
                     Action = $"{tag}-action-{i}",
                     TargetName = $"{tag}-target-{i}",
                     Details = $"{tag}-details-{i}",
-                    Timestamp = DateTime.UtcNow.AddMinutes(-i),
+                    Timestamp = DateTime.UtcNow.AddMinutes(-i)
                 });
-            }
             dbContext.AuditLogEntries.Add(new AuditLogEntry
             {
                 ActorName = "unrelated-actor",
@@ -184,21 +183,23 @@ public class AuditLogsIndexIntegrationTests : IDisposable
                 Category = "Test",
                 IsSuccess = true,
                 Action = "unrelated-action",
-                Timestamp = DateTime.UtcNow,
+                Timestamp = DateTime.UtcNow
             });
             await dbContext.SaveChangesAsync();
         });
 
-        var client = factory.CreateClient();
+        HttpClient client = factory.CreateClient();
 
-        var page1Response = await client.GetAsync($"/Admin/AuditLogs?Filter.ActorSubjectId={tag}-subject&Filter.Category=Test&PageNumber=1");
+        HttpResponseMessage page1Response =
+            await client.GetAsync(
+                $"/Admin/AuditLogs?Filter.ActorSubjectId={tag}-subject&Filter.Category=Test&PageNumber=1");
         Assert.Equal(HttpStatusCode.OK, page1Response.StatusCode);
 
-        var page1Content = await page1Response.Content.ReadAsStringAsync();
-        var context = BrowsingContext.New(AngleSharp.Configuration.Default);
-        var page1Document = await context.OpenAsync(req => req.Content(page1Content));
+        string page1Content = await page1Response.Content.ReadAsStringAsync();
+        IBrowsingContext context = BrowsingContext.New(AngleSharp.Configuration.Default);
+        IDocument page1Document = await context.OpenAsync(req => req.Content(page1Content));
 
-        var page1Rows = page1Document.QuerySelectorAll("ck-responsive-row");
+        IHtmlCollection<IElement> page1Rows = page1Document.QuerySelectorAll("ck-responsive-row");
         Assert.Equal(3, page1Rows.Length);
         Assert.DoesNotContain(page1Rows, row => row.TextContent.Contains("unrelated-action"));
         Assert.Contains("Showing 3 of 3 entries", page1Document.QuerySelector(".pagination-summary")?.TextContent);

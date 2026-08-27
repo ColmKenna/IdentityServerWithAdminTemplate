@@ -1,8 +1,8 @@
 namespace IdentityServerProject.Services;
 
 /// <summary>
-/// A generic single page of <typeparamref name="T"/> results, along with enough
-/// information for the caller to render pagination controls.
+///     A generic single page of <typeparamref name="T" /> results, along with enough
+///     information for the caller to render pagination controls.
 /// </summary>
 public class ListResult<T>
 {
@@ -22,13 +22,13 @@ public class ListResult<T>
 
     public static ListResult<T> Empty(Pagination pagination)
     {
-        var normalized = pagination.Normalize();
-        return new()
+        Pagination normalized = pagination.Normalize();
+        return new ListResult<T>
         {
             Items = Array.Empty<T>(),
             TotalCount = 0,
             PageNumber = normalized.PageNumber,
-            PageSize = normalized.PageSize,
+            PageSize = normalized.PageSize
         };
     }
 

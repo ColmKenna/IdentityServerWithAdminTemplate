@@ -13,17 +13,13 @@ public class EditInputModel
     [Display(Name = "Display Name")]
     public string? DisplayName { get; set; }
 
-    [StringLength(1000)]
-    public string? Description { get; set; }
+    [StringLength(1000)] public string? Description { get; set; }
 
-    [Display(Name = "Enabled")]
-    public bool Enabled { get; set; }
+    [Display(Name = "Enabled")] public bool Enabled { get; set; }
 
-    [Display(Name = "Required")]
-    public bool Required { get; set; }
+    [Display(Name = "Required")] public bool Required { get; set; }
 
-    [Display(Name = "Emphasize")]
-    public bool Emphasize { get; set; }
+    [Display(Name = "Emphasize")] public bool Emphasize { get; set; }
 
     [Display(Name = "Show in Discovery Document")]
     public bool ShowInDiscoveryDocument { get; set; }
@@ -38,11 +34,9 @@ public class EditModel : PageModel
         _editorService = editorService;
     }
 
-    [FromQuery]
-    public string Name { get; set; } = string.Empty;
+    [FromQuery] public string Name { get; set; } = string.Empty;
 
-    [BindProperty]
-    public EditInputModel Input { get; set; } = new();
+    [BindProperty] public EditInputModel Input { get; set; } = new();
 
     public IdentityResourceEditorModel Editor { get; private set; } = new()
     {
@@ -53,7 +47,7 @@ public class EditModel : PageModel
         Required = false,
         Emphasize = false,
         ShowInDiscoveryDocument = true,
-        UserClaims = new(),
+        UserClaims = new List<string>()
     };
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
@@ -61,7 +55,8 @@ public class EditModel : PageModel
         if (string.IsNullOrWhiteSpace(Name))
             return NotFound();
 
-        var editor = await _editorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
+        IdentityResourceEditorModel? editor =
+            await _editorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
         if (editor == null)
             return NotFound();
 
@@ -78,14 +73,15 @@ public class EditModel : PageModel
 
         if (!ModelState.IsValid)
         {
-            var editor = await _editorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
+            IdentityResourceEditorModel? editor =
+                await _editorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
             if (editor == null)
                 return NotFound();
             Editor = editor;
             return Page();
         }
 
-        var result = await _editorService.UpdateBasicsAsync(
+        IdentityResourceEditResult result = await _editorService.UpdateBasicsAsync(
             new UpdateIdentityResourceBasicsCommand(
                 ScopeName.Create(Name),
                 Input.DisplayName,
@@ -99,22 +95,26 @@ public class EditModel : PageModel
         return await RenderOutcomeAsync(result, Name, cancellationToken);
     }
 
-    public async Task<IActionResult> OnPostAddClaimAsync(string name, string claimType, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnPostAddClaimAsync(string name, string claimType,
+        CancellationToken cancellationToken)
     {
-        var result = await _editorService.AddClaimAsync(ScopeName.Create(name), ClaimType.Create(claimType), cancellationToken);
+        IdentityResourceEditResult result = await _editorService.AddClaimAsync(ScopeName.Create(name),
+            ClaimType.Create(claimType), cancellationToken);
         return await RenderOutcomeAsync(result, name, cancellationToken);
     }
 
-    public async Task<IActionResult> OnPostRemoveClaimAsync(string name, string claimType, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnPostRemoveClaimAsync(string name, string claimType,
+        CancellationToken cancellationToken)
     {
-        var result = await _editorService.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create(claimType), cancellationToken);
+        IdentityResourceEditResult result = await _editorService.RemoveClaimAsync(ScopeName.Create(name),
+            ClaimType.Create(claimType), cancellationToken);
         return await RenderOutcomeAsync(result, name, cancellationToken);
     }
 
     /// <summary>
-    /// Turns a service outcome into a response. A refused mutation re-renders the editor with the
-    /// reason in the validation summary; it is deliberately not a 404, which would tell the
-    /// operator the resource does not exist when in fact it is guarded.
+    ///     Turns a service outcome into a response. A refused mutation re-renders the editor with the
+    ///     reason in the validation summary; it is deliberately not a 404, which would tell the
+    ///     operator the resource does not exist when in fact it is guarded.
     /// </summary>
     private async Task<IActionResult> RenderOutcomeAsync(
         IdentityResourceEditResult result, string name, CancellationToken cancellationToken)
@@ -125,7 +125,8 @@ public class EditModel : PageModel
                 return RedirectToPage(new { name });
 
             case IdentityResourceEditOutcome.Protected:
-                var editor = await _editorService.GetForEditAsync(ScopeName.Create(name), cancellationToken);
+                IdentityResourceEditorModel? editor =
+                    await _editorService.GetForEditAsync(ScopeName.Create(name), cancellationToken);
                 if (editor == null)
                     return NotFound();
 
@@ -146,6 +147,6 @@ public class EditModel : PageModel
         Enabled = editor.Enabled,
         Required = editor.Required,
         Emphasize = editor.Emphasize,
-        ShowInDiscoveryDocument = editor.ShowInDiscoveryDocument,
+        ShowInDiscoveryDocument = editor.ShowInDiscoveryDocument
     };
 }

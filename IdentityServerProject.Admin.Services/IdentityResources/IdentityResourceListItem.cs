@@ -1,7 +1,7 @@
 namespace IdentityServerProject.Services.IdentityResources;
 
 /// <summary>
-/// A single row projected for display on the Admin &gt; Identity Resources list page.
+///     A single row projected for display on the Admin &gt; Identity Resources list page.
 /// </summary>
 public sealed class IdentityResourceListItem
 {
@@ -22,7 +22,7 @@ public sealed class IdentityResourceListItem
     public required int UserClaimsCount { get; init; }
 
     /// <summary>
-    /// Number of distinct clients whose AllowedScopes reference this identity resource by name.
+    ///     Number of distinct clients whose AllowedScopes reference this identity resource by name.
     /// </summary>
     public required int ClientReferenceCount { get; set; }
 

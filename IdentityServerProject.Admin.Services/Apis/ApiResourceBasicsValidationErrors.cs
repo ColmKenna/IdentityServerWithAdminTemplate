@@ -1,9 +1,10 @@
 using IdentityServerProject.Services.Validation;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace IdentityServerProject.Services.Apis;
 
 /// <summary>
-/// Strongly typed validation error container for API resource basic settings.
+///     Strongly typed validation error container for API resource basic settings.
 /// </summary>
 public sealed class ApiResourceBasicsValidationErrors
 {
@@ -23,47 +24,31 @@ public sealed class ApiResourceBasicsValidationErrors
         var errors = new ApiResourceBasicsValidationErrors();
 
         if (string.IsNullOrWhiteSpace(name))
-        {
             errors.AddNameError("Name is required.");
-        }
         else if (!ScopeValidationHelper.IsValidScopeName(name))
-        {
-            errors.AddNameError("Name contains invalid characters. Use alphanumeric characters, hyphens, dots, slashes, and colons.");
-        }
+            errors.AddNameError(
+                "Name contains invalid characters. Use alphanumeric characters, hyphens, dots, slashes, and colons.");
         else if (name.Length > ValidationConstants.MaxNameLength)
-        {
             errors.AddNameError($"Name cannot exceed {ValidationConstants.MaxNameLength} characters.");
-        }
 
         if (displayName != null && displayName.Length > ValidationConstants.MaxDisplayNameLength)
-        {
-            errors.AddDisplayNameError($"Display Name cannot exceed {ValidationConstants.MaxDisplayNameLength} characters.");
-        }
+            errors.AddDisplayNameError(
+                $"Display Name cannot exceed {ValidationConstants.MaxDisplayNameLength} characters.");
 
         if (description != null && description.Length > ValidationConstants.MaxDescriptionLength)
-        {
-            errors.AddDescriptionError($"Description cannot exceed {ValidationConstants.MaxDescriptionLength} characters.");
-        }
+            errors.AddDescriptionError(
+                $"Description cannot exceed {ValidationConstants.MaxDescriptionLength} characters.");
 
         return errors;
     }
 
-    public void AddToModelState(Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary modelState, string prefix = "Basics")
+    public void AddToModelState(ModelStateDictionary modelState, string prefix = "Basics")
     {
-        foreach (var error in Name)
-        {
-            modelState.AddModelError($"{prefix}.{nameof(Name)}", error);
-        }
+        foreach (string error in Name) modelState.AddModelError($"{prefix}.{nameof(Name)}", error);
 
-        foreach (var error in DisplayName)
-        {
-            modelState.AddModelError($"{prefix}.{nameof(DisplayName)}", error);
-        }
+        foreach (string error in DisplayName) modelState.AddModelError($"{prefix}.{nameof(DisplayName)}", error);
 
-        foreach (var error in Description)
-        {
-            modelState.AddModelError($"{prefix}.{nameof(Description)}", error);
-        }
+        foreach (string error in Description) modelState.AddModelError($"{prefix}.{nameof(Description)}", error);
     }
 
     public ValidationErrorDictionary ToDictionary()

@@ -3,6 +3,7 @@ using AngleSharp;
 using AngleSharp.Dom;
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Services.Apis;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -10,25 +11,27 @@ using Moq;
 namespace IdentityServerProject.Admin.Tests.Apis;
 
 /// <summary>
-/// Full HTTP pipeline tests for GET /Admin/Apis, asserting on the rendered HTML via AngleSharp.
-/// Each test builds its own factory/client with <see cref="IApiResourceListService"/> replaced by a
-/// mock so the rendered markup is fully controlled and independent of database state.
+///     Full HTTP pipeline tests for GET /Admin/Apis, asserting on the rendered HTML via AngleSharp.
+///     Each test builds its own factory/client with <see cref="IApiResourceListService" /> replaced by a
+///     mock so the rendered markup is fully controlled and independent of database state.
 /// </summary>
 public class ApisIndexIntegrationTests : IDisposable
 {
     private readonly List<IDisposable> _disposables = new();
+
+    public void Dispose()
+    {
+        foreach (IDisposable disposable in _disposables) disposable.Dispose();
+    }
 
     private HttpClient CreateClient(IApiResourceListService apiResourceListService)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
 
-        var factory = baseFactory.WithWebHostBuilder(builder =>
+        WebApplicationFactory<Program> factory = baseFactory.WithWebHostBuilder(builder =>
         {
-            builder.ConfigureTestServices(services =>
-            {
-                services.AddSingleton(apiResourceListService);
-            });
+            builder.ConfigureTestServices(services => { services.AddSingleton(apiResourceListService); });
         });
         _disposables.Add(factory);
 
@@ -48,7 +51,7 @@ public class ApisIndexIntegrationTests : IDisposable
         Items = Array.Empty<ApiResourceListItem>(),
         TotalCount = 0,
         PageNumber = pageNumber,
-        PageSize = pageSize,
+        PageSize = pageSize
     };
 
     private static ApiResourceListItem MakeItem(string suffix, bool enabled = true, int scopeCount = 0) => new()
@@ -56,13 +59,13 @@ public class ApisIndexIntegrationTests : IDisposable
         Name = $"api-{suffix}",
         DisplayName = $"API {suffix}",
         Enabled = enabled,
-        ScopeCount = scopeCount,
+        ScopeCount = scopeCount
     };
 
     private static async Task<IDocument> GetDocumentAsync(HttpResponseMessage response)
     {
-        var content = await response.Content.ReadAsStringAsync();
-        var context = BrowsingContext.New(AngleSharp.Configuration.Default);
+        string content = await response.Content.ReadAsStringAsync();
+        IBrowsingContext context = BrowsingContext.New(AngleSharp.Configuration.Default);
         return await context.OpenAsync(req => req.Content(content));
     }
 
@@ -71,9 +74,9 @@ public class ApisIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_ReturnsSuccessStatusCode()
     {
-        var client = CreateClient(MockService(EmptyResult()));
+        HttpClient client = CreateClient(MockService(EmptyResult()));
 
-        var response = await client.GetAsync("/Admin/Apis");
+        HttpResponseMessage response = await client.GetAsync("/Admin/Apis");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -81,13 +84,13 @@ public class ApisIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_RendersAdminLayoutSidebarWithApisNavItemActive()
     {
-        var client = CreateClient(MockService(EmptyResult()));
+        HttpClient client = CreateClient(MockService(EmptyResult()));
 
-        var response = await client.GetAsync("/Admin/Apis");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Apis");
+        IDocument document = await GetDocumentAsync(response);
 
         Assert.NotNull(document.QuerySelector("aside.sidebar"));
-        var navItem = document.QuerySelector("a[href*='/Admin/Apis']");
+        IElement? navItem = document.QuerySelector("a[href*='/Admin/Apis']");
         Assert.NotNull(navItem);
         Assert.Contains("active", navItem!.ClassList);
     }
@@ -95,10 +98,10 @@ public class ApisIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_RendersPageTitleAndSubtitle()
     {
-        var client = CreateClient(MockService(EmptyResult()));
+        HttpClient client = CreateClient(MockService(EmptyResult()));
 
-        var response = await client.GetAsync("/Admin/Apis");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Apis");
+        IDocument document = await GetDocumentAsync(response);
 
         Assert.Equal("API Resources", document.QuerySelector("h1.page-title")?.TextContent.Trim());
         Assert.Equal(
@@ -111,10 +114,10 @@ public class ApisIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_RendersTableColumnHeaders()
     {
-        var client = CreateClient(MockService(EmptyResult()));
+        HttpClient client = CreateClient(MockService(EmptyResult()));
 
-        var response = await client.GetAsync("/Admin/Apis");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Apis");
+        IDocument document = await GetDocumentAsync(response);
 
         var headers = document.QuerySelectorAll("ck-responsive-col-head").Select(h => h.TextContent.Trim()).ToList();
         Assert.Equal(new[] { "Name", "Display Name", "Scopes", "Status", "Actions" }, headers);
@@ -128,17 +131,17 @@ public class ApisIndexIntegrationTests : IDisposable
             Items = new[] { MakeItem("alpha", scopeCount: 3), MakeItem("beta", scopeCount: 1) },
             TotalCount = 2,
             PageNumber = 1,
-            PageSize = 10,
+            PageSize = 10
         };
-        var client = CreateClient(MockService(result));
+        HttpClient client = CreateClient(MockService(result));
 
-        var response = await client.GetAsync("/Admin/Apis");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Apis");
+        IDocument document = await GetDocumentAsync(response);
 
-        var rows = document.QuerySelectorAll("ck-responsive-row");
+        IHtmlCollection<IElement> rows = document.QuerySelectorAll("ck-responsive-row");
         Assert.Equal(2, rows.Length);
 
-        var firstRowText = rows[0].TextContent;
+        string firstRowText = rows[0].TextContent;
         Assert.Contains("API alpha", firstRowText);
         Assert.Contains("api-alpha", firstRowText);
         Assert.Contains("3", firstRowText);
@@ -149,17 +152,17 @@ public class ApisIndexIntegrationTests : IDisposable
     {
         var result = new ListResult<ApiResourceListItem>
         {
-            Items = new[] { MakeItem("on", enabled: true) },
+            Items = new[] { MakeItem("on") },
             TotalCount = 1,
             PageNumber = 1,
-            PageSize = 10,
+            PageSize = 10
         };
-        var client = CreateClient(MockService(result));
+        HttpClient client = CreateClient(MockService(result));
 
-        var response = await client.GetAsync("/Admin/Apis");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Apis");
+        IDocument document = await GetDocumentAsync(response);
 
-        var badge = document.QuerySelector(".status-badge");
+        IElement? badge = document.QuerySelector(".status-badge");
         Assert.NotNull(badge);
         Assert.Contains("Enabled", badge!.TextContent);
         Assert.Contains("enabled", badge.ClassList);
@@ -170,17 +173,17 @@ public class ApisIndexIntegrationTests : IDisposable
     {
         var result = new ListResult<ApiResourceListItem>
         {
-            Items = new[] { MakeItem("off", enabled: false) },
+            Items = new[] { MakeItem("off", false) },
             TotalCount = 1,
             PageNumber = 1,
-            PageSize = 10,
+            PageSize = 10
         };
-        var client = CreateClient(MockService(result));
+        HttpClient client = CreateClient(MockService(result));
 
-        var response = await client.GetAsync("/Admin/Apis");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Apis");
+        IDocument document = await GetDocumentAsync(response);
 
-        var badge = document.QuerySelector(".status-badge");
+        IElement? badge = document.QuerySelector(".status-badge");
         Assert.NotNull(badge);
         Assert.Contains("Disabled", badge!.TextContent);
         Assert.Contains("disabled", badge.ClassList);
@@ -191,21 +194,13 @@ public class ApisIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_NoApisExist_RendersEmptyStateMessage()
     {
-        var client = CreateClient(MockService(EmptyResult()));
+        HttpClient client = CreateClient(MockService(EmptyResult()));
 
-        var response = await client.GetAsync("/Admin/Apis");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Apis");
+        IDocument document = await GetDocumentAsync(response);
 
-        var emptyState = document.QuerySelector(".empty-state");
+        IElement? emptyState = document.QuerySelector(".empty-state");
         Assert.NotNull(emptyState);
         Assert.Empty(document.QuerySelectorAll("ck-responsive-row"));
-    }
-
-    public void Dispose()
-    {
-        foreach (var disposable in _disposables)
-        {
-            disposable.Dispose();
-        }
     }
 }

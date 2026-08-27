@@ -1,5 +1,6 @@
 using System.Net;
 using System.Security.Claims;
+using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
@@ -14,6 +15,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Client = Duende.IdentityServer.Models.Client;
+using Secret = Duende.IdentityServer.Models.Secret;
 
 namespace IdentityServerProject.Admin.Tests.Task02;
 
@@ -31,11 +33,11 @@ public sealed class Task02SqlServerIntegrationTests
     [Fact]
     public async Task RevokeUserAccess_RejectsPreviouslyIssuedIdentityCookieOnNextRequest()
     {
-        using var client = _factory.CreateHttpsClient();
+        using HttpClient client = _factory.CreateHttpsClient();
         await SignInAsync(client, "admin@sales.local", "Password123!");
 
         _factory.IdentityCommands.Reset();
-        var before = await client.GetAsync("/Admin/Clients");
+        HttpResponseMessage before = await client.GetAsync("/Admin/Clients");
         Assert.Equal(HttpStatusCode.OK, before.StatusCode);
         Assert.InRange(_factory.IdentityCommands.ReadCount, 1, 10);
         Console.WriteLine(
@@ -43,41 +45,43 @@ public sealed class Task02SqlServerIntegrationTests
 
         string userId = string.Empty;
         string? originalStamp = null;
-        var grantKey = $"task02-cookie-{Guid.NewGuid():N}";
+        string grantKey = $"task02-cookie-{Guid.NewGuid():N}";
         await _factory.RunInScopeAsync(async services =>
         {
-            var users = services.GetRequiredService<UserManager<ApplicationUser>>();
-            var user = await users.FindByNameAsync("admin@sales.local");
+            UserManager<ApplicationUser> users = services.GetRequiredService<UserManager<ApplicationUser>>();
+            ApplicationUser? user = await users.FindByNameAsync("admin@sales.local");
             Assert.NotNull(user);
             userId = user!.Id;
             originalStamp = user.SecurityStamp;
 
-            var grants = services.GetRequiredService<PersistedGrantDbContext>();
+            PersistedGrantDbContext grants = services.GetRequiredService<PersistedGrantDbContext>();
             grants.PersistedGrants.Add(NewGrant(grantKey, userId));
             await grants.SaveChangesAsync();
         });
 
         await _factory.RunInScopeAsync(async services =>
         {
-            var service = services.GetRequiredService<IUserDetailsService>();
-            var result = await service.RevokeUserAccessAsync(new UserActionContext(UserId.Create(userId), UserId.Create("another-administrator")));
+            IUserDetailsService service = services.GetRequiredService<IUserDetailsService>();
+            UserAccessRevokeResult result =
+                await service.RevokeUserAccessAsync(new UserActionContext(UserId.Create(userId),
+                    UserId.Create("another-administrator")));
             Assert.True(result.Success);
             Assert.Equal(1, result.RevokedGrantCount);
         });
 
         await _factory.RunInScopeAsync(async services =>
         {
-            var user = await services.GetRequiredService<ApplicationDbContext>().Users
+            ApplicationUser user = await services.GetRequiredService<ApplicationDbContext>().Users
                 .AsNoTracking()
                 .SingleAsync(u => u.Id == userId);
             Assert.NotEqual(originalStamp, user.SecurityStamp);
 
-            var grantExists = await services.GetRequiredService<PersistedGrantDbContext>()
+            bool grantExists = await services.GetRequiredService<PersistedGrantDbContext>()
                 .PersistedGrants.AsNoTracking().AnyAsync(g => g.Key == grantKey);
             Assert.False(grantExists);
         });
 
-        var after = await client.GetAsync("/Admin/Clients");
+        HttpResponseMessage after = await client.GetAsync("/Admin/Clients");
         Assert.Equal(HttpStatusCode.Redirect, after.StatusCode);
         Assert.StartsWith("/Account/Login", after.Headers.Location?.PathAndQuery, StringComparison.Ordinal);
     }
@@ -85,14 +89,14 @@ public sealed class Task02SqlServerIntegrationTests
     [Fact]
     public async Task RevokeUserAccess_NotifiesOnlyAfterCommit_AndNotificationFailureReturnsWarning()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var grantKey = $"task02-notification-{tag}";
+        string tag = Guid.NewGuid().ToString("N");
+        string grantKey = $"task02-notification-{tag}";
         string userId = string.Empty;
         string? originalStamp = null;
 
         await _factory.RunInScopeAsync(async services =>
         {
-            var users = services.GetRequiredService<UserManager<ApplicationUser>>();
+            UserManager<ApplicationUser> users = services.GetRequiredService<UserManager<ApplicationUser>>();
             var user = new ApplicationUser
             {
                 UserName = $"notification-{tag}@sales.local",
@@ -102,19 +106,19 @@ public sealed class Task02SqlServerIntegrationTests
             userId = user.Id;
             originalStamp = user.SecurityStamp;
 
-            var grants = services.GetRequiredService<PersistedGrantDbContext>();
+            PersistedGrantDbContext grants = services.GetRequiredService<PersistedGrantDbContext>();
             grants.PersistedGrants.Add(NewGrant(grantKey, user.Id));
             await grants.SaveChangesAsync();
         });
 
-        var callbackObservedCommittedState = false;
+        bool callbackObservedCommittedState = false;
         _factory.BackChannelLogout.OnSendAsync = async (_, _) =>
         {
             await _factory.RunInScopeAsync(async services =>
             {
-                var user = await services.GetRequiredService<ApplicationDbContext>().Users
+                ApplicationUser user = await services.GetRequiredService<ApplicationDbContext>().Users
                     .AsNoTracking().SingleAsync(u => u.Id == userId);
-                var grantExists = await services.GetRequiredService<PersistedGrantDbContext>()
+                bool grantExists = await services.GetRequiredService<PersistedGrantDbContext>()
                     .PersistedGrants.AsNoTracking().AnyAsync(g => g.Key == grantKey);
                 callbackObservedCommittedState = user.SecurityStamp != originalStamp && !grantExists;
             });
@@ -125,8 +129,9 @@ public sealed class Task02SqlServerIntegrationTests
         {
             await _factory.RunInScopeAsync(async services =>
             {
-                var service = services.GetRequiredService<IUserDetailsService>();
-                var result = await service.RevokeUserAccessAsync(new UserActionContext(UserId.Create(userId), UserId.Create("another-administrator")));
+                IUserDetailsService service = services.GetRequiredService<IUserDetailsService>();
+                UserAccessRevokeResult result = await service.RevokeUserAccessAsync(
+                    new UserActionContext(UserId.Create(userId), UserId.Create("another-administrator")));
                 Assert.True(result.Success);
                 Assert.NotNull(result.WarningMessage);
             });
@@ -139,22 +144,23 @@ public sealed class Task02SqlServerIntegrationTests
         Assert.True(callbackObservedCommittedState);
         await _factory.RunInScopeAsync(async services =>
         {
-            var user = await services.GetRequiredService<ApplicationDbContext>().Users
+            ApplicationUser user = await services.GetRequiredService<ApplicationDbContext>().Users
                 .AsNoTracking().SingleAsync(u => u.Id == userId);
             Assert.NotEqual(originalStamp, user.SecurityStamp);
             Assert.False(await services.GetRequiredService<PersistedGrantDbContext>()
                 .PersistedGrants.AsNoTracking().AnyAsync(g => g.Key == grantKey));
 
-            var audits = await services.GetRequiredService<ApplicationDbContext>().AuditLogEntries
+            List<AuditLogEntry> audits = await services.GetRequiredService<ApplicationDbContext>().AuditLogEntries
                 .AsNoTracking()
                 .Where(a => a.TargetId == userId
-                    && (a.Action == AuditAction.RevokeUserAccess || a.Action == AuditAction.SendBackChannelLogout))
+                            && (a.Action == AuditAction.RevokeUserAccess ||
+                                a.Action == AuditAction.SendBackChannelLogout))
                 .ToListAsync();
             Assert.Single(audits, a => a.Action == AuditAction.RevokeUserAccess
-                && a.Outcome == AuditOutcome.Succeeded);
+                                       && a.Outcome == AuditOutcome.Succeeded);
             Assert.Single(audits, a => a.Action == AuditAction.SendBackChannelLogout
-                && a.Outcome == AuditOutcome.Failed
-                && a.ReasonCode == AuditReasonCode.NotificationFailure);
+                                       && a.Outcome == AuditOutcome.Failed
+                                       && a.ReasonCode == AuditReasonCode.NotificationFailure);
         });
     }
 
@@ -163,18 +169,18 @@ public sealed class Task02SqlServerIntegrationTests
     {
         await _factory.RunInScopeAsync(async services =>
         {
-            var users = services.GetRequiredService<UserManager<ApplicationUser>>();
-            var admin = await users.FindByNameAsync("admin@sales.local");
+            UserManager<ApplicationUser> users = services.GetRequiredService<UserManager<ApplicationUser>>();
+            ApplicationUser? admin = await users.FindByNameAsync("admin@sales.local");
             Assert.NotNull(admin);
 
-            var actor = services.GetRequiredService<IHttpContextAccessor>();
+            IHttpContextAccessor actor = services.GetRequiredService<IHttpContextAccessor>();
             actor.HttpContext = new DefaultHttpContext
             {
                 User = new ClaimsPrincipal(new ClaimsIdentity(
                     new[] { new Claim(ClaimTypes.NameIdentifier, admin!.Id) }, "Task02"))
             };
 
-            var result = await services.GetRequiredService<IUserDetailsService>()
+            RoleChangeResult result = await services.GetRequiredService<IUserDetailsService>()
                 .RemoveRoleAsync(UserId.Create(admin.Id), Config.SysAdminRole);
 
             Assert.False(result.Success);
@@ -187,14 +193,14 @@ public sealed class Task02SqlServerIntegrationTests
     [Fact]
     public async Task ConcurrentRemovalOfTwoRemainingSysAdmins_AllowsExactlyOneAndAuditsOncePerAttempt()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         var userIds = new List<string>();
         string seedAdminId = string.Empty;
 
         await _factory.RunInScopeAsync(async services =>
         {
-            var users = services.GetRequiredService<UserManager<ApplicationUser>>();
-            for (var index = 0; index < 2; index++)
+            UserManager<ApplicationUser> users = services.GetRequiredService<UserManager<ApplicationUser>>();
+            for (int index = 0; index < 2; index++)
             {
                 var user = new ApplicationUser
                 {
@@ -206,7 +212,7 @@ public sealed class Task02SqlServerIntegrationTests
                 userIds.Add(user.Id);
             }
 
-            var seedAdmin = await users.FindByNameAsync("admin@sales.local");
+            ApplicationUser? seedAdmin = await users.FindByNameAsync("admin@sales.local");
             Assert.NotNull(seedAdmin);
             seedAdminId = seedAdmin!.Id;
             Assert.True((await users.RemoveFromRoleAsync(seedAdmin, Config.SysAdminRole)).Succeeded);
@@ -215,47 +221,45 @@ public sealed class Task02SqlServerIntegrationTests
         try
         {
             using var start = new Barrier(3);
-            var attempts = userIds.Select(userId => Task.Run(async () =>
+            Task<RoleChangeResult>[] attempts = userIds.Select(userId => Task.Run(async () =>
             {
-                await using var scope = _factory.Services.CreateAsyncScope();
-                var service = scope.ServiceProvider.GetRequiredService<IUserDetailsService>();
+                await using AsyncServiceScope scope = _factory.Services.CreateAsyncScope();
+                IUserDetailsService service = scope.ServiceProvider.GetRequiredService<IUserDetailsService>();
                 start.SignalAndWait();
                 return await service.RemoveRoleAsync(UserId.Create(userId), Config.SysAdminRole);
             })).ToArray();
 
             start.SignalAndWait();
-            var results = await Task.WhenAll(attempts);
+            RoleChangeResult[] results = await Task.WhenAll(attempts);
 
             Assert.Single(results, result => result.Success);
             Assert.Single(results, result => !result.Success
-                && result.ReasonCode == AuditReasonCode.LastAdministrator);
+                                             && result.ReasonCode == AuditReasonCode.LastAdministrator);
 
             await _factory.RunInScopeAsync(async services =>
             {
-                var db = services.GetRequiredService<ApplicationDbContext>();
-                var sysAdminRoleId = await db.Roles.Where(r => r.Name == Config.SysAdminRole)
+                ApplicationDbContext db = services.GetRequiredService<ApplicationDbContext>();
+                string sysAdminRoleId = await db.Roles.Where(r => r.Name == Config.SysAdminRole)
                     .Select(r => r.Id).SingleAsync();
                 Assert.Equal(1, await db.UserRoles.CountAsync(ur => ur.RoleId == sysAdminRoleId));
 
-                var audits = await db.AuditLogEntries.AsNoTracking()
+                List<AuditLogEntry> audits = await db.AuditLogEntries.AsNoTracking()
                     .Where(a => a.Action == AuditAction.RemoveRole && userIds.Contains(a.TargetId!))
                     .ToListAsync();
                 Assert.Equal(2, audits.Count);
                 Assert.Single(audits, a => a.Outcome == AuditOutcome.Succeeded);
                 Assert.Single(audits, a => a.Outcome == AuditOutcome.Denied
-                    && a.ReasonCode == AuditReasonCode.LastAdministrator);
+                                           && a.ReasonCode == AuditReasonCode.LastAdministrator);
             });
         }
         finally
         {
             await _factory.RunInScopeAsync(async services =>
             {
-                var users = services.GetRequiredService<UserManager<ApplicationUser>>();
-                var seedAdmin = await users.FindByIdAsync(seedAdminId);
+                UserManager<ApplicationUser> users = services.GetRequiredService<UserManager<ApplicationUser>>();
+                ApplicationUser? seedAdmin = await users.FindByIdAsync(seedAdminId);
                 if (seedAdmin != null && !await users.IsInRoleAsync(seedAdmin, Config.SysAdminRole))
-                {
                     await users.AddToRoleAsync(seedAdmin, Config.SysAdminRole);
-                }
             });
         }
     }
@@ -263,7 +267,7 @@ public sealed class Task02SqlServerIntegrationTests
     [Fact]
     public async Task ConcurrentEnableAndDelete_ProducesOnlyASerializedOutcome()
     {
-        var clientId = $"task02-client-race-{Guid.NewGuid():N}";
+        string clientId = $"task02-client-race-{Guid.NewGuid():N}";
         await SeedClientAsync(new Client
         {
             ClientId = clientId,
@@ -273,8 +277,8 @@ public sealed class Task02SqlServerIntegrationTests
         });
         await _factory.RunInScopeAsync(async services =>
         {
-            var db = services.GetRequiredService<ConfigurationDbContext>();
-            var entityId = await db.Clients.Where(c => c.ClientId == clientId).Select(c => c.Id).SingleAsync();
+            ConfigurationDbContext db = services.GetRequiredService<ConfigurationDbContext>();
+            int entityId = await db.Clients.Where(c => c.ClientId == clientId).Select(c => c.Id).SingleAsync();
             db.Set<ClientProperty>().Add(new ClientProperty
             {
                 ClientId = entityId,
@@ -287,15 +291,15 @@ public sealed class Task02SqlServerIntegrationTests
         using var start = new Barrier(3);
         var enable = Task.Run(async () =>
         {
-            await using var scope = _factory.Services.CreateAsyncScope();
-            var service = scope.ServiceProvider.GetRequiredService<IClientDetailsService>();
+            await using AsyncServiceScope scope = _factory.Services.CreateAsyncScope();
+            IClientDetailsService service = scope.ServiceProvider.GetRequiredService<IClientDetailsService>();
             start.SignalAndWait();
             return await service.ToggleClientStatusAsync(ClientId.Create(clientId));
         });
         var delete = Task.Run(async () =>
         {
-            await using var scope = _factory.Services.CreateAsyncScope();
-            var service = scope.ServiceProvider.GetRequiredService<IClientDetailsService>();
+            await using AsyncServiceScope scope = _factory.Services.CreateAsyncScope();
+            IClientDetailsService service = scope.ServiceProvider.GetRequiredService<IClientDetailsService>();
             start.SignalAndWait();
             return await service.DeleteClientAsync(ClientId.Create(clientId));
         });
@@ -305,7 +309,8 @@ public sealed class Task02SqlServerIntegrationTests
 
         await _factory.RunInScopeAsync(async services =>
         {
-            var client = await services.GetRequiredService<ConfigurationDbContext>().Clients
+            Duende.IdentityServer.EntityFramework.Entities.Client? client = await services
+                .GetRequiredService<ConfigurationDbContext>().Clients
                 .AsNoTracking().SingleOrDefaultAsync(c => c.ClientId == clientId);
             if (delete.Result.Success)
             {
@@ -325,7 +330,7 @@ public sealed class Task02SqlServerIntegrationTests
     [Fact]
     public async Task SecretRevocation_ExpiredReplacementDoesNotCount_AndExpiredTargetCanBeRemoved()
     {
-        var clientId = $"task02-secret-expiry-{Guid.NewGuid():N}";
+        string clientId = $"task02-secret-expiry-{Guid.NewGuid():N}";
         await SeedClientAsync(new Client
         {
             ClientId = clientId,
@@ -333,23 +338,25 @@ public sealed class Task02SqlServerIntegrationTests
             RequireClientSecret = true,
             ClientSecrets =
             {
-                new Duende.IdentityServer.Models.Secret("valid-hash") { Expiration = DateTime.UtcNow.AddDays(1) },
-                new Duende.IdentityServer.Models.Secret("expired-hash") { Expiration = DateTime.UtcNow.AddDays(-1) }
+                new Secret("valid-hash") { Expiration = DateTime.UtcNow.AddDays(1) },
+                new Secret("expired-hash") { Expiration = DateTime.UtcNow.AddDays(-1) }
             }
         });
 
-        var secretIds = await GetSecretIdsAsync(clientId);
-        var validId = secretIds.Single(s => s.Expiration > DateTime.UtcNow).Id;
-        var expiredId = secretIds.Single(s => s.Expiration < DateTime.UtcNow).Id;
+        List<ClientSecret> secretIds = await GetSecretIdsAsync(clientId);
+        int validId = secretIds.Single(s => s.Expiration > DateTime.UtcNow).Id;
+        int expiredId = secretIds.Single(s => s.Expiration < DateTime.UtcNow).Id;
 
         await _factory.RunInScopeAsync(async services =>
         {
-            var service = services.GetRequiredService<IClientDetailsService>();
-            var validResult = await service.RevokeClientSecretAsync(ClientId.Create(clientId), validId);
+            IClientDetailsService service = services.GetRequiredService<IClientDetailsService>();
+            ClientSecretRevokeResult validResult =
+                await service.RevokeClientSecretAsync(ClientId.Create(clientId), validId);
             Assert.False(validResult.Success);
             Assert.Equal(AuditReasonCode.LastUsableSecret, validResult.ReasonCode);
 
-            var expiredResult = await service.RevokeClientSecretAsync(ClientId.Create(clientId), expiredId);
+            ClientSecretRevokeResult expiredResult =
+                await service.RevokeClientSecretAsync(ClientId.Create(clientId), expiredId);
             Assert.True(expiredResult.Success);
         });
 
@@ -359,7 +366,7 @@ public sealed class Task02SqlServerIntegrationTests
     [Fact]
     public async Task ConcurrentRevocationOfFinalTwoUsableSecrets_AllowsExactlyOneAndAuditsOncePerAttempt()
     {
-        var clientId = $"task02-secret-race-{Guid.NewGuid():N}";
+        string clientId = $"task02-secret-race-{Guid.NewGuid():N}";
         await SeedClientAsync(new Client
         {
             ClientId = clientId,
@@ -367,39 +374,39 @@ public sealed class Task02SqlServerIntegrationTests
             RequireClientSecret = true,
             ClientSecrets =
             {
-                new Duende.IdentityServer.Models.Secret("first-hash") { Expiration = DateTime.UtcNow.AddDays(1) },
-                new Duende.IdentityServer.Models.Secret("second-hash") { Expiration = DateTime.UtcNow.AddDays(1) }
+                new Secret("first-hash") { Expiration = DateTime.UtcNow.AddDays(1) },
+                new Secret("second-hash") { Expiration = DateTime.UtcNow.AddDays(1) }
             }
         });
-        var secretIds = (await GetSecretIdsAsync(clientId)).Select(s => s.Id).ToArray();
+        int[] secretIds = (await GetSecretIdsAsync(clientId)).Select(s => s.Id).ToArray();
 
         using var start = new Barrier(3);
-        var attempts = secretIds.Select(secretId => Task.Run(async () =>
+        Task<ClientSecretRevokeResult>[] attempts = secretIds.Select(secretId => Task.Run(async () =>
         {
-            await using var scope = _factory.Services.CreateAsyncScope();
-            var service = scope.ServiceProvider.GetRequiredService<IClientDetailsService>();
+            await using AsyncServiceScope scope = _factory.Services.CreateAsyncScope();
+            IClientDetailsService service = scope.ServiceProvider.GetRequiredService<IClientDetailsService>();
             start.SignalAndWait();
             return await service.RevokeClientSecretAsync(ClientId.Create(clientId), secretId);
         })).ToArray();
 
         start.SignalAndWait();
-        var results = await Task.WhenAll(attempts);
+        ClientSecretRevokeResult[] results = await Task.WhenAll(attempts);
 
         Assert.Single(results, result => result.Success);
         Assert.Single(results, result => !result.Success
-            && result.ReasonCode == AuditReasonCode.LastUsableSecret);
+                                         && result.ReasonCode == AuditReasonCode.LastUsableSecret);
         Assert.Single(await GetSecretIdsAsync(clientId));
 
         await _factory.RunInScopeAsync(async services =>
         {
-            var audits = await services.GetRequiredService<ApplicationDbContext>().AuditLogEntries
+            List<AuditLogEntry> audits = await services.GetRequiredService<ApplicationDbContext>().AuditLogEntries
                 .AsNoTracking()
                 .Where(a => a.Action == AuditAction.RevokeSecret && a.TargetId == clientId)
                 .ToListAsync();
             Assert.Equal(2, audits.Count);
             Assert.Single(audits, a => a.Outcome == AuditOutcome.Succeeded);
             Assert.Single(audits, a => a.Outcome == AuditOutcome.Denied
-                && a.ReasonCode == AuditReasonCode.LastUsableSecret);
+                                       && a.ReasonCode == AuditReasonCode.LastUsableSecret);
         });
     }
 
@@ -407,7 +414,7 @@ public sealed class Task02SqlServerIntegrationTests
     {
         await _factory.RunInScopeAsync(async services =>
         {
-            var db = services.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext db = services.GetRequiredService<ConfigurationDbContext>();
             db.Clients.Add(client.ToEntity());
             await db.SaveChangesAsync();
         });
@@ -418,7 +425,8 @@ public sealed class Task02SqlServerIntegrationTests
         var result = new List<ClientSecret>();
         await _factory.RunInScopeAsync(async services =>
         {
-            var client = await services.GetRequiredService<ConfigurationDbContext>().Clients
+            Duende.IdentityServer.EntityFramework.Entities.Client client = await services
+                .GetRequiredService<ConfigurationDbContext>().Clients
                 .AsNoTracking()
                 .Include(c => c.ClientSecrets)
                 .SingleAsync(c => c.ClientId == clientId);
@@ -427,7 +435,7 @@ public sealed class Task02SqlServerIntegrationTests
         return result;
     }
 
-    private static Duende.IdentityServer.EntityFramework.Entities.PersistedGrant NewGrant(
+    private static PersistedGrant NewGrant(
         string key,
         string subjectId) => new()
     {
@@ -442,13 +450,13 @@ public sealed class Task02SqlServerIntegrationTests
 
     private static async Task SignInAsync(HttpClient client, string username, string password)
     {
-        var loginPage = await client.GetAsync("/Account/Login");
+        HttpResponseMessage loginPage = await client.GetAsync("/Account/Login");
         loginPage.EnsureSuccessStatusCode();
-        var document = await new HtmlParser().ParseDocumentAsync(await loginPage.Content.ReadAsStringAsync());
-        var token = document.QuerySelector("input[name='__RequestVerificationToken']")?.GetAttribute("value");
+        IHtmlDocument document = await new HtmlParser().ParseDocumentAsync(await loginPage.Content.ReadAsStringAsync());
+        string? token = document.QuerySelector("input[name='__RequestVerificationToken']")?.GetAttribute("value");
         Assert.False(string.IsNullOrWhiteSpace(token));
 
-        var response = await client.PostAsync("/Account/Login", new FormUrlEncodedContent(
+        HttpResponseMessage response = await client.PostAsync("/Account/Login", new FormUrlEncodedContent(
             new Dictionary<string, string>
             {
                 ["__RequestVerificationToken"] = token!,
@@ -457,5 +465,4 @@ public sealed class Task02SqlServerIntegrationTests
             }));
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
     }
-
 }

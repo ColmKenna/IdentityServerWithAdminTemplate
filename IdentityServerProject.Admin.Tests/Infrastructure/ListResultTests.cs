@@ -5,7 +5,7 @@ public class ListResultTests
     [Fact]
     public void Empty_ReturnsZeroCountAndEmptyItems()
     {
-        var result = ListResult<string>.Empty(1, 10);
+        var result = ListResult<string>.Empty();
 
         Assert.Empty(result.Items);
         Assert.Equal(0, result.TotalCount);
@@ -29,7 +29,7 @@ public class ListResultTests
             Items = Array.Empty<int>(),
             TotalCount = totalCount,
             PageNumber = 1,
-            PageSize = pageSize,
+            PageSize = pageSize
         };
 
         Assert.Equal(expectedTotalPages, result.TotalPages);
@@ -39,21 +39,21 @@ public class ListResultTests
     [InlineData(1, 3, false, true)]
     [InlineData(2, 3, true, true)]
     [InlineData(3, 3, true, false)]
-    public void HasPreviousAndNextPage_EvaluatesCorrectly(int pageNumber, int totalPages, bool expectedHasPrev, bool expectedHasNext)
+    public void HasPreviousAndNextPage_EvaluatesCorrectly(int pageNumber, int totalPages, bool expectedHasPrev,
+        bool expectedHasNext)
     {
-        var pageSize = 10;
-        var totalCount = totalPages * pageSize;
+        int pageSize = 10;
+        int totalCount = totalPages * pageSize;
 
         var result = new ListResult<int>
         {
             Items = Array.Empty<int>(),
             TotalCount = totalCount,
             PageNumber = pageNumber,
-            PageSize = pageSize,
+            PageSize = pageSize
         };
 
         Assert.Equal(expectedHasPrev, result.HasPreviousPage);
         Assert.Equal(expectedHasNext, result.HasNextPage);
     }
 }
-

@@ -24,13 +24,13 @@ public class ClientListService : IClientListService
         ListQuery query,
         CancellationToken cancellationToken = default)
     {
-        var pagination = query.Pagination.Normalize();
+        Pagination pagination = query.Pagination.Normalize();
 
-        var dbQuery = ApplyFilter(_configurationDbContext.Clients.AsNoTracking(), query.Filter);
+        IQueryable<Client> dbQuery = ApplyFilter(_configurationDbContext.Clients.AsNoTracking(), query.Filter);
 
-        var totalCount = await dbQuery.CountAsync(cancellationToken);
+        int totalCount = await dbQuery.CountAsync(cancellationToken);
 
-        var pageEntities = await dbQuery
+        List<Client> pageEntities = await dbQuery
             .OrderBy(c => c.ClientName)
             .ThenBy(c => c.ClientId)
             .Skip(pagination.Skip)
@@ -45,7 +45,7 @@ public class ClientListService : IClientListService
             Items = items,
             TotalCount = totalCount,
             PageNumber = pagination.PageNumber,
-            PageSize = pagination.PageSize,
+            PageSize = pagination.PageSize
         };
     }
 
@@ -54,8 +54,8 @@ public class ClientListService : IClientListService
         if (string.IsNullOrWhiteSpace(filter))
             return query;
 
-        var escaped = LikeExtensions.EscapeLikePattern(filter.Trim());
-        var pattern = $"%{escaped}%";
+        string? escaped = LikeExtensions.EscapeLikePattern(filter.Trim());
+        string pattern = $"%{escaped}%";
 
         return query.Where(c =>
             (c.ClientName != null && EF.Functions.Like(c.ClientName, pattern)) ||
@@ -69,13 +69,13 @@ public class ClientListService : IClientListService
             ClientId = entity.ClientId,
             ClientName = string.IsNullOrWhiteSpace(entity.ClientName) ? entity.ClientId : entity.ClientName,
             ClientType = DeriveClientType(entity),
-            Enabled = entity.Enabled,
+            Enabled = entity.Enabled
         };
     }
 
     private static string DeriveClientType(Client entity)
     {
-        var grantType = entity.AllowedGrantTypes.Select(g => g.GrantType).FirstOrDefault();
+        string? grantType = entity.AllowedGrantTypes.Select(g => g.GrantType).FirstOrDefault();
 
         return grantType switch
         {
@@ -85,13 +85,13 @@ public class ClientListService : IClientListService
             GrantTypeHybrid => "Hybrid",
             GrantTypeImplicit => "Implicit",
             GrantTypeDeviceCode => "Device Flow",
-            _ => Prettify(grantType),
+            _ => Prettify(grantType)
         };
     }
 
     private static string Prettify(string grantType)
     {
-        var words = grantType.Replace('_', ' ').Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+        string[] words = grantType.Replace('_', ' ').Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return string.Join(" ", words.Select(w => CultureInfo.InvariantCulture.TextInfo.ToTitleCase(w)));
     }
 }

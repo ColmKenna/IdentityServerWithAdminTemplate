@@ -14,7 +14,8 @@ public class ClientEndpointsTests
     [InlineData(null, false)]
     public void AbsoluteHttpUri_TryCreate_ValidatesCorrectly(string? input, bool expectedSuccess)
     {
-        var success = AbsoluteHttpUri.TryCreate(input, ValidationConstants.MaxClientRedirectUriLength, out var uri, out var error);
+        bool success = AbsoluteHttpUri.TryCreate(input, ValidationConstants.MaxClientRedirectUriLength,
+            out AbsoluteHttpUri uri, out string? error);
         Assert.Equal(expectedSuccess, success);
         if (expectedSuccess)
         {
@@ -23,9 +24,7 @@ public class ClientEndpointsTests
             Assert.Equal(input.Trim(), (string)uri);
         }
         else
-        {
             Assert.NotNull(error);
-        }
     }
 
     [Theory]
@@ -35,9 +34,11 @@ public class ClientEndpointsTests
     [InlineData("https://example.com/path", false, null)]
     [InlineData("ftp://example.com", false, null)]
     [InlineData("", false, null)]
-    public void CorsOrigin_TryCreate_ValidatesAndNormalizes(string? input, bool expectedSuccess, string? expectedNormalized)
+    public void CorsOrigin_TryCreate_ValidatesAndNormalizes(string? input, bool expectedSuccess,
+        string? expectedNormalized)
     {
-        var success = CorsOrigin.TryCreate(input, ValidationConstants.MaxClientCorsOriginLength, out var origin, out var error);
+        bool success = CorsOrigin.TryCreate(input, ValidationConstants.MaxClientCorsOriginLength, out CorsOrigin origin,
+            out string? error);
         Assert.Equal(expectedSuccess, success);
         if (expectedSuccess)
         {
@@ -46,24 +47,21 @@ public class ClientEndpointsTests
             Assert.Equal(expectedNormalized, (string)origin);
         }
         else
-        {
             Assert.NotNull(error);
-        }
     }
 
     [Fact]
     public void ClientEndpoints_Normalize_TrimsAndDeduplicates()
     {
         var endpoints = new ClientEndpoints(
-            redirectUris: new List<string> { " https://example.com/a ", "https://example.com/a", "" },
-            postLogoutRedirectUris: new List<string> { " https://example.com/out ", "https://example.com/out" },
-            allowedCorsOrigins: new List<string> { "https://example.com:443/", "https://example.com" },
-            frontChannelLogoutUri: " https://example.com/front ",
-            frontChannelLogoutSessionRequired: true,
-            backChannelLogoutUri: " https://example.com/back ",
-            backChannelLogoutSessionRequired: false);
+            new List<string> { " https://example.com/a ", "https://example.com/a", "" },
+            new List<string> { " https://example.com/out ", "https://example.com/out" },
+            new List<string> { "https://example.com:443/", "https://example.com" },
+            " https://example.com/front ",
+            true,
+            " https://example.com/back ");
 
-        var normalized = endpoints.Normalize();
+        ClientEndpoints normalized = endpoints.Normalize();
 
         Assert.Equal(new[] { "https://example.com/a" }, normalized.RedirectUris);
         Assert.Equal(new[] { "https://example.com/out" }, normalized.PostLogoutRedirectUris);

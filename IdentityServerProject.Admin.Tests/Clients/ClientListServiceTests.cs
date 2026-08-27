@@ -7,8 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace IdentityServerProject.Admin.Tests.Clients;
 
 /// <summary>
-/// Integration tests for <see cref="ClientListService"/> exercised against the
-/// shared SQLite in-memory database provided by <see cref="AdminWebFactory"/>.
+///     Integration tests for <see cref="ClientListService" /> exercised against the
+///     shared SQLite in-memory database provided by <see cref="AdminWebFactory" />.
 /// </summary>
 public class ClientListServiceTests : IClassFixture<AdminWebFactory>
 {
@@ -19,7 +19,8 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         _factory = factory;
     }
 
-    private static Client MakeClient(string tag, string suffix, bool enabled = true, string grantType = "authorization_code") => new()
+    private static Client MakeClient(string tag, string suffix, bool enabled = true,
+        string grantType = "authorization_code") => new()
     {
         ClientId = $"{tag}-client-{suffix}",
         ClientName = $"{tag} Client {suffix}",
@@ -28,7 +29,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
         ProtocolType = "oidc",
         AllowedGrantTypes = new List<ClientGrantType>
         {
-            new ClientGrantType { GrantType = grantType }
+            new() { GrantType = grantType }
         }
     };
 
@@ -36,7 +37,7 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             configDb.Clients.AddRange(clients);
             await configDb.SaveChangesAsync();
         });
@@ -45,16 +46,17 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetClientsAsync_FilterMatchesClientName_ReturnsOnlyMatchingClient()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedAsync(MakeClient(tag, "alpha"), MakeClient(tag, "beta"));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientListService>();
+            IClientListService service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(new ListQuery($"{tag} Client alpha", Pagination.From(1, 10)));
+            ListResult<ClientListItem> result =
+                await service.GetClientsAsync(new ListQuery($"{tag} Client alpha", Pagination.From(1, 10)));
 
-            var item = Assert.Single(result.Items);
+            ClientListItem item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-client-alpha", item.ClientId);
         });
     }
@@ -62,16 +64,17 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetClientsAsync_FilterMatchesClientId_ReturnsOnlyMatchingClient()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedAsync(MakeClient(tag, "gamma"), MakeClient(tag, "delta"));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientListService>();
+            IClientListService service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(new ListQuery($"{tag}-client-delta", Pagination.From(1, 10)));
+            ListResult<ClientListItem> result =
+                await service.GetClientsAsync(new ListQuery($"{tag}-client-delta", Pagination.From(1, 10)));
 
-            var item = Assert.Single(result.Items);
+            ClientListItem item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-client-delta", item.ClientId);
         });
     }
@@ -79,14 +82,16 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetClientsAsync_FilterIsCaseInsensitive_ReturnsMatch()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedAsync(MakeClient(tag, "epsilon"));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientListService>();
+            IClientListService service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(new ListQuery($"{tag} CLIENT EPSILON".ToUpperInvariant(), Pagination.From(1, 10)));
+            ListResult<ClientListItem> result =
+                await service.GetClientsAsync(new ListQuery($"{tag} CLIENT EPSILON".ToUpperInvariant(),
+                    Pagination.From(1, 10)));
 
             Assert.Single(result.Items);
         });
@@ -95,33 +100,36 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetClientsAsync_NoFilter_ReturnsClientsOrderedByName()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedAsync(MakeClient(tag, "zeta"), MakeClient(tag, "alpha2"));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientListService>();
+            IClientListService service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(new ListQuery(tag, Pagination.From(1, 10)));
+            ListResult<ClientListItem> result =
+                await service.GetClientsAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(2, result.Items.Count);
-            Assert.True(string.Compare(result.Items[0].ClientName, result.Items[1].ClientName, StringComparison.Ordinal) <= 0);
+            Assert.True(
+                string.Compare(result.Items[0].ClientName, result.Items[1].ClientName, StringComparison.Ordinal) <= 0);
         });
     }
 
     [Fact]
     public async Task GetClientsAsync_Pagination_ReturnsCorrectPageAndTotalCount()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedAsync(
             MakeClient(tag, "1"), MakeClient(tag, "2"), MakeClient(tag, "3"),
             MakeClient(tag, "4"), MakeClient(tag, "5"));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientListService>();
+            IClientListService service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(new ListQuery(tag, Pagination.From(2, 2)));
+            ListResult<ClientListItem>
+                result = await service.GetClientsAsync(new ListQuery(tag, Pagination.From(2, 2)));
 
             Assert.Equal(2, result.Items.Count);
             Assert.Equal(5, result.TotalCount);
@@ -132,14 +140,15 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetClientsAsync_ClientDisabled_MapsEnabledFalse()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        await SeedAsync(MakeClient(tag, "off", enabled: false));
+        string tag = Guid.NewGuid().ToString("N");
+        await SeedAsync(MakeClient(tag, "off", false));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientListService>();
+            IClientListService service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(new ListQuery(tag, Pagination.From(1, 10)));
+            ListResult<ClientListItem> result =
+                await service.GetClientsAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.False(Assert.Single(result.Items).Enabled);
         });
@@ -152,14 +161,15 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
     [InlineData("implicit", "Implicit")]
     public async Task GetClientsAsync_DerivesClientTypeFromGrantType(string grantType, string expectedType)
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedAsync(MakeClient(tag, "type", grantType: grantType));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientListService>();
+            IClientListService service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(new ListQuery(tag, Pagination.From(1, 10)));
+            ListResult<ClientListItem> result =
+                await service.GetClientsAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(expectedType, Assert.Single(result.Items).ClientType);
         });
@@ -168,13 +178,14 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetClientsAsync_NoMatchingClients_ReturnsEmptyResultWithZeroTotalCount()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientListService>();
+            IClientListService service = sp.GetRequiredService<IClientListService>();
 
-            var result = await service.GetClientsAsync(new ListQuery(tag, Pagination.From(1, 10)));
+            ListResult<ClientListItem> result =
+                await service.GetClientsAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Empty(result.Items);
             Assert.Equal(0, result.TotalCount);

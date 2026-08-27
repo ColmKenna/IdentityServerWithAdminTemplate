@@ -23,10 +23,11 @@ public class ResetPasswordPageModelTests
     {
         var httpContext = new DefaultHttpContext();
         var modelState = new ModelStateDictionary();
-        var pageContext = new PageContext(new ActionContext(httpContext, new RouteData(), new PageActionDescriptor(), modelState))
-        {
-            ViewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), modelState)
-        };
+        var pageContext =
+            new PageContext(new ActionContext(httpContext, new RouteData(), new PageActionDescriptor(), modelState))
+            {
+                ViewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), modelState)
+            };
 
         return new ResetPasswordModel(service.Object)
         {
@@ -39,17 +40,20 @@ public class ResetPasswordPageModelTests
     public async Task OnPostAsync_InvalidModelState_ReloadsDisplayNameWithoutCallingResetService()
     {
         var service = new Mock<IUserDetailsService>();
-        service.Setup(s => s.GetUserDetailsAsync(new UserActionContext(UserId.Create("user-1"), null), It.IsAny<CancellationToken>()))
+        service.Setup(s =>
+                s.GetUserDetailsAsync(new UserActionContext(UserId.Create("user-1"), null),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Account());
-        var model = CreateModel(service);
+        ResetPasswordModel model = CreateModel(service);
         model.Id = "user-1";
         model.ModelState.AddModelError("Input.ConfirmPassword", "The password and confirmation password do not match.");
 
-        var result = await model.OnPostAsync(CancellationToken.None);
+        IActionResult result = await model.OnPostAsync(CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
         Assert.Equal("Ada Admin", model.UserNameDisplay);
-        service.Verify(s => s.ResetPasswordAsync(It.IsAny<UserId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        service.Verify(s => s.ResetPasswordAsync(It.IsAny<UserId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -58,17 +62,20 @@ public class ResetPasswordPageModelTests
         var service = new Mock<IUserDetailsService>();
         service.Setup(s => s.ResetPasswordAsync(UserId.Create("user-1"), "new-password", It.IsAny<CancellationToken>()))
             .ReturnsAsync(PasswordResetResult.Failed("The password does not meet the configured policy."));
-        service.Setup(s => s.GetUserDetailsAsync(new UserActionContext(UserId.Create("user-1"), null), It.IsAny<CancellationToken>()))
+        service.Setup(s =>
+                s.GetUserDetailsAsync(new UserActionContext(UserId.Create("user-1"), null),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Account());
-        var model = CreateModel(service);
+        ResetPasswordModel model = CreateModel(service);
         model.Id = "user-1";
         model.Input = new ResetPasswordInputModel { NewPassword = "new-password", ConfirmPassword = "new-password" };
 
-        var result = await model.OnPostAsync(CancellationToken.None);
+        IActionResult result = await model.OnPostAsync(CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
         Assert.Equal("Ada Admin", model.UserNameDisplay);
-        Assert.Equal("The password does not meet the configured policy.", model.ModelState[string.Empty]!.Errors.Single().ErrorMessage);
+        Assert.Equal("The password does not meet the configured policy.",
+            model.ModelState[string.Empty]!.Errors.Single().ErrorMessage);
     }
 
     [Fact]
@@ -77,13 +84,13 @@ public class ResetPasswordPageModelTests
         var service = new Mock<IUserDetailsService>();
         service.Setup(s => s.ResetPasswordAsync(UserId.Create("user-1"), "new-password", It.IsAny<CancellationToken>()))
             .ReturnsAsync(PasswordResetResult.Succeeded());
-        var model = CreateModel(service);
+        ResetPasswordModel model = CreateModel(service);
         model.Id = "user-1";
         model.Input = new ResetPasswordInputModel { NewPassword = "new-password", ConfirmPassword = "new-password" };
 
-        var result = await model.OnPostAsync(CancellationToken.None);
+        IActionResult result = await model.OnPostAsync(CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("./Details", redirect.PageName);
         Assert.Equal("user-1", redirect.RouteValues!["id"]);
         Assert.Equal("Password has been successfully reset.", model.TempData["StatusMessage"]);

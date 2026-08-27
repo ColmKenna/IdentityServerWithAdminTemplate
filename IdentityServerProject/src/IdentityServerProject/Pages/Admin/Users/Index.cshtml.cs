@@ -9,8 +9,8 @@ namespace IdentityServerProject.Pages.Admin.Users;
 
 public class IndexModel : PageModel
 {
-    private readonly IUserListService _userListService;
     private readonly AdminConsoleOptions _options;
+    private readonly IUserListService _userListService;
 
     public IndexModel(IUserListService userListService, IOptions<AdminConsoleOptions> options)
     {
@@ -18,16 +18,13 @@ public class IndexModel : PageModel
         _options = options.Value;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public string? Filter { get; set; }
+    [BindProperty(SupportsGet = true)] public string? Filter { get; set; }
 
-    [BindProperty(SupportsGet = true)]
-    public int PageNumber { get; set; } = 1;
+    [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
 
     public ListResult<UserListItem> Users { get; private set; } = default!;
 
-    [TempData]
-    public string? StatusMessage { get; set; }
+    [TempData] public string? StatusMessage { get; set; }
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
@@ -42,7 +39,7 @@ public class IndexModel : PageModel
         if (string.IsNullOrWhiteSpace(id))
             return NotFound();
 
-        var result = await _userListService.UnlockUserAsync(UserId.Create(id), cancellationToken);
+        UserUnlockResult result = await _userListService.UnlockUserAsync(UserId.Create(id), cancellationToken);
         if (result.Status == UserUnlockStatus.NotFound)
             return NotFound();
 

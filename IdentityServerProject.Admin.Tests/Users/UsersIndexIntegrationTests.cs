@@ -4,6 +4,7 @@ using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Services.Users;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -11,29 +12,31 @@ using Moq;
 namespace IdentityServerProject.Admin.Tests.Users;
 
 /// <summary>
-/// Full HTTP pipeline tests for GET &amp; POST /Admin/Users, asserting on the rendered HTML via AngleSharp.
-/// Each test builds its own factory/client with <see cref="IUserListService"/> replaced by a
-/// mock so the rendered markup is fully controlled and independent of database state.
+///     Full HTTP pipeline tests for GET &amp; POST /Admin/Users, asserting on the rendered HTML via AngleSharp.
+///     Each test builds its own factory/client with <see cref="IUserListService" /> replaced by a
+///     mock so the rendered markup is fully controlled and independent of database state.
 /// </summary>
 public class UsersIndexIntegrationTests : IDisposable
 {
     private readonly List<IDisposable> _disposables = new();
+
+    public void Dispose()
+    {
+        foreach (IDisposable disposable in _disposables) disposable.Dispose();
+    }
 
     private HttpClient CreateClient(IUserListService userListService, bool allowAutoRedirect = true)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
 
-        var factory = baseFactory.WithWebHostBuilder(builder =>
+        WebApplicationFactory<Program> factory = baseFactory.WithWebHostBuilder(builder =>
         {
-            builder.ConfigureTestServices(services =>
-            {
-                services.AddSingleton(userListService);
-            });
+            builder.ConfigureTestServices(services => { services.AddSingleton(userListService); });
         });
         _disposables.Add(factory);
 
-        return factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        return factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = allowAutoRedirect
         });
@@ -52,7 +55,7 @@ public class UsersIndexIntegrationTests : IDisposable
         Items = Array.Empty<UserListItem>(),
         TotalCount = 0,
         PageNumber = pageNumber,
-        PageSize = pageSize,
+        PageSize = pageSize
     };
 
     private static UserListItem MakeItem(string suffix, bool lockedOut = false) => new()
@@ -62,13 +65,13 @@ public class UsersIndexIntegrationTests : IDisposable
         Email = $"user-{suffix}@sales.local",
         FullName = $"Full Name {suffix}",
         IsLockedOut = lockedOut,
-        LockoutEnd = lockedOut ? DateTimeOffset.UtcNow.AddDays(1) : null,
+        LockoutEnd = lockedOut ? DateTimeOffset.UtcNow.AddDays(1) : null
     };
 
     private static async Task<IDocument> GetDocumentAsync(HttpResponseMessage response)
     {
-        var content = await response.Content.ReadAsStringAsync();
-        var context = BrowsingContext.New(AngleSharp.Configuration.Default);
+        string content = await response.Content.ReadAsStringAsync();
+        IBrowsingContext context = BrowsingContext.New(AngleSharp.Configuration.Default);
         return await context.OpenAsync(req => req.Content(content));
     }
 
@@ -77,9 +80,9 @@ public class UsersIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_ReturnsSuccessStatusCode()
     {
-        var client = CreateClient(MockService(EmptyResult()));
+        HttpClient client = CreateClient(MockService(EmptyResult()));
 
-        var response = await client.GetAsync("/Admin/Users");
+        HttpResponseMessage response = await client.GetAsync("/Admin/Users");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -87,13 +90,13 @@ public class UsersIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_RendersAdminLayoutSidebarWithUsersNavItemActive()
     {
-        var client = CreateClient(MockService(EmptyResult()));
+        HttpClient client = CreateClient(MockService(EmptyResult()));
 
-        var response = await client.GetAsync("/Admin/Users");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Users");
+        IDocument document = await GetDocumentAsync(response);
 
         Assert.NotNull(document.QuerySelector("aside.sidebar"));
-        var navItem = document.QuerySelector("a[href*='/Admin/Users']");
+        IElement? navItem = document.QuerySelector("a[href*='/Admin/Users']");
         Assert.NotNull(navItem);
         Assert.Contains("active", navItem!.ClassList);
     }
@@ -101,10 +104,10 @@ public class UsersIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_RendersPageTitleAndSubtitle()
     {
-        var client = CreateClient(MockService(EmptyResult()));
+        HttpClient client = CreateClient(MockService(EmptyResult()));
 
-        var response = await client.GetAsync("/Admin/Users");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Users");
+        IDocument document = await GetDocumentAsync(response);
 
         Assert.Equal("Users", document.QuerySelector("h1.page-title")?.TextContent.Trim());
         Assert.Equal(
@@ -117,10 +120,10 @@ public class UsersIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_RendersTableColumnHeaders()
     {
-        var client = CreateClient(MockService(EmptyResult()));
+        HttpClient client = CreateClient(MockService(EmptyResult()));
 
-        var response = await client.GetAsync("/Admin/Users");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Users");
+        IDocument document = await GetDocumentAsync(response);
 
         var headers = document.QuerySelectorAll("ck-responsive-col-head").Select(h => h.TextContent.Trim()).ToList();
         Assert.Equal(new[] { "User", "Email", "Status", "Actions" }, headers);
@@ -134,17 +137,17 @@ public class UsersIndexIntegrationTests : IDisposable
             Items = new[] { MakeItem("alpha"), MakeItem("beta") },
             TotalCount = 2,
             PageNumber = 1,
-            PageSize = 10,
+            PageSize = 10
         };
-        var client = CreateClient(MockService(result));
+        HttpClient client = CreateClient(MockService(result));
 
-        var response = await client.GetAsync("/Admin/Users");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Users");
+        IDocument document = await GetDocumentAsync(response);
 
-        var rows = document.QuerySelectorAll("ck-responsive-row");
+        IHtmlCollection<IElement> rows = document.QuerySelectorAll("ck-responsive-row");
         Assert.Equal(2, rows.Length);
 
-        var firstRowText = rows[0].TextContent;
+        string firstRowText = rows[0].TextContent;
         Assert.Contains("Full Name alpha", firstRowText);
         Assert.Contains("username-alpha", firstRowText);
         Assert.Contains("user-alpha@sales.local", firstRowText);
@@ -155,22 +158,22 @@ public class UsersIndexIntegrationTests : IDisposable
     {
         var result = new ListResult<UserListItem>
         {
-            Items = new[] { MakeItem("locked", lockedOut: true) },
+            Items = new[] { MakeItem("locked", true) },
             TotalCount = 1,
             PageNumber = 1,
-            PageSize = 10,
+            PageSize = 10
         };
-        var client = CreateClient(MockService(result));
+        HttpClient client = CreateClient(MockService(result));
 
-        var response = await client.GetAsync("/Admin/Users");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Users");
+        IDocument document = await GetDocumentAsync(response);
 
-        var badge = document.QuerySelector(".status-badge");
+        IElement? badge = document.QuerySelector(".status-badge");
         Assert.NotNull(badge);
         Assert.Contains("Locked Out", badge!.TextContent);
         Assert.Contains("disabled", badge.ClassList);
 
-        var unlockBtn = document.QuerySelector("button.unlock-btn");
+        IElement? unlockBtn = document.QuerySelector("button.unlock-btn");
         Assert.NotNull(unlockBtn);
     }
 
@@ -179,22 +182,22 @@ public class UsersIndexIntegrationTests : IDisposable
     {
         var result = new ListResult<UserListItem>
         {
-            Items = new[] { MakeItem("active", lockedOut: false) },
+            Items = new[] { MakeItem("active") },
             TotalCount = 1,
             PageNumber = 1,
-            PageSize = 10,
+            PageSize = 10
         };
-        var client = CreateClient(MockService(result));
+        HttpClient client = CreateClient(MockService(result));
 
-        var response = await client.GetAsync("/Admin/Users");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Users");
+        IDocument document = await GetDocumentAsync(response);
 
-        var badge = document.QuerySelector(".status-badge");
+        IElement? badge = document.QuerySelector(".status-badge");
         Assert.NotNull(badge);
         Assert.Contains("Active", badge!.TextContent);
         Assert.Contains("enabled", badge.ClassList);
 
-        var unlockBtn = document.QuerySelector("button.unlock-btn");
+        IElement? unlockBtn = document.QuerySelector("button.unlock-btn");
         Assert.Null(unlockBtn);
     }
 
@@ -208,28 +211,34 @@ public class UsersIndexIntegrationTests : IDisposable
             Items = new[] { MakeItem("page1-item") },
             TotalCount = 2,
             PageNumber = 1,
-            PageSize = 1,
+            PageSize = 1
         };
         var page2 = new ListResult<UserListItem>
         {
             Items = new[] { MakeItem("page2-item") },
             TotalCount = 2,
             PageNumber = 2,
-            PageSize = 1,
+            PageSize = 1
         };
 
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == Pagination.From(1, TestOptions.PageSize)), It.IsAny<CancellationToken>())).ReturnsAsync(page1);
-        mock.Setup(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == Pagination.From(2, TestOptions.PageSize)), It.IsAny<CancellationToken>())).ReturnsAsync(page2);
+        mock.Setup(s =>
+            s.GetUsersAsync(
+                It.Is<ListQuery>(q => q.Filter == null && q.Pagination == Pagination.From(1, TestOptions.PageSize)),
+                It.IsAny<CancellationToken>())).ReturnsAsync(page1);
+        mock.Setup(s =>
+            s.GetUsersAsync(
+                It.Is<ListQuery>(q => q.Filter == null && q.Pagination == Pagination.From(2, TestOptions.PageSize)),
+                It.IsAny<CancellationToken>())).ReturnsAsync(page2);
 
-        var client = CreateClient(mock.Object);
+        HttpClient client = CreateClient(mock.Object);
 
-        var forwardResponse = await client.GetAsync("/Admin/Users?PageNumber=2");
-        var forwardDocument = await GetDocumentAsync(forwardResponse);
+        HttpResponseMessage forwardResponse = await client.GetAsync("/Admin/Users?PageNumber=2");
+        IDocument forwardDocument = await GetDocumentAsync(forwardResponse);
         Assert.Contains("username-page2-item", forwardDocument.QuerySelector("ck-responsive-row")!.TextContent);
 
-        var backResponse = await client.GetAsync("/Admin/Users?PageNumber=1");
-        var backDocument = await GetDocumentAsync(backResponse);
+        HttpResponseMessage backResponse = await client.GetAsync("/Admin/Users?PageNumber=1");
+        IDocument backDocument = await GetDocumentAsync(backResponse);
         Assert.Contains("username-page1-item", backDocument.QuerySelector("ck-responsive-row")!.TextContent);
     }
 
@@ -241,21 +250,24 @@ public class UsersIndexIntegrationTests : IDisposable
             Items = Array.Empty<UserListItem>(),
             TotalCount = 1,
             PageNumber = 99,
-            PageSize = 10,
+            PageSize = 10
         };
 
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == Pagination.From(99, TestOptions.PageSize)), It.IsAny<CancellationToken>())).ReturnsAsync(beyondLastPage);
+        mock.Setup(s =>
+            s.GetUsersAsync(
+                It.Is<ListQuery>(q => q.Filter == null && q.Pagination == Pagination.From(99, TestOptions.PageSize)),
+                It.IsAny<CancellationToken>())).ReturnsAsync(beyondLastPage);
 
-        var client = CreateClient(mock.Object);
+        HttpClient client = CreateClient(mock.Object);
 
-        var response = await client.GetAsync("/Admin/Users?PageNumber=99");
+        HttpResponseMessage response = await client.GetAsync("/Admin/Users?PageNumber=99");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var document = await GetDocumentAsync(response);
+        IDocument document = await GetDocumentAsync(response);
         Assert.NotNull(document.QuerySelector(".empty-state"));
 
-        var nextControl = document.QuerySelector("[data-pagination='next']");
+        IElement? nextControl = document.QuerySelector("[data-pagination='next']");
         Assert.NotNull(nextControl);
         Assert.Contains("disabled", nextControl!.ClassList);
     }
@@ -268,18 +280,21 @@ public class UsersIndexIntegrationTests : IDisposable
             Items = new[] { MakeItem("match-1"), MakeItem("match-2") },
             TotalCount = 5,
             PageNumber = 1,
-            PageSize = 2,
+            PageSize = 2
         };
 
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == "admin" && q.Pagination == Pagination.From(1, TestOptions.PageSize)), It.IsAny<CancellationToken>())).ReturnsAsync(result);
+        mock.Setup(s =>
+            s.GetUsersAsync(
+                It.Is<ListQuery>(q => q.Filter == "admin" && q.Pagination == Pagination.From(1, TestOptions.PageSize)),
+                It.IsAny<CancellationToken>())).ReturnsAsync(result);
 
-        var client = CreateClient(mock.Object);
+        HttpClient client = CreateClient(mock.Object);
 
-        var response = await client.GetAsync("/Admin/Users?Filter=admin&PageNumber=1");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Users?Filter=admin&PageNumber=1");
+        IDocument document = await GetDocumentAsync(response);
 
-        var nextLink = document.QuerySelector("[data-pagination='next']");
+        IElement? nextLink = document.QuerySelector("[data-pagination='next']");
         Assert.NotNull(nextLink);
         Assert.Contains("Filter=admin", nextLink!.GetAttribute("href"));
     }
@@ -289,12 +304,12 @@ public class UsersIndexIntegrationTests : IDisposable
     [Fact]
     public async Task Get_NoUsersExist_RendersEmptyStateMessage()
     {
-        var client = CreateClient(MockService(EmptyResult()));
+        HttpClient client = CreateClient(MockService(EmptyResult()));
 
-        var response = await client.GetAsync("/Admin/Users");
-        var document = await GetDocumentAsync(response);
+        HttpResponseMessage response = await client.GetAsync("/Admin/Users");
+        IDocument document = await GetDocumentAsync(response);
 
-        var emptyState = document.QuerySelector(".empty-state");
+        IElement? emptyState = document.QuerySelector(".empty-state");
         Assert.NotNull(emptyState);
         Assert.Empty(document.QuerySelectorAll("ck-responsive-row"));
     }
@@ -305,27 +320,27 @@ public class UsersIndexIntegrationTests : IDisposable
         var mockService = new Mock<IUserListService>();
         var result = new ListResult<UserListItem>
         {
-            Items = new[] { MakeItem("locked", lockedOut: true) },
+            Items = new[] { MakeItem("locked", true) },
             TotalCount = 1,
             PageNumber = 1,
-            PageSize = 10,
+            PageSize = 10
         };
         mockService.Setup(s => s.GetUsersAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         mockService.Setup(s => s.UnlockUserAsync(UserId.Create("user-id-locked"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserUnlockResult.Succeeded);
 
-        var client = CreateClient(mockService.Object, allowAutoRedirect: false);
+        HttpClient client = CreateClient(mockService.Object, false);
 
-        var getResponse = await client.GetAsync("/Admin/Users");
-        var getDocument = await GetDocumentAsync(getResponse);
+        HttpResponseMessage getResponse = await client.GetAsync("/Admin/Users");
+        IDocument getDocument = await GetDocumentAsync(getResponse);
 
         var tokenInput = getDocument.QuerySelector("input[name='__RequestVerificationToken']") as IHtmlInputElement;
         Assert.NotNull(tokenInput);
 
-        var token = tokenInput!.Value;
-        var cookies = getResponse.Headers.GetValues("Set-Cookie");
-        var cookie = cookies.FirstOrDefault(c => c.StartsWith(".AspNetCore.Antiforgery"));
+        string token = tokenInput!.Value;
+        IEnumerable<string> cookies = getResponse.Headers.GetValues("Set-Cookie");
+        string? cookie = cookies.FirstOrDefault(c => c.StartsWith(".AspNetCore.Antiforgery"));
         Assert.NotNull(cookie);
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/Admin/Users?handler=Unlock&id=user-id-locked");
@@ -335,18 +350,11 @@ public class UsersIndexIntegrationTests : IDisposable
             ["__RequestVerificationToken"] = token
         });
 
-        var response = await client.SendAsync(request);
+        HttpResponseMessage response = await client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.StartsWith("/Admin/Users", response.Headers.Location?.OriginalString);
-        mockService.Verify(s => s.UnlockUserAsync(UserId.Create("user-id-locked"), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    public void Dispose()
-    {
-        foreach (var disposable in _disposables)
-        {
-            disposable.Dispose();
-        }
+        mockService.Verify(s => s.UnlockUserAsync(UserId.Create("user-id-locked"), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }

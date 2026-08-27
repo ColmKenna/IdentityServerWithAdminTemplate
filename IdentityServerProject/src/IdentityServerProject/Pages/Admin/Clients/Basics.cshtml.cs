@@ -27,11 +27,9 @@ public class BasicsModel : PageModel
         _clientDetailsService = clientDetailsService;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public string Id { get; set; } = string.Empty;
+    [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
-    [BindProperty]
-    public BasicsInputModel Input { get; set; } = new();
+    [BindProperty] public BasicsInputModel Input { get; set; } = new();
 
     public string ClientIdDisplay { get; private set; } = string.Empty;
 
@@ -40,7 +38,8 @@ public class BasicsModel : PageModel
         if (string.IsNullOrWhiteSpace(Id))
             return NotFound();
 
-        var client = await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
+        ClientDetailsModel? client =
+            await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
         if (client == null)
             return NotFound();
 
@@ -58,14 +57,16 @@ public class BasicsModel : PageModel
 
         if (!ModelState.IsValid)
         {
-            var client = await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
+            ClientDetailsModel? client =
+                await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
             if (client == null)
                 return NotFound();
             ClientIdDisplay = client.ClientId;
             return Page();
         }
 
-        var result = await _clientDetailsService.UpdateClientBasicsAsync(ClientId.Create(Id), Input.ClientName, Input.Description, cancellationToken);
+        AdminMutationResult result = await _clientDetailsService.UpdateClientBasicsAsync(ClientId.Create(Id),
+            Input.ClientName, Input.Description, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
             return NotFound();
 
@@ -81,12 +82,8 @@ public class BasicsModel : PageModel
 
     private void MapErrors(AdminMutationResult result)
     {
-        foreach (var (key, messages) in result.Errors)
-        {
-            foreach (var message in messages)
-            {
-                ModelState.AddModelError(key, message);
-            }
-        }
+        foreach ((string key, string[] messages) in result.Errors)
+        foreach (string message in messages)
+            ModelState.AddModelError(key, message);
     }
 }

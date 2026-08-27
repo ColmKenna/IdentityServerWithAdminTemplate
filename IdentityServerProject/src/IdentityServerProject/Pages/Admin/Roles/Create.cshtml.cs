@@ -15,16 +15,7 @@ public class CreateModel : PageModel
         _roleService = roleService;
     }
 
-    [BindProperty]
-    public InputModel Input { get; set; } = new();
-
-    public class InputModel
-    {
-        [Required(ErrorMessage = "Role Name is required")]
-        [StringLength(ValidationConstants.MaxNameLength, ErrorMessage = "Role Name must not exceed 200 characters")]
-        [Display(Name = "Role Name")]
-        public string Name { get; set; } = string.Empty;
-    }
+    [BindProperty] public InputModel Input { get; set; } = new();
 
     public void OnGet()
     {
@@ -35,7 +26,7 @@ public class CreateModel : PageModel
         if (!ModelState.IsValid)
             return Page();
 
-        var result = await _roleService.CreateRoleAsync(new RoleCreateInputModel
+        RoleCreateResult result = await _roleService.CreateRoleAsync(new RoleCreateInputModel
         {
             Name = Input.Name
         }, cancellationToken);
@@ -48,5 +39,13 @@ public class CreateModel : PageModel
 
         TempData["StatusMessage"] = $"Role '{Input.Name}' was successfully created.";
         return RedirectToPage("./Index");
+    }
+
+    public class InputModel
+    {
+        [Required(ErrorMessage = "Role Name is required")]
+        [StringLength(ValidationConstants.MaxNameLength, ErrorMessage = "Role Name must not exceed 200 characters")]
+        [Display(Name = "Role Name")]
+        public string Name { get; set; } = string.Empty;
     }
 }

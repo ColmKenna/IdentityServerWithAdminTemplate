@@ -11,9 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace IdentityServerProject.Admin.Tests.Clients;
 
 /// <summary>
-/// Verifies TASK-04 audit coverage for <see cref="ClientCreateService"/> and
-/// <see cref="ClientDetailsService"/>: both already audited success, but neither
-/// audited denial or unexpected-failure outcomes before this task.
+///     Verifies TASK-04 audit coverage for <see cref="ClientCreateService" /> and
+///     <see cref="ClientDetailsService" />: both already audited success, but neither
+///     audited denial or unexpected-failure outcomes before this task.
 /// </summary>
 public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
 {
@@ -46,11 +46,8 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
-            foreach (var client in clients)
-            {
-                configDb.Clients.Add(client.ToEntity());
-            }
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            foreach (Client client in clients) configDb.Clients.Add(client.ToEntity());
             await configDb.SaveChangesAsync();
         });
     }
@@ -59,7 +56,7 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             if (!await configDb.IdentityResources.AnyAsync(resource => resource.Name == "openid"))
             {
                 configDb.IdentityResources.Add(new IdentityResource("openid", new[] { "sub" }).ToEntity());
@@ -74,8 +71,9 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
         AuditLogEntry? found = null;
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ApplicationDbContext>();
-            found = db.AuditLogEntries.Single(e => e.Category == AuditCategory.Client && e.Action == action && e.TargetId == targetId);
+            ApplicationDbContext db = sp.GetRequiredService<ApplicationDbContext>();
+            found = db.AuditLogEntries.Single(e =>
+                e.Category == AuditCategory.Client && e.Action == action && e.TargetId == targetId);
             await Task.CompletedTask;
         });
         return found!;
@@ -84,7 +82,7 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task CreateClientAsync_DuplicateClientId_WritesDeniedAuditEvent()
     {
-        var clientId = $"client-audit-dup-{Guid.NewGuid():N}";
+        string clientId = $"client-audit-dup-{Guid.NewGuid():N}";
         await SeedAsync(MakeClient(clientId, "Existing Client"));
 
         var input = new ClientCreateInputModel
@@ -92,17 +90,17 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
             ClientId = clientId,
             ClientName = "Duplicate Attempt",
             RequirePkce = true,
-            RequireClientSecret = false,
+            RequireClientSecret = false
         };
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientCreateService>();
-            var result = await service.CreateClientAsync(input);
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
+            ClientCreateResult result = await service.CreateClientAsync(input);
             Assert.False(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.Create, clientId);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.Create, clientId);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
         Assert.Equal(AuditReasonCode.NameCollision, entry.ReasonCode);
     }
@@ -111,7 +109,7 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
     public async Task CreateClientAsync_ValidInput_WritesSucceededAuditEvent()
     {
         await SeedIdentityScopesAsync();
-        var clientId = $"client-audit-create-{Guid.NewGuid():N}";
+        string clientId = $"client-audit-create-{Guid.NewGuid():N}";
         var input = new ClientCreateInputModel
         {
             ClientId = clientId,
@@ -125,29 +123,29 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientCreateService>();
-            var result = await service.CreateClientAsync(input);
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
+            ClientCreateResult result = await service.CreateClientAsync(input);
             Assert.True(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.Create, clientId);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.Create, clientId);
         Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
     }
 
     [Fact]
     public async Task DeleteClientAsync_EnabledClient_WritesDeniedAuditEventWithClientEnabledReason()
     {
-        var clientId = $"client-audit-delete-enabled-{Guid.NewGuid():N}";
-        await SeedAsync(MakeClient(clientId, "Enabled Client", enabled: true));
+        string clientId = $"client-audit-delete-enabled-{Guid.NewGuid():N}";
+        await SeedAsync(MakeClient(clientId, "Enabled Client"));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.DeleteClientAsync(ClientId.Create(clientId));
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDeleteResult result = await service.DeleteClientAsync(ClientId.Create(clientId));
             Assert.False(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.Delete, clientId);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.Delete, clientId);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
         Assert.Equal(AuditReasonCode.ClientEnabled, entry.ReasonCode);
     }
@@ -155,16 +153,16 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task DeleteClientAsync_ClientNotFound_WritesDeniedAuditEvent()
     {
-        var clientId = $"client-audit-delete-missing-{Guid.NewGuid():N}";
+        string clientId = $"client-audit-delete-missing-{Guid.NewGuid():N}";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.DeleteClientAsync(ClientId.Create(clientId));
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDeleteResult result = await service.DeleteClientAsync(ClientId.Create(clientId));
             Assert.False(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.Delete, clientId);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.Delete, clientId);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
         Assert.Equal(AuditReasonCode.NotFound, entry.ReasonCode);
     }
@@ -172,16 +170,16 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task ToggleClientStatusAsync_ClientNotFound_WritesDeniedAuditEvent()
     {
-        var clientId = $"client-audit-toggle-missing-{Guid.NewGuid():N}";
+        string clientId = $"client-audit-toggle-missing-{Guid.NewGuid():N}";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.ToggleClientStatusAsync(ClientId.Create(clientId));
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            bool result = await service.ToggleClientStatusAsync(ClientId.Create(clientId));
             Assert.False(result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.SetEnabled, clientId);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.SetEnabled, clientId);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
         Assert.Equal(AuditReasonCode.NotFound, entry.ReasonCode);
     }
@@ -189,42 +187,45 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task ToggleClientStatusAsync_ExistingClient_WritesSucceededAuditEvent()
     {
-        var clientId = $"client-audit-toggle-{Guid.NewGuid():N}";
-        await SeedAsync(MakeClient(clientId, "Toggle Client", enabled: true));
+        string clientId = $"client-audit-toggle-{Guid.NewGuid():N}";
+        await SeedAsync(MakeClient(clientId, "Toggle Client"));
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.ToggleClientStatusAsync(ClientId.Create(clientId));
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            bool result = await service.ToggleClientStatusAsync(ClientId.Create(clientId));
             Assert.True(result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.SetEnabled, clientId);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.SetEnabled, clientId);
         Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
     }
 
     [Fact]
-    public async Task RevokeClientSecretAsync_LastUsableSecretOnConfidentialClient_WritesDeniedAuditEventWithLastUsableSecretReason()
+    public async Task
+        RevokeClientSecretAsync_LastUsableSecretOnConfidentialClient_WritesDeniedAuditEventWithLastUsableSecretReason()
     {
-        var clientId = $"client-audit-lastsecret-{Guid.NewGuid():N}";
+        string clientId = $"client-audit-lastsecret-{Guid.NewGuid():N}";
         await SeedAsync(MakeClient(clientId, "Confidential Client"));
 
         int secretId = 0;
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
-            var entity = configDb.Clients.Include(c => c.ClientSecrets).Single(c => c.ClientId == clientId);
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            Duende.IdentityServer.EntityFramework.Entities.Client entity =
+                configDb.Clients.Include(c => c.ClientSecrets).Single(c => c.ClientId == clientId);
             secretId = entity.ClientSecrets.Single().Id;
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.RevokeClientSecretAsync(ClientId.Create(clientId), secretId);
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientSecretRevokeResult
+                result = await service.RevokeClientSecretAsync(ClientId.Create(clientId), secretId);
             Assert.False(result.Success);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.RevokeSecret, clientId);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.RevokeSecret, clientId);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
         Assert.Equal(AuditReasonCode.LastUsableSecret, entry.ReasonCode);
     }
@@ -232,16 +233,16 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task ToggleClientStatusAsync_UnexpectedPersistenceFailure_WritesFailedAuditEventAndRethrows()
     {
-        var clientId = $"client-audit-failure-{Guid.NewGuid():N}";
+        string clientId = $"client-audit-failure-{Guid.NewGuid():N}";
 
         await Assert.ThrowsAnyAsync<Exception>(() => _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
             await sp.GetRequiredService<ConfigurationDbContext>().DisposeAsync();
             await service.ToggleClientStatusAsync(ClientId.Create(clientId));
         }));
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.SetEnabled, clientId);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.SetEnabled, clientId);
         Assert.Equal(AuditOutcome.Failed, entry.Outcome);
         Assert.Equal(AuditReasonCode.PersistenceFailure, entry.ReasonCode);
     }

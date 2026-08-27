@@ -9,12 +9,12 @@ using Moq;
 namespace IdentityServerProject.Admin.Tests.Users;
 
 /// <summary>
-/// Focused adapter tests for <see cref="EfIdentityUserAdministrationStore"/> covering paths that
-/// need a mocked <see cref="UserManager{TUser}"/> rather than end-to-end DI resolution - namely,
-/// how a mid-sequence Identity failure during unlock is reported without partially applying the
-/// remaining step. The rest of the port's behavior is exercised indirectly through
-/// <see cref="UserListServiceTests"/>, <see cref="UserCreateServiceTests"/>, and
-/// <see cref="UserDetailsServiceTests"/> via the real (SQLite in-memory) DI container.
+///     Focused adapter tests for <see cref="EfIdentityUserAdministrationStore" /> covering paths that
+///     need a mocked <see cref="UserManager{TUser}" /> rather than end-to-end DI resolution - namely,
+///     how a mid-sequence Identity failure during unlock is reported without partially applying the
+///     remaining step. The rest of the port's behavior is exercised indirectly through
+///     <see cref="UserListServiceTests" />, <see cref="UserCreateServiceTests" />, and
+///     <see cref="UserDetailsServiceTests" /> via the real (SQLite in-memory) DI container.
 /// </summary>
 public class EfIdentityUserAdministrationStoreTests : IClassFixture<AdminWebFactory>
 {
@@ -31,17 +31,17 @@ public class EfIdentityUserAdministrationStoreTests : IClassFixture<AdminWebFact
         UserName = $"{tag}-username-{suffix}",
         Email = $"{tag}-email-{suffix}@sales.local",
         FullName = $"{tag} User {suffix}",
-        LockoutEnabled = true,
+        LockoutEnabled = true
     };
 
     [Fact]
     public async Task UnlockUserAsync_SetLockoutFailure_ReturnsIdentityErrorsWithoutResettingAccessFailures()
     {
-        var user = MakeUser(Guid.NewGuid().ToString("N"), "lockout-failure");
-        var userManager = CreateUserManager();
+        ApplicationUser user = MakeUser(Guid.NewGuid().ToString("N"), "lockout-failure");
+        Mock<UserManager<ApplicationUser>> userManager = CreateUserManager();
         userManager.Setup(manager => manager.FindByIdAsync(user.Id)).ReturnsAsync(user);
         userManager
-            .Setup(manager => manager.SetLockoutEndDateAsync(user, (DateTimeOffset?)null))
+            .Setup(manager => manager.SetLockoutEndDateAsync(user, null))
             .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Lockout state update failed." }));
 
         await _factory.RunInScopeAsync(async sp =>
@@ -51,23 +51,24 @@ public class EfIdentityUserAdministrationStoreTests : IClassFixture<AdminWebFact
                 userManager.Object,
                 sp.GetRequiredService<RoleManager<IdentityRole>>());
 
-            var outcome = await store.UnlockUserAsync(UserId.Create(user.Id));
+            UserUnlockOutcome outcome = await store.UnlockUserAsync(UserId.Create(user.Id));
 
             Assert.Equal(UserUnlockStatus.Failed, outcome.Result.Status);
             Assert.Equal("Lockout state update failed.", Assert.Single(outcome.Result.Errors));
             Assert.Equal(user.UserName, outcome.TargetName);
-            userManager.Verify(manager => manager.ResetAccessFailedCountAsync(It.IsAny<ApplicationUser>()), Times.Never);
+            userManager.Verify(manager => manager.ResetAccessFailedCountAsync(It.IsAny<ApplicationUser>()),
+                Times.Never);
         });
     }
 
     [Fact]
     public async Task UnlockUserAsync_ResetAccessFailuresFailure_ReturnsIdentityErrors()
     {
-        var user = MakeUser(Guid.NewGuid().ToString("N"), "reset-failure");
-        var userManager = CreateUserManager();
+        ApplicationUser user = MakeUser(Guid.NewGuid().ToString("N"), "reset-failure");
+        Mock<UserManager<ApplicationUser>> userManager = CreateUserManager();
         userManager.Setup(manager => manager.FindByIdAsync(user.Id)).ReturnsAsync(user);
         userManager
-            .Setup(manager => manager.SetLockoutEndDateAsync(user, (DateTimeOffset?)null))
+            .Setup(manager => manager.SetLockoutEndDateAsync(user, null))
             .ReturnsAsync(IdentityResult.Success);
         userManager
             .Setup(manager => manager.ResetAccessFailedCountAsync(user))
@@ -80,7 +81,7 @@ public class EfIdentityUserAdministrationStoreTests : IClassFixture<AdminWebFact
                 userManager.Object,
                 sp.GetRequiredService<RoleManager<IdentityRole>>());
 
-            var outcome = await store.UnlockUserAsync(UserId.Create(user.Id));
+            UserUnlockOutcome outcome = await store.UnlockUserAsync(UserId.Create(user.Id));
 
             Assert.Equal(UserUnlockStatus.Failed, outcome.Result.Status);
             Assert.Equal("Access-failure reset failed.", Assert.Single(outcome.Result.Errors));
@@ -90,7 +91,7 @@ public class EfIdentityUserAdministrationStoreTests : IClassFixture<AdminWebFact
     [Fact]
     public async Task UnlockUserAsync_UserNotFound_ReturnsNotFoundWithRawIdAsTargetName()
     {
-        var userManager = CreateUserManager();
+        Mock<UserManager<ApplicationUser>> userManager = CreateUserManager();
         userManager.Setup(manager => manager.FindByIdAsync("missing-user")).ReturnsAsync((ApplicationUser?)null);
 
         await _factory.RunInScopeAsync(async sp =>
@@ -100,7 +101,7 @@ public class EfIdentityUserAdministrationStoreTests : IClassFixture<AdminWebFact
                 userManager.Object,
                 sp.GetRequiredService<RoleManager<IdentityRole>>());
 
-            var outcome = await store.UnlockUserAsync(UserId.Create("missing-user"));
+            UserUnlockOutcome outcome = await store.UnlockUserAsync(UserId.Create("missing-user"));
 
             Assert.Equal(UserUnlockStatus.NotFound, outcome.Result.Status);
             Assert.Equal("missing-user", outcome.TargetName);

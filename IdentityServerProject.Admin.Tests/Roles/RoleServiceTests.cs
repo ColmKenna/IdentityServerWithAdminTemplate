@@ -1,13 +1,14 @@
 using IdentityServerProject.Services.AuditLogs;
 using IdentityServerProject.Services.Roles;
+using IdentityServerProject.Services.Validation;
 using Moq;
 
 namespace IdentityServerProject.Admin.Tests.Roles;
 
 public class RoleServiceTests
 {
-    private readonly Mock<IRoleAdministrationStore> _storeMock = new();
     private readonly Mock<IAuditWriter> _auditWriterMock = new();
+    private readonly Mock<IRoleAdministrationStore> _storeMock = new();
     private readonly RoleService _sut;
 
     public RoleServiceTests()
@@ -30,13 +31,16 @@ public class RoleServiceTests
             PageSize = 10
         };
 
-        _storeMock.Setup(s => s.GetRolesAsync(new ListQuery("edit", Pagination.From(1, 10)), It.IsAny<CancellationToken>()))
+        _storeMock.Setup(s =>
+                s.GetRolesAsync(new ListQuery("edit", Pagination.From(1, 10)), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
-        var result = await _sut.GetRolesAsync(new ListQuery("edit", Pagination.From(1, 10)));
+        ListResult<RoleListItem> result = await _sut.GetRolesAsync(new ListQuery("edit", Pagination.From(1, 10)));
 
         Assert.Same(expected, result);
-        _storeMock.Verify(s => s.GetRolesAsync(new ListQuery("edit", Pagination.From(1, 10)), It.IsAny<CancellationToken>()), Times.Once);
+        _storeMock.Verify(
+            s => s.GetRolesAsync(new ListQuery("edit", Pagination.From(1, 10)), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -46,7 +50,7 @@ public class RoleServiceTests
         _storeMock.Setup(s => s.FindRoleAsync(RoleId.Create("1"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
-        var result = await _sut.GetRoleAsync(RoleId.Create("1"));
+        RoleDetailsModel? result = await _sut.GetRoleAsync(RoleId.Create("1"));
 
         Assert.Same(expected, result);
         _storeMock.Verify(s => s.FindRoleAsync(RoleId.Create("1"), It.IsAny<CancellationToken>()), Times.Once);
@@ -59,7 +63,7 @@ public class RoleServiceTests
         _storeMock.Setup(s => s.CreateRoleAsync(input, It.IsAny<CancellationToken>()))
             .ReturnsAsync((RoleCreateOutcome.Succeeded, RoleId.Create("role-123"), null));
 
-        var result = await _sut.CreateRoleAsync(input);
+        RoleCreateResult result = await _sut.CreateRoleAsync(input);
 
         Assert.True(result.Success);
         Assert.Equal(RoleId.Create("role-123"), result.RoleId);
@@ -82,7 +86,7 @@ public class RoleServiceTests
         _storeMock.Setup(s => s.CreateRoleAsync(input, It.IsAny<CancellationToken>()))
             .ReturnsAsync((RoleCreateOutcome.NameCollision, null, null));
 
-        var result = await _sut.CreateRoleAsync(input);
+        RoleCreateResult result = await _sut.CreateRoleAsync(input);
 
         Assert.False(result.Success);
         Assert.Contains("already exists", result.ErrorMessage);
@@ -104,7 +108,7 @@ public class RoleServiceTests
         _storeMock.Setup(s => s.CreateRoleAsync(input, It.IsAny<CancellationToken>()))
             .ReturnsAsync((RoleCreateOutcome.ValidationFailed, null, "Invalid role name"));
 
-        var result = await _sut.CreateRoleAsync(input);
+        RoleCreateResult result = await _sut.CreateRoleAsync(input);
 
         Assert.False(result.Success);
         Assert.Equal("Invalid role name", result.ErrorMessage);
@@ -144,7 +148,7 @@ public class RoleServiceTests
         _storeMock.Setup(s => s.DeleteRoleAsync(RoleId.Create("role-1"), "SysAdmin", It.IsAny<CancellationToken>()))
             .ReturnsAsync((RoleDeleteOutcome.Succeeded, "Auditor"));
 
-        var result = await _sut.DeleteRoleAsync(RoleId.Create("role-1"));
+        AdminMutationResult result = await _sut.DeleteRoleAsync(RoleId.Create("role-1"));
 
         Assert.True(result.Succeeded);
 
@@ -162,10 +166,11 @@ public class RoleServiceTests
     [Fact]
     public async Task DeleteRoleAsync_ProtectedRole_WritesDeniedAudit()
     {
-        _storeMock.Setup(s => s.DeleteRoleAsync(RoleId.Create("sysadmin-id"), "SysAdmin", It.IsAny<CancellationToken>()))
+        _storeMock
+            .Setup(s => s.DeleteRoleAsync(RoleId.Create("sysadmin-id"), "SysAdmin", It.IsAny<CancellationToken>()))
             .ReturnsAsync((RoleDeleteOutcome.ProtectedRoleBlocked, "SysAdmin"));
 
-        var result = await _sut.DeleteRoleAsync(RoleId.Create("sysadmin-id"));
+        AdminMutationResult result = await _sut.DeleteRoleAsync(RoleId.Create("sysadmin-id"));
 
         Assert.False(result.Succeeded);
         Assert.Contains("protected role", result.ErrorMessage);
@@ -187,7 +192,7 @@ public class RoleServiceTests
         _storeMock.Setup(s => s.DeleteRoleAsync(RoleId.Create("missing-id"), "SysAdmin", It.IsAny<CancellationToken>()))
             .ReturnsAsync((RoleDeleteOutcome.RoleNotFound, "missing-id"));
 
-        var result = await _sut.DeleteRoleAsync(RoleId.Create("missing-id"));
+        AdminMutationResult result = await _sut.DeleteRoleAsync(RoleId.Create("missing-id"));
 
         Assert.False(result.Succeeded);
         Assert.Equal("Role not found.", result.ErrorMessage);
@@ -208,7 +213,7 @@ public class RoleServiceTests
         _storeMock.Setup(s => s.DeleteRoleAsync(RoleId.Create("bad-id"), "SysAdmin", It.IsAny<CancellationToken>()))
             .ReturnsAsync((RoleDeleteOutcome.ValidationFailed, "bad-role"));
 
-        var result = await _sut.DeleteRoleAsync(RoleId.Create("bad-id"));
+        AdminMutationResult result = await _sut.DeleteRoleAsync(RoleId.Create("bad-id"));
 
         Assert.False(result.Succeeded);
         Assert.Equal("Failed to delete role.", result.ErrorMessage);

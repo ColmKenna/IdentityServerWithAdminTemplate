@@ -1,4 +1,5 @@
 using Duende.IdentityServer.EntityFramework.DbContexts;
+using Duende.IdentityServer.EntityFramework.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -8,13 +9,14 @@ public class PersistedGrantDbContextFactory : IDesignTimeDbContextFactory<Persis
 {
     public PersistedGrantDbContext CreateDbContext(string[] args)
     {
-        var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
-        services.AddSingleton(new Duende.IdentityServer.EntityFramework.Options.OperationalStoreOptions());
-        var serviceProvider = services.BuildServiceProvider();
+        var services = new ServiceCollection();
+        services.AddSingleton(new OperationalStoreOptions());
+        ServiceProvider serviceProvider = services.BuildServiceProvider();
 
         var optionsBuilder = new DbContextOptionsBuilder<PersistedGrantDbContext>();
         optionsBuilder.UseApplicationServiceProvider(serviceProvider);
-        optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=IdentityOperationalDb_DesignTime;Trusted_Connection=True;MultipleActiveResultSets=true", 
+        optionsBuilder.UseSqlServer(
+            "Server=(localdb)\\mssqllocaldb;Database=IdentityOperationalDb_DesignTime;Trusted_Connection=True;MultipleActiveResultSets=true",
             sql => sql.MigrationsAssembly(typeof(PersistedGrantDbContextFactory).Assembly.FullName));
 
         return new PersistedGrantDbContext(optionsBuilder.Options);

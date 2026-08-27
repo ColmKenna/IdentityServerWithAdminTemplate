@@ -6,20 +6,19 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace IdentityServerProject.Admin.Tests.AuditLogs;
 
 /// <summary>
-/// TASK-04 architecture/inventory test: every mutating <c>OnPost*</c> handler under
-/// <c>Pages/Admin</c> must delegate to a service method, and no PageModel may write audit
-/// entries itself (services own audit events because they own the outcome and invariant).
-///
-/// This is a maintained allow-list, not a fully automatic call-graph check: adding a new
-/// <c>OnPost*</c> handler that isn't in <see cref="ExpectedMutatingHandlers"/> fails this test,
-/// forcing the author to confirm the delegated service method is audited (per the per-service
-/// coverage tests in this project) before adding it to the list.
+///     TASK-04 architecture/inventory test: every mutating <c>OnPost*</c> handler under
+///     <c>Pages/Admin</c> must delegate to a service method, and no PageModel may write audit
+///     entries itself (services own audit events because they own the outcome and invariant).
+///     This is a maintained allow-list, not a fully automatic call-graph check: adding a new
+///     <c>OnPost*</c> handler that isn't in <see cref="ExpectedMutatingHandlers" /> fails this test,
+///     forcing the author to confirm the delegated service method is audited (per the per-service
+///     coverage tests in this project) before adding it to the list.
 /// </summary>
 public class PageModelAuditCoverageTests
 {
     /// <summary>
-    /// (PageModel full type name, OnPost handler name) pairs confirmed to delegate to an
-    /// audited service method. Derived directly from Pages/Admin as of this task.
+    ///     (PageModel full type name, OnPost handler name) pairs confirmed to delegate to an
+    ///     audited service method. Derived directly from Pages/Admin as of this task.
     /// </summary>
     private static readonly HashSet<(string TypeFullName, string Handler)> ExpectedMutatingHandlers = new()
     {
@@ -73,19 +72,19 @@ public class PageModelAuditCoverageTests
         ("IdentityServerProject.Pages.Admin.Apis.EditorModel", "OnPostRemoveClaimAsync"),
         ("IdentityServerProject.Pages.Admin.Apis.EditorModel", "OnPostEnableAsync"),
         ("IdentityServerProject.Pages.Admin.Apis.EditorModel", "OnPostDisableAsync"),
-        ("IdentityServerProject.Pages.Admin.Apis.EditorModel", "OnPostDeleteAsync"),
+        ("IdentityServerProject.Pages.Admin.Apis.EditorModel", "OnPostDeleteAsync")
     };
 
     /// <summary>
-    /// PageModels with zero OnPost* handlers today (pure read/filter pages). Listed explicitly
-    /// so their absence from <see cref="ExpectedMutatingHandlers"/> reads as intentional.
+    ///     PageModels with zero OnPost* handlers today (pure read/filter pages). Listed explicitly
+    ///     so their absence from <see cref="ExpectedMutatingHandlers" /> reads as intentional.
     /// </summary>
     private static readonly HashSet<string> KnownNonMutatingPageModels = new()
     {
         "IdentityServerProject.Pages.Admin.Clients.IndexModel",
         "IdentityServerProject.Pages.Admin.Apis.IndexModel",
         "IdentityServerProject.Pages.Admin.AuditLogs.IndexModel",
-        "IdentityServerProject.Pages.Admin.Diagnostics.IndexModel",
+        "IdentityServerProject.Pages.Admin.Diagnostics.IndexModel"
     };
 
     private static IEnumerable<Type> GetAdminPageModelTypes()
@@ -93,7 +92,8 @@ public class PageModelAuditCoverageTests
         return typeof(ApplicationDbContext).Assembly.GetTypes()
             .Where(t => t.IsClass && !t.IsAbstract)
             .Where(t => typeof(PageModel).IsAssignableFrom(t))
-            .Where(t => t.Namespace != null && t.Namespace.StartsWith("IdentityServerProject.Pages.Admin", StringComparison.Ordinal));
+            .Where(t => t.Namespace != null &&
+                        t.Namespace.StartsWith("IdentityServerProject.Pages.Admin", StringComparison.Ordinal));
     }
 
     private static IEnumerable<MethodInfo> GetOnPostHandlers(Type pageModelType)
@@ -134,16 +134,18 @@ public class PageModelAuditCoverageTests
             .ToList();
 
         Assert.True(offenders.Count == 0,
-            "PageModel(s) inject IAuditWriter directly - auditing belongs in the service layer: " + string.Join(", ", offenders));
+            "PageModel(s) inject IAuditWriter directly - auditing belongs in the service layer: " +
+            string.Join(", ", offenders));
     }
 
     [Fact]
     public void KnownNonMutatingPageModels_StillHaveNoOnPostHandlers()
     {
-        foreach (var typeName in KnownNonMutatingPageModels)
+        foreach (string typeName in KnownNonMutatingPageModels)
         {
-            var type = GetAdminPageModelTypes().SingleOrDefault(t => t.FullName == typeName);
-            Assert.True(type != null, $"Expected PageModel '{typeName}' was not found - update KnownNonMutatingPageModels.");
+            Type? type = GetAdminPageModelTypes().SingleOrDefault(t => t.FullName == typeName);
+            Assert.True(type != null,
+                $"Expected PageModel '{typeName}' was not found - update KnownNonMutatingPageModels.");
 
             var handlers = GetOnPostHandlers(type!).ToList();
             Assert.True(handlers.Count == 0,

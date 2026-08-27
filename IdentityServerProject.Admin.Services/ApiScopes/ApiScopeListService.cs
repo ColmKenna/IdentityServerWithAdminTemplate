@@ -1,16 +1,18 @@
+using System.Data;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
 using IdentityServerProject.Services.AuditLogs;
 using IdentityServerProject.Services.Scopes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace IdentityServerProject.Services.ApiScopes;
 
 public class ApiScopeListService : IApiScopeListService
 {
+    private readonly IAuditWriter _auditWriter;
     private readonly ConfigurationDbContext _configurationDbContext;
     private readonly IScopeUsageService _scopeUsageService;
-    private readonly IAuditWriter _auditWriter;
 
     public ApiScopeListService(
         ConfigurationDbContext configurationDbContext,
@@ -26,13 +28,13 @@ public class ApiScopeListService : IApiScopeListService
         ListQuery query,
         CancellationToken cancellationToken = default)
     {
-        var pagination = query.Pagination.Normalize();
+        Pagination pagination = query.Pagination.Normalize();
 
-        var dbQuery = ApplyFilter(_configurationDbContext.ApiScopes.AsNoTracking(), query.Filter);
+        IQueryable<ApiScope> dbQuery = ApplyFilter(_configurationDbContext.ApiScopes.AsNoTracking(), query.Filter);
 
-        var totalCount = await dbQuery.CountAsync(cancellationToken);
+        int totalCount = await dbQuery.CountAsync(cancellationToken);
 
-        var items = await dbQuery
+        List<ApiScopeListItem> items = await dbQuery
             .OrderBy(s => s.Name)
             .ThenBy(s => s.DisplayName)
             .Skip(pagination.Skip)
@@ -47,50 +49,39 @@ public class ApiScopeListService : IApiScopeListService
             .ToListAsync(cancellationToken);
 
         var scopeNames = ScopeSet.FromStrings(items.Select(i => i.Name));
-        var referenceCounts = await _scopeUsageService.GetClientReferenceCountsAsync(scopeNames, cancellationToken);
+        ScopeUsageCounts referenceCounts =
+            await _scopeUsageService.GetClientReferenceCountsAsync(scopeNames, cancellationToken);
 
-        foreach (var item in items)
-        {
+        foreach (ApiScopeListItem item in items)
             item.ClientReferenceCount = referenceCounts[ScopeName.Create(item.Name)];
-        }
 
         return new ListResult<ApiScopeListItem>
         {
             Items = items,
             TotalCount = totalCount,
             PageNumber = pagination.PageNumber,
-            PageSize = pagination.PageSize,
+            PageSize = pagination.PageSize
         };
     }
 
-    public async Task<ApiScopeDeleteResult> DeleteApiScopeAsync(string name, CancellationToken cancellationToken = default)
+    public async Task<ApiScopeDeleteResult> DeleteApiScopeAsync(string name,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            await using var transaction = await _configurationDbContext.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken);
-            var scope = await _configurationDbContext.ApiScopes
+            await using IDbContextTransaction transaction =
+                await _configurationDbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable,
+                    cancellationToken);
+            ApiScope? scope = await _configurationDbContext.ApiScopes
                 .FirstOrDefaultAsync(s => s.Name == name, cancellationToken);
 
             if (scope == null)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                await _auditWriter.WriteAsync(new AdminAuditEvent(
-                    AuditCategory.ApiScope, AuditAction.Delete, AuditOutcome.Denied, AuditReasonCode.NotFound,
-                    TargetId: name, TargetName: name, Details: $"API Scope '{name}' was not found."), cancellationToken);
-                return ApiScopeDeleteResult.NotFound;
-            }
+                return await HandleScopeNotFoundResultAsync(transaction, name, cancellationToken);
 
-            var referenceCounts = await _scopeUsageService.GetClientReferenceCountsAsync(
+            ScopeUsageCounts referenceCounts = await _scopeUsageService.GetClientReferenceCountsAsync(
                 ScopeSet.FromStrings(new[] { name }), cancellationToken);
             if (referenceCounts[ScopeName.Create(name)] > 0)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                await _auditWriter.WriteAsync(new AdminAuditEvent(
-                    AuditCategory.ApiScope, AuditAction.Delete, AuditOutcome.Denied, AuditReasonCode.ReferencedResource,
-                    TargetId: name, TargetName: scope.DisplayName ?? name,
-                    Details: $"API Scope '{name}' is referenced by one or more clients."), cancellationToken);
-                return ApiScopeDeleteResult.Blocked;
-            }
+                return await BuildReferencedScopeResultAsync(transaction, name, scope, cancellationToken);
 
             _configurationDbContext.ApiScopes.Remove(scope);
             await _configurationDbContext.SaveChangesAsync(cancellationToken);
@@ -99,7 +90,7 @@ public class ApiScopeListService : IApiScopeListService
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.ApiScope, AuditAction.Delete, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
-                TargetId: name, TargetName: scope.DisplayName ?? name,
+                name, scope.DisplayName ?? name,
                 Details: $"Deleted API Scope '{name}'"), cancellationToken);
             return ApiScopeDeleteResult.Deleted;
         }
@@ -107,9 +98,30 @@ public class ApiScopeListService : IApiScopeListService
         {
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.ApiScope, AuditAction.Delete, AuditOutcome.Failed, AuditReasonCode.PersistenceFailure,
-                TargetId: name, TargetName: name, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
+                name, name, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
             throw;
         }
+    }
+
+    private async Task<ApiScopeDeleteResult> HandleScopeNotFoundResultAsync(
+        IDbContextTransaction transaction, string name, CancellationToken cancellationToken)
+    {
+        await transaction.RollbackAsync(cancellationToken);
+        await _auditWriter.WriteAsync(new AdminAuditEvent(
+            AuditCategory.ApiScope, AuditAction.Delete, AuditOutcome.Denied, AuditReasonCode.NotFound,
+            name, name, Details: $"API Scope '{name}' was not found."), cancellationToken);
+        return ApiScopeDeleteResult.NotFound;
+    }
+
+    private async Task<ApiScopeDeleteResult> BuildReferencedScopeResultAsync(
+        IDbContextTransaction transaction, string name, ApiScope scope, CancellationToken cancellationToken)
+    {
+        await transaction.RollbackAsync(cancellationToken);
+        await _auditWriter.WriteAsync(new AdminAuditEvent(
+            AuditCategory.ApiScope, AuditAction.Delete, AuditOutcome.Denied, AuditReasonCode.ReferencedResource,
+            name, scope.DisplayName ?? name,
+            Details: $"API Scope '{name}' is referenced by one or more clients."), cancellationToken);
+        return ApiScopeDeleteResult.Blocked;
     }
 
     private static IQueryable<ApiScope> ApplyFilter(IQueryable<ApiScope> query, string? filter)
@@ -117,8 +129,8 @@ public class ApiScopeListService : IApiScopeListService
         if (string.IsNullOrWhiteSpace(filter))
             return query;
 
-        var escaped = LikeExtensions.EscapeLikePattern(filter.Trim());
-        var pattern = $"%{escaped}%";
+        string? escaped = LikeExtensions.EscapeLikePattern(filter.Trim());
+        string pattern = $"%{escaped}%";
 
         return query.Where(s =>
             EF.Functions.Like(s.Name, pattern) ||

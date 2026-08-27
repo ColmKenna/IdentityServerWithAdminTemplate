@@ -11,11 +11,9 @@ public class AuthenticationInputModel
     public bool RequirePkce { get; set; }
     public bool RequireClientSecret { get; set; }
 
-    [Display(Name = "Grant Types")]
-    public List<string> GrantTypes { get; set; } = new();
+    [Display(Name = "Grant Types")] public List<string> GrantTypes { get; set; } = new();
 
-    [Display(Name = "Redirect URIs")]
-    public List<string> RedirectUris { get; set; } = new();
+    [Display(Name = "Redirect URIs")] public List<string> RedirectUris { get; set; } = new();
 
     [Display(Name = "Post-Logout Redirect URIs")]
     public List<string> PostLogoutRedirectUris { get; set; } = new();
@@ -45,11 +43,9 @@ public class AuthenticationModel : PageModel
         _clientDetailsService = clientDetailsService;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public string Id { get; set; } = string.Empty;
+    [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
-    [BindProperty]
-    public AuthenticationInputModel Input { get; set; } = new();
+    [BindProperty] public AuthenticationInputModel Input { get; set; } = new();
 
     public string ClientNameDisplay { get; private set; } = string.Empty;
     public bool HasDrifted { get; private set; }
@@ -61,7 +57,8 @@ public class AuthenticationModel : PageModel
         if (string.IsNullOrWhiteSpace(Id))
             return NotFound();
 
-        var authentication = await _clientDetailsService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
+        ClientAuthenticationModel? authentication =
+            await _clientDetailsService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
         if (authentication == null)
             return NotFound();
 
@@ -85,7 +82,9 @@ public class AuthenticationModel : PageModel
                 key.StartsWith("Input.PostLogoutRedirectUris", StringComparison.Ordinal) ||
                 key.StartsWith("Input.FrontChannelLogoutUri", StringComparison.Ordinal) ||
                 key.StartsWith("Input.BackChannelLogoutUri", StringComparison.Ordinal) ||
-                key.StartsWith("Input.CorsOrigins", StringComparison.Ordinal)) ? 1 : 0;
+                key.StartsWith("Input.CorsOrigins", StringComparison.Ordinal))
+                ? 1
+                : 0;
 
             return await ReloadPageAsync(cancellationToken);
         }
@@ -104,7 +103,8 @@ public class AuthenticationModel : PageModel
             BackChannelLogoutSessionRequired = Input.BackChannelLogoutSessionRequired
         };
 
-        var result = await _clientDetailsService.UpdateClientAuthenticationAsync(ClientId.Create(Id), input, cancellationToken);
+        AdminMutationResult result =
+            await _clientDetailsService.UpdateClientAuthenticationAsync(ClientId.Create(Id), input, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
             return NotFound();
 
@@ -146,47 +146,48 @@ public class AuthenticationModel : PageModel
     private void ValidateInput()
     {
         if (Input.GrantTypes.Count == 0)
-        {
             ModelState.AddModelError(string.Empty, "At least one grant type must be selected.");
-        }
         else if (Input.GrantTypes.Any(grantType =>
                      !string.IsNullOrWhiteSpace(grantType) &&
                      grantType.Trim().Length > ValidationConstants.MaxGrantTypeLength))
-        {
             ModelState.AddModelError(
                 "Input.GrantTypes",
                 $"Grant types cannot exceed {ValidationConstants.MaxGrantTypeLength} characters.");
-        }
 
-        if (UriValidationHelper.GetInvalidHttpUris(Input.RedirectUris, ValidationConstants.MaxClientRedirectUriLength).Any())
+        if (UriValidationHelper.GetInvalidHttpUris(Input.RedirectUris, ValidationConstants.MaxClientRedirectUriLength)
+            .Any())
             ModelState.AddModelError("Input.RedirectUris", "Each Redirect URI must be an absolute HTTP or HTTPS URL.");
 
-        if (UriValidationHelper.GetInvalidHttpUris(Input.PostLogoutRedirectUris, ValidationConstants.MaxClientPostLogoutRedirectUriLength).Any())
-            ModelState.AddModelError("Input.PostLogoutRedirectUris", "Each Post-Logout Redirect URI must be an absolute HTTP or HTTPS URL.");
+        if (UriValidationHelper.GetInvalidHttpUris(Input.PostLogoutRedirectUris,
+                ValidationConstants.MaxClientPostLogoutRedirectUriLength).Any())
+            ModelState.AddModelError("Input.PostLogoutRedirectUris",
+                "Each Post-Logout Redirect URI must be an absolute HTTP or HTTPS URL.");
 
         if (Input.CorsOrigins
             .Where(origin => !string.IsNullOrWhiteSpace(origin))
-            .Any(origin => !UriValidationHelper.TryNormalizeCorsOrigin(origin, ValidationConstants.MaxClientCorsOriginLength, out _)))
-        {
-            ModelState.AddModelError("Input.CorsOrigins", "Each CORS Origin must be an absolute HTTP or HTTPS URL containing only the scheme and authority (no path, query, or fragment).");
-        }
+            .Any(origin =>
+                !UriValidationHelper.TryNormalizeCorsOrigin(origin, ValidationConstants.MaxClientCorsOriginLength,
+                    out _)))
+            ModelState.AddModelError("Input.CorsOrigins",
+                "Each CORS Origin must be an absolute HTTP or HTTPS URL containing only the scheme and authority (no path, query, or fragment).");
 
         if (!string.IsNullOrWhiteSpace(Input.FrontChannelLogoutUri) &&
-            !UriValidationHelper.IsValidHttpOrHttpsUri(Input.FrontChannelLogoutUri, ValidationConstants.MaxLogoutUriLength))
-        {
-            ModelState.AddModelError("Input.FrontChannelLogoutUri", "Front-channel logout URI must be an absolute HTTP or HTTPS URL.");
-        }
+            !UriValidationHelper.IsValidHttpOrHttpsUri(Input.FrontChannelLogoutUri,
+                ValidationConstants.MaxLogoutUriLength))
+            ModelState.AddModelError("Input.FrontChannelLogoutUri",
+                "Front-channel logout URI must be an absolute HTTP or HTTPS URL.");
 
         if (!string.IsNullOrWhiteSpace(Input.BackChannelLogoutUri) &&
-            !UriValidationHelper.IsValidHttpOrHttpsUri(Input.BackChannelLogoutUri, ValidationConstants.MaxLogoutUriLength))
-        {
-            ModelState.AddModelError("Input.BackChannelLogoutUri", "Back-channel logout URI must be an absolute HTTP or HTTPS URL.");
-        }
+            !UriValidationHelper.IsValidHttpOrHttpsUri(Input.BackChannelLogoutUri,
+                ValidationConstants.MaxLogoutUriLength))
+            ModelState.AddModelError("Input.BackChannelLogoutUri",
+                "Back-channel logout URI must be an absolute HTTP or HTTPS URL.");
     }
 
     private async Task<IActionResult> ReloadPageAsync(CancellationToken cancellationToken)
     {
-        var authentication = await _clientDetailsService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
+        ClientAuthenticationModel? authentication =
+            await _clientDetailsService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
         if (authentication == null)
             return NotFound();
 
@@ -198,12 +199,8 @@ public class AuthenticationModel : PageModel
 
     private void AddErrorsToModelState(IReadOnlyDictionary<string, string[]> errors)
     {
-        foreach (var (key, messages) in errors)
-        {
-            foreach (var message in messages)
-            {
-                ModelState.AddModelError(key, message);
-            }
-        }
+        foreach ((string key, string[] messages) in errors)
+        foreach (string message in messages)
+            ModelState.AddModelError(key, message);
     }
 }

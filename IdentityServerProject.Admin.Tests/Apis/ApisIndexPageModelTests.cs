@@ -6,23 +6,23 @@ using Moq;
 namespace IdentityServerProject.Admin.Tests.Apis;
 
 /// <summary>
-/// Unit tests for <see cref="IndexModel"/> handler logic, exercised directly
-/// against a mocked <see cref="IApiResourceListService"/> (no HTTP pipeline involved).
+///     Unit tests for <see cref="IndexModel" /> handler logic, exercised directly
+///     against a mocked <see cref="IApiResourceListService" /> (no HTTP pipeline involved).
 /// </summary>
 public class ApisIndexPageModelTests
 {
+    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
+
     private static ListResult<ApiResourceListItem> MakeResult(int pageNumber = 1, int pageSize = 10) => new()
     {
         Items = new[]
         {
-            new ApiResourceListItem { Name = "sales.api", DisplayName = "Sales API", ScopeCount = 2, Enabled = true },
+            new ApiResourceListItem { Name = "sales.api", DisplayName = "Sales API", ScopeCount = 2, Enabled = true }
         },
         TotalCount = 1,
         PageNumber = pageNumber,
-        PageSize = pageSize,
+        PageSize = pageSize
     };
-
-    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
 
     [Fact]
     public async Task OnGetAsync_NoQueryParameters_CallsServiceWithNullFilterAndFirstPage()
@@ -35,13 +35,14 @@ public class ApisIndexPageModelTests
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiResourcesAsync(new ListQuery(null, DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiResourcesAsync(new ListQuery(null, DefaultPagination), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
     public async Task OnGetAsync_ServiceReturnsResult_PopulatesApiResourcesProperty()
     {
-        var expected = MakeResult();
+        ListResult<ApiResourceListItem> expected = MakeResult();
         var mock = new Mock<IApiResourceListService>();
         mock.Setup(s => s.GetApiResourcesAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
@@ -57,14 +58,17 @@ public class ApisIndexPageModelTests
     public async Task OnGetAsync_FilterSpecified_PassesFilterToService()
     {
         var mock = new Mock<IApiResourceListService>();
-        mock.Setup(s => s.GetApiResourcesAsync(new ListQuery("sales", DefaultPagination), It.IsAny<CancellationToken>()))
+        mock.Setup(s =>
+                s.GetApiResourcesAsync(new ListQuery("sales", DefaultPagination), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { Filter = "sales" };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiResourcesAsync(new ListQuery("sales", DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(
+            s => s.GetApiResourcesAsync(new ListQuery("sales", DefaultPagination), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -72,8 +76,9 @@ public class ApisIndexPageModelTests
     {
         var page3 = Pagination.From(3, TestOptions.PageSize);
         var mock = new Mock<IApiResourceListService>();
-        mock.Setup(s => s.GetApiResourcesAsync(It.Is<ListQuery>(q => q.Pagination == page3), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(MakeResult(pageNumber: 3));
+        mock.Setup(s =>
+                s.GetApiResourcesAsync(It.Is<ListQuery>(q => q.Pagination == page3), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakeResult(3));
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { PageNumber = 3 };
 
@@ -93,6 +98,7 @@ public class ApisIndexPageModelTests
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiResourcesAsync(new ListQuery(null, DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiResourcesAsync(new ListQuery(null, DefaultPagination), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }

@@ -12,9 +12,9 @@ public class IdentityResourceEditorModel
     public List<string> UserClaims { get; set; } = new();
 
     /// <summary>
-    /// True when every mutation on this resource is refused (see
-    /// <see cref="BuiltInIdentityResourcePolicy"/>). The editor renders read-only in that case, so
-    /// the operator is told before submitting rather than after.
+    ///     True when every mutation on this resource is refused (see
+    ///     <see cref="BuiltInIdentityResourcePolicy" />). The editor renders read-only in that case, so
+    ///     the operator is told before submitting rather than after.
     /// </summary>
     public bool IsProtected { get; set; }
 }

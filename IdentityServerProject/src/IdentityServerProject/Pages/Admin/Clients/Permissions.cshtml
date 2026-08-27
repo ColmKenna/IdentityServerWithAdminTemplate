@@ -1,5 +1,5 @@
 @page "{id}"
-@model IdentityServerProject.Pages.Admin.Clients.PermissionsModel
+@model PermissionsModel
 @{
     ViewData["Title"] = "Configure Client Permissions";
     ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
@@ -18,10 +18,11 @@
     </div>
 </div>
 
-<partial name="_ClientEditorTabs" model="new ClientEditorTabsModel(Model.Id, ClientEditorTab.Permissions)" />
+<partial name="_ClientEditorTabs" model="new ClientEditorTabsModel(Model.Id, ClientEditorTab.Permissions)"/>
 
 <form method="post" id="edit-client-permissions-form">
-    <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger" style="display: @(ViewData.ModelState.IsValid ? "none" : "block"); margin-bottom: 20px;"></div>
+    <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger"
+         style="display: @(ViewData.ModelState.IsValid ? "none" : "block"); margin-bottom: 20px;"></div>
 
     @{
         void RenderApiScopesContent()
@@ -29,8 +30,10 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
                 @foreach (var scope in Model.AvailableApiScopes)
                 {
-                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line-soft, #dde3e8); border-radius: 4px; cursor: pointer;">
-                        <input type="checkbox" name="Input.AllowedScopes" value="@scope" class="scope-checkbox" @(Model.Input.AllowedScopes.Contains(scope) ? "checked" : "") />
+                    <label
+                        style="display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line-soft, #dde3e8); border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" name="Input.AllowedScopes" value="@scope" class="scope-checkbox"
+                               @(Model.Input.AllowedScopes.Contains(scope) ? "checked" : "")/>
                         <code>@scope</code>
                     </label>
                 }
@@ -42,21 +45,24 @@
     {
         <ck-tabs id="client-permissions-tabs" class="client-editor-tabs">
             <ck-tab label="Identity Resources" active>
-                <p class="form-text" style="margin-bottom: 14px;">These claims are returned in the ID token. <code>openid</code> is required for interactive sign-in and cannot be removed.</p>
+                <p class="form-text" style="margin-bottom: 14px;">These claims are returned in the ID token. <code>openid</code>
+                    is required for interactive sign-in and cannot be removed.</p>
 
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
                     @foreach (var scope in Model.AvailableIdentityScopes)
                     {
                         var isOpenId = scope == "openid";
-                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line-soft, #dde3e8); border-radius: 4px; cursor: @(isOpenId ? "not-allowed" : "pointer");">
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line-soft, #dde3e8); border-radius: 4px; cursor: @(isOpenId ? "not-allowed" : "pointer");">
                             @if (isOpenId)
                             {
-                                <input type="checkbox" checked disabled />
-                                <input type="hidden" name="Input.AllowedScopes" value="openid" />
+                                <input type="checkbox" checked disabled/>
+                                <input type="hidden" name="Input.AllowedScopes" value="openid"/>
                             }
                             else
                             {
-                                <input type="checkbox" name="Input.AllowedScopes" value="@scope" class="scope-checkbox" @(Model.Input.AllowedScopes.Contains(scope) ? "checked" : "") />
+                                <input type="checkbox" name="Input.AllowedScopes" value="@scope" class="scope-checkbox"
+                                       @(Model.Input.AllowedScopes.Contains(scope) ? "checked" : "")/>
                             }
                             <code>@scope</code>
                             @if (isOpenId)
@@ -91,6 +97,7 @@
         font-size: 0.825rem;
         color: var(--text-dim, #8b9096);
     }
+
     .required {
         color: #c8433b;
     }

@@ -17,7 +17,8 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
         _factory = factory;
     }
 
-    private static PersistedGrant MakeGrant(string key, string clientId, string subjectId, string type = "user_consent", DateTime? expiration = null)
+    private static PersistedGrant MakeGrant(string key, string clientId, string subjectId, string type = "user_consent",
+        DateTime? expiration = null)
     {
         return new PersistedGrant
         {
@@ -35,24 +36,18 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var grantDb = sp.GetRequiredService<PersistedGrantDbContext>();
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            PersistedGrantDbContext grantDb = sp.GetRequiredService<PersistedGrantDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
 
             if (grants != null)
             {
-                foreach (var grant in grants)
-                {
-                    grantDb.PersistedGrants.Add(grant);
-                }
+                foreach (PersistedGrant grant in grants) grantDb.PersistedGrants.Add(grant);
                 await grantDb.SaveChangesAsync();
             }
 
             if (clients != null)
             {
-                foreach (var client in clients)
-                {
-                    configDb.Clients.Add(client);
-                }
+                foreach (Client client in clients) configDb.Clients.Add(client);
                 await configDb.SaveChangesAsync();
             }
         });
@@ -61,9 +56,9 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetGrantsAsync_ReturnsGrants_WithResolvedClientNames()
     {
-        var tag = $"grant-test-{Guid.NewGuid():N}";
-        var clientId = $"{tag}-client-id";
-        var clientName = $"{tag} Client Display Name";
+        string tag = $"grant-test-{Guid.NewGuid():N}";
+        string clientId = $"{tag}-client-id";
+        string clientName = $"{tag} Client Display Name";
 
         var client = new Client
         {
@@ -71,18 +66,18 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
             ClientName = clientName
         };
 
-        var grant = MakeGrant($"{tag}-key", clientId, $"{tag}-user-1");
+        PersistedGrant grant = MakeGrant($"{tag}-key", clientId, $"{tag}-user-1");
 
         await SeedAsync(new[] { grant }, new[] { client });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IGrantListService>();
-            var result = await service.GetGrantsAsync(
+            IGrantListService service = sp.GetRequiredService<IGrantListService>();
+            ListResult<GrantListItem> result = await service.GetGrantsAsync(
                 new GrantFilter(ClientId: ClientId.Create(clientId)),
-                pagination: Pagination.From(1, 10));
+                Pagination.From(1, 10));
 
-            var item = Assert.Single(result.Items);
+            GrantListItem item = Assert.Single(result.Items);
             Assert.Equal(clientName, item.ClientName);
             Assert.Equal(clientId, item.ClientId);
         });
@@ -91,20 +86,20 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetGrantsAsync_FiltersBySubjectId_ReturnsMatchingGrants()
     {
-        var tag = $"grant-subject-{Guid.NewGuid():N}";
-        var g1 = MakeGrant($"{tag}-key-1", $"{tag}-client", $"{tag}-target-user");
-        var g2 = MakeGrant($"{tag}-key-2", $"{tag}-client", $"{tag}-other-user");
+        string tag = $"grant-subject-{Guid.NewGuid():N}";
+        PersistedGrant g1 = MakeGrant($"{tag}-key-1", $"{tag}-client", $"{tag}-target-user");
+        PersistedGrant g2 = MakeGrant($"{tag}-key-2", $"{tag}-client", $"{tag}-other-user");
 
         await SeedAsync(new[] { g1, g2 });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IGrantListService>();
-            var result = await service.GetGrantsAsync(
-                new GrantFilter(SubjectId: UserId.Create($"{tag}-target-user")),
-                pagination: Pagination.From(1, 10));
+            IGrantListService service = sp.GetRequiredService<IGrantListService>();
+            ListResult<GrantListItem> result = await service.GetGrantsAsync(
+                new GrantFilter(UserId.Create($"{tag}-target-user")),
+                Pagination.From(1, 10));
 
-            var item = Assert.Single(result.Items);
+            GrantListItem item = Assert.Single(result.Items);
             Assert.Equal(g1.Key, item.Key);
         });
     }
@@ -119,7 +114,7 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
         var now = new DateTime(2026, 7, 21, 12, 0, 0, DateTimeKind.Utc);
         DateTime? expiration = minutesFromNow.HasValue ? now.AddMinutes(minutesFromNow.Value) : null;
 
-        var formatted = GrantListService.FormatRelativeExpiration(expiration, now);
+        string formatted = GrantListService.FormatRelativeExpiration(expiration, now);
 
         Assert.Equal(expectedFormat, formatted);
     }
@@ -127,24 +122,24 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task RevokeGrantAsync_ExistingGrant_RemovesGrantFromDatabase()
     {
-        var tag = $"grant-revoke-{Guid.NewGuid():N}";
-        var grantKey = $"{tag}-key";
-        var grant = MakeGrant(grantKey, $"{tag}-client", $"{tag}-user");
+        string tag = $"grant-revoke-{Guid.NewGuid():N}";
+        string grantKey = $"{tag}-key";
+        PersistedGrant grant = MakeGrant(grantKey, $"{tag}-client", $"{tag}-user");
 
         await SeedAsync(new[] { grant });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IGrantListService>();
-            var result = await service.RevokeGrantAsync(GrantKey.Create(grantKey));
+            IGrantListService service = sp.GetRequiredService<IGrantListService>();
+            RevokeGrantResult result = await service.RevokeGrantAsync(GrantKey.Create(grantKey));
 
             Assert.Equal(RevokeGrantResult.Revoked, result);
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var grantDb = sp.GetRequiredService<PersistedGrantDbContext>();
-            var existing = grantDb.PersistedGrants.FirstOrDefault(g => g.Key == grantKey);
+            PersistedGrantDbContext grantDb = sp.GetRequiredService<PersistedGrantDbContext>();
+            PersistedGrant? existing = grantDb.PersistedGrants.FirstOrDefault(g => g.Key == grantKey);
             Assert.Null(existing);
         });
     }
@@ -152,24 +147,24 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task RevokeGrantsBySubjectAsync_RemovesAllSubjectGrants()
     {
-        var tag = $"grant-revoke-subject-{Guid.NewGuid():N}";
-        var subjectId = $"{tag}-user-multi";
-        var g1 = MakeGrant($"{tag}-key-1", $"{tag}-client-1", subjectId);
-        var g2 = MakeGrant($"{tag}-key-2", $"{tag}-client-2", subjectId);
+        string tag = $"grant-revoke-subject-{Guid.NewGuid():N}";
+        string subjectId = $"{tag}-user-multi";
+        PersistedGrant g1 = MakeGrant($"{tag}-key-1", $"{tag}-client-1", subjectId);
+        PersistedGrant g2 = MakeGrant($"{tag}-key-2", $"{tag}-client-2", subjectId);
 
         await SeedAsync(new[] { g1, g2 });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IGrantListService>();
-            var count = await service.RevokeGrantsBySubjectAsync(UserId.Create(subjectId));
+            IGrantListService service = sp.GetRequiredService<IGrantListService>();
+            int count = await service.RevokeGrantsBySubjectAsync(UserId.Create(subjectId));
 
             Assert.Equal(2, count);
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var grantDb = sp.GetRequiredService<PersistedGrantDbContext>();
+            PersistedGrantDbContext grantDb = sp.GetRequiredService<PersistedGrantDbContext>();
             var existing = grantDb.PersistedGrants.Where(g => g.SubjectId == subjectId).ToList();
             Assert.Empty(existing);
         });

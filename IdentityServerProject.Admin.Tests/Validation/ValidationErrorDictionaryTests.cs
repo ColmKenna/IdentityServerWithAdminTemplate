@@ -7,7 +7,7 @@ public sealed class ValidationErrorDictionaryTests
     [Fact]
     public void Empty_ReturnsEmptyInstance()
     {
-        var errors = ValidationErrorDictionary.Empty;
+        ValidationErrorDictionary errors = ValidationErrorDictionary.Empty;
 
         Assert.True(errors.IsEmpty);
         Assert.False(errors.HasErrors);
@@ -34,7 +34,7 @@ public sealed class ValidationErrorDictionaryTests
         var errors = new ValidationErrorDictionary();
 
         errors.AddError("Password", "Password is too short.")
-              .AddError("Password", "Password requires a special character.");
+            .AddError("Password", "Password requires a special character.");
 
         Assert.Single(errors);
         Assert.Equal(new[] { "Password is too short.", "Password requires a special character." }, errors["Password"]);
@@ -68,7 +68,7 @@ public sealed class ValidationErrorDictionaryTests
         var errors = new ValidationErrorDictionary();
         errors.AddError("Scope", "Invalid scope");
 
-        var found = errors.TryGetValue("Scope", out var messages);
+        bool found = errors.TryGetValue("Scope", out string[] messages);
 
         Assert.True(found);
         Assert.Equal(new[] { "Invalid scope" }, messages);
@@ -79,7 +79,7 @@ public sealed class ValidationErrorDictionaryTests
     {
         var errors = new ValidationErrorDictionary();
 
-        var found = errors.TryGetValue("Missing", out var messages);
+        bool found = errors.TryGetValue("Missing", out string[] messages);
 
         Assert.False(found);
         Assert.Empty(messages);
@@ -92,7 +92,7 @@ public sealed class ValidationErrorDictionaryTests
         errors.AddError("Field1", "Error 1");
         errors.AddError("Field2", "Error 2");
 
-        var dict = errors.ToDictionary();
+        IReadOnlyDictionary<string, string[]> dict = errors.ToDictionary();
 
         Assert.Equal(2, dict.Count);
         Assert.Equal(new[] { "Error 1" }, dict["Field1"]);

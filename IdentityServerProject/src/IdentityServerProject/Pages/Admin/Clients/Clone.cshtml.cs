@@ -21,20 +21,18 @@ public class CloneModel : PageModel
         _secretRevealService = secretRevealService;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public string SourceClientId { get; set; } = string.Empty;
+    [BindProperty(SupportsGet = true)] public string SourceClientId { get; set; } = string.Empty;
 
     public string SourceClientName { get; set; } = string.Empty;
 
-    [BindProperty]
-    public ClientCreateInputModel Input { get; set; } = new();
+    [BindProperty] public ClientCreateInputModel Input { get; set; } = new();
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(SourceClientId))
             return RedirectToPage("./Index");
 
-        var sourceClient = await LoadSourceClientAsync(cancellationToken);
+        ClientDetailsModel? sourceClient = await LoadSourceClientAsync(cancellationToken);
         if (sourceClient == null)
             return NotFound();
 
@@ -50,7 +48,7 @@ public class CloneModel : PageModel
         if (string.IsNullOrWhiteSpace(SourceClientId))
             return RedirectToPage("./Index");
 
-        var sourceClient = await LoadSourceClientAsync(cancellationToken);
+        ClientDetailsModel? sourceClient = await LoadSourceClientAsync(cancellationToken);
         if (sourceClient == null)
             return NotFound();
 
@@ -59,7 +57,8 @@ public class CloneModel : PageModel
         if (!ModelState.IsValid)
             return Page();
 
-        var result = await _clientCreateService.CloneClientAsync(SourceClientId, Input, cancellationToken);
+        ClientCreateResult result =
+            await _clientCreateService.CloneClientAsync(SourceClientId, Input, cancellationToken);
         if (!result.Success)
         {
             AddErrorsToModelState(result.Errors);
@@ -71,7 +70,7 @@ public class CloneModel : PageModel
 
         if (!string.IsNullOrEmpty(result.PlaintextSecret))
         {
-            var ticket = await _secretRevealService.IssueAsync(
+            SecretRevealTicket ticket = await _secretRevealService.IssueAsync(
                 new SecretRevealTarget(SecretRevealPurpose.ClientCreated, result.ClientId!),
                 result.PlaintextSecret,
                 cancellationToken);
@@ -83,7 +82,8 @@ public class CloneModel : PageModel
 
     private async Task<ClientDetailsModel?> LoadSourceClientAsync(CancellationToken cancellationToken)
     {
-        var sourceClient = await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(SourceClientId), cancellationToken);
+        ClientDetailsModel? sourceClient =
+            await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(SourceClientId), cancellationToken);
         if (sourceClient != null)
             SourceClientName = sourceClient.ClientName ?? SourceClientId;
 
@@ -92,16 +92,13 @@ public class CloneModel : PageModel
 
     private void AddErrorsToModelState(IReadOnlyDictionary<string, string[]> errors)
     {
-        foreach (var (field, messages) in errors)
+        foreach ((string field, string[] messages) in errors)
         {
-            var key = string.IsNullOrEmpty(field) || field.StartsWith("Input.", StringComparison.Ordinal)
+            string key = string.IsNullOrEmpty(field) || field.StartsWith("Input.", StringComparison.Ordinal)
                 ? field
                 : $"Input.{field}";
 
-            foreach (var message in messages)
-            {
-                ModelState.AddModelError(key, message);
-            }
+            foreach (string message in messages) ModelState.AddModelError(key, message);
         }
     }
 }

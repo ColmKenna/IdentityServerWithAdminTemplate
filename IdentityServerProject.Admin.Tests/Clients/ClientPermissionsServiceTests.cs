@@ -27,12 +27,14 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
 
             if (!await configDb.IdentityResources.AnyAsync(r => r.Name == "openid"))
             {
-                configDb.IdentityResources.Add(new IdentityResourceModel("openid", new List<string> { "sub" }).ToEntity());
-                configDb.IdentityResources.Add(new IdentityResourceModel("profile", new List<string> { "name" }).ToEntity());
+                configDb.IdentityResources.Add(
+                    new IdentityResourceModel("openid", new List<string> { "sub" }).ToEntity());
+                configDb.IdentityResources.Add(new IdentityResourceModel("profile", new List<string> { "name" })
+                    .ToEntity());
             }
 
             configDb.ApiScopes.Add(new ApiScopeModel($"{tag}.read", "Read Access").ToEntity());
@@ -43,8 +45,8 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
 
     private async Task SeedClientAsync(ClientModel client)
     {
-        var entity = client.ToEntity();
-        var isM2M = client.AllowedGrantTypes.Contains("client_credentials");
+        Client entity = client.ToEntity();
+        bool isM2M = client.AllowedGrantTypes.Contains("client_credentials");
 
         if (isM2M)
         {
@@ -52,22 +54,22 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
             entity.RequirePkce = false;
             entity.ClientSecrets = new List<ClientSecret>
             {
-                new ClientSecret { Value = "secret".Sha256(), Type = "SharedSecret" }
+                new() { Value = "secret".Sha256(), Type = "SharedSecret" }
             };
         }
         else
         {
             entity.RequireClientSecret = false;
             entity.RequirePkce = true;
-            if (entity.AllowedGrantTypes.Any(g => g.GrantType == "authorization_code") && (entity.RedirectUris == null || entity.RedirectUris.Count == 0))
-            {
-                entity.RedirectUris = new List<ClientRedirectUri> { new ClientRedirectUri { RedirectUri = "https://example.com/callback" } };
-            }
+            if (entity.AllowedGrantTypes.Any(g => g.GrantType == "authorization_code") &&
+                (entity.RedirectUris == null || entity.RedirectUris.Count == 0))
+                entity.RedirectUris = new List<ClientRedirectUri>
+                    { new() { RedirectUri = "https://example.com/callback" } };
         }
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             configDb.Clients.Add(entity);
             await configDb.SaveChangesAsync();
         });
@@ -78,8 +80,9 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientPermissionsAsync(ClientId.Create("non-existent-client-id-xyz"));
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientPermissionsModel? result =
+                await service.GetClientPermissionsAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.Null(result);
         });
     }
@@ -87,10 +90,10 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetClientPermissionsAsync_ExistingClient_ReturnsAllowedAndAvailableScopes()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedScopesAsync(tag);
 
-        var clientId = $"{tag}-get-permissions";
+        string clientId = $"{tag}-get-permissions";
         await SeedClientAsync(new ClientModel
         {
             ClientId = clientId,
@@ -101,8 +104,8 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientPermissionsModel? result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
             Assert.Equal(clientId, result!.ClientId);
@@ -116,10 +119,10 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetClientPermissionsAsync_M2MClient_SetsIsInteractiveToFalse()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedScopesAsync(tag);
 
-        var clientId = $"{tag}-m2m-permissions";
+        string clientId = $"{tag}-m2m-permissions";
         await SeedClientAsync(new ClientModel
         {
             ClientId = clientId,
@@ -130,8 +133,8 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientPermissionsModel? result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
             Assert.False(result!.IsInteractive);
@@ -142,10 +145,10 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UpdateClientPermissionsAsync_InteractiveClient_EnforcesOpenIdEvenWhenOmitted()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedScopesAsync(tag);
 
-        var clientId = $"{tag}-enforce-openid";
+        string clientId = $"{tag}-enforce-openid";
         await SeedClientAsync(new ClientModel
         {
             ClientId = clientId,
@@ -156,12 +159,13 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
 
-            var updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId), ScopeSet.FromStrings(new[] { $"{tag}.read" }));
+            AdminMutationResult updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId),
+                ScopeSet.FromStrings(new[] { $"{tag}.read" }));
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
-            var result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
+            ClientPermissionsModel? result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
             Assert.NotNull(result);
             Assert.Contains("openid", result!.AllowedScopes);
             Assert.Contains($"{tag}.read", result.AllowedScopes);
@@ -171,10 +175,10 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UpdateClientPermissionsAsync_M2MClient_StripsIdentityScopesEvenIfSubmitted()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedScopesAsync(tag);
 
-        var clientId = $"{tag}-strip-identity";
+        string clientId = $"{tag}-strip-identity";
         await SeedClientAsync(new ClientModel
         {
             ClientId = clientId,
@@ -184,12 +188,13 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
 
-            var updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId), ScopeSet.FromStrings(new[] { "openid", "profile", $"{tag}.write" }));
+            AdminMutationResult updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId),
+                ScopeSet.FromStrings(new[] { "openid", "profile", $"{tag}.write" }));
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
-            var result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
+            ClientPermissionsModel? result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
             Assert.NotNull(result);
             Assert.DoesNotContain("openid", result!.AllowedScopes);
             Assert.DoesNotContain("profile", result.AllowedScopes);
@@ -200,10 +205,10 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UpdateClientPermissionsAsync_AddsAndRemovesApiScopes()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedScopesAsync(tag);
 
-        var clientId = $"{tag}-add-remove-api";
+        string clientId = $"{tag}-add-remove-api";
         await SeedClientAsync(new ClientModel
         {
             ClientId = clientId,
@@ -214,12 +219,13 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
 
-            var updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId), ScopeSet.FromStrings(new[] { "openid", $"{tag}.write" }));
+            AdminMutationResult updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId),
+                ScopeSet.FromStrings(new[] { "openid", $"{tag}.write" }));
             Assert.True(updateResult.Succeeded, updateResult.ErrorMessage);
 
-            var result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
+            ClientPermissionsModel? result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
             Assert.NotNull(result);
             Assert.Contains($"{tag}.write", result!.AllowedScopes);
             Assert.DoesNotContain($"{tag}.read", result.AllowedScopes);
@@ -231,8 +237,9 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientPermissionsAsync(ClientId.Create("non-existent-client-id-xyz"), ScopeSet.FromStrings(new[] { "openid" }));
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            AdminMutationResult result = await service.UpdateClientPermissionsAsync(
+                ClientId.Create("non-existent-client-id-xyz"), ScopeSet.FromStrings(new[] { "openid" }));
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
         });
     }
@@ -240,9 +247,9 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UpdateClientPermissionsAsync_UnknownScope_IsFieldKeyedAndDoesNotMutate()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
         await SeedScopesAsync(tag);
-        var clientId = $"{tag}-unknown-scope";
+        string clientId = $"{tag}-unknown-scope";
         await SeedClientAsync(new ClientModel
         {
             ClientId = clientId,
@@ -253,15 +260,15 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientPermissionsAsync(
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            AdminMutationResult result = await service.UpdateClientPermissionsAsync(
                 ClientId.Create(clientId),
                 ScopeSet.FromStrings(new[] { "openid", "scope.that.is.not.configured" }));
 
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
             Assert.True(result.Errors.ContainsKey("Input.AllowedScopes"));
 
-            var persisted = await sp.GetRequiredService<ConfigurationDbContext>().Clients
+            Client persisted = await sp.GetRequiredService<ConfigurationDbContext>().Clients
                 .AsNoTracking().Include(client => client.AllowedScopes)
                 .SingleAsync(client => client.ClientId == clientId);
             Assert.Equal(

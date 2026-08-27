@@ -21,15 +21,13 @@ public class CreateModel : PageModel
         _secretRevealService = secretRevealService;
     }
 
-    [BindProperty]
-    public ClientCreateInputModel Input { get; set; } = new();
+    [BindProperty] public ClientCreateInputModel Input { get; set; } = new();
 
     public string? CreatedSecret { get; set; }
 
     public string? CreatedClientId { get; set; }
 
-    [TempData]
-    public string? SecretRevealHandle { get; set; }
+    [TempData] public string? SecretRevealHandle { get; set; }
 
     public bool RevealMode => !string.IsNullOrEmpty(CreatedSecret);
 
@@ -42,14 +40,16 @@ public class CreateModel : PageModel
         AvailablePresets = _clientPresetService.GetAvailablePresets();
         await LoadAvailableScopesAsync(cancellationToken);
 
-        var handle = SecretRevealHandle;
+        string? handle = SecretRevealHandle;
         if (!string.IsNullOrEmpty(handle) && !string.IsNullOrWhiteSpace(clientId))
         {
-            var reveal = await _secretRevealService.ConsumeAsync(
-                new SecretRevealTarget(SecretRevealPurpose.ClientCreated, clientId), IdentityServerProject.Services.SecretReveals.SecretRevealHandle.Create(handle), cancellationToken);
+            SecretRevealConsumeResult reveal = await _secretRevealService.ConsumeAsync(
+                new SecretRevealTarget(SecretRevealPurpose.ClientCreated, clientId),
+                Services.SecretReveals.SecretRevealHandle.Create(handle), cancellationToken);
             if (reveal.Status == SecretRevealConsumeStatus.Revealed)
                 CreatedSecret = reveal.Plaintext;
         }
+
         CreatedClientId = clientId;
 
         if (string.IsNullOrWhiteSpace(Input.ClientId) && string.IsNullOrWhiteSpace(CreatedClientId))
@@ -65,18 +65,15 @@ public class CreateModel : PageModel
             return Page();
         }
 
-        var result = await _clientCreateService.CreateClientAsync(Input, cancellationToken);
+        ClientCreateResult result = await _clientCreateService.CreateClientAsync(Input, cancellationToken);
         if (!result.Success)
         {
-            foreach (var (field, messages) in result.Errors)
+            foreach ((string field, string[] messages) in result.Errors)
             {
-                var key = string.IsNullOrEmpty(field) || field.StartsWith("Input.", StringComparison.Ordinal)
+                string key = string.IsNullOrEmpty(field) || field.StartsWith("Input.", StringComparison.Ordinal)
                     ? field
                     : $"Input.{field}";
-                foreach (var message in messages)
-                {
-                    ModelState.AddModelError(key, message);
-                }
+                foreach (string message in messages) ModelState.AddModelError(key, message);
             }
 
             if (result.Errors.Count == 0)
@@ -88,7 +85,7 @@ public class CreateModel : PageModel
 
         if (!string.IsNullOrEmpty(result.PlaintextSecret))
         {
-            var ticket = await _secretRevealService.IssueAsync(
+            SecretRevealTicket ticket = await _secretRevealService.IssueAsync(
                 new SecretRevealTarget(SecretRevealPurpose.ClientCreated, result.ClientId!),
                 result.PlaintextSecret,
                 cancellationToken);
@@ -101,7 +98,7 @@ public class CreateModel : PageModel
     private void ApplyPresetDefaults(string presetId)
     {
         Input.SelectedPreset = presetId;
-        var preset = _clientPresetService.GetPreset(presetId) ?? _clientPresetService.GetPreset("web");
+        ClientPreset? preset = _clientPresetService.GetPreset(presetId) ?? _clientPresetService.GetPreset("web");
 
         if (preset != null)
         {
@@ -112,8 +109,6 @@ public class CreateModel : PageModel
         }
     }
 
-    private async Task LoadAvailableScopesAsync(CancellationToken cancellationToken)
-    {
+    private async Task LoadAvailableScopesAsync(CancellationToken cancellationToken) =>
         AvailableScopes = await _clientCreateService.GetAvailableScopesAsync(cancellationToken);
-    }
 }

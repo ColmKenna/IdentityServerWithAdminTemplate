@@ -10,8 +10,8 @@ using Moq;
 namespace IdentityServerProject.Admin.Tests.Apis;
 
 /// <summary>
-/// Unit tests for <see cref="EditorModel"/> handler logic, exercised directly against a
-/// mocked <see cref="IApiResourceEditorService"/> (no HTTP pipeline involved).
+///     Unit tests for <see cref="EditorModel" /> handler logic, exercised directly against a
+///     mocked <see cref="IApiResourceEditorService" /> (no HTTP pipeline involved).
 /// </summary>
 public class ApiResourceEditorPageModelTests
 {
@@ -22,9 +22,9 @@ public class ApiResourceEditorPageModelTests
         DisplayName = "Sales API",
         Description = "Desc",
         Enabled = true,
-        Secrets = new(),
-        Scopes = new(),
-        Claims = new(),
+        Secrets = new List<ApiResourceSecretItem>(),
+        Scopes = new List<string>(),
+        Claims = new List<string>()
     };
 
     // ---------- OnGetAsync ----------
@@ -35,7 +35,7 @@ public class ApiResourceEditorPageModelTests
         var mock = new Mock<IApiResourceEditorService>();
         var model = new EditorModel(mock.Object) { Name = null, Tab = "secrets" };
 
-        var result = await model.OnGetAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnGetAsync(CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
         Assert.True(model.Editor.IsNew);
@@ -46,13 +46,14 @@ public class ApiResourceEditorPageModelTests
     [Fact]
     public async Task OnGetAsync_NameResolvesToResource_PopulatesEditor()
     {
-        var editor = MakeEditor();
+        ApiResourceEditorModel editor = MakeEditor();
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(editor);
 
         var model = new EditorModel(mock.Object) { Name = "sales.api" };
 
-        var result = await model.OnGetAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnGetAsync(CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
         Assert.Same(editor, model.Editor);
@@ -63,11 +64,12 @@ public class ApiResourceEditorPageModelTests
     public async Task OnGetAsync_NameDoesNotResolve_ReturnsNotFound()
     {
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("missing"), It.IsAny<CancellationToken>())).ReturnsAsync(default(ApiResourceEditorModel));
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("missing"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(default(ApiResourceEditorModel));
 
         var model = new EditorModel(mock.Object) { Name = "missing" };
 
-        var result = await model.OnGetAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnGetAsync(CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -80,14 +82,15 @@ public class ApiResourceEditorPageModelTests
     [InlineData(null, "basics")]
     public async Task OnGetAsync_TabQueryString_NormalizesToKnownTab(string? requestedTab, string expectedTab)
     {
-        var editor = MakeEditor();
+        ApiResourceEditorModel editor = MakeEditor();
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(editor);
         mock.Setup(s => s.GetAllApiScopeNamesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<string>());
 
         var model = new EditorModel(mock.Object) { Name = "sales.api", Tab = requestedTab! };
 
-        await model.OnGetAsync(cancellationToken: CancellationToken.None);
+        await model.OnGetAsync(CancellationToken.None);
 
         Assert.Equal(expectedTab, model.Tab);
     }
@@ -104,12 +107,12 @@ public class ApiResourceEditorPageModelTests
         var model = new EditorModel(mock.Object)
         {
             Name = null,
-            Basics = new EditorModel.BasicsInputModel { Name = "new.api" },
+            Basics = new EditorModel.BasicsInputModel { Name = "new.api" }
         };
 
-        var result = await model.OnPostSaveBasicsAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostSaveBasicsAsync(CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("new.api", redirect.RouteValues!["name"]);
         Assert.Equal("basics", redirect.RouteValues!["tab"]);
     }
@@ -117,19 +120,21 @@ public class ApiResourceEditorPageModelTests
     [Fact]
     public async Task OnPostSaveBasicsAsync_NameCollision_SetsErrorAndRedisplaysPage()
     {
-        var editor = MakeEditor("original.api");
+        ApiResourceEditorModel editor = MakeEditor("original.api");
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("original.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("original.api"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(editor);
         mock.Setup(s => s.SaveBasicsAsync(It.IsAny<SaveApiResourceBasicsCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(SaveApiResourceBasicsResult.ConflictResult("Basics.Name", "An API resource named 'taken.api' already exists."));
+            .ReturnsAsync(SaveApiResourceBasicsResult.ConflictResult("Basics.Name",
+                "An API resource named 'taken.api' already exists."));
 
         var model = new EditorModel(mock.Object)
         {
             Name = "original.api",
-            Basics = new EditorModel.BasicsInputModel { Name = "taken.api" },
+            Basics = new EditorModel.BasicsInputModel { Name = "taken.api" }
         };
 
-        var result = await model.OnPostSaveBasicsAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostSaveBasicsAsync(CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
         Assert.False(model.ModelState.IsValid);
@@ -146,10 +151,10 @@ public class ApiResourceEditorPageModelTests
         var model = new EditorModel(mock.Object)
         {
             Name = "gone.api",
-            Basics = new EditorModel.BasicsInputModel { Name = "gone.api" },
+            Basics = new EditorModel.BasicsInputModel { Name = "gone.api" }
         };
 
-        var result = await model.OnPostSaveBasicsAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostSaveBasicsAsync(CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -168,7 +173,8 @@ public class ApiResourceEditorPageModelTests
                 new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, "sales.api"),
                 "the-plaintext-secret",
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new SecretRevealTicket(SecretRevealHandle.Create("opaque-handle"), DateTimeOffset.UtcNow.AddMinutes(5)));
+            .ReturnsAsync(new SecretRevealTicket(SecretRevealHandle.Create("opaque-handle"),
+                DateTimeOffset.UtcNow.AddMinutes(5)));
 
         var model = new EditorModel(mock.Object, reveals.Object)
         {
@@ -176,9 +182,9 @@ public class ApiResourceEditorPageModelTests
             Secret = new EditorModel.SecretInputModel { Description = "desc" }
         };
 
-        var result = await model.OnPostAddSecretAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostAddSecretAsync(CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("secrets", redirect.RouteValues!["tab"]);
         Assert.Null(model.GeneratedSecret);
         Assert.Equal("opaque-handle", model.SecretRevealHandle);
@@ -193,7 +199,7 @@ public class ApiResourceEditorPageModelTests
 
         var model = new EditorModel(mock.Object) { Name = "missing" };
 
-        var result = await model.OnPostAddSecretAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostAddSecretAsync(CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -209,9 +215,9 @@ public class ApiResourceEditorPageModelTests
 
         var model = new EditorModel(mock.Object) { Name = "sales.api" };
 
-        var result = await model.OnPostDeleteAsync(confirmation: "DELETE", cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostDeleteAsync("DELETE", CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("./Index", redirect.PageName);
     }
 
@@ -224,7 +230,7 @@ public class ApiResourceEditorPageModelTests
 
         var model = new EditorModel(mock.Object) { Name = "missing" };
 
-        var result = await model.OnPostDeleteAsync(confirmation: "DELETE", cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostDeleteAsync("DELETE", CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -240,9 +246,9 @@ public class ApiResourceEditorPageModelTests
 
         var model = new EditorModel(mock.Object) { Name = "sales.api" };
 
-        var result = await model.OnPostDisableAsync(confirmation: "DISABLE", cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostDisableAsync("DISABLE", CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("basics", redirect.RouteValues!["tab"]);
     }
 
@@ -252,9 +258,9 @@ public class ApiResourceEditorPageModelTests
         var mock = new Mock<IApiResourceEditorService>();
         var model = new EditorModel(mock.Object) { Name = "sales.api" };
 
-        var result = await model.OnPostDeleteAsync(confirmation: "delete", cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostDeleteAsync("delete", CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("sales.api", redirect.RouteValues!["name"]);
         Assert.Contains("Type DELETE", model.ErrorMessage);
         mock.Verify(s => s.DeleteAsync(It.IsAny<ScopeName>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -269,7 +275,7 @@ public class ApiResourceEditorPageModelTests
 
         var model = new EditorModel(mock.Object) { Name = "missing" };
 
-        var result = await model.OnPostEnableAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostEnableAsync(CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -280,7 +286,8 @@ public class ApiResourceEditorPageModelTests
     public async Task OnPostAttachScopeAsync_Success_RedirectsToScopesTab()
     {
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.AttachScopeAsync(ScopeName.Create("sales.api"), ScopeName.Create("sales.read"), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.AttachScopeAsync(ScopeName.Create("sales.api"), ScopeName.Create("sales.read"),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.Success());
 
         var model = new EditorModel(mock.Object)
@@ -289,9 +296,9 @@ public class ApiResourceEditorPageModelTests
             AttachScope = new EditorModel.AttachScopeInputModel { ScopeName = "sales.read" }
         };
 
-        var result = await model.OnPostAttachScopeAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostAttachScopeAsync(CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("scopes", redirect.RouteValues!["tab"]);
     }
 
@@ -299,12 +306,13 @@ public class ApiResourceEditorPageModelTests
     public async Task OnPostDetachScopeAsync_ScopeNotAttached_ReturnsNotFound()
     {
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.DetachScopeAsync(ScopeName.Create("sales.api"), ScopeName.Create("sales.read"), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.DetachScopeAsync(ScopeName.Create("sales.api"), ScopeName.Create("sales.read"),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.NotFoundResult());
 
         var model = new EditorModel(mock.Object) { Name = "sales.api" };
 
-        var result = await model.OnPostDetachScopeAsync("sales.read", cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostDetachScopeAsync("sales.read", CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -322,45 +330,50 @@ public class ApiResourceEditorPageModelTests
             Claim = new EditorModel.ClaimInputModel { ClaimType = "department" }
         };
 
-        var result = await model.OnPostAddClaimAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostAddClaimAsync(CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("claims", redirect.RouteValues!["tab"]);
     }
 
     [Fact]
     public async Task OnPostRemoveClaimAsync_ValidationFailure_ReloadsEditorAndRedisplaysClaimsTab()
     {
-        var editor = MakeEditor("sales.api");
+        ApiResourceEditorModel editor = MakeEditor();
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.RemoveClaimAsync(ScopeName.Create("sales.api"), ClaimType.Create("sub"), It.IsAny<CancellationToken>()))
+        mock.Setup(s =>
+                s.RemoveClaimAsync(ScopeName.Create("sales.api"), ClaimType.Create("sub"),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.ValidationFailure("Claim.ClaimType", "The sub claim cannot be removed."));
-        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(editor);
         mock.Setup(s => s.GetAllApiScopeNamesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<string>());
 
         var model = new EditorModel(mock.Object) { Name = "sales.api", Tab = "basics" };
 
-        var result = await model.OnPostRemoveClaimAsync("sub", CancellationToken.None);
+        IActionResult result = await model.OnPostRemoveClaimAsync("sub", CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
         Assert.Same(editor, model.Editor);
         Assert.Equal("claims", model.Tab);
-        Assert.Equal("The sub claim cannot be removed.", model.ModelState["Claim.ClaimType"]!.Errors.Single().ErrorMessage);
+        Assert.Equal("The sub claim cannot be removed.",
+            model.ModelState["Claim.ClaimType"]!.Errors.Single().ErrorMessage);
     }
 
     [Fact]
     public async Task OnPostRevokeSecretAsync_ValidationFailure_ReloadsEditorAndRedisplaysSecretsTab()
     {
-        var editor = MakeEditor("sales.api");
+        ApiResourceEditorModel editor = MakeEditor();
         var mock = new Mock<IApiResourceEditorService>();
         mock.Setup(s => s.RevokeSecretAsync(ScopeName.Create("sales.api"), 17, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.ValidationFailure(string.Empty, "The secret cannot be revoked."));
-        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(editor);
         mock.Setup(s => s.GetAllApiScopeNamesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<string>());
 
         var model = new EditorModel(mock.Object) { Name = "sales.api" };
 
-        var result = await model.OnPostRevokeSecretAsync(17, "REVOKE", CancellationToken.None);
+        IActionResult result = await model.OnPostRevokeSecretAsync(17, "REVOKE", CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
         Assert.Same(editor, model.Editor);
@@ -373,9 +386,10 @@ public class ApiResourceEditorPageModelTests
     [Fact]
     public async Task OnPostSaveBasicsAsync_InvalidModelState_ReloadsEditorAndRedisplaysBasicsTabWithoutSaving()
     {
-        var editor = MakeEditor("sales.api");
+        ApiResourceEditorModel editor = MakeEditor();
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(editor);
         mock.Setup(s => s.SaveBasicsAsync(It.IsAny<SaveApiResourceBasicsCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SaveApiResourceBasicsResult.ValidationFailure("Basics.Name", "The Name field is required."));
 
@@ -383,10 +397,10 @@ public class ApiResourceEditorPageModelTests
         {
             Name = "sales.api",
             Tab = "secrets",
-            Basics = new EditorModel.BasicsInputModel { Name = string.Empty },
+            Basics = new EditorModel.BasicsInputModel { Name = string.Empty }
         };
 
-        var result = await model.OnPostSaveBasicsAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostSaveBasicsAsync(CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
         Assert.Same(editor, model.Editor);
@@ -396,24 +410,25 @@ public class ApiResourceEditorPageModelTests
     [Fact]
     public async Task OnPostSaveBasicsAsync_StronglyTypedValidationErrors_AddsFieldErrorsToModelState()
     {
-        var editor = MakeEditor("sales.api");
+        ApiResourceEditorModel editor = MakeEditor();
         var validationErrors = new ApiResourceBasicsValidationErrors();
         validationErrors.AddNameError("Name is required.");
         validationErrors.AddDisplayNameError("Display name is invalid.");
         validationErrors.AddDescriptionError("Description is too long.");
 
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(editor);
         mock.Setup(s => s.SaveBasicsAsync(It.IsAny<SaveApiResourceBasicsCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SaveApiResourceBasicsResult.ValidationFailure(validationErrors));
 
         var model = new EditorModel(mock.Object)
         {
             Name = "sales.api",
-            Basics = new EditorModel.BasicsInputModel { Name = string.Empty },
+            Basics = new EditorModel.BasicsInputModel { Name = string.Empty }
         };
 
-        var result = await model.OnPostSaveBasicsAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostSaveBasicsAsync(CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
         Assert.False(model.ModelState.IsValid);
@@ -427,12 +442,14 @@ public class ApiResourceEditorPageModelTests
     [Fact]
     public async Task OnPostCreateScopeAsync_NameCollision_SetsErrorAndRedisplaysPage()
     {
-        var editor = MakeEditor("sales.api");
+        ApiResourceEditorModel editor = MakeEditor();
         var mock = new Mock<IApiResourceEditorService>();
-        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>())).ReturnsAsync(editor);
+        mock.Setup(s => s.GetForEditAsync(ScopeName.Create("sales.api"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(editor);
         mock.Setup(s => s.GetAllApiScopeNamesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<string>());
         mock.Setup(s => s.CreateScopeAsync(It.IsAny<CreateApiResourceScopeCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(AdminMutationResult.ConflictResult("CreateScope.ScopeName", "A scope named 'taken.scope' already exists."));
+            .ReturnsAsync(AdminMutationResult.ConflictResult("CreateScope.ScopeName",
+                "A scope named 'taken.scope' already exists."));
 
         var model = new EditorModel(mock.Object)
         {
@@ -440,7 +457,7 @@ public class ApiResourceEditorPageModelTests
             CreateScope = new EditorModel.CreateScopeInputModel { ScopeName = "taken.scope" }
         };
 
-        var result = await model.OnPostCreateScopeAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostCreateScopeAsync(CancellationToken.None);
 
         Assert.IsType<PageResult>(result);
         Assert.False(model.ModelState.IsValid);
@@ -460,7 +477,7 @@ public class ApiResourceEditorPageModelTests
             CreateScope = new EditorModel.CreateScopeInputModel { ScopeName = "new.scope" }
         };
 
-        var result = await model.OnPostCreateScopeAsync(cancellationToken: CancellationToken.None);
+        IActionResult result = await model.OnPostCreateScopeAsync(CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }

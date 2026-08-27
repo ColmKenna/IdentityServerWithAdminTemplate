@@ -44,7 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             navigator.clipboard.writeText(target.textContent || '').then(() => {
                 copyButton.textContent = 'Copied!';
-                setTimeout(() => { copyButton.textContent = 'Copy'; }, 2000);
+                setTimeout(() => {
+                    copyButton.textContent = 'Copy';
+                }, 2000);
             });
         });
     }

@@ -1,5 +1,6 @@
 @page
-@model IdentityServerProject.Pages.Admin.Keys.IndexModel
+@using Microsoft.IdentityModel.Tokens
+@model IndexModel
 @{
     ViewData["Title"] = "Keys";
     ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
@@ -42,7 +43,7 @@
                         <ck-responsive-col>@key.SigningAlgorithm</ck-responsive-col>
                         <ck-responsive-col>—</ck-responsive-col>
                         <ck-responsive-col>
-                            @if (key.Key is Microsoft.IdentityModel.Tokens.X509SecurityKey)
+                            @if (key.Key is X509SecurityKey)
                             {
                                 <span class="badge badge-success">X509 Certificate</span>
                             }
@@ -68,6 +69,7 @@
         font-size: 0.75rem;
         font-weight: 700;
     }
+
     .badge-primary {
         background: #e8f0fe;
         color: #1a73e8;

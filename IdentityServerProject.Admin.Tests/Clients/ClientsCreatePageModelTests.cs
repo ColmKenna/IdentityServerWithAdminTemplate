@@ -28,15 +28,15 @@ public class ClientsCreatePageModelTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
             db.IdentityResources.Add(new IdentityResource(
                 $"page-model-scope-{Guid.NewGuid():N}",
                 new[] { "sub" }).ToEntity());
             await db.SaveChangesAsync();
 
-            var createService = sp.GetRequiredService<IClientCreateService>();
-            var presets = sp.GetRequiredService<IClientPresetService>();
-            var revealService = sp.GetRequiredService<ISecretRevealService>();
+            IClientCreateService createService = sp.GetRequiredService<IClientCreateService>();
+            IClientPresetService presets = sp.GetRequiredService<IClientPresetService>();
+            ISecretRevealService revealService = sp.GetRequiredService<ISecretRevealService>();
             var pageModel = new CreateModel(createService, presets, revealService);
 
             await pageModel.OnGetAsync(null, CancellationToken.None);
@@ -53,13 +53,13 @@ public class ClientsCreatePageModelTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var createService = sp.GetRequiredService<IClientCreateService>();
-            var presets = sp.GetRequiredService<IClientPresetService>();
-            var revealService = sp.GetRequiredService<ISecretRevealService>();
+            IClientCreateService createService = sp.GetRequiredService<IClientCreateService>();
+            IClientPresetService presets = sp.GetRequiredService<IClientPresetService>();
+            ISecretRevealService revealService = sp.GetRequiredService<ISecretRevealService>();
             var pageModel = new CreateModel(createService, presets, revealService);
             pageModel.ModelState.AddModelError("Input.ClientId", "Required");
 
-            var result = await pageModel.OnPostAsync(CancellationToken.None);
+            IActionResult result = await pageModel.OnPostAsync(CancellationToken.None);
 
             Assert.IsType<PageResult>(result);
             Assert.False(pageModel.ModelState.IsValid);
@@ -79,13 +79,14 @@ public class ClientsCreatePageModelTests : IClassFixture<AdminWebFactory>
             var httpContext = new DefaultHttpContext();
             var tempData = new TempDataDictionary(httpContext, Mock.Of<ITempDataProvider>());
 
-            var presets = sp.GetRequiredService<IClientPresetService>();
+            IClientPresetService presets = sp.GetRequiredService<IClientPresetService>();
             var revealService = new Mock<ISecretRevealService>();
             revealService.Setup(service => service.IssueAsync(
                     new SecretRevealTarget(SecretRevealPurpose.ClientCreated, "new-web-client"),
                     "secret123",
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new SecretRevealTicket(SecretRevealHandle.Create("opaque-handle"), DateTimeOffset.UtcNow.AddMinutes(5)));
+                .ReturnsAsync(new SecretRevealTicket(SecretRevealHandle.Create("opaque-handle"),
+                    DateTimeOffset.UtcNow.AddMinutes(5)));
 
             var pageModel = new CreateModel(mockService.Object, presets, revealService.Object)
             {
@@ -98,9 +99,9 @@ public class ClientsCreatePageModelTests : IClassFixture<AdminWebFactory>
                 }
             };
 
-            var result = await pageModel.OnPostAsync(CancellationToken.None);
+            IActionResult result = await pageModel.OnPostAsync(CancellationToken.None);
 
-            var redirectResult = Assert.IsType<RedirectToPageResult>(result);
+            RedirectToPageResult redirectResult = Assert.IsType<RedirectToPageResult>(result);
             Assert.Equal("./Create", redirectResult.PageName);
             Assert.Equal("new-web-client", redirectResult.RouteValues!["clientId"]);
             Assert.False(redirectResult.RouteValues.ContainsKey("token"));
@@ -109,5 +110,3 @@ public class ClientsCreatePageModelTests : IClassFixture<AdminWebFactory>
         });
     }
 }
-
-

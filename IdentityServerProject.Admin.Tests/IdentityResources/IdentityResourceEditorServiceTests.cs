@@ -11,14 +11,14 @@ using Microsoft.Extensions.DependencyInjection;
 namespace IdentityServerProject.Admin.Tests.IdentityResources;
 
 /// <summary>
-/// Exercises <see cref="IdentityResourceEditorService"/> against a real (SQLite in-memory) DI
-/// container.
+///     Exercises <see cref="IdentityResourceEditorService" /> against a real (SQLite in-memory) DI
+///     container.
 /// </summary>
 /// <remarks>
-/// The built-in resource under test is materialised from Duende's own
-/// <c>IdentityResources.OpenId()</c> rather than a hand-built lookalike, because the defect this
-/// suite guards against was precisely that the protection matched a claim literal instead of the
-/// real resource. A fabricated row named "openid" would have passed the old code too.
+///     The built-in resource under test is materialised from Duende's own
+///     <c>IdentityResources.OpenId()</c> rather than a hand-built lookalike, because the defect this
+///     suite guards against was precisely that the protection matched a claim literal instead of the
+///     real resource. A fabricated row named "openid" would have passed the old code too.
 /// </remarks>
 public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
 {
@@ -30,20 +30,17 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
     }
 
     /// <summary>
-    /// Seeds the genuine built-in openid resource if this shared connection does not have it yet.
-    /// Idempotent: every test here is a rejection test, so the row stays in its seeded state.
+    ///     Seeds the genuine built-in openid resource if this shared connection does not have it yet.
+    ///     Idempotent: every test here is a rejection test, so the row stays in its seeded state.
     /// </summary>
     private async Task EnsureBuiltInOpenIdResourceAsync()
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
-            if (await configDb.IdentityResources.AnyAsync(r => r.Name == "openid"))
-            {
-                return;
-            }
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            if (await configDb.IdentityResources.AnyAsync(r => r.Name == "openid")) return;
 
-            var entity = new Duende.IdentityServer.Models.IdentityResources.OpenId().ToEntity();
+            IdentityResource entity = new Duende.IdentityServer.Models.IdentityResources.OpenId().ToEntity();
             entity.NonEditable = true;
             configDb.IdentityResources.Add(entity);
             await configDb.SaveChangesAsync();
@@ -52,18 +49,18 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
 
     private async Task<string> CreateCustomResourceAsync(bool nonEditable, params string[] claims)
     {
-        var name = $"custom-{Guid.NewGuid():N}";
+        string name = $"custom-{Guid.NewGuid():N}";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             configDb.IdentityResources.Add(new IdentityResource
             {
                 Name = name,
                 DisplayName = "Custom Resource",
                 Enabled = true,
                 NonEditable = nonEditable,
-                UserClaims = claims.Select(c => new IdentityResourceClaim { Type = c }).ToList(),
+                UserClaims = claims.Select(c => new IdentityResourceClaim { Type = c }).ToList()
             });
             await configDb.SaveChangesAsync();
         });
@@ -76,7 +73,7 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
         IdentityResource? loaded = null;
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             loaded = await configDb.IdentityResources
                 .AsNoTracking()
                 .Include(r => r.UserClaims)
@@ -85,6 +82,105 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
 
         Assert.NotNull(loaded);
         return loaded!;
+    }
+
+    #region Missing resources are still reported as missing
+
+    [Theory]
+    [InlineData("basics")]
+    [InlineData("add")]
+    [InlineData("remove")]
+    public async Task Mutations_OnAMissingResource_ReportNotFoundRatherThanProtected(string operation)
+    {
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            IIdentityResourceEditorService service = sp.GetRequiredService<IIdentityResourceEditorService>();
+            string missing = $"missing-{Guid.NewGuid():N}";
+
+            IdentityResourceEditResult result = operation switch
+            {
+                "basics" => await service.UpdateBasicsAsync(missing, "x", null, true, false, false, true),
+                "add" => await service.AddClaimAsync(ScopeName.Create(missing), ClaimType.Create("email")),
+                _ => await service.RemoveClaimAsync(ScopeName.Create(missing), ClaimType.Create("email"))
+            };
+
+            Assert.Equal(IdentityResourceEditOutcome.NotFound, result.Outcome);
+        });
+    }
+
+    #endregion
+
+    [Fact]
+    public async Task CreateAsync_NewResource_PersistsAllEditorFieldsAndClaims()
+    {
+        string name = $"{Guid.NewGuid():N}-resource";
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            IIdentityResourceEditorService service = sp.GetRequiredService<IIdentityResourceEditorService>();
+            AdminMutationResult result = await service.CreateAsync(
+                name,
+                "Resource display",
+                "Resource description",
+                false,
+                true,
+                true,
+                false,
+                new List<string> { "email", "name" });
+
+            Assert.True(result.Succeeded, result.ErrorMessage);
+            IdentityResourceEditorModel? editor = await service.GetForEditAsync(ScopeName.Create(name));
+            Assert.NotNull(editor);
+            Assert.Equal("Resource display", editor!.DisplayName);
+            Assert.Equal("Resource description", editor.Description);
+            Assert.False(editor.Enabled);
+            Assert.True(editor.Required);
+            Assert.True(editor.Emphasize);
+            Assert.False(editor.ShowInDiscoveryDocument);
+            Assert.Equal(new[] { "email", "name" }, editor.UserClaims.OrderBy(claim => claim));
+        });
+    }
+
+    [Fact]
+    public async Task CreateAsync_DuplicateClaims_PropagatesTheDatabaseConstraintFailure()
+    {
+        string name = $"{Guid.NewGuid():N}-duplicate-claims";
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            IIdentityResourceEditorService service = sp.GetRequiredService<IIdentityResourceEditorService>();
+
+            await Assert.ThrowsAsync<DbUpdateException>(() => service.CreateAsync(
+                name,
+                "Resource display",
+                null,
+                true,
+                false,
+                false,
+                true,
+                new List<string> { "email", "email" }));
+        });
+    }
+
+    [Fact]
+    public async Task CreateAsync_NameUsedByAnApiScope_ReturnsFailureWithoutCreatingAResource()
+    {
+        string name = $"{Guid.NewGuid():N}-shared";
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            db.ApiScopes.Add(new ApiScope { Name = name });
+            await db.SaveChangesAsync();
+
+            IIdentityResourceEditorService service = sp.GetRequiredService<IIdentityResourceEditorService>();
+            AdminMutationResult result = await service.CreateAsync(name, "Resource display", null, true, false, false,
+                true, new List<string>());
+
+            Assert.False(result.Succeeded);
+            Assert.Equal("An API scope with this name already exists.", result.ErrorMessage);
+            Assert.False(await db.IdentityResources.AnyAsync(resource => resource.Name == name));
+        });
     }
 
     #region The genuine built-in openid resource
@@ -105,27 +201,27 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
     public async Task UpdateBasicsAsync_BuiltInOpenIdResource_IsRefusedAndNothingChanges()
     {
         await EnsureBuiltInOpenIdResourceAsync();
-        var before = await LoadAsync("openid");
+        IdentityResource before = await LoadAsync("openid");
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceEditorService>();
+            IIdentityResourceEditorService service = sp.GetRequiredService<IIdentityResourceEditorService>();
 
-            var result = await service.UpdateBasicsAsync(
+            IdentityResourceEditResult result = await service.UpdateBasicsAsync(
                 "openid",
-                displayName: "Hijacked",
-                description: "Hijacked",
-                enabled: false,
-                required: false,
-                emphasize: false,
-                showInDiscoveryDocument: false);
+                "Hijacked",
+                "Hijacked",
+                false,
+                false,
+                false,
+                false);
 
             Assert.Equal(IdentityResourceEditOutcome.Protected, result.Outcome);
             Assert.False(result.Success);
             Assert.NotNull(result.ErrorMessage);
         });
 
-        var after = await LoadAsync("openid");
+        IdentityResource after = await LoadAsync("openid");
         Assert.Equal(before.DisplayName, after.DisplayName);
         Assert.True(after.Enabled);
         Assert.True(after.ShowInDiscoveryDocument);
@@ -140,9 +236,9 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-            var result = await service.UpdateBasicsAsync(
-                "openid", "OpenId", null, enabled: false, required: true, emphasize: false, showInDiscoveryDocument: true);
+            IIdentityResourceEditorService service = sp.GetRequiredService<IIdentityResourceEditorService>();
+            IdentityResourceEditResult result = await service.UpdateBasicsAsync(
+                "openid", "OpenId", null, false, true, false, true);
 
             Assert.Equal(IdentityResourceEditOutcome.Protected, result.Outcome);
         });
@@ -160,8 +256,9 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-            var result = await service.AddClaimAsync(ScopeName.Create("openid"), ClaimType.Create("email"));
+            IIdentityResourceEditorService service = sp.GetRequiredService<IIdentityResourceEditorService>();
+            IdentityResourceEditResult result =
+                await service.AddClaimAsync(ScopeName.Create("openid"), ClaimType.Create("email"));
 
             Assert.Equal(IdentityResourceEditOutcome.Protected, result.Outcome);
         });
@@ -176,8 +273,9 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-            var result = await service.RemoveClaimAsync(ScopeName.Create("openid"), ClaimType.Create("sub"));
+            IIdentityResourceEditorService service = sp.GetRequiredService<IIdentityResourceEditorService>();
+            IdentityResourceEditResult result =
+                await service.RemoveClaimAsync(ScopeName.Create("openid"), ClaimType.Create("sub"));
 
             Assert.Equal(IdentityResourceEditOutcome.Protected, result.Outcome);
 
@@ -196,8 +294,8 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceListService>();
-            var result = await service.DeleteIdentityResourceAsync("openid");
+            IIdentityResourceListService service = sp.GetRequiredService<IIdentityResourceListService>();
+            IdentityResourceDeleteResult result = await service.DeleteIdentityResourceAsync("openid");
 
             Assert.Equal(IdentityResourceDeleteResult.Blocked, result);
         });
@@ -214,23 +312,23 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
     {
         // The three methods drifted apart once already. Asserting them together, rather than in
         // three separate tests, is what makes a future divergence fail loudly.
-        var name = await CreateCustomResourceAsync(nonEditable: true, "email");
+        string name = await CreateCustomResourceAsync(true, "email");
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceEditorService>();
+            IIdentityResourceEditorService service = sp.GetRequiredService<IIdentityResourceEditorService>();
 
-            var outcomes = new[]
+            IdentityResourceEditOutcome[] outcomes = new[]
             {
                 (await service.UpdateBasicsAsync(name, "x", "x", true, false, false, true)).Outcome,
                 (await service.AddClaimAsync(ScopeName.Create(name), ClaimType.Create("phone_number"))).Outcome,
-                (await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("email"))).Outcome,
+                (await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("email"))).Outcome
             };
 
             Assert.All(outcomes, o => Assert.Equal(IdentityResourceEditOutcome.Protected, o));
         });
 
-        var after = await LoadAsync(name);
+        IdentityResource after = await LoadAsync(name);
         Assert.Equal("Custom Resource", after.DisplayName);
         Assert.DoesNotContain(after.UserClaims, c => c.Type == "phone_number");
         Assert.Contains(after.UserClaims, c => c.Type == "email");
@@ -239,11 +337,11 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task DeleteIdentityResourceAsync_NonEditableResource_IsBlocked()
     {
-        var name = await CreateCustomResourceAsync(nonEditable: true);
+        string name = await CreateCustomResourceAsync(true);
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceListService>();
+            IIdentityResourceListService service = sp.GetRequiredService<IIdentityResourceListService>();
             Assert.Equal(IdentityResourceDeleteResult.Blocked, await service.DeleteIdentityResourceAsync(name));
         });
 
@@ -257,19 +355,19 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UpdateBasicsAsync_OrdinaryResource_Succeeds()
     {
-        var name = await CreateCustomResourceAsync(nonEditable: false);
+        string name = await CreateCustomResourceAsync(false);
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-            var result = await service.UpdateBasicsAsync(
-                name, "Renamed", "New description", enabled: false, required: true, emphasize: true, showInDiscoveryDocument: false);
+            IIdentityResourceEditorService service = sp.GetRequiredService<IIdentityResourceEditorService>();
+            IdentityResourceEditResult result = await service.UpdateBasicsAsync(
+                name, "Renamed", "New description", false, true, true, false);
 
             Assert.Equal(IdentityResourceEditOutcome.Success, result.Outcome);
             Assert.Null(result.ErrorMessage);
         });
 
-        var after = await LoadAsync(name);
+        IdentityResource after = await LoadAsync(name);
         Assert.Equal("Renamed", after.DisplayName);
         Assert.False(after.Enabled);
         Assert.True(after.Emphasize);
@@ -278,16 +376,18 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task AddAndRemoveClaimAsync_OrdinaryResource_Succeed()
     {
-        var name = await CreateCustomResourceAsync(nonEditable: false, "email");
+        string name = await CreateCustomResourceAsync(false, "email");
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-            Assert.Equal(IdentityResourceEditOutcome.Success, (await service.AddClaimAsync(ScopeName.Create(name), ClaimType.Create("phone_number"))).Outcome);
-            Assert.Equal(IdentityResourceEditOutcome.Success, (await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("email"))).Outcome);
+            IIdentityResourceEditorService service = sp.GetRequiredService<IIdentityResourceEditorService>();
+            Assert.Equal(IdentityResourceEditOutcome.Success,
+                (await service.AddClaimAsync(ScopeName.Create(name), ClaimType.Create("phone_number"))).Outcome);
+            Assert.Equal(IdentityResourceEditOutcome.Success,
+                (await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("email"))).Outcome);
         });
 
-        var after = await LoadAsync(name);
+        IdentityResource after = await LoadAsync(name);
         Assert.Contains(after.UserClaims, c => c.Type == "phone_number");
         Assert.DoesNotContain(after.UserClaims, c => c.Type == "email");
     }
@@ -297,114 +397,17 @@ public class IdentityResourceEditorServiceTests : IClassFixture<AdminWebFactory>
     {
         // The sub invariant is scoped to the openid resource, not to the claim type globally.
         // A custom resource that happens to carry sub stays editable.
-        var name = await CreateCustomResourceAsync(nonEditable: false, "sub", "email");
+        string name = await CreateCustomResourceAsync(false, "sub", "email");
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-            Assert.Equal(IdentityResourceEditOutcome.Success, (await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("sub"))).Outcome);
+            IIdentityResourceEditorService service = sp.GetRequiredService<IIdentityResourceEditorService>();
+            Assert.Equal(IdentityResourceEditOutcome.Success,
+                (await service.RemoveClaimAsync(ScopeName.Create(name), ClaimType.Create("sub"))).Outcome);
         });
 
         Assert.DoesNotContain((await LoadAsync(name)).UserClaims, c => c.Type == "sub");
     }
 
     #endregion
-
-    #region Missing resources are still reported as missing
-
-    [Theory]
-    [InlineData("basics")]
-    [InlineData("add")]
-    [InlineData("remove")]
-    public async Task Mutations_OnAMissingResource_ReportNotFoundRatherThanProtected(string operation)
-    {
-        await _factory.RunInScopeAsync(async sp =>
-        {
-            var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-            var missing = $"missing-{Guid.NewGuid():N}";
-
-            var result = operation switch
-            {
-                "basics" => await service.UpdateBasicsAsync(missing, "x", null, true, false, false, true),
-                "add" => await service.AddClaimAsync(ScopeName.Create(missing), ClaimType.Create("email")),
-                _ => await service.RemoveClaimAsync(ScopeName.Create(missing), ClaimType.Create("email")),
-            };
-
-            Assert.Equal(IdentityResourceEditOutcome.NotFound, result.Outcome);
-        });
-    }
-
-    #endregion
-
-    [Fact]
-    public async Task CreateAsync_NewResource_PersistsAllEditorFieldsAndClaims()
-    {
-        var name = $"{Guid.NewGuid():N}-resource";
-
-        await _factory.RunInScopeAsync(async sp =>
-        {
-            var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-            var result = await service.CreateAsync(
-                name,
-                "Resource display",
-                "Resource description",
-                enabled: false,
-                required: true,
-                emphasize: true,
-                showInDiscoveryDocument: false,
-                userClaims: new List<string> { "email", "name" });
-
-            Assert.True(result.Succeeded, result.ErrorMessage);
-            var editor = await service.GetForEditAsync(ScopeName.Create(name));
-            Assert.NotNull(editor);
-            Assert.Equal("Resource display", editor!.DisplayName);
-            Assert.Equal("Resource description", editor.Description);
-            Assert.False(editor.Enabled);
-            Assert.True(editor.Required);
-            Assert.True(editor.Emphasize);
-            Assert.False(editor.ShowInDiscoveryDocument);
-            Assert.Equal(new[] { "email", "name" }, editor.UserClaims.OrderBy(claim => claim));
-        });
-    }
-
-    [Fact]
-    public async Task CreateAsync_DuplicateClaims_PropagatesTheDatabaseConstraintFailure()
-    {
-        var name = $"{Guid.NewGuid():N}-duplicate-claims";
-
-        await _factory.RunInScopeAsync(async sp =>
-        {
-            var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-
-            await Assert.ThrowsAsync<DbUpdateException>(() => service.CreateAsync(
-                name,
-                "Resource display",
-                null,
-                enabled: true,
-                required: false,
-                emphasize: false,
-                showInDiscoveryDocument: true,
-                userClaims: new List<string> { "email", "email" }));
-        });
-    }
-
-    [Fact]
-    public async Task CreateAsync_NameUsedByAnApiScope_ReturnsFailureWithoutCreatingAResource()
-    {
-        var name = $"{Guid.NewGuid():N}-shared";
-
-        await _factory.RunInScopeAsync(async sp =>
-        {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            db.ApiScopes.Add(new ApiScope { Name = name });
-            await db.SaveChangesAsync();
-
-            var service = sp.GetRequiredService<IIdentityResourceEditorService>();
-            var result = await service.CreateAsync(name, "Resource display", null, true, false, false, true, new List<string>());
-
-            Assert.False(result.Succeeded);
-            Assert.Equal("An API scope with this name already exists.", result.ErrorMessage);
-            Assert.False(await db.IdentityResources.AnyAsync(resource => resource.Name == name));
-        });
-    }
 }

@@ -8,9 +8,9 @@ namespace IdentityServerProject.Services.AuditLogs;
 
 public class AuditWriter : IAuditWriter
 {
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<AuditWriter> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ILogger<AuditWriter> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
 
     public AuditWriter(
@@ -27,13 +27,13 @@ public class AuditWriter : IAuditWriter
 
     public async Task WriteAsync(AdminAuditEvent auditEvent, CancellationToken cancellationToken = default)
     {
-        var context = _httpContextAccessor.HttpContext;
-        var (actorSubjectId, actorName) = AuditActorResolver.Resolve(context?.User);
-        var correlationId = context?.TraceIdentifier ?? string.Empty;
-        var ipAddress = context?.Connection.RemoteIpAddress?.ToString();
-        var timestamp = _timeProvider.GetUtcNow().UtcDateTime;
+        HttpContext? context = _httpContextAccessor.HttpContext;
+        (string actorSubjectId, string actorName) = AuditActorResolver.Resolve(context?.User);
+        string correlationId = context?.TraceIdentifier ?? string.Empty;
+        string? ipAddress = context?.Connection.RemoteIpAddress?.ToString();
+        DateTime timestamp = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var logLevel = auditEvent.Outcome switch
+        LogLevel logLevel = auditEvent.Outcome switch
         {
             AuditOutcome.Succeeded => LogLevel.Information,
             AuditOutcome.Denied => LogLevel.Warning,
@@ -53,25 +53,25 @@ public class AuditWriter : IAuditWriter
             // A fresh scope (and hence a fresh store instance) so this write never shares a
             // connection/transaction with whatever the caller's own scope was mid-way through -
             // including a transaction that caller just rolled back.
-            using var scope = _scopeFactory.CreateScope();
-            var store = scope.ServiceProvider.GetRequiredService<IAdminAuditStore>();
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            IAdminAuditStore store = scope.ServiceProvider.GetRequiredService<IAdminAuditStore>();
 
             var record = new AuditLogRecord(
-                Timestamp: timestamp,
-                CorrelationId: correlationId,
-                ActorSubjectId: UserId.Create(actorSubjectId),
-                ActorName: actorName,
-                IpAddress: ipAddress,
-                Category: auditEvent.Category,
-                Action: auditEvent.Action,
-                Outcome: auditEvent.Outcome,
-                ReasonCode: auditEvent.ReasonCode,
-                IsSuccess: auditEvent.Outcome == AuditOutcome.Succeeded,
-                TargetId: auditEvent.TargetId,
-                TargetName: auditEvent.TargetName,
-                OldValuesJson: SerializeAuditValue(auditEvent.OldValues),
-                NewValuesJson: SerializeAuditValue(auditEvent.NewValues),
-                Details: auditEvent.Details);
+                timestamp,
+                correlationId,
+                UserId.Create(actorSubjectId),
+                actorName,
+                ipAddress,
+                auditEvent.Category,
+                auditEvent.Action,
+                auditEvent.Outcome,
+                auditEvent.ReasonCode,
+                auditEvent.Outcome == AuditOutcome.Succeeded,
+                auditEvent.TargetId,
+                auditEvent.TargetName,
+                SerializeAuditValue(auditEvent.OldValues),
+                SerializeAuditValue(auditEvent.NewValues),
+                auditEvent.Details);
 
             await store.WriteAsync(record, cancellationToken);
         }

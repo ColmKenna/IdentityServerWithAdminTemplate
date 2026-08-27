@@ -4,14 +4,15 @@ using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Data;
 using IdentityServerProject.Services.ApiScopes;
 using IdentityServerProject.Services.AuditLogs;
+using IdentityServerProject.Services.Validation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace IdentityServerProject.Admin.Tests.ApiScopes;
 
 /// <summary>
-/// Verifies TASK-04 audit coverage for <see cref="ApiScopeEditorService"/> (previously
-/// success-only) and <see cref="ApiScopeListService.DeleteApiScopeAsync"/> (previously had
-/// no <see cref="IAuditWriter"/> dependency at all - a named plan gap).
+///     Verifies TASK-04 audit coverage for <see cref="ApiScopeEditorService" /> (previously
+///     success-only) and <see cref="ApiScopeListService.DeleteApiScopeAsync" /> (previously had
+///     no <see cref="IAuditWriter" /> dependency at all - a named plan gap).
 /// </summary>
 public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
 {
@@ -26,7 +27,7 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             configDb.ApiScopes.Add(scope);
             await configDb.SaveChangesAsync();
         });
@@ -37,8 +38,9 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
         AuditLogEntry? found = null;
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ApplicationDbContext>();
-            found = db.AuditLogEntries.Single(e => e.Category == AuditCategory.ApiScope && e.Action == action && e.TargetId == targetId);
+            ApplicationDbContext db = sp.GetRequiredService<ApplicationDbContext>();
+            found = db.AuditLogEntries.Single(e =>
+                e.Category == AuditCategory.ApiScope && e.Action == action && e.TargetId == targetId);
             await Task.CompletedTask;
         });
         return found!;
@@ -47,16 +49,16 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task DeleteApiScopeAsync_ScopeNotFound_WritesDeniedAuditEvent()
     {
-        var name = $"apiscope-audit-delete-missing-{Guid.NewGuid():N}";
+        string name = $"apiscope-audit-delete-missing-{Guid.NewGuid():N}";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
-            var result = await service.DeleteApiScopeAsync(name);
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
+            ApiScopeDeleteResult result = await service.DeleteApiScopeAsync(name);
             Assert.Equal(ApiScopeDeleteResult.NotFound, result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.Delete, name);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.Delete, name);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
         Assert.Equal(AuditReasonCode.NotFound, entry.ReasonCode);
     }
@@ -64,34 +66,34 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task DeleteApiScopeAsync_ScopeExists_WritesSucceededAuditEvent()
     {
-        var name = $"apiscope-audit-delete-{Guid.NewGuid():N}";
+        string name = $"apiscope-audit-delete-{Guid.NewGuid():N}";
         await SeedApiScopeAsync(new ApiScope { Name = name, DisplayName = "Delete Me", Enabled = true });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
-            var result = await service.DeleteApiScopeAsync(name);
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
+            ApiScopeDeleteResult result = await service.DeleteApiScopeAsync(name);
             Assert.Equal(ApiScopeDeleteResult.Deleted, result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.Delete, name);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.Delete, name);
         Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
     }
 
     [Fact]
     public async Task CreateAsync_NameCollision_WritesDeniedAuditEvent()
     {
-        var name = $"apiscope-audit-create-collision-{Guid.NewGuid():N}";
+        string name = $"apiscope-audit-create-collision-{Guid.NewGuid():N}";
         await SeedApiScopeAsync(new ApiScope { Name = name, Enabled = true });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
-            var result = await service.CreateAsync(name, "Duplicate", null);
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
+            AdminMutationResult result = await service.CreateAsync(name, "Duplicate", null);
             Assert.False(result.Succeeded);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.Create, name);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.Create, name);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
         Assert.Equal(AuditReasonCode.NameCollision, entry.ReasonCode);
     }
@@ -99,32 +101,32 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task CreateAsync_ValidInput_WritesSucceededAuditEvent()
     {
-        var name = $"apiscope-audit-create-{Guid.NewGuid():N}";
+        string name = $"apiscope-audit-create-{Guid.NewGuid():N}";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
-            var result = await service.CreateAsync(name, "New Scope", null);
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
+            AdminMutationResult result = await service.CreateAsync(name, "New Scope", null);
             Assert.True(result.Succeeded);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.Create, name);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.Create, name);
         Assert.Equal(AuditOutcome.Succeeded, entry.Outcome);
     }
 
     [Fact]
     public async Task UpdateBasicsAsync_ScopeNotFound_WritesDeniedAuditEvent()
     {
-        var name = $"apiscope-audit-update-missing-{Guid.NewGuid():N}";
+        string name = $"apiscope-audit-update-missing-{Guid.NewGuid():N}";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
-            var result = await service.UpdateBasicsAsync(name, "New Display", null, true, false, false, true);
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
+            bool result = await service.UpdateBasicsAsync(name, "New Display", null, true, false, false, true);
             Assert.False(result);
         });
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.Update, name);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.Update, name);
         Assert.Equal(AuditOutcome.Denied, entry.Outcome);
         Assert.Equal(AuditReasonCode.NotFound, entry.ReasonCode);
     }
@@ -132,16 +134,16 @@ public class ApiScopeAuditCoverageTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UpdateBasicsAsync_UnexpectedPersistenceFailure_WritesFailedAuditEventAndRethrows()
     {
-        var name = $"apiscope-audit-failure-{Guid.NewGuid():N}";
+        string name = $"apiscope-audit-failure-{Guid.NewGuid():N}";
 
         await Assert.ThrowsAnyAsync<Exception>(() => _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeEditorService>();
+            IApiScopeEditorService service = sp.GetRequiredService<IApiScopeEditorService>();
             await sp.GetRequiredService<ConfigurationDbContext>().DisposeAsync();
             await service.UpdateBasicsAsync(name, "Display", null, true, false, false, true);
         }));
 
-        var entry = await GetSingleAuditEntryAsync(AuditAction.Update, name);
+        AuditLogEntry entry = await GetSingleAuditEntryAsync(AuditAction.Update, name);
         Assert.Equal(AuditOutcome.Failed, entry.Outcome);
         Assert.Equal(AuditReasonCode.PersistenceFailure, entry.ReasonCode);
     }

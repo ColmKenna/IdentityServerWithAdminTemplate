@@ -25,14 +25,14 @@ function selectPreset(presetKey) {
 
     if (!preset.grantTypes.includes('authorization_code') && !preset.grantTypes.includes('implicit')) {
         if (uriSection) uriSection.style.display = 'none';
-        
+
         // Uncheck oidc identity scopes
         document.querySelectorAll('.scope-checkbox').forEach(cb => {
             if (cb.value === 'openid' || cb.value === 'profile') {
                 cb.checked = false;
             }
         });
-    } else { 
+    } else {
         if (uriSection) uriSection.style.display = 'block';
         checkDefaultScopes();
     }
@@ -56,7 +56,9 @@ function copySecretToClipboard() {
         if (btn) {
             const origText = btn.textContent;
             btn.textContent = '✓ Copied!';
-            setTimeout(() => { btn.textContent = origText; }, 2000);
+            setTimeout(() => {
+                btn.textContent = origText;
+            }, 2000);
         }
     });
 }
@@ -67,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const currentPresetId = document.getElementById('selected-preset-input').value || 'web';
     const preset = window.availablePresets.find(p => p.id === currentPresetId);
-    
+
     if (preset && !preset.grantTypes.includes('authorization_code') && !preset.grantTypes.includes('implicit')) {
         const uriSection = document.getElementById('uri-configuration-section');
         if (uriSection) uriSection.style.display = 'none';

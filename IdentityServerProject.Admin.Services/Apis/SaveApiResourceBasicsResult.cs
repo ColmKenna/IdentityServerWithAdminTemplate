@@ -3,7 +3,7 @@ using IdentityServerProject.Services.Validation;
 namespace IdentityServerProject.Services.Apis;
 
 /// <summary>
-/// Result of creating or updating API resource basic settings.
+///     Result of creating or updating API resource basic settings.
 /// </summary>
 public sealed class SaveApiResourceBasicsResult
 {
@@ -16,7 +16,7 @@ public sealed class SaveApiResourceBasicsResult
 
     public static SaveApiResourceBasicsResult SucceededResult() => new()
     {
-        Status = AdminMutationStatus.Succeeded,
+        Status = AdminMutationStatus.Succeeded
     };
 
     public static SaveApiResourceBasicsResult NotFoundResult() => new()

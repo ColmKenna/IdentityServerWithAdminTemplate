@@ -1,5 +1,5 @@
 @page
-@model IdentityServerProject.Pages.Admin.Users.IndexModel
+@model IndexModel
 @{
     ViewData["Title"] = "Users";
 }
@@ -10,7 +10,11 @@
         <p class="page-sub">Provisioned user accounts and access controls</p>
     </div>
     <a id="new-user-link" class="btn-primary" asp-page="./Create">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
         New user
     </a>
 </div>
@@ -44,12 +48,14 @@
                     </ck-responsive-col>
                     <ck-responsive-col>@(string.IsNullOrWhiteSpace(userItem.Email) ? "—" : userItem.Email)</ck-responsive-col>
                     <ck-responsive-col>
-                        <span class="status-badge @(userItem.IsLockedOut ? "disabled" : "enabled")">@(userItem.IsLockedOut ? "Locked Out" : "Active")</span>
+                        <span
+                            class="status-badge @(userItem.IsLockedOut ? "disabled" : "enabled")">@(userItem.IsLockedOut ? "Locked Out" : "Active")</span>
                     </ck-responsive-col>
                     <ck-responsive-col class="actions-cell">
                         @if (userItem.IsLockedOut)
                         {
-                            <form method="post" asp-page-handler="Unlock" asp-route-id="@userItem.Id" class="inline-action-form">
+                            <form method="post" asp-page-handler="Unlock" asp-route-id="@userItem.Id"
+                                  class="inline-action-form">
                                 <button type="submit" class="btn-sm btn-secondary unlock-btn">Unlock</button>
                             </form>
                         }
@@ -74,7 +80,8 @@
             }
             else
             {
-                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter" asp-route-PageNumber="@(Model.Users.PageNumber - 1)">&lsaquo;</a>
+                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
+                   asp-route-PageNumber="@(Model.Users.PageNumber - 1)">&lsaquo;</a>
             }
             <span class="pagination-page">Page @Model.Users.PageNumber of @Model.Users.TotalPages</span>
             @if (!Model.Users.HasNextPage)
@@ -83,7 +90,8 @@
             }
             else
             {
-                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter" asp-route-PageNumber="@(Model.Users.PageNumber + 1)">&rsaquo;</a>
+                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
+                   asp-route-PageNumber="@(Model.Users.PageNumber + 1)">&rsaquo;</a>
             }
         </div>
     </div>

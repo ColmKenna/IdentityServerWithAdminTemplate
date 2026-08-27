@@ -1,5 +1,5 @@
 @page "{sourceClientId}"
-@model IdentityServerProject.Pages.Admin.Clients.CloneModel
+@model CloneModel
 @{
     ViewData["Title"] = "Clone Client";
     ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
@@ -14,33 +14,38 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">Clone Client</h1>
-        <p class="page-sub">Create a new client based on <strong>@Model.SourceClientName</strong>. The new client will inherit all settings and scopes, except for the client secrets.</p>
+        <p class="page-sub">Create a new client based on <strong>@Model.SourceClientName</strong>. The new client will
+            inherit all settings and scopes, except for the client secrets.</p>
     </div>
     <a asp-page="./Details" asp-route-id="@Model.SourceClientId" class="btn-secondary">&larr; Back to Client</a>
 </div>
 
 <form method="post" id="clone-client-form">
-    <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger" style="display: @(ViewData.ModelState.IsValid ? "none" : "block"); margin-bottom: 20px;"></div>
+    <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger"
+         style="display: @(ViewData.ModelState.IsValid ? "none" : "block"); margin-bottom: 20px;"></div>
 
-    <input type="hidden" asp-for="SourceClientId" />
+    <input type="hidden" asp-for="SourceClientId"/>
 
     <div class="panel" style="margin-bottom: 24px; padding: 28px;">
         <div class="form-group" style="margin-bottom: 16px;">
             <label asp-for="Input.ClientId" class="form-label">New Client ID <span class="required">*</span></label>
-            <input asp-for="Input.ClientId" class="form-control" placeholder="e.g. my-web-app-clone" required />
+            <input asp-for="Input.ClientId" class="form-control" placeholder="e.g. my-web-app-clone" required/>
             <span asp-validation-for="Input.ClientId" class="text-danger field-validation-error"></span>
-            <small class="form-text text-muted" style="display: block; margin-top: 4px; font-size: 0.85rem;">Unique alphanumeric identifier used in OAuth requests.</small>
+            <small class="form-text text-muted" style="display: block; margin-top: 4px; font-size: 0.85rem;">Unique
+                alphanumeric identifier used in OAuth requests.</small>
         </div>
 
         <div class="form-group" style="margin-bottom: 16px;">
             <label asp-for="Input.ClientName" class="form-label">New Client Display Name <span class="required">*</span></label>
-            <input asp-for="Input.ClientName" class="form-control" placeholder="e.g. Customer Portal Web Clone" required />
+            <input asp-for="Input.ClientName" class="form-control" placeholder="e.g. Customer Portal Web Clone"
+                   required/>
             <span asp-validation-for="Input.ClientName" class="text-danger field-validation-error"></span>
         </div>
 
         <div class="form-group" style="margin-bottom: 16px;">
             <label asp-for="Input.Description" class="form-label">Description</label>
-            <textarea asp-for="Input.Description" class="form-control" rows="2" placeholder="Optional notes about this client application"></textarea>
+            <textarea asp-for="Input.Description" class="form-control" rows="2"
+                      placeholder="Optional notes about this client application"></textarea>
             <span asp-validation-for="Input.Description" class="text-danger field-validation-error"></span>
         </div>
 
@@ -57,6 +62,7 @@
         flex-direction: column;
         gap: 6px;
     }
+
     .form-control {
         width: 100%;
         max-width: 400px;
@@ -65,11 +71,13 @@
         padding: 10px 14px;
         font-size: 0.95rem;
     }
+
     .form-label {
         font-weight: 600;
         font-size: 0.9rem;
         color: var(--ink, #17191c);
     }
+
     .field-validation-error {
         font-size: 0.85rem;
         color: #c8433b;

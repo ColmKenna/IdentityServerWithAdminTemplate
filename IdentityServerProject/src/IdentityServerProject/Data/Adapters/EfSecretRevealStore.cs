@@ -2,13 +2,14 @@ using System.Data;
 using IdentityServerProject.Services.SecretReveals;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace IdentityServerProject.Data.Adapters;
 
 /// <summary>
-/// EF-backed <see cref=\"ISecretRevealStore\"/> adapter against <see cref=\"ApplicationDbContext\"/>.
-/// Owns every SQL-Server-specific concern moved out of the (now host-agnostic) library service:
-/// digest-collision detection on insert, and locked, serializable-isolation match-and-consume.
+///     EF-backed <see cref=\"ISecretRevealStore" /> adapter against <see cref=\"ApplicationDbContext\" />.
+///     Owns every SQL-Server-specific concern moved out of the (now host-agnostic) library service:
+///     digest-collision detection on insert, and locked, serializable-isolation match-and-consume.
 /// </summary>
 public sealed class EfSecretRevealStore : ISecretRevealStore
 {
@@ -27,7 +28,7 @@ public sealed class EfSecretRevealStore : ISecretRevealStore
         DateTimeOffset expiresUtc,
         CancellationToken cancellationToken = default)
     {
-        var actorSubjectIdStr = securityContext.ActorSubjectId.Value ?? string.Empty;
+        string actorSubjectIdStr = securityContext.ActorSubjectId.Value ?? string.Empty;
         _dbContext.SecretRevealRecords.Add(new SecretRevealRecord
         {
             HandleDigest = handleDigest,
@@ -57,21 +58,21 @@ public sealed class EfSecretRevealStore : ISecretRevealStore
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
-        var actorSubjectIdStr = securityContext.ActorSubjectId.Value ?? string.Empty;
-        var purposeStr = securityContext.Purpose.ToString();
-        var targetId = securityContext.TargetId;
+        string actorSubjectIdStr = securityContext.ActorSubjectId.Value ?? string.Empty;
+        string purposeStr = securityContext.Purpose.ToString();
+        string targetId = securityContext.TargetId;
         var lookup = SecretRevealLookup.NotFound();
 
-        var strategy = _dbContext.Database.CreateExecutionStrategy();
+        IExecutionStrategy strategy = _dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             // A retry must not reuse entities tracked from the failed attempt.
             _dbContext.ChangeTracker.Clear();
             lookup = SecretRevealLookup.NotFound();
 
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync(
+            await using IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable, cancellationToken);
-            var record = await LoadForConsumeAsync(handleDigest, cancellationToken);
+            SecretRevealRecord? record = await LoadForConsumeAsync(handleDigest, cancellationToken);
             if (record == null)
             {
                 await transaction.CommitAsync(cancellationToken);
@@ -105,41 +106,36 @@ public sealed class EfSecretRevealStore : ISecretRevealStore
         return lookup;
     }
 
-    public async Task CleanupExpiredAsync(DateTimeOffset now, int batchSize, CancellationToken cancellationToken = default)
+    public async Task CleanupExpiredAsync(DateTimeOffset now, int batchSize,
+        CancellationToken cancellationToken = default)
     {
-        if (batchSize <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(batchSize), "Batch size must be positive.");
-        }
+        if (batchSize <= 0) throw new ArgumentOutOfRangeException(nameof(batchSize), "Batch size must be positive.");
 
         // Deleting in bounded chunks limits log-flush and locking pressure on SQL Server.
-        var expiredIds = await _dbContext.SecretRevealRecords
+        List<long> expiredIds = await _dbContext.SecretRevealRecords
             .Where(r => r.ExpiresUtc <= now)
             .OrderBy(r => r.ExpiresUtc)
             .Select(r => r.Id)
             .Take(batchSize)
             .ToListAsync(cancellationToken);
 
-        if (expiredIds.Count == 0)
-        {
-            return;
-        }
+        if (expiredIds.Count == 0) return;
 
         await _dbContext.SecretRevealRecords
             .Where(r => expiredIds.Contains(r.Id))
             .ExecuteDeleteAsync(cancellationToken);
     }
 
-    private async Task<SecretRevealRecord?> LoadForConsumeAsync(byte[] handleDigest, CancellationToken cancellationToken)
+    private async Task<SecretRevealRecord?> LoadForConsumeAsync(byte[] handleDigest,
+        CancellationToken cancellationToken)
     {
         // On SQL Server, take an exclusive row-level lock so concurrent consumers serialize behind
         // the first transaction. On SQLite/in-memory test providers, fall back to standard LINQ.
         if (_dbContext.Database.IsSqlServer())
-        {
             return await _dbContext.SecretRevealRecords
-                .FromSqlInterpolated($"SELECT * FROM dbo.SecretRevealRecords WITH (UPDLOCK, ROWLOCK) WHERE HandleDigest = {handleDigest}")
+                .FromSqlInterpolated(
+                    $"SELECT * FROM dbo.SecretRevealRecords WITH (UPDLOCK, ROWLOCK) WHERE HandleDigest = {handleDigest}")
                 .SingleOrDefaultAsync(cancellationToken);
-        }
 
         return await _dbContext.SecretRevealRecords
             .SingleOrDefaultAsync(r => r.HandleDigest == handleDigest, cancellationToken);
@@ -147,14 +143,11 @@ public sealed class EfSecretRevealStore : ISecretRevealStore
 
     private static bool IsDigestCollision(DbUpdateException ex)
     {
-        if (ex.InnerException is SqlException sqlEx && (sqlEx.Number == 2627 || sqlEx.Number == 2601))
-        {
-            return true;
-        }
+        if (ex.InnerException is SqlException sqlEx && (sqlEx.Number == 2627 || sqlEx.Number == 2601)) return true;
 
         // SQLite unique constraint error code
-        var message = ex.InnerException?.Message ?? ex.Message;
+        string message = ex.InnerException?.Message ?? ex.Message;
         return message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase)
-            || message.Contains("DuplicateKeyException", StringComparison.OrdinalIgnoreCase);
+               || message.Contains("DuplicateKeyException", StringComparison.OrdinalIgnoreCase);
     }
 }

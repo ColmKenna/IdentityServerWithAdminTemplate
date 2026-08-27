@@ -5,10 +5,10 @@ public enum SecretRevealInsertStatus
     Inserted,
 
     /// <summary>
-    /// The generated handle digest collided with an existing row. The caller should generate a
-    /// fresh handle and retry.
+    ///     The generated handle digest collided with an existing row. The caller should generate a
+    ///     fresh handle and retry.
     /// </summary>
-    DigestCollision,
+    DigestCollision
 }
 
 public enum SecretRevealLookupStatus
@@ -16,7 +16,7 @@ public enum SecretRevealLookupStatus
     NotFound,
     WrongContext,
     Expired,
-    Revealed,
+    Revealed
 }
 
 public sealed record SecretRevealLookup(SecretRevealLookupStatus Status, string? ProtectedPayload)
@@ -32,8 +32,8 @@ public sealed record SecretRevealLookup(SecretRevealLookupStatus Status, string?
 }
 
 /// <summary>
-/// Host-owned lifecycle storage for one-time secret-reveal records: insertion (with digest-collision
-/// detection so the caller can retry with a fresh handle), atomic match-and-consume, and expiry cleanup.
+///     Host-owned lifecycle storage for one-time secret-reveal records: insertion (with digest-collision
+///     detection so the caller can retry with a fresh handle), atomic match-and-consume, and expiry cleanup.
 /// </summary>
 public interface ISecretRevealStore
 {
@@ -46,10 +46,10 @@ public interface ISecretRevealStore
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Atomically loads, validates, and deletes the record for <paramref name=\"handleDigest\"/> so a
-    /// handle can be consumed exactly once even under concurrent callers. A record whose actor,
-    /// purpose, or target does not match is reported as <see cref=\"SecretRevealLookupStatus.WrongContext\"/>
-    /// without being deleted, so a legitimate holder can still consume it.
+    ///     Atomically loads, validates, and deletes the record for <paramref name=\"handleDigest\" /> so a
+    ///     handle can be consumed exactly once even under concurrent callers. A record whose actor,
+    ///     purpose, or target does not match is reported as <see cref=\"SecretRevealLookupStatus.WrongContext\" />
+    ///     without being deleted, so a legitimate holder can still consume it.
     /// </summary>
     Task<SecretRevealLookup> ConsumeAsync(
         byte[] handleDigest,

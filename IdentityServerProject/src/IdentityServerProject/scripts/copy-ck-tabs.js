@@ -18,8 +18,8 @@ if (!fs.existsSync(distDir)) {
     process.exit(0);
 }
 
-fs.rmSync(destDir, { recursive: true, force: true });
-fs.mkdirSync(destDir, { recursive: true });
-fs.cpSync(distDir, destDir, { recursive: true });
+fs.rmSync(destDir, {recursive: true, force: true});
+fs.mkdirSync(destDir, {recursive: true});
+fs.cpSync(distDir, destDir, {recursive: true});
 
 console.log(`[copy-ck-tabs] Copied dist assets to ${destDir}`);

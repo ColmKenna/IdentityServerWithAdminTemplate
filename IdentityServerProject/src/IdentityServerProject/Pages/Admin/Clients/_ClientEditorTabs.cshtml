@@ -1,4 +1,4 @@
-@model IdentityServerProject.Pages.Admin.Clients.ClientEditorTabsModel
+@model ClientEditorTabsModel
 @*
     Sub-navigation strip shared by the five Client editor pages (WI-07).
 
@@ -18,7 +18,8 @@
             <ck-tab label="@tab.Label"
                     active="@(isCurrent ? "" : null)"
                     data-current="@(isCurrent ? "true" : "false")">
-                <a asp-page="@tab.Page" asp-route-id="@Model.ClientId" aria-current="@(isCurrent ? "page" : null)">@tab.Label</a>
+                <a asp-page="@tab.Page" asp-route-id="@Model.ClientId"
+                   aria-current="@(isCurrent ? "page" : null)">@tab.Label</a>
             </ck-tab>
         }
     </ck-tabs>

@@ -29,7 +29,7 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
         ShowInDiscoveryDocument = true,
         UserClaims = new List<IdentityResourceClaim>
         {
-            new IdentityResourceClaim { Type = "sub" }
+            new() { Type = "sub" }
         }
     };
 
@@ -37,21 +37,15 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             if (resources != null)
-            {
-                foreach (var res in resources)
-                {
+                foreach (IdentityResource res in resources)
                     configDb.IdentityResources.Add(res);
-                }
-            }
+
             if (clients != null)
-            {
-                foreach (var client in clients)
-                {
+                foreach (Client client in clients)
                     configDb.Clients.Add(client);
-                }
-            }
+
             await configDb.SaveChangesAsync();
         });
     }
@@ -59,15 +53,16 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetIdentityResourcesAsync_FilterMatchesName_ReturnsMatchingResource()
     {
-        var tag = $"idres-test-filter-{Guid.NewGuid():N}";
-        var r1 = MakeIdentityResource(tag, "alpha");
-        var r2 = MakeIdentityResource(tag, "beta");
+        string tag = $"idres-test-filter-{Guid.NewGuid():N}";
+        IdentityResource r1 = MakeIdentityResource(tag, "alpha");
+        IdentityResource r2 = MakeIdentityResource(tag, "beta");
         await SeedAsync(new[] { r1, r2 });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceListService>();
-            var result = await service.GetIdentityResourcesAsync(new ListQuery(tag, Pagination.From(1, 10)));
+            IIdentityResourceListService service = sp.GetRequiredService<IIdentityResourceListService>();
+            ListResult<IdentityResourceListItem> result =
+                await service.GetIdentityResourcesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(2, result.TotalCount);
             Assert.Contains(result.Items, item => item.Name == r1.Name);
@@ -78,15 +73,15 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetIdentityResourcesAsync_CountsClientsWithMatchingAllowedScope()
     {
-        var tag = $"idres-test-counts-{Guid.NewGuid():N}";
-        var r1 = MakeIdentityResource(tag, "referenced");
+        string tag = $"idres-test-counts-{Guid.NewGuid():N}";
+        IdentityResource r1 = MakeIdentityResource(tag, "referenced");
         var client = new Client
         {
             ClientId = $"{tag}-client",
             ClientName = "Test Client",
             AllowedScopes = new List<ClientScope>
             {
-                new ClientScope { Scope = r1.Name }
+                new() { Scope = r1.Name }
             }
         };
 
@@ -94,10 +89,11 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceListService>();
-            var result = await service.GetIdentityResourcesAsync(new ListQuery(tag, Pagination.From(1, 10)));
+            IIdentityResourceListService service = sp.GetRequiredService<IIdentityResourceListService>();
+            ListResult<IdentityResourceListItem> result =
+                await service.GetIdentityResourcesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
-            var item = Assert.Single(result.Items);
+            IdentityResourceListItem item = Assert.Single(result.Items);
             Assert.Equal(1, item.ClientReferenceCount);
         });
     }
@@ -105,14 +101,14 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task DeleteIdentityResourceAsync_UnreferencedResource_DeletesSuccessfully()
     {
-        var tag = $"idres-test-delete-{Guid.NewGuid():N}";
-        var resource = MakeIdentityResource(tag, "custom");
+        string tag = $"idres-test-delete-{Guid.NewGuid():N}";
+        IdentityResource resource = MakeIdentityResource(tag, "custom");
         await SeedAsync(new[] { resource });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceListService>();
-            var result = await service.DeleteIdentityResourceAsync(resource.Name);
+            IIdentityResourceListService service = sp.GetRequiredService<IIdentityResourceListService>();
+            IdentityResourceDeleteResult result = await service.DeleteIdentityResourceAsync(resource.Name);
 
             Assert.Equal(IdentityResourceDeleteResult.Deleted, result);
         });
@@ -121,15 +117,15 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task DeleteIdentityResourceAsync_ReferencedResource_ReturnsBlockedWithoutMutation()
     {
-        var tag = $"idres-test-blocked-{Guid.NewGuid():N}";
-        var resource = MakeIdentityResource(tag, "active");
+        string tag = $"idres-test-blocked-{Guid.NewGuid():N}";
+        IdentityResource resource = MakeIdentityResource(tag, "active");
         var client = new Client
         {
             ClientId = $"{tag}-client",
             ClientName = "Test Client",
             AllowedScopes = new List<ClientScope>
             {
-                new ClientScope { Scope = resource.Name }
+                new() { Scope = resource.Name }
             }
         };
 
@@ -137,24 +133,26 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceListService>();
-            var result = await service.DeleteIdentityResourceAsync(resource.Name);
+            IIdentityResourceListService service = sp.GetRequiredService<IIdentityResourceListService>();
+            IdentityResourceDeleteResult result = await service.DeleteIdentityResourceAsync(resource.Name);
 
             Assert.Equal(IdentityResourceDeleteResult.Blocked, result);
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             Assert.True(await configDb.IdentityResources.AnyAsync(r => r.Name == resource.Name));
-            
-            var c = await configDb.Clients.Include(cl => cl.AllowedScopes).FirstOrDefaultAsync(cl => cl.ClientId == $"{tag}-client");
+
+            Client? c = await configDb.Clients.Include(cl => cl.AllowedScopes)
+                .FirstOrDefaultAsync(cl => cl.ClientId == $"{tag}-client");
             Assert.NotNull(c);
             Assert.Contains(c.AllowedScopes, cs => cs.Scope == resource.Name);
 
-            var auditDb = sp.GetRequiredService<ApplicationDbContext>();
-            var audit = await auditDb.AuditLogEntries.SingleAsync(e =>
-                e.Category == AuditCategory.IdentityResource && e.Action == AuditAction.Delete && e.TargetId == resource.Name);
+            ApplicationDbContext auditDb = sp.GetRequiredService<ApplicationDbContext>();
+            AuditLogEntry audit = await auditDb.AuditLogEntries.SingleAsync(e =>
+                e.Category == AuditCategory.IdentityResource && e.Action == AuditAction.Delete &&
+                e.TargetId == resource.Name);
             Assert.Equal(AuditOutcome.Denied, audit.Outcome);
             Assert.Equal(AuditReasonCode.ReferencedResource, audit.ReasonCode);
         });
@@ -165,8 +163,8 @@ public class IdentityResourceListServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IIdentityResourceListService>();
-            var result = await service.DeleteIdentityResourceAsync("openid");
+            IIdentityResourceListService service = sp.GetRequiredService<IIdentityResourceListService>();
+            IdentityResourceDeleteResult result = await service.DeleteIdentityResourceAsync("openid");
 
             Assert.Equal(IdentityResourceDeleteResult.Blocked, result);
         });

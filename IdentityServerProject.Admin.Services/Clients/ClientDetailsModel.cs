@@ -43,7 +43,11 @@ public class ClientDeleteResult
         string errorMessage,
         AuditReasonCode? reasonCode = null,
         AdminMutationStatus status = AdminMutationStatus.Denied) =>
-        new() { Success = false, Status = status, ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed, ErrorMessage = errorMessage };
+        new()
+        {
+            Success = false, Status = status, ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed,
+            ErrorMessage = errorMessage
+        };
 }
 
 public class ClientBasicsModel
@@ -70,7 +74,7 @@ public sealed record ClientBasicsAuditValue(
     string? Description,
     bool Enabled,
     string? ClientUri,
-    string? LogoUri) : AuditLogs.IAuditValue;
+    string? LogoUri) : IAuditValue;
 
 public class ClientAuthenticationModel
 {
@@ -187,7 +191,7 @@ public sealed record ClientAuthenticationAuditValue(
     string? FrontChannelLogoutUri,
     bool FrontChannelLogoutSessionRequired,
     string? BackChannelLogoutUri,
-    bool BackChannelLogoutSessionRequired) : AuditLogs.IAuditValue;
+    bool BackChannelLogoutSessionRequired) : IAuditValue;
 
 public class ClientPermissionsModel
 {
@@ -265,7 +269,11 @@ public class ClientSecretRevokeResult
         string errorMessage,
         AuditReasonCode? reasonCode = null,
         AdminMutationStatus status = AdminMutationStatus.Denied) =>
-        new() { Success = false, Status = status, ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed, ErrorMessage = errorMessage };
+        new()
+        {
+            Success = false, Status = status, ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed,
+            ErrorMessage = errorMessage
+        };
 }
 
 public class ClientTokenSettingsModel
@@ -293,4 +301,4 @@ public sealed record ClientTokenSettingsAuditValue(
     TokenLifetime IdentityTokenLifetime,
     bool RequireConsent,
     bool AllowOfflineAccess,
-    RefreshTokenSettings RefreshToken) : AuditLogs.IAuditValue;
+    RefreshTokenSettings RefreshToken) : IAuditValue;

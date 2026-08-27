@@ -37,7 +37,7 @@ public sealed class SecretSecurityContextTests
     [Fact]
     public void CreateSecretCommand_InitializesProperties()
     {
-        var expiration = DateTime.UtcNow.AddDays(30);
+        DateTime expiration = DateTime.UtcNow.AddDays(30);
         var command = new CreateSecretCommand("client-a", "My Description", expiration);
 
         Assert.Equal("client-a", command.TargetId);
@@ -48,7 +48,7 @@ public sealed class SecretSecurityContextTests
     [Fact]
     public void AddApiResourceSecretCommand_ToCreateSecretCommand_MapsProperties()
     {
-        var expiration = DateTime.UtcNow.AddDays(7);
+        DateTime expiration = DateTime.UtcNow.AddDays(7);
         var apiSecretCmd = new AddApiResourceSecretCommand(ScopeName.Create("api-1"), "Api Secret", expiration);
 
         var unifiedCmd = apiSecretCmd.ToCreateSecretCommand();

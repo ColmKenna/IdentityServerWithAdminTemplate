@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import {readFile} from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
 
 async function loadClientUriRowsScript() {
     const containers = new Map();
     const document = {
-        addEventListener() {},
+        addEventListener() {
+        },
         createElement() {
             return {
                 className: '',
@@ -24,17 +25,20 @@ async function loadClientUriRowsScript() {
             return [];
         }
     };
-    const context = { document, window: {}, navigator: {}, setTimeout() {} };
+    const context = {
+        document, window: {}, navigator: {}, setTimeout() {
+        }
+    };
     const script = await readFile(new URL('../wwwroot/js/client-uri-rows.js', import.meta.url), 'utf8');
     vm.runInNewContext(script, context);
 
-    return { containers, context };
+    return {containers, context};
 }
 
 test('addUriRow appends a removable URI input using the supplied binding name and placeholder', async () => {
-    const { containers, context } = await loadClientUriRowsScript();
+    const {containers, context} = await loadClientUriRowsScript();
     const rows = [];
-    containers.set('redirect-uris', { appendChild: row => rows.push(row) });
+    containers.set('redirect-uris', {appendChild: row => rows.push(row)});
 
     context.addUriRow('redirect-uris', 'Input.RedirectUris', 'https://example.test/signin');
 
@@ -46,10 +50,14 @@ test('addUriRow appends a removable URI input using the supplied binding name an
 });
 
 test('removeUriRow removes the closest URI row when one exists', async () => {
-    const { context } = await loadClientUriRowsScript();
-    const row = { removed: false, remove() { this.removed = true; } };
+    const {context} = await loadClientUriRowsScript();
+    const row = {
+        removed: false, remove() {
+            this.removed = true;
+        }
+    };
 
-    context.removeUriRow({ closest: selector => selector === '.uri-input-row' ? row : null });
+    context.removeUriRow({closest: selector => selector === '.uri-input-row' ? row : null});
 
     assert.equal(row.removed, true);
 });

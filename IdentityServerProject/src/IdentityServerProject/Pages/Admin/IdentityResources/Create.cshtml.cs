@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using IdentityServerProject.Services.IdentityResources;
+using IdentityServerProject.Services.Scopes;
+using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -39,8 +41,7 @@ public class CreateModel : PageModel
         _identityResourceEditorService = identityResourceEditorService;
     }
 
-    [BindProperty]
-    public CreateInputModel Input { get; set; } = new();
+    [BindProperty] public CreateInputModel Input { get; set; } = new();
 
     public void OnGet()
     {
@@ -51,9 +52,9 @@ public class CreateModel : PageModel
         if (!ModelState.IsValid)
             return Page();
 
-        var result = await _identityResourceEditorService.CreateAsync(
+        AdminMutationResult result = await _identityResourceEditorService.CreateAsync(
             new CreateIdentityResourceCommand(
-                IdentityServerProject.Services.Scopes.ScopeName.Create(Input.Name),
+                ScopeName.Create(Input.Name),
                 Input.DisplayName,
                 Input.Description,
                 Input.Enabled,

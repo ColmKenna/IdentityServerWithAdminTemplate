@@ -3,7 +3,8 @@ using IdentityServerProject.Services.Users;
 namespace IdentityServerProject.Services.AuditLogs;
 
 /// <summary>
-/// A single row projected for display on the Admin &gt; Audit Log list page.\n/// </summary>
+///     A single row projected for display on the Admin &gt; Audit Log list page.\n///
+/// </summary>
 public sealed class AuditLogListItem
 {
     public required int Id { get; init; }

@@ -11,16 +11,16 @@ namespace IdentityServerProject.Services.SecretReveals;
 public sealed class SecretRevealService : ISecretRevealService
 {
     internal const string ProtectorPurpose = "IdentityServerProject.Admin.SecretReveal.v1";
-    internal static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(5);
     private const int CleanupBatchSize = 100;
     private const int HandleGenerationAttempts = 3;
+    internal static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(5);
+    private readonly IAuditWriter _auditWriter;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ILogger<SecretRevealService> _logger;
+    private readonly IDataProtector _protector;
 
     private readonly ISecretRevealStore _store;
-    private readonly IDataProtector _protector;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly TimeProvider _timeProvider;
-    private readonly IAuditWriter _auditWriter;
-    private readonly ILogger<SecretRevealService> _logger;
 
     public SecretRevealService(
         ISecretRevealStore store,
@@ -43,9 +43,9 @@ public sealed class SecretRevealService : ISecretRevealService
         string plaintext,
         CancellationToken cancellationToken = default)
     {
-        var purpose = target.Purpose;
-        var targetId = target.TargetId;
-        var normalizedTarget = NormalizeTarget(targetId);
+        SecretRevealPurpose purpose = target.Purpose;
+        string targetId = target.TargetId;
+        string normalizedTarget = NormalizeTarget(targetId);
         ValidatePurpose(purpose);
         if (normalizedTarget.Length == 0)
         {
@@ -61,7 +61,7 @@ public sealed class SecretRevealService : ISecretRevealService
             throw new ArgumentException("A non-empty plaintext value is required.", nameof(plaintext));
         }
 
-        var actorSubjectId = ResolveActorSubjectId();
+        UserId actorSubjectId = ResolveActorSubjectId();
         if (actorSubjectId.IsEmpty)
         {
             await AuditAsync(AuditAction.Issue, AuditOutcome.Denied, AuditReasonCode.WrongContext,
@@ -70,15 +70,15 @@ public sealed class SecretRevealService : ISecretRevealService
         }
 
         var securityContext = SecretSecurityContext.Create(actorSubjectId, purpose, normalizedTarget);
-        var now = _timeProvider.GetUtcNow();
-        var expiresUtc = now.Add(Lifetime);
-        var protectedPayload = BindingProtector(actorSubjectId.Value, purpose, normalizedTarget).Protect(plaintext);
+        DateTimeOffset now = _timeProvider.GetUtcNow();
+        DateTimeOffset expiresUtc = now.Add(Lifetime);
+        string protectedPayload = BindingProtector(actorSubjectId.Value, purpose, normalizedTarget).Protect(plaintext);
 
-        for (var attempt = 1; attempt <= HandleGenerationAttempts; attempt++)
+        for (int attempt = 1; attempt <= HandleGenerationAttempts; attempt++)
         {
-            var rawHandle = RandomNumberGenerator.GetBytes(32);
-            var handle = WebEncoders.Base64UrlEncode(rawHandle);
-            var digest = SHA256.HashData(rawHandle);
+            byte[] rawHandle = RandomNumberGenerator.GetBytes(32);
+            string handle = WebEncoders.Base64UrlEncode(rawHandle);
+            byte[] digest = SHA256.HashData(rawHandle);
 
             SecretRevealInsertStatus insertStatus;
             try
@@ -115,14 +115,14 @@ public sealed class SecretRevealService : ISecretRevealService
         SecretRevealHandle handle,
         CancellationToken cancellationToken = default)
     {
-        var purpose = target.Purpose;
-        var targetId = target.TargetId;
-        var normalizedTarget = NormalizeTarget(targetId);
-        var actorSubjectId = ResolveActorSubjectId();
+        SecretRevealPurpose purpose = target.Purpose;
+        string targetId = target.TargetId;
+        string normalizedTarget = NormalizeTarget(targetId);
+        UserId actorSubjectId = ResolveActorSubjectId();
         if (!Enum.IsDefined(purpose)
             || normalizedTarget.Length == 0
             || actorSubjectId.IsEmpty
-            || !TryDigestHandle(handle.Value, out var digest))
+            || !TryDigestHandle(handle.Value, out byte[] digest))
         {
             await AuditAsync(AuditAction.Consume, AuditOutcome.Denied, AuditReasonCode.WrongContext,
                 normalizedTarget, "Secret reveal is unavailable.", cancellationToken);
@@ -145,11 +145,11 @@ public sealed class SecretRevealService : ISecretRevealService
 
         if (lookup.Status != SecretRevealLookupStatus.Revealed)
         {
-            var unavailableReason = lookup.Status switch
+            AuditReasonCode unavailableReason = lookup.Status switch
             {
                 SecretRevealLookupStatus.WrongContext => AuditReasonCode.WrongContext,
                 SecretRevealLookupStatus.Expired => AuditReasonCode.Expired,
-                _ => AuditReasonCode.NotFound,
+                _ => AuditReasonCode.NotFound
             };
             await AuditAsync(AuditAction.Consume, AuditOutcome.Denied, unavailableReason,
                 normalizedTarget, "Secret reveal is unavailable.", cancellationToken);
@@ -158,7 +158,8 @@ public sealed class SecretRevealService : ISecretRevealService
 
         try
         {
-            var plaintext = BindingProtector(actorSubjectId.Value, purpose, normalizedTarget).Unprotect(lookup.ProtectedPayload!);
+            string plaintext = BindingProtector(actorSubjectId.Value, purpose, normalizedTarget)
+                .Unprotect(lookup.ProtectedPayload!);
             await AuditAsync(AuditAction.Consume, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
                 normalizedTarget, $"Consumed {purpose} secret reveal.", cancellationToken);
             return SecretRevealConsumeResult.Revealed(plaintext);
@@ -211,7 +212,7 @@ public sealed class SecretRevealService : ISecretRevealService
 
         try
         {
-            var rawHandle = WebEncoders.Base64UrlDecode(handle);
+            byte[] rawHandle = WebEncoders.Base64UrlDecode(handle);
             if (rawHandle.Length != 32)
                 return false;
 
@@ -236,7 +237,7 @@ public sealed class SecretRevealService : ISecretRevealService
             action,
             outcome,
             reasonCode,
-            TargetId: string.IsNullOrWhiteSpace(targetId) ? null : targetId,
-            TargetName: string.IsNullOrWhiteSpace(targetId) ? null : targetId,
+            string.IsNullOrWhiteSpace(targetId) ? null : targetId,
+            string.IsNullOrWhiteSpace(targetId) ? null : targetId,
             Details: details), cancellationToken);
 }

@@ -7,9 +7,9 @@ public partial class ClientCreateService
 {
     private static bool IsUniqueConstraintViolation(DbUpdateException exception)
     {
-        var message = exception.InnerException?.Message ?? exception.Message;
-        var isClientIdConstraint = message.Contains("IX_Clients_ClientId", StringComparison.OrdinalIgnoreCase)
-            || message.Contains("Clients.ClientId", StringComparison.OrdinalIgnoreCase);
+        string message = exception.InnerException?.Message ?? exception.Message;
+        bool isClientIdConstraint = message.Contains("IX_Clients_ClientId", StringComparison.OrdinalIgnoreCase)
+                                    || message.Contains("Clients.ClientId", StringComparison.OrdinalIgnoreCase);
 
         return isClientIdConstraint && UniqueConstraintViolationDetector.IsUniqueConstraintViolation(exception);
     }

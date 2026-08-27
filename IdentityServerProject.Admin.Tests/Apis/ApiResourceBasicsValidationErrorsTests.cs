@@ -27,7 +27,7 @@ public class ApiResourceBasicsValidationErrorsTests
         Assert.True(errors.HasErrors);
         Assert.Single(errors.Name);
         Assert.Equal("Name is required.", errors.Name[0]);
-        var dict = errors.ToDictionary();
+        ValidationErrorDictionary dict = errors.ToDictionary();
         Assert.True(dict.ContainsKey("Basics.Name"));
         Assert.Equal("Name is required.", dict["Basics.Name"][0]);
     }
@@ -46,7 +46,7 @@ public class ApiResourceBasicsValidationErrorsTests
     [Fact]
     public void Validate_OverlongName_AddsLengthError()
     {
-        var overlongName = new string('a', ValidationConstants.MaxNameLength + 1);
+        string overlongName = new('a', ValidationConstants.MaxNameLength + 1);
         var errors = ApiResourceBasicsValidationErrors.Validate(overlongName, null, null);
 
         Assert.False(errors.IsValid);
@@ -58,7 +58,7 @@ public class ApiResourceBasicsValidationErrorsTests
     [Fact]
     public void Validate_OverlongDisplayName_AddsDisplayNameError()
     {
-        var overlongDisplayName = new string('b', ValidationConstants.MaxDisplayNameLength + 1);
+        string overlongDisplayName = new('b', ValidationConstants.MaxDisplayNameLength + 1);
         var errors = ApiResourceBasicsValidationErrors.Validate("valid-name", overlongDisplayName, null);
 
         Assert.False(errors.IsValid);
@@ -66,14 +66,14 @@ public class ApiResourceBasicsValidationErrorsTests
         Assert.Empty(errors.Name);
         Assert.Single(errors.DisplayName);
         Assert.Contains($"cannot exceed {ValidationConstants.MaxDisplayNameLength} characters", errors.DisplayName[0]);
-        var dict = errors.ToDictionary();
+        ValidationErrorDictionary dict = errors.ToDictionary();
         Assert.True(dict.ContainsKey("Basics.DisplayName"));
     }
 
     [Fact]
     public void Validate_OverlongDescription_AddsDescriptionError()
     {
-        var overlongDescription = new string('c', ValidationConstants.MaxDescriptionLength + 1);
+        string overlongDescription = new('c', ValidationConstants.MaxDescriptionLength + 1);
         var errors = ApiResourceBasicsValidationErrors.Validate("valid-name", "valid-display", overlongDescription);
 
         Assert.False(errors.IsValid);
@@ -82,16 +82,16 @@ public class ApiResourceBasicsValidationErrorsTests
         Assert.Empty(errors.DisplayName);
         Assert.Single(errors.Description);
         Assert.Contains($"cannot exceed {ValidationConstants.MaxDescriptionLength} characters", errors.Description[0]);
-        var dict = errors.ToDictionary();
+        ValidationErrorDictionary dict = errors.ToDictionary();
         Assert.True(dict.ContainsKey("Basics.Description"));
     }
 
     [Fact]
     public void Validate_MultipleErrors_PopulatesAllFieldsAndDictionaryKeys()
     {
-        var overlongName = new string('a', ValidationConstants.MaxNameLength + 1);
-        var overlongDisplayName = new string('b', ValidationConstants.MaxDisplayNameLength + 1);
-        var overlongDescription = new string('c', ValidationConstants.MaxDescriptionLength + 1);
+        string overlongName = new('a', ValidationConstants.MaxNameLength + 1);
+        string overlongDisplayName = new('b', ValidationConstants.MaxDisplayNameLength + 1);
+        string overlongDescription = new('c', ValidationConstants.MaxDescriptionLength + 1);
 
         var errors = ApiResourceBasicsValidationErrors.Validate(overlongName, overlongDisplayName, overlongDescription);
 
@@ -101,7 +101,7 @@ public class ApiResourceBasicsValidationErrorsTests
         Assert.NotEmpty(errors.DisplayName);
         Assert.NotEmpty(errors.Description);
 
-        var dict = errors.ToDictionary();
+        ValidationErrorDictionary dict = errors.ToDictionary();
         Assert.True(dict.ContainsKey("Basics.Name"));
         Assert.True(dict.ContainsKey("Basics.DisplayName"));
         Assert.True(dict.ContainsKey("Basics.Description"));

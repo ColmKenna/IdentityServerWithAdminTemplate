@@ -18,11 +18,9 @@ public class IndexModel : PageModel
         _options = options.Value;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public AuditLogFilter Filter { get; set; } = new();
+    [BindProperty(SupportsGet = true)] public AuditLogFilter Filter { get; set; } = new();
 
-    [BindProperty(SupportsGet = true)]
-    public int PageNumber { get; set; } = 1;
+    [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
 
     public ListResult<AuditLogListItem> AuditLogEntries { get; private set; } = default!;
 

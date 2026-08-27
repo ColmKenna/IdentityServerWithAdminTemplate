@@ -1,6 +1,8 @@
 using Duende.IdentityServer.Events;
 using Duende.IdentityServer.Extensions;
+using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
+using IdentityServerProject.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -9,12 +11,12 @@ namespace IdentityServerProject.Pages.Account;
 
 public class LogoutModel : PageModel
 {
-    private readonly SignInManager<Data.ApplicationUser> _signInManager;
-    private readonly IIdentityServerInteractionService _interaction;
     private readonly IEventService _events;
+    private readonly IIdentityServerInteractionService _interaction;
+    private readonly SignInManager<ApplicationUser> _signInManager;
 
     public LogoutModel(
-        SignInManager<Data.ApplicationUser> signInManager,
+        SignInManager<ApplicationUser> signInManager,
         IIdentityServerInteractionService interaction,
         IEventService events)
     {
@@ -23,11 +25,10 @@ public class LogoutModel : PageModel
         _events = events;
     }
 
-    [BindProperty]
-    public string? LogoutId { get; set; }
+    [BindProperty] public string? LogoutId { get; set; }
 
     public string? PostLogoutRedirectUri { get; set; }
-    
+
     public bool ShowLogoutPrompt { get; set; } = true;
 
     public async Task<IActionResult> OnGetAsync(string? logoutId)
@@ -36,11 +37,9 @@ public class LogoutModel : PageModel
 
         if (logoutId is not null)
         {
-            var logoutContext = await _interaction.GetLogoutContextAsync(logoutId, HttpContext.RequestAborted);
-            if (logoutContext?.ShowSignoutPrompt == false)
-            {
-                return await OnPostAsync();
-            }
+            LogoutRequest? logoutContext =
+                await _interaction.GetLogoutContextAsync(logoutId, HttpContext.RequestAborted);
+            if (logoutContext?.ShowSignoutPrompt == false) return await OnPostAsync();
         }
 
         if (User?.Identity?.IsAuthenticated == true)
@@ -48,7 +47,7 @@ public class LogoutModel : PageModel
             ShowLogoutPrompt = true;
             return Page();
         }
-        
+
         ShowLogoutPrompt = false;
         return Page();
     }
@@ -65,14 +64,12 @@ public class LogoutModel : PageModel
 
         if (LogoutId is not null)
         {
-            var logoutContext = await _interaction.GetLogoutContextAsync(LogoutId, HttpContext.RequestAborted);
+            LogoutRequest? logoutContext =
+                await _interaction.GetLogoutContextAsync(LogoutId, HttpContext.RequestAborted);
             PostLogoutRedirectUri = logoutContext?.PostLogoutRedirectUri;
         }
 
-        if (PostLogoutRedirectUri is not null)
-        {
-            return Redirect(PostLogoutRedirectUri);
-        }
+        if (PostLogoutRedirectUri is not null) return Redirect(PostLogoutRedirectUri);
 
         return RedirectToPage("/Account/Logout");
     }

@@ -5,7 +5,7 @@ using IdentityServerProject.Services.Validation;
 namespace IdentityServerProject.Services.Clients;
 
 /// <summary>
-/// Strongly typed domain identifier for an IdentityServer client.
+///     Strongly typed domain identifier for an IdentityServer client.
 /// </summary>
 [JsonConverter(typeof(ClientIdJsonConverter))]
 public readonly record struct ClientId(string Value) : IComparable<ClientId>, IEquatable<ClientId>
@@ -16,6 +16,8 @@ public readonly record struct ClientId(string Value) : IComparable<ClientId>, IE
 
     public bool IsValid => !IsEmpty && Value.Length <= ValidationConstants.MaxClientIdLength;
 
+    public int CompareTo(ClientId other) => string.Compare(Value, other.Value, StringComparison.Ordinal);
+
     public static ClientId Create(string? value) => new(value?.Trim() ?? string.Empty);
 
     public static implicit operator string(ClientId id) => id.Value ?? string.Empty;
@@ -23,8 +25,6 @@ public readonly record struct ClientId(string Value) : IComparable<ClientId>, IE
     public static explicit operator ClientId(string? value) => Create(value);
 
     public override string ToString() => Value ?? string.Empty;
-
-    public int CompareTo(ClientId other) => string.Compare(Value, other.Value, StringComparison.Ordinal);
 }
 
 public sealed class ClientIdJsonConverter : JsonConverter<ClientId>
@@ -36,8 +36,6 @@ public sealed class ClientIdJsonConverter : JsonConverter<ClientId>
             : ClientId.Empty;
     }
 
-    public override void Write(Utf8JsonWriter writer, ClientId value, JsonSerializerOptions options)
-    {
+    public override void Write(Utf8JsonWriter writer, ClientId value, JsonSerializerOptions options) =>
         writer.WriteStringValue(value.Value ?? string.Empty);
-    }
 }

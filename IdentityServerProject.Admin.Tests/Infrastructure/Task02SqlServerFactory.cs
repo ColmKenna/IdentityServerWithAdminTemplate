@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Testcontainers.MsSql;
 
 namespace IdentityServerProject.Admin.Tests.Infrastructure;
@@ -25,20 +26,20 @@ public sealed class Task02SqlServerCollection : ICollectionFixture<Task02SqlServ
 }
 
 /// <summary>
-/// Disposable, migration-backed SQL Server databases for isolation and retry tests. By default,
-/// the fixture starts a dedicated Docker container; CI can provide a server through
-/// TASK_SQLSERVER_CONNECTION_STRING_TEMPLATE instead. These tests never use SQLite or EF InMemory
-/// for transaction assertions.
+///     Disposable, migration-backed SQL Server databases for isolation and retry tests. By default,
+///     the fixture starts a dedicated Docker container; CI can provide a server through
+///     TASK_SQLSERVER_CONNECTION_STRING_TEMPLATE instead. These tests never use SQLite or EF InMemory
+///     for transaction assertions.
 /// </summary>
 public sealed class Task02SqlServerFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private const string SqlServerImage = "mcr.microsoft.com/mssql/server:2022-latest";
-    private readonly string _identityDatabase = $"Task02_Identity_{Guid.NewGuid():N}";
-    private readonly string _configurationDatabase = $"Task02_Configuration_{Guid.NewGuid():N}";
-    private readonly string _operationalDatabase = $"Task02_Operational_{Guid.NewGuid():N}";
     private static string? _containerConnectionStringTemplate;
-    private MsSqlContainer? _sqlContainer;
+    private readonly string _configurationDatabase = $"Task02_Configuration_{Guid.NewGuid():N}";
+    private readonly string _identityDatabase = $"Task02_Identity_{Guid.NewGuid():N}";
+    private readonly string _operationalDatabase = $"Task02_Operational_{Guid.NewGuid():N}";
     private bool _databasesDeleted;
+    private MsSqlContainer? _sqlContainer;
 
     public string IdentityConnectionString { get; private set; } = null!;
     public string ConfigurationConnectionString { get; private set; } = null!;
@@ -55,6 +56,8 @@ public sealed class Task02SqlServerFactory : WebApplicationFactory<Program>, IAs
         await CreateSchemaAsync();
     }
 
+    async Task IAsyncLifetime.DisposeAsync() => await DisposeAsync();
+
     public override async ValueTask DisposeAsync()
     {
         await base.DisposeAsync();
@@ -67,8 +70,6 @@ public sealed class Task02SqlServerFactory : WebApplicationFactory<Program>, IAs
 
         _containerConnectionStringTemplate = null;
     }
-
-    async Task IAsyncLifetime.DisposeAsync() => await DisposeAsync();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -93,25 +94,23 @@ public sealed class Task02SqlServerFactory : WebApplicationFactory<Program>, IAs
         });
     }
 
-    public HttpClient CreateHttpsClient(bool allowAutoRedirect = false) => CreateClient(new WebApplicationFactoryClientOptions
-    {
-        AllowAutoRedirect = allowAutoRedirect,
-        BaseAddress = new Uri("https://localhost")
-    });
+    public HttpClient CreateHttpsClient(bool allowAutoRedirect = false) => CreateClient(
+        new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = allowAutoRedirect,
+            BaseAddress = new Uri("https://localhost")
+        });
 
     public async Task RunInScopeAsync(Func<IServiceProvider, Task> action)
     {
-        await using var scope = Services.CreateAsyncScope();
+        await using AsyncServiceScope scope = Services.CreateAsyncScope();
         await action(scope.ServiceProvider);
     }
 
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (!disposing)
-        {
-            return;
-        }
+        if (!disposing) return;
 
         if (!_databasesDeleted)
         {
@@ -125,9 +124,7 @@ public sealed class Task02SqlServerFactory : WebApplicationFactory<Program>, IAs
     private async Task StartContainerWhenNoServerIsConfiguredAsync()
     {
         if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TASK_SQLSERVER_CONNECTION_STRING_TEMPLATE")))
-        {
             return;
-        }
 
         _sqlContainer = new MsSqlBuilder(SqlServerImage).Build();
         await _sqlContainer.StartAsync();
@@ -144,19 +141,15 @@ public sealed class Task02SqlServerFactory : WebApplicationFactory<Program>, IAs
     private async Task CreateSchemaAsync()
     {
         await using (var identityDb = new ApplicationDbContext(
-                   SqlOptions<ApplicationDbContext>(IdentityConnectionString).Options))
-        {
+                         SqlOptions<ApplicationDbContext>(IdentityConnectionString).Options))
             await identityDb.Database.MigrateAsync();
-        }
 
-        await using (var provider = StoreOptionsProvider(new ConfigurationStoreOptions()))
+        await using (ServiceProvider provider = StoreOptionsProvider(new ConfigurationStoreOptions()))
         await using (var configurationDb = new ConfigurationDbContext(
-                   SqlOptions<ConfigurationDbContext>(ConfigurationConnectionString, provider).Options))
-        {
+                         SqlOptions<ConfigurationDbContext>(ConfigurationConnectionString, provider).Options))
             await configurationDb.Database.MigrateAsync();
-        }
 
-        await using var operationalProvider = StoreOptionsProvider(new OperationalStoreOptions());
+        await using ServiceProvider operationalProvider = StoreOptionsProvider(new OperationalStoreOptions());
         await using var operationalDb = new PersistedGrantDbContext(
             SqlOptions<PersistedGrantDbContext>(OperationalConnectionString, operationalProvider).Options);
         await operationalDb.Database.MigrateAsync();
@@ -168,10 +161,7 @@ public sealed class Task02SqlServerFactory : WebApplicationFactory<Program>, IAs
         where TContext : DbContext
     {
         var builder = new DbContextOptionsBuilder<TContext>();
-        if (applicationServices != null)
-        {
-            builder.UseApplicationServiceProvider(applicationServices);
-        }
+        if (applicationServices != null) builder.UseApplicationServiceProvider(applicationServices);
 
         builder.UseSqlServer(connectionString, sql =>
             sql.MigrationsAssembly(typeof(Program).Assembly.FullName).EnableRetryOnFailure());
@@ -190,20 +180,17 @@ public sealed class Task02SqlServerFactory : WebApplicationFactory<Program>, IAs
         where TContext : DbContext
     {
         var descriptors = services.Where(descriptor =>
-            descriptor.ServiceType == typeof(DbContextOptions<TContext>)
-            || descriptor.ServiceType == typeof(TContext)
-            || (descriptor.ServiceType.IsGenericType
-                && descriptor.ServiceType.Name.StartsWith("IDbContextPool", StringComparison.Ordinal)
-                && descriptor.ServiceType.GenericTypeArguments[0] == typeof(TContext))
-            || (descriptor.ServiceType.IsGenericType
-                && descriptor.ServiceType.GetGenericTypeDefinition() == typeof(Microsoft.Extensions.Options.IConfigureOptions<>)
-                && descriptor.ServiceType.GenericTypeArguments[0] == typeof(DbContextOptions<TContext>)))
+                descriptor.ServiceType == typeof(DbContextOptions<TContext>)
+                || descriptor.ServiceType == typeof(TContext)
+                || (descriptor.ServiceType.IsGenericType
+                    && descriptor.ServiceType.Name.StartsWith("IDbContextPool", StringComparison.Ordinal)
+                    && descriptor.ServiceType.GenericTypeArguments[0] == typeof(TContext))
+                || (descriptor.ServiceType.IsGenericType
+                    && descriptor.ServiceType.GetGenericTypeDefinition() == typeof(IConfigureOptions<>)
+                    && descriptor.ServiceType.GenericTypeArguments[0] == typeof(DbContextOptions<TContext>)))
             .ToList();
 
-        foreach (var descriptor in descriptors)
-        {
-            services.Remove(descriptor);
-        }
+        foreach (ServiceDescriptor descriptor in descriptors) services.Remove(descriptor);
     }
 
     private static void DeleteDatabase<TContext>(string connectionString, object? storeOptions = null)
@@ -220,7 +207,7 @@ public sealed class Task02SqlServerFactory : WebApplicationFactory<Program>, IAs
 
             using (provider)
             {
-                var options = SqlOptions<TContext>(connectionString, provider).Options;
+                DbContextOptions<TContext> options = SqlOptions<TContext>(connectionString, provider).Options;
                 using var context = (TContext)Activator.CreateInstance(typeof(TContext), options)!;
                 context.Database.EnsureDeleted();
             }
@@ -234,15 +221,13 @@ public sealed class Task02SqlServerFactory : WebApplicationFactory<Program>, IAs
 
     public static string BuildConnectionString(string database)
     {
-        var configuredTemplate = Environment.GetEnvironmentVariable("TASK_SQLSERVER_CONNECTION_STRING_TEMPLATE")
-            ?? _containerConnectionStringTemplate;
+        string? configuredTemplate = Environment.GetEnvironmentVariable("TASK_SQLSERVER_CONNECTION_STRING_TEMPLATE")
+                                     ?? _containerConnectionStringTemplate;
         if (!string.IsNullOrWhiteSpace(configuredTemplate))
         {
             if (!configuredTemplate.Contains("{database}", StringComparison.Ordinal))
-            {
                 throw new InvalidOperationException(
                     "TASK_SQLSERVER_CONNECTION_STRING_TEMPLATE must contain the {database} placeholder.");
-            }
 
             return configuredTemplate.Replace("{database}", database, StringComparison.Ordinal);
         }
@@ -283,9 +268,7 @@ public sealed class IdentityDbCommandCounter : DbCommandInterceptor
     private void CountRead(DbCommand command)
     {
         if (command.CommandText.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
-        {
             Interlocked.Increment(ref _readCount);
-        }
     }
 }
 

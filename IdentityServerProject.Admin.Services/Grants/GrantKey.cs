@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace IdentityServerProject.Services.Grants;
 
 /// <summary>
-/// Strongly typed domain identifier for a persisted grant key.
+///     Strongly typed domain identifier for a persisted grant key.
 /// </summary>
 [JsonConverter(typeof(GrantKeyJsonConverter))]
 public readonly record struct GrantKey(string Value) : IComparable<GrantKey>, IEquatable<GrantKey>
@@ -13,6 +13,8 @@ public readonly record struct GrantKey(string Value) : IComparable<GrantKey>, IE
 
     public bool IsEmpty => string.IsNullOrWhiteSpace(Value);
 
+    public int CompareTo(GrantKey other) => string.Compare(Value, other.Value, StringComparison.Ordinal);
+
     public static GrantKey Create(string? value) => new(value?.Trim() ?? string.Empty);
 
     public static implicit operator string(GrantKey key) => key.Value ?? string.Empty;
@@ -20,8 +22,6 @@ public readonly record struct GrantKey(string Value) : IComparable<GrantKey>, IE
     public static explicit operator GrantKey(string? value) => Create(value);
 
     public override string ToString() => Value ?? string.Empty;
-
-    public int CompareTo(GrantKey other) => string.Compare(Value, other.Value, StringComparison.Ordinal);
 }
 
 public sealed class GrantKeyJsonConverter : JsonConverter<GrantKey>
@@ -33,8 +33,6 @@ public sealed class GrantKeyJsonConverter : JsonConverter<GrantKey>
             : GrantKey.Empty;
     }
 
-    public override void Write(Utf8JsonWriter writer, GrantKey value, JsonSerializerOptions options)
-    {
+    public override void Write(Utf8JsonWriter writer, GrantKey value, JsonSerializerOptions options) =>
         writer.WriteStringValue(value.Value ?? string.Empty);
-    }
 }

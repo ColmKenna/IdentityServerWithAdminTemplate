@@ -1,5 +1,5 @@
 @page
-@model IdentityServerProject.Pages.Admin.Grants.IndexModel
+@model IndexModel
 @{
     ViewData["Title"] = "Persisted Grants";
 }
@@ -26,15 +26,15 @@
         <div class="filter-grid">
             <div>
                 <label asp-for="SubjectId">Subject ID</label>
-                <input asp-for="SubjectId" class="form-control" type="search" placeholder="Filter by user" />
+                <input asp-for="SubjectId" class="form-control" type="search" placeholder="Filter by user"/>
             </div>
             <div>
                 <label asp-for="ClientId">Client ID</label>
-                <input asp-for="ClientId" class="form-control" type="search" placeholder="Filter by client" />
+                <input asp-for="ClientId" class="form-control" type="search" placeholder="Filter by client"/>
             </div>
             <div>
                 <label asp-for="TypeFilter">Grant type</label>
-                <input asp-for="TypeFilter" class="form-control" type="search" placeholder="Filter by type" />
+                <input asp-for="TypeFilter" class="form-control" type="search" placeholder="Filter by type"/>
             </div>
         </div>
         <div class="filter-actions">
@@ -74,7 +74,8 @@
                         @grant.CreationTime.ToString("yyyy-MM-dd HH:mm") UTC
                     </ck-responsive-col>
                     <ck-responsive-col>
-                        <span class="status-badge @(grant.IsExpired ? "disabled" : "enabled")">@grant.ExpirationFormatted</span>
+                        <span
+                            class="status-badge @(grant.IsExpired ? "disabled" : "enabled")">@grant.ExpirationFormatted</span>
                     </ck-responsive-col>
                     <ck-responsive-col class="actions-cell">
                         <button
@@ -98,7 +99,8 @@
     }
 
     <div class="pagination-footer">
-        <span class="pagination-summary">Showing @Model.Grants.Items.Count of @Model.Grants.TotalCount persisted grants</span>
+        <span
+            class="pagination-summary">Showing @Model.Grants.Items.Count of @Model.Grants.TotalCount persisted grants</span>
         <div class="pagination-controls">
             @if (!Model.Grants.HasPreviousPage)
             {
@@ -106,7 +108,9 @@
             }
             else
             {
-                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-PageNumber="@(Model.Grants.PageNumber - 1)" asp-route-SubjectId="@Model.SubjectId" asp-route-ClientId="@Model.ClientId" asp-route-TypeFilter="@Model.TypeFilter">&lsaquo;</a>
+                <a data-pagination="previous" class="pagination-btn" asp-page="./Index"
+                   asp-route-PageNumber="@(Model.Grants.PageNumber - 1)" asp-route-SubjectId="@Model.SubjectId"
+                   asp-route-ClientId="@Model.ClientId" asp-route-TypeFilter="@Model.TypeFilter">&lsaquo;</a>
             }
             <span class="pagination-page">Page @Model.Grants.PageNumber of @Model.Grants.TotalPages</span>
             @if (!Model.Grants.HasNextPage)
@@ -115,7 +119,9 @@
             }
             else
             {
-                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-PageNumber="@(Model.Grants.PageNumber + 1)" asp-route-SubjectId="@Model.SubjectId" asp-route-ClientId="@Model.ClientId" asp-route-TypeFilter="@Model.TypeFilter">&rsaquo;</a>
+                <a data-pagination="next" class="pagination-btn" asp-page="./Index"
+                   asp-route-PageNumber="@(Model.Grants.PageNumber + 1)" asp-route-SubjectId="@Model.SubjectId"
+                   asp-route-ClientId="@Model.ClientId" asp-route-TypeFilter="@Model.TypeFilter">&rsaquo;</a>
             }
         </div>
     </div>
@@ -123,17 +129,18 @@
 
 <dialog id="revoke-grant-modal" class="modal">
     <form method="post" asp-page-handler="Revoke">
-        <input type="hidden" name="key" id="revoke-grant-modal-key-input" value="" />
-        <input type="hidden" name="PageNumber" value="@Model.Grants.PageNumber" />
-        <input type="hidden" name="SubjectId" value="@Model.SubjectId" />
-        <input type="hidden" name="ClientId" value="@Model.ClientId" />
-        <input type="hidden" name="TypeFilter" value="@Model.TypeFilter" />
+        <input type="hidden" name="key" id="revoke-grant-modal-key-input" value=""/>
+        <input type="hidden" name="PageNumber" value="@Model.Grants.PageNumber"/>
+        <input type="hidden" name="SubjectId" value="@Model.SubjectId"/>
+        <input type="hidden" name="ClientId" value="@Model.ClientId"/>
+        <input type="hidden" name="TypeFilter" value="@Model.TypeFilter"/>
 
         <h2 class="modal-title">Revoke persisted grant</h2>
 
         <p class="modal-body" id="revoke-grant-modal-message">
             Are you sure you want to revoke grant <strong id="revoke-grant-modal-key-text"></strong> for client
-            <strong id="revoke-grant-modal-client-text"></strong> (User: <code id="revoke-grant-modal-subject-text"></code>)?
+            <strong id="revoke-grant-modal-client-text"></strong> (User: <code
+                id="revoke-grant-modal-subject-text"></code>)?
             This session or token will be invalidated immediately.
         </p>
 

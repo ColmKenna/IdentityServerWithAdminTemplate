@@ -12,11 +12,12 @@ public class ScopeUsageService : IScopeUsageService
         _configurationDbContext = configurationDbContext;
     }
 
-    public async Task<ScopeUsageCounts> GetClientReferenceCountsAsync(ScopeSet scopeNames, CancellationToken cancellationToken = default)
+    public async Task<ScopeUsageCounts> GetClientReferenceCountsAsync(ScopeSet scopeNames,
+        CancellationToken cancellationToken = default)
     {
-        var names = scopeNames.ToValues();
+        IReadOnlyList<string> names = scopeNames.ToValues();
 
-        var counts = await _configurationDbContext.Clients
+        Dictionary<string, int> counts = await _configurationDbContext.Clients
             .SelectMany(c => c.AllowedScopes)
             .Where(cs => names.Contains(cs.Scope))
             .GroupBy(cs => cs.Scope)
@@ -26,5 +27,4 @@ public class ScopeUsageService : IScopeUsageService
         return new ScopeUsageCounts(names.Select(name =>
             new KeyValuePair<ScopeName, int>(ScopeName.Create(name), counts.GetValueOrDefault(name, 0))));
     }
-
 }

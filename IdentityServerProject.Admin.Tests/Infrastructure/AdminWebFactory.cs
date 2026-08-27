@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Duende.IdentityServer.EntityFramework.DbContexts;
+using Duende.IdentityServer.EntityFramework.Options;
 using IdentityServerProject.Data;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
@@ -10,7 +11,9 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -32,7 +35,8 @@ public class AdminWebFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("Seed__TestUserPassword", "Password123!");
         Environment.SetEnvironmentVariable("ConnectionStrings__IdentityDb", "Server=localhost;Database=dummy;");
         Environment.SetEnvironmentVariable("ConnectionStrings__IdentityConfigDb", "Server=localhost;Database=dummy;");
-        Environment.SetEnvironmentVariable("ConnectionStrings__IdentityOperationalDb", "Server=localhost;Database=dummy;");
+        Environment.SetEnvironmentVariable("ConnectionStrings__IdentityOperationalDb",
+            "Server=localhost;Database=dummy;");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -47,29 +51,21 @@ public class AdminWebFactory : WebApplicationFactory<Program>
         builder.ConfigureTestServices(services =>
         {
             // Remove existing health checks to avoid duplicates
-            var healthCheckDescriptors = services.Where(d => d.ServiceType == typeof(Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckRegistration)).ToList();
-            foreach (var descriptor in healthCheckDescriptors)
-            {
-                services.Remove(descriptor);
-            }
-            services.Configure<Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckServiceOptions>(options =>
-            {
-                options.Registrations.Clear();
-            });
+            var healthCheckDescriptors = services.Where(d => d.ServiceType == typeof(HealthCheckRegistration)).ToList();
+            foreach (ServiceDescriptor descriptor in healthCheckDescriptors) services.Remove(descriptor);
+            services.Configure<HealthCheckServiceOptions>(options => { options.Registrations.Clear(); });
 
 
             // Override IdentityServer DbContexts directly on the singletons
-            var configStoreOptions = services.FirstOrDefault(d => d.ServiceType == typeof(Duende.IdentityServer.EntityFramework.Options.ConfigurationStoreOptions));
-            if (configStoreOptions?.ImplementationInstance is Duende.IdentityServer.EntityFramework.Options.ConfigurationStoreOptions configOptions)
-            {
+            ServiceDescriptor? configStoreOptions =
+                services.FirstOrDefault(d => d.ServiceType == typeof(ConfigurationStoreOptions));
+            if (configStoreOptions?.ImplementationInstance is ConfigurationStoreOptions configOptions)
                 configOptions.ConfigureDbContext = b => b.UseSqlite(_connection);
-            }
 
-            var opStoreOptions = services.FirstOrDefault(d => d.ServiceType == typeof(Duende.IdentityServer.EntityFramework.Options.OperationalStoreOptions));
-            if (opStoreOptions?.ImplementationInstance is Duende.IdentityServer.EntityFramework.Options.OperationalStoreOptions opOptions)
-            {
+            ServiceDescriptor? opStoreOptions =
+                services.FirstOrDefault(d => d.ServiceType == typeof(OperationalStoreOptions));
+            if (opStoreOptions?.ImplementationInstance is OperationalStoreOptions opOptions)
                 opOptions.ConfigureDbContext = b => b.UseSqlite(_connection);
-            }
 
             // Remove ApplicationDbContext to re-register it
             RemoveDbContext<ApplicationDbContext>(services);
@@ -92,11 +88,11 @@ public class AdminWebFactory : WebApplicationFactory<Program>
 
             // Add test authentication handler
             services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = "TestScheme";
-                options.DefaultChallengeScheme = "TestScheme";
-            })
-            .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("TestScheme", options => { });
+                {
+                    options.DefaultAuthenticateScheme = "TestScheme";
+                    options.DefaultChallengeScheme = "TestScheme";
+                })
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("TestScheme", options => { });
         });
     }
 
@@ -109,15 +105,13 @@ public class AdminWebFactory : WebApplicationFactory<Program>
         // schema must already exist on the shared SQLite connection *before* base.CreateHost is
         // called, or the seed step fails with "no such table: AspNetRoles". Create it directly
         // against the connection here, independent of the DI container that base.CreateHost builds.
-        var bootstrapOptions = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlite(_connection).Options;
-        using (var bootstrapDb = new ApplicationDbContext(bootstrapOptions))
-        {
-            bootstrapDb.Database.EnsureCreated();
-        }
+        DbContextOptions<ApplicationDbContext> bootstrapOptions =
+            new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlite(_connection).Options;
+        using (var bootstrapDb = new ApplicationDbContext(bootstrapOptions)) bootstrapDb.Database.EnsureCreated();
 
-        var host = base.CreateHost(builder);
+        IHost host = base.CreateHost(builder);
 
-        using var scope = host.Services.CreateScope();
+        using IServiceScope scope = host.Services.CreateScope();
         scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.EnsureCreated();
 
         // EnsureCreated() short-circuits when any table already exists. All contexts share
@@ -130,39 +124,35 @@ public class AdminWebFactory : WebApplicationFactory<Program>
 
     private static void CreateTablesForSharedConnection(DbContext context)
     {
-        var creator = (Microsoft.EntityFrameworkCore.Storage.RelationalDatabaseCreator)
-            context.Database.GetService<Microsoft.EntityFrameworkCore.Storage.IDatabaseCreator>();
+        var creator = (RelationalDatabaseCreator)
+            context.Database.GetService<IDatabaseCreator>();
         creator.CreateTables();
     }
 
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing)
-        {
-            _connection?.Dispose();
-        }
+        if (disposing) _connection?.Dispose();
     }
 
     private static void RemoveDbContext<TDbContext>(IServiceCollection services) where TDbContext : DbContext
     {
-        var descriptors = services.Where(d => 
+        var descriptors = services.Where(d =>
             d.ServiceType == typeof(DbContextOptions<TDbContext>) ||
             d.ServiceType == typeof(TDbContext) ||
-            (d.ServiceType.IsGenericType && d.ServiceType.Name.StartsWith("IDbContextPool") && d.ServiceType.GenericTypeArguments[0] == typeof(TDbContext)) ||
-            (d.ServiceType.IsGenericType && d.ServiceType.GetGenericTypeDefinition() == typeof(Microsoft.Extensions.Options.IConfigureOptions<>) && d.ServiceType.GenericTypeArguments[0] == typeof(DbContextOptions<TDbContext>))
+            (d.ServiceType.IsGenericType && d.ServiceType.Name.StartsWith("IDbContextPool") &&
+             d.ServiceType.GenericTypeArguments[0] == typeof(TDbContext)) ||
+            (d.ServiceType.IsGenericType && d.ServiceType.GetGenericTypeDefinition() == typeof(IConfigureOptions<>) &&
+             d.ServiceType.GenericTypeArguments[0] == typeof(DbContextOptions<TDbContext>))
         ).ToList();
-        
-        foreach (var descriptor in descriptors)
-        {
-            services.Remove(descriptor);
-        }
+
+        foreach (ServiceDescriptor descriptor in descriptors) services.Remove(descriptor);
     }
 
     public async Task RunInScopeAsync(Func<IServiceProvider, Task> action)
     {
-        using var scope = Services.CreateScope();
-        
+        using IServiceScope scope = Services.CreateScope();
+
         await action(scope.ServiceProvider);
     }
 }
@@ -179,22 +169,18 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var mode = Request.Headers["X-Test-Auth"].ToString();
+        string mode = Request.Headers["X-Test-Auth"].ToString();
         if (string.Equals(mode, "anonymous", StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(AuthenticateResult.NoResult());
-        }
 
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, "admin-test-id"),
-            new Claim(ClaimTypes.Name, "admin@sales.local")
+            new(ClaimTypes.NameIdentifier, "admin-test-id"),
+            new(ClaimTypes.Name, "admin@sales.local")
         };
 
         if (!string.Equals(mode, "non-admin", StringComparison.OrdinalIgnoreCase))
-        {
             claims.Add(new Claim(ClaimTypes.Role, Config.SysAdminRole));
-        }
 
         var identity = new ClaimsIdentity(claims, "TestScheme");
         var principal = new ClaimsPrincipal(identity);
@@ -205,7 +191,7 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
 
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)
     {
-        var returnUrl = Uri.EscapeDataString($"{Request.PathBase}{Request.Path}{Request.QueryString}");
+        string returnUrl = Uri.EscapeDataString($"{Request.PathBase}{Request.Path}{Request.QueryString}");
         Response.Redirect($"/Account/Login?returnUrl={returnUrl}");
         return Task.CompletedTask;
     }

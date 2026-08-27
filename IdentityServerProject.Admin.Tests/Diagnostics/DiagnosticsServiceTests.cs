@@ -9,10 +9,10 @@ using Microsoft.Extensions.Options;
 namespace IdentityServerProject.Admin.Tests.Diagnostics;
 
 /// <summary>
-/// Exercises <see cref="DiagnosticsService"/> against the real (SQLite in-memory) DI container.
-/// Covers the healthy path for all three stores plus signing key material; a genuine store
-/// failure is exercised at the integration-test level instead (mocked IDiagnosticsService),
-/// since forcing a connection failure against the shared test fixture isn't practical.
+///     Exercises <see cref="DiagnosticsService" /> against the real (SQLite in-memory) DI container.
+///     Covers the healthy path for all three stores plus signing key material; a genuine store
+///     failure is exercised at the integration-test level instead (mocked IDiagnosticsService),
+///     since forcing a connection failure against the shared test fixture isn't practical.
 /// </summary>
 public class DiagnosticsServiceTests : IClassFixture<AdminWebFactory>
 {
@@ -28,8 +28,8 @@ public class DiagnosticsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IDiagnosticsService>();
-            var result = await service.GetDiagnosticsAsync();
+            IDiagnosticsService service = sp.GetRequiredService<IDiagnosticsService>();
+            DiagnosticsModel result = await service.GetDiagnosticsAsync();
 
             Assert.Equal(3, result.StoreHealth.Count);
             Assert.All(result.StoreHealth, s => Assert.True(s.IsHealthy));
@@ -44,8 +44,8 @@ public class DiagnosticsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IDiagnosticsService>();
-            var result = await service.GetDiagnosticsAsync();
+            IDiagnosticsService service = sp.GetRequiredService<IDiagnosticsService>();
+            DiagnosticsModel result = await service.GetDiagnosticsAsync();
 
             Assert.False(string.IsNullOrWhiteSpace(result.SigningKeyId));
             Assert.False(string.IsNullOrWhiteSpace(result.SigningAlgorithm));
@@ -60,11 +60,11 @@ public class DiagnosticsServiceTests : IClassFixture<AdminWebFactory>
     {
         // Written straight through UserManager, i.e. the way a claim could have arrived before the
         // admin editor started refusing reserved types.
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+            UserManager<ApplicationUser> userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
             var user = new ApplicationUser
             {
                 UserName = $"{tag}-reserved-claim-holder",
@@ -75,14 +75,15 @@ public class DiagnosticsServiceTests : IClassFixture<AdminWebFactory>
 
             // The role claim type this deployment actually authorizes on - Duende's
             // AddAspNetIdentity rewrites it to the JWT short form, so it is not ClaimTypes.Role.
-            var roleClaimType = sp.GetRequiredService<IOptions<IdentityOptions>>().Value.ClaimsIdentity.RoleClaimType;
+            string roleClaimType =
+                sp.GetRequiredService<IOptions<IdentityOptions>>().Value.ClaimsIdentity.RoleClaimType;
             await userManager.AddClaimAsync(user, new Claim(roleClaimType, Config.SysAdminRole));
             await userManager.AddClaimAsync(user, new Claim("dept", "Engineering"));
 
-            var service = sp.GetRequiredService<IDiagnosticsService>();
-            var result = await service.GetDiagnosticsAsync();
+            IDiagnosticsService service = sp.GetRequiredService<IDiagnosticsService>();
+            DiagnosticsModel result = await service.GetDiagnosticsAsync();
 
-            var holder = Assert.Single(result.ReservedClaimHolders, h => h.UserId == user.Id);
+            ReservedClaimHolder holder = Assert.Single(result.ReservedClaimHolders, h => h.UserId == user.Id);
             Assert.Equal(roleClaimType, holder.ClaimType);
             Assert.Equal(Config.SysAdminRole, holder.ClaimValue);
             Assert.Equal(user.UserName, holder.UserName);
@@ -95,11 +96,11 @@ public class DiagnosticsServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetDiagnosticsAsync_OnlyOrdinaryClaims_ReportsNoReservedHolders()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+            UserManager<ApplicationUser> userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
             var user = new ApplicationUser
             {
                 UserName = $"{tag}-ordinary-claim-holder",
@@ -109,8 +110,8 @@ public class DiagnosticsServiceTests : IClassFixture<AdminWebFactory>
             Assert.True((await userManager.CreateAsync(user, "Password123!")).Succeeded);
             await userManager.AddClaimAsync(user, new Claim("team", "Platform"));
 
-            var service = sp.GetRequiredService<IDiagnosticsService>();
-            var result = await service.GetDiagnosticsAsync();
+            IDiagnosticsService service = sp.GetRequiredService<IDiagnosticsService>();
+            DiagnosticsModel result = await service.GetDiagnosticsAsync();
 
             Assert.DoesNotContain(result.ReservedClaimHolders, h => h.UserId == user.Id);
         });

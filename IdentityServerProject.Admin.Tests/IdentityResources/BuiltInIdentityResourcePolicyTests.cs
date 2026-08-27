@@ -4,8 +4,8 @@ using IdentityServerProject.Services.IdentityResources;
 namespace IdentityServerProject.Admin.Tests.IdentityResources;
 
 /// <summary>
-/// Unit coverage for the protection rules themselves, independent of any store. The service tests
-/// prove the rules are applied; these prove the rules are right.
+///     Unit coverage for the protection rules themselves, independent of any store. The service tests
+///     prove the rules are applied; these prove the rules are right.
 /// </summary>
 public class BuiltInIdentityResourcePolicyTests
 {
@@ -67,10 +67,8 @@ public class BuiltInIdentityResourcePolicyTests
     [InlineData("openid", "sub")]
     [InlineData("OPENID", "SUB")]
     [InlineData(" openid ", " sub ")]
-    public void IsInvariantClaim_SubOnOpenId_ReturnsTrue(string resourceName, string claimType)
-    {
+    public void IsInvariantClaim_SubOnOpenId_ReturnsTrue(string resourceName, string claimType) =>
         Assert.True(BuiltInIdentityResourcePolicy.IsInvariantClaim(resourceName, claimType));
-    }
 
     [Theory]
     [InlineData("openid", "email")]
@@ -90,7 +88,7 @@ public class BuiltInIdentityResourcePolicyTests
     {
         Assert.Contains("openid", BuiltInIdentityResourcePolicy.ProtectedMessage("openid"));
 
-        var invariant = BuiltInIdentityResourcePolicy.InvariantClaimMessage("openid", "sub");
+        string invariant = BuiltInIdentityResourcePolicy.InvariantClaimMessage("openid", "sub");
         Assert.Contains("openid", invariant);
         Assert.Contains("sub", invariant);
     }

@@ -1,5 +1,5 @@
 @page
-@model IdentityServerProject.Pages.Consent.IndexModel
+@model IndexModel
 @{
     ViewData["Title"] = "Consent";
 }
@@ -14,7 +14,7 @@
 </ul>
 
 <form method="post">
-    <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+    <input type="hidden" name="returnUrl" value="@Model.ReturnUrl"/>
     <button type="submit" name="consented" value="true">Allow</button>
     <button type="submit" name="consented" value="false">Deny</button>
 </form>

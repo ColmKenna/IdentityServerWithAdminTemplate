@@ -8,8 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace IdentityServerProject.Admin.Tests.ApiScopes;
 
 /// <summary>
-/// Integration tests for <see cref="ApiScopeListService"/> exercised against the
-/// shared SQLite in-memory database provided by <see cref="AdminWebFactory"/>.
+///     Integration tests for <see cref="ApiScopeListService" /> exercised against the
+///     shared SQLite in-memory database provided by <see cref="AdminWebFactory" />.
 /// </summary>
 public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
 {
@@ -28,7 +28,7 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
         Enabled = enabled,
         Required = false,
         Emphasize = false,
-        ShowInDiscoveryDocument = true,
+        ShowInDiscoveryDocument = true
     };
 
     private static Client MakeClient(string tag, string suffix, params string[] allowedScopes)
@@ -42,10 +42,7 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
             AllowedScopes = new List<ClientScope>()
         };
 
-        foreach (var scope in allowedScopes)
-        {
-            client.AllowedScopes.Add(new ClientScope { Scope = scope });
-        }
+        foreach (string scope in allowedScopes) client.AllowedScopes.Add(new ClientScope { Scope = scope });
 
         return client;
     }
@@ -54,15 +51,9 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            if (scopes != null)
-            {
-                db.ApiScopes.AddRange(scopes);
-            }
-            if (clients != null)
-            {
-                db.Clients.AddRange(clients);
-            }
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            if (scopes != null) db.ApiScopes.AddRange(scopes);
+            if (clients != null) db.Clients.AddRange(clients);
             await db.SaveChangesAsync();
         });
     }
@@ -70,16 +61,17 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetApiScopesAsync_FilterMatchesName_ReturnsOnlyMatchingScope()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        await SeedAsync(scopes: new[] { MakeApiScope(tag, "alpha"), MakeApiScope(tag, "beta") });
+        string tag = Guid.NewGuid().ToString("N");
+        await SeedAsync(new[] { MakeApiScope(tag, "alpha"), MakeApiScope(tag, "beta") });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(new ListQuery($"{tag}-scope-alpha", Pagination.From(1, 10)));
+            ListResult<ApiScopeListItem> result =
+                await service.GetApiScopesAsync(new ListQuery($"{tag}-scope-alpha", Pagination.From(1, 10)));
 
-            var item = Assert.Single(result.Items);
+            ApiScopeListItem item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-scope-alpha", item.Name);
         });
     }
@@ -87,16 +79,17 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetApiScopesAsync_FilterMatchesDisplayName_ReturnsOnlyMatchingScope()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        await SeedAsync(scopes: new[] { MakeApiScope(tag, "gamma"), MakeApiScope(tag, "delta") });
+        string tag = Guid.NewGuid().ToString("N");
+        await SeedAsync(new[] { MakeApiScope(tag, "gamma"), MakeApiScope(tag, "delta") });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(new ListQuery($"{tag} Scope delta", Pagination.From(1, 10)));
+            ListResult<ApiScopeListItem> result =
+                await service.GetApiScopesAsync(new ListQuery($"{tag} Scope delta", Pagination.From(1, 10)));
 
-            var item = Assert.Single(result.Items);
+            ApiScopeListItem item = Assert.Single(result.Items);
             Assert.Equal($"{tag}-scope-delta", item.Name);
         });
     }
@@ -104,14 +97,16 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetApiScopesAsync_FilterIsCaseInsensitive_ReturnsMatch()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        await SeedAsync(scopes: new[] { MakeApiScope(tag, "epsilon") });
+        string tag = Guid.NewGuid().ToString("N");
+        await SeedAsync(new[] { MakeApiScope(tag, "epsilon") });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(new ListQuery($"{tag} SCOPE EPSILON".ToUpperInvariant(), Pagination.From(1, 10)));
+            ListResult<ApiScopeListItem> result =
+                await service.GetApiScopesAsync(new ListQuery($"{tag} SCOPE EPSILON".ToUpperInvariant(),
+                    Pagination.From(1, 10)));
 
             Assert.Single(result.Items);
         });
@@ -120,14 +115,15 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetApiScopesAsync_NoFilter_ReturnsScopesOrderedByName()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        await SeedAsync(scopes: new[] { MakeApiScope(tag, "zeta"), MakeApiScope(tag, "alpha2") });
+        string tag = Guid.NewGuid().ToString("N");
+        await SeedAsync(new[] { MakeApiScope(tag, "zeta"), MakeApiScope(tag, "alpha2") });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
+            ListResult<ApiScopeListItem> result =
+                await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(2, result.Items.Count);
             Assert.True(string.Compare(result.Items[0].Name, result.Items[1].Name, StringComparison.Ordinal) <= 0);
@@ -137,18 +133,19 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetApiScopesAsync_Pagination_ReturnsCorrectPageAndTotalCount()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        await SeedAsync(scopes: new[]
+        string tag = Guid.NewGuid().ToString("N");
+        await SeedAsync(new[]
         {
             MakeApiScope(tag, "1"), MakeApiScope(tag, "2"), MakeApiScope(tag, "3"),
-            MakeApiScope(tag, "4"), MakeApiScope(tag, "5"),
+            MakeApiScope(tag, "4"), MakeApiScope(tag, "5")
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(2, 2)));
+            ListResult<ApiScopeListItem> result =
+                await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(2, 2)));
 
             Assert.Equal(2, result.Items.Count);
             Assert.Equal(5, result.TotalCount);
@@ -159,14 +156,15 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetApiScopesAsync_ScopeDisabled_MapsEnabledFalse()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        await SeedAsync(scopes: new[] { MakeApiScope(tag, "off", enabled: false) });
+        string tag = Guid.NewGuid().ToString("N");
+        await SeedAsync(new[] { MakeApiScope(tag, "off", false) });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
+            ListResult<ApiScopeListItem> result =
+                await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.False(Assert.Single(result.Items).Enabled);
         });
@@ -175,13 +173,14 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetApiScopesAsync_NoMatchingScopes_ReturnsEmptyResultWithZeroTotalCount()
     {
-        var tag = Guid.NewGuid().ToString("N");
+        string tag = Guid.NewGuid().ToString("N");
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
+            ListResult<ApiScopeListItem> result =
+                await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Empty(result.Items);
             Assert.Equal(0, result.TotalCount);
@@ -191,14 +190,15 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetApiScopesAsync_ScopeUnreferenced_ReportsZeroClientReferenceCount()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        await SeedAsync(scopes: new[] { MakeApiScope(tag, "unused") });
+        string tag = Guid.NewGuid().ToString("N");
+        await SeedAsync(new[] { MakeApiScope(tag, "unused") });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
+            ListResult<ApiScopeListItem> result =
+                await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(0, Assert.Single(result.Items).ClientReferenceCount);
         });
@@ -207,21 +207,22 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task GetApiScopesAsync_ScopeReferencedByMultipleClients_ReportsDistinctClientCount()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var scopeName = $"{tag}-scope-shared";
+        string tag = Guid.NewGuid().ToString("N");
+        string scopeName = $"{tag}-scope-shared";
         await SeedAsync(
-            scopes: new[] { MakeApiScope(tag, "shared") },
-            clients: new[]
+            new[] { MakeApiScope(tag, "shared") },
+            new[]
             {
                 MakeClient(tag, "a", scopeName),
-                MakeClient(tag, "b", scopeName),
+                MakeClient(tag, "b", scopeName)
             });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
+            ListResult<ApiScopeListItem> result =
+                await service.GetApiScopesAsync(new ListQuery(tag, Pagination.From(1, 10)));
 
             Assert.Equal(2, Assert.Single(result.Items).ClientReferenceCount);
         });
@@ -230,23 +231,23 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task DeleteApiScopeAsync_ScopeUnreferenced_DeletesAndReturnsDeleted()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var scopeName = $"{tag}-scope-deleteme";
-        await SeedAsync(scopes: new[] { MakeApiScope(tag, "deleteme") });
+        string tag = Guid.NewGuid().ToString("N");
+        string scopeName = $"{tag}-scope-deleteme";
+        await SeedAsync(new[] { MakeApiScope(tag, "deleteme") });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.DeleteApiScopeAsync(scopeName);
+            ApiScopeDeleteResult result = await service.DeleteApiScopeAsync(scopeName);
 
             Assert.Equal(ApiScopeDeleteResult.Deleted, result);
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            var exists = await db.ApiScopes.AnyAsync(s => s.Name == scopeName);
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            bool exists = await db.ApiScopes.AnyAsync(s => s.Name == scopeName);
             Assert.False(exists);
         });
     }
@@ -254,25 +255,25 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task DeleteApiScopeAsync_ScopeReferencedByClient_ReturnsBlockedAndLeavesScopeIntact()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var scopeName = $"{tag}-scope-inuse";
+        string tag = Guid.NewGuid().ToString("N");
+        string scopeName = $"{tag}-scope-inuse";
         await SeedAsync(
-            scopes: new[] { MakeApiScope(tag, "inuse") },
-            clients: new[] { MakeClient(tag, "holder", scopeName) });
+            new[] { MakeApiScope(tag, "inuse") },
+            new[] { MakeClient(tag, "holder", scopeName) });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.DeleteApiScopeAsync(scopeName);
+            ApiScopeDeleteResult result = await service.DeleteApiScopeAsync(scopeName);
 
             Assert.Equal(ApiScopeDeleteResult.Blocked, result);
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            var exists = await db.ApiScopes.AnyAsync(s => s.Name == scopeName);
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            bool exists = await db.ApiScopes.AnyAsync(s => s.Name == scopeName);
             Assert.True(exists);
         });
     }
@@ -282,9 +283,9 @@ public class ApiScopeListServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IApiScopeListService>();
+            IApiScopeListService service = sp.GetRequiredService<IApiScopeListService>();
 
-            var result = await service.DeleteApiScopeAsync($"missing-scope-{Guid.NewGuid():N}");
+            ApiScopeDeleteResult result = await service.DeleteApiScopeAsync($"missing-scope-{Guid.NewGuid():N}");
 
             Assert.Equal(ApiScopeDeleteResult.NotFound, result);
         });

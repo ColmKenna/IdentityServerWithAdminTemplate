@@ -1,3 +1,4 @@
+using System.Data;
 using System.Globalization;
 using Duende.IdentityModel;
 using Duende.IdentityServer.EntityFramework.DbContexts;
@@ -10,7 +11,7 @@ using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Secrets;
 using IdentityServerProject.Services.Validation;
 using Microsoft.EntityFrameworkCore;
-using static Duende.IdentityServer.Models.HashExtensions;
+using Microsoft.EntityFrameworkCore.Storage;
 using Client = Duende.IdentityServer.EntityFramework.Entities.Client;
 
 namespace IdentityServerProject.Services.Clients;
@@ -25,10 +26,10 @@ public partial class ClientDetailsService : IClientDetailsService
 
     public const string DisabledAtPropertyKey = "admin:disabledAt";
     public const int MinimumDisabledDaysBeforeDelete = 90;
-
-    private readonly ConfigurationDbContext _configurationDbContext;
     private readonly IAuditWriter _auditWriter;
     private readonly IClientConfigurationValidator _clientConfigurationValidator;
+
+    private readonly ConfigurationDbContext _configurationDbContext;
     private readonly TimeProvider _timeProvider;
 
     public ClientDetailsService(
@@ -45,12 +46,13 @@ public partial class ClientDetailsService : IClientDetailsService
 
     #region Overview and lifecycle
 
-    public async Task<ClientDetailsModel?> GetClientDetailsAsync(ClientId clientId, CancellationToken cancellationToken = default)
+    public async Task<ClientDetailsModel?> GetClientDetailsAsync(ClientId clientId,
+        CancellationToken cancellationToken = default)
     {
         if (clientId.IsEmpty)
             return null;
 
-        var client = await _configurationDbContext.Clients
+        Client? client = await _configurationDbContext.Clients
             .AsNoTracking()
             .AsSplitQuery()
             .Include(c => c.AllowedGrantTypes)
@@ -65,8 +67,8 @@ public partial class ClientDetailsService : IClientDetailsService
             return null;
 
         var grantTypesList = client.AllowedGrantTypes.Select(g => g.GrantType).ToList();
-        var grantTypesString = grantTypesList.Count > 0 ? string.Join(", ", grantTypesList) : "None";
-        var (canDelete, deleteBlockReason) = EvaluateDeleteEligibility(client, _timeProvider.GetUtcNow());
+        string grantTypesString = grantTypesList.Count > 0 ? string.Join(", ", grantTypesList) : "None";
+        (bool canDelete, string? deleteBlockReason) = EvaluateDeleteEligibility(client, _timeProvider.GetUtcNow());
 
         return new ClientDetailsModel
         {
@@ -104,21 +106,22 @@ public partial class ClientDetailsService : IClientDetailsService
         if (string.IsNullOrWhiteSpace(clientId))
             return false;
 
-        var targetName = clientId;
-        var found = false;
-        var enabled = false;
-        var now = _timeProvider.GetUtcNow();
+        string targetName = clientId;
+        bool found = false;
+        bool enabled = false;
+        DateTimeOffset now = _timeProvider.GetUtcNow();
         try
         {
-            var strategy = _configurationDbContext.Database.CreateExecutionStrategy();
+            IExecutionStrategy strategy = _configurationDbContext.Database.CreateExecutionStrategy();
             await strategy.ExecuteAsync(async () =>
             {
                 _configurationDbContext.ChangeTracker.Clear();
                 found = false;
-                await using var transaction = await _configurationDbContext.Database.BeginTransactionAsync(
-                    System.Data.IsolationLevel.Serializable, cancellationToken);
+                await using IDbContextTransaction transaction =
+                    await _configurationDbContext.Database.BeginTransactionAsync(
+                        IsolationLevel.Serializable, cancellationToken);
 
-                var client = await _configurationDbContext.Clients
+                Client? client = await _configurationDbContext.Clients
                     .Include(c => c.Properties)
                     .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
                 if (client == null)
@@ -132,22 +135,18 @@ public partial class ClientDetailsService : IClientDetailsService
                 client.Enabled = !client.Enabled;
                 enabled = client.Enabled;
 
-                var disabledAtProperty = client.Properties.FirstOrDefault(p => p.Key == DisabledAtPropertyKey);
+                ClientProperty? disabledAtProperty =
+                    client.Properties.FirstOrDefault(p => p.Key == DisabledAtPropertyKey);
                 if (client.Enabled)
                 {
-                    if (disabledAtProperty != null)
-                    {
-                        client.Properties.Remove(disabledAtProperty);
-                    }
+                    if (disabledAtProperty != null) client.Properties.Remove(disabledAtProperty);
                 }
                 else if (disabledAtProperty == null)
-                {
                     client.Properties.Add(new ClientProperty
                     {
                         Key = DisabledAtPropertyKey,
                         Value = now.UtcDateTime.ToString("O", CultureInfo.InvariantCulture)
                     });
-                }
 
                 await _configurationDbContext.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
@@ -162,7 +161,7 @@ public partial class ClientDetailsService : IClientDetailsService
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.Client, AuditAction.SetEnabled, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
-                TargetId: clientId, TargetName: targetName,
+                clientId, targetName,
                 Details: $"Client status changed to {(enabled ? "Enabled" : "Disabled")}"), cancellationToken);
 
             return true;
@@ -174,7 +173,8 @@ public partial class ClientDetailsService : IClientDetailsService
         }
     }
 
-    public Task<ClientDeleteResult> DeleteClientAsync(ClientId clientId, CancellationToken cancellationToken = default) =>
+    public Task<ClientDeleteResult>
+        DeleteClientAsync(ClientId clientId, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.Delete,
             clientId.Value,
@@ -182,7 +182,8 @@ public partial class ClientDetailsService : IClientDetailsService
             () => DeleteClientCoreAsync(clientId.Value, cancellationToken),
             cancellationToken);
 
-    private async Task<ClientDeleteResult> DeleteClientCoreAsync(string clientId, CancellationToken cancellationToken = default)
+    private async Task<ClientDeleteResult> DeleteClientCoreAsync(string clientId,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(clientId))
         {
@@ -192,20 +193,21 @@ public partial class ClientDetailsService : IClientDetailsService
                 "Client not found.", AuditReasonCode.NotFound, AdminMutationStatus.NotFound);
         }
 
-        var clientName = clientId;
+        string clientName = clientId;
         var outcome = ClientDeleteResult.Failed(
             "Client not found.", AuditReasonCode.NotFound, AdminMutationStatus.NotFound);
-        var now = _timeProvider.GetUtcNow();
+        DateTimeOffset now = _timeProvider.GetUtcNow();
         try
         {
-            var strategy = _configurationDbContext.Database.CreateExecutionStrategy();
+            IExecutionStrategy strategy = _configurationDbContext.Database.CreateExecutionStrategy();
             await strategy.ExecuteAsync(async () =>
             {
                 _configurationDbContext.ChangeTracker.Clear();
-                await using var transaction = await _configurationDbContext.Database.BeginTransactionAsync(
-                    System.Data.IsolationLevel.Serializable, cancellationToken);
+                await using IDbContextTransaction transaction =
+                    await _configurationDbContext.Database.BeginTransactionAsync(
+                        IsolationLevel.Serializable, cancellationToken);
 
-                var client = await _configurationDbContext.Clients
+                Client? client = await _configurationDbContext.Clients
                     .Include(c => c.Properties)
                     .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
                 if (client == null)
@@ -217,10 +219,10 @@ public partial class ClientDetailsService : IClientDetailsService
                 }
 
                 clientName = client.ClientName ?? client.ClientId;
-                var (canDelete, deleteBlockReason) = EvaluateDeleteEligibility(client, now);
+                (bool canDelete, string? deleteBlockReason) = EvaluateDeleteEligibility(client, now);
                 if (!canDelete)
                 {
-                    var reasonCode = client.Enabled
+                    AuditReasonCode reasonCode = client.Enabled
                         ? AuditReasonCode.ClientEnabled
                         : AuditReasonCode.RetentionPeriod;
                     outcome = ClientDeleteResult.Failed(deleteBlockReason!, reasonCode);
@@ -236,14 +238,15 @@ public partial class ClientDetailsService : IClientDetailsService
 
             if (!outcome.Success)
             {
-                await AuditDeniedAsync(AuditAction.Delete, AuditReasonCode.From(outcome.ReasonCode), clientId, clientName,
+                await AuditDeniedAsync(AuditAction.Delete, AuditReasonCode.From(outcome.ReasonCode), clientId,
+                    clientName,
                     outcome.ErrorMessage!, cancellationToken);
                 return outcome;
             }
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.Client, AuditAction.Delete, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
-                TargetId: clientId, TargetName: clientName,
+                clientId, clientName,
                 Details: $"Deleted client '{clientName}'"), cancellationToken);
 
             return outcome;
@@ -255,37 +258,33 @@ public partial class ClientDetailsService : IClientDetailsService
         }
     }
 
-    public Task<AdminMutationResult> UpdateClientBasicsAsync(ClientId clientId, string clientName, string? description, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> UpdateClientBasicsAsync(ClientId clientId, string clientName, string? description,
+        CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.UpdateBasics,
             clientId.Value,
             clientName ?? clientId.Value,
-            () => UpdateClientBasicsCoreAsync(clientId.Value, clientName ?? string.Empty, description, cancellationToken),
+            () => UpdateClientBasicsCoreAsync(clientId.Value, clientName ?? string.Empty, description,
+                cancellationToken),
             cancellationToken);
 
-    private async Task<AdminMutationResult> UpdateClientBasicsCoreAsync(string clientId, string clientName, string? description, CancellationToken cancellationToken = default)
+    private async Task<AdminMutationResult> UpdateClientBasicsCoreAsync(string clientId, string clientName,
+        string? description, CancellationToken cancellationToken = default)
     {
         clientId = clientId?.Trim() ?? string.Empty;
 
-        var trimmedName = clientName?.Trim() ?? string.Empty;
-        var trimmedDescription = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+        string trimmedName = clientName?.Trim() ?? string.Empty;
+        string? trimmedDescription = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
         var errors = new ValidationErrorDictionary();
-        if (clientId.Length == 0)
-        {
-            errors.AddError("Id", "Client ID is required.");
-        }
+        if (clientId.Length == 0) errors.AddError("Id", "Client ID is required.");
         if (trimmedName.Length == 0)
-        {
             errors.AddError("Input.ClientName", "Client Name is required.");
-        }
         else if (trimmedName.Length > ValidationConstants.MaxNameLength)
-        {
-            errors.AddError("Input.ClientName", $"Client Name cannot exceed {ValidationConstants.MaxNameLength} characters.");
-        }
+            errors.AddError("Input.ClientName",
+                $"Client Name cannot exceed {ValidationConstants.MaxNameLength} characters.");
         if (trimmedDescription != null && trimmedDescription.Length > ValidationConstants.MaxDescriptionLength)
-        {
-            errors.AddError("Input.Description", $"Description cannot exceed {ValidationConstants.MaxDescriptionLength} characters.");
-        }
+            errors.AddError("Input.Description",
+                $"Description cannot exceed {ValidationConstants.MaxDescriptionLength} characters.");
         if (errors.HasErrors)
         {
             await AuditDeniedAsync(AuditAction.UpdateBasics, AuditReasonCode.ValidationFailed, clientId, trimmedName,
@@ -293,7 +292,7 @@ public partial class ClientDetailsService : IClientDetailsService
             return AdminMutationResult.ValidationFailure(errors);
         }
 
-        var client = await LoadCompleteClientAsync(clientId, asNoTracking: true, cancellationToken);
+        Client? client = await LoadCompleteClientAsync(clientId, true, cancellationToken);
 
         if (client == null)
         {
@@ -304,18 +303,19 @@ public partial class ClientDetailsService : IClientDetailsService
 
         try
         {
-            var proposed = client.ToModel();
+            Duende.IdentityServer.Models.Client proposed = client.ToModel();
             proposed.ClientName = trimmedName;
             proposed.Description = trimmedDescription;
-            var validationError = await ValidateClientAsync(proposed, cancellationToken);
+            string? validationError = await ValidateClientAsync(proposed, cancellationToken);
             if (validationError != null)
             {
-                await AuditDeniedAsync(AuditAction.UpdateBasics, AuditReasonCode.ValidationFailed, clientId, trimmedName,
+                await AuditDeniedAsync(AuditAction.UpdateBasics, AuditReasonCode.ValidationFailed, clientId,
+                    trimmedName,
                     "Client basics validation failed.", cancellationToken);
                 return AdminMutationResult.ValidationFailure("Input.ClientName", validationError);
             }
 
-            var trackedClient = await _configurationDbContext.Clients
+            Client trackedClient = await _configurationDbContext.Clients
                 .FirstAsync(c => c.ClientId == clientId, cancellationToken);
             trackedClient.ClientName = trimmedName;
             trackedClient.Description = trimmedDescription;
@@ -324,7 +324,7 @@ public partial class ClientDetailsService : IClientDetailsService
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.Client, AuditAction.UpdateBasics, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
-                TargetId: clientId, TargetName: trimmedName,
+                clientId, trimmedName,
                 Details: $"Updated basic settings for client '{trimmedName}'"), cancellationToken);
 
             return AdminMutationResult.Success();
@@ -340,12 +340,13 @@ public partial class ClientDetailsService : IClientDetailsService
 
     #region Authentication
 
-    public async Task<ClientAuthenticationModel?> GetClientAuthenticationAsync(ClientId clientId, CancellationToken cancellationToken = default)
+    public async Task<ClientAuthenticationModel?> GetClientAuthenticationAsync(ClientId clientId,
+        CancellationToken cancellationToken = default)
     {
         if (clientId.IsEmpty)
             return null;
 
-        var client = await _configurationDbContext.Clients
+        Client? client = await _configurationDbContext.Clients
             .AsNoTracking()
             .AsSplitQuery()
             .Include(c => c.AllowedGrantTypes)
@@ -358,8 +359,9 @@ public partial class ClientDetailsService : IClientDetailsService
         if (client == null)
             return null;
 
-        var grantTypes = client.AllowedGrantTypes.Select(g => g.GrantType).OrderBy(g => g, StringComparer.Ordinal).ToList();
-        var (hasDrifted, driftDetails) = EvaluatePresetDrift(client, grantTypes);
+        var grantTypes = client.AllowedGrantTypes.Select(g => g.GrantType).OrderBy(g => g, StringComparer.Ordinal)
+            .ToList();
+        (bool hasDrifted, string? driftDetails) = EvaluatePresetDrift(client, grantTypes);
 
         return new ClientAuthenticationModel
         {
@@ -369,7 +371,8 @@ public partial class ClientDetailsService : IClientDetailsService
             RequireClientSecret = client.RequireClientSecret,
             GrantTypes = grantTypes,
             RedirectUris = client.RedirectUris.OrderBy(u => u.Id).Select(u => u.RedirectUri).ToList(),
-            PostLogoutRedirectUris = client.PostLogoutRedirectUris.OrderBy(u => u.Id).Select(u => u.PostLogoutRedirectUri).ToList(),
+            PostLogoutRedirectUris = client.PostLogoutRedirectUris.OrderBy(u => u.Id)
+                .Select(u => u.PostLogoutRedirectUri).ToList(),
             AllowedCorsOrigins = client.AllowedCorsOrigins.OrderBy(o => o.Id).Select(o => o.Origin).ToList(),
             FrontChannelLogoutUri = client.FrontChannelLogoutUri,
             FrontChannelLogoutSessionRequired = client.FrontChannelLogoutSessionRequired,
@@ -380,7 +383,8 @@ public partial class ClientDetailsService : IClientDetailsService
         };
     }
 
-    public Task<AdminMutationResult> UpdateClientAuthenticationAsync(ClientId clientId, ClientAuthenticationInputModel input, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> UpdateClientAuthenticationAsync(ClientId clientId,
+        ClientAuthenticationInputModel input, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.UpdateAuthentication,
             clientId.Value,
@@ -388,14 +392,12 @@ public partial class ClientDetailsService : IClientDetailsService
             () => UpdateClientAuthenticationCoreAsync(clientId.Value, input, cancellationToken),
             cancellationToken);
 
-    private async Task<AdminMutationResult> UpdateClientAuthenticationCoreAsync(string clientId, ClientAuthenticationInputModel input, CancellationToken cancellationToken = default)
+    private async Task<AdminMutationResult> UpdateClientAuthenticationCoreAsync(string clientId,
+        ClientAuthenticationInputModel input, CancellationToken cancellationToken = default)
     {
         clientId = clientId?.Trim() ?? string.Empty;
         var errors = new ValidationErrorDictionary();
-        if (clientId.Length == 0)
-        {
-            errors.AddError("Id", "Client ID is required.");
-        }
+        if (clientId.Length == 0) errors.AddError("Id", "Client ID is required.");
 
         if (input == null)
         {
@@ -403,89 +405,91 @@ public partial class ClientDetailsService : IClientDetailsService
             input = new ClientAuthenticationInputModel();
         }
 
-        var grantTypes = input.GrantTypes?
+        List<string> grantTypes = input.GrantTypes?
             .Where(grantType => !string.IsNullOrWhiteSpace(grantType))
             .Select(grantType => grantType.Trim())
             .Distinct(StringComparer.Ordinal)
-            .ToList() ?? new();
+            .ToList() ?? new List<string>();
         if (grantTypes.Count == 0)
-        {
             errors.AddError("Input.GrantTypes", "At least one grant type must be selected.");
-        }
         else if (grantTypes.Any(grantType => grantType.Length > ValidationConstants.MaxGrantTypeLength))
-        {
-            errors.AddError("Input.GrantTypes", $"Grant types cannot exceed {ValidationConstants.MaxGrantTypeLength} characters.");
-        }
+            errors.AddError("Input.GrantTypes",
+                $"Grant types cannot exceed {ValidationConstants.MaxGrantTypeLength} characters.");
 
-        var redirectUris = input.RedirectUris?
+        List<string> redirectUris = input.RedirectUris?
             .Where(u => !string.IsNullOrWhiteSpace(u))
             .Select(u => u.Trim())
             .Distinct(StringComparer.Ordinal)
-            .ToList() ?? new();
+            .ToList() ?? new List<string>();
 
-        if (redirectUris.Any(uri => !UriValidationHelper.IsValidHttpOrHttpsUri(uri, ValidationConstants.MaxClientRedirectUriLength)))
-        {
-            errors.AddError("Input.RedirectUris", "Each Redirect URI must be an absolute HTTP or HTTPS URL within the configured length limit.");
-        }
+        if (redirectUris.Any(uri =>
+                !UriValidationHelper.IsValidHttpOrHttpsUri(uri, ValidationConstants.MaxClientRedirectUriLength)))
+            errors.AddError("Input.RedirectUris",
+                "Each Redirect URI must be an absolute HTTP or HTTPS URL within the configured length limit.");
 
-        var postLogoutUris = input.PostLogoutRedirectUris?
+        List<string> postLogoutUris = input.PostLogoutRedirectUris?
             .Where(u => !string.IsNullOrWhiteSpace(u))
             .Select(u => u.Trim())
             .Distinct(StringComparer.Ordinal)
-            .ToList() ?? new();
+            .ToList() ?? new List<string>();
 
-        if (postLogoutUris.Any(uri => !UriValidationHelper.IsValidHttpOrHttpsUri(uri, ValidationConstants.MaxClientPostLogoutRedirectUriLength)))
-        {
-            errors.AddError("Input.PostLogoutRedirectUris", "Each Post-Logout Redirect URI must be an absolute HTTP or HTTPS URL within the configured length limit.");
-        }
+        if (postLogoutUris.Any(uri =>
+                !UriValidationHelper.IsValidHttpOrHttpsUri(uri,
+                    ValidationConstants.MaxClientPostLogoutRedirectUriLength)))
+            errors.AddError("Input.PostLogoutRedirectUris",
+                "Each Post-Logout Redirect URI must be an absolute HTTP or HTTPS URL within the configured length limit.");
 
-        var rawCorsOrigins = input.CorsOrigins?
+        List<string> rawCorsOrigins = input.CorsOrigins?
             .Where(o => !string.IsNullOrWhiteSpace(o))
             .Select(o => o.Trim())
-            .ToList() ?? new();
+            .ToList() ?? new List<string>();
         var corsOrigins = new List<string>();
-        foreach (var origin in rawCorsOrigins)
+        foreach (string origin in rawCorsOrigins)
         {
-            if (!UriValidationHelper.TryNormalizeCorsOrigin(origin, ValidationConstants.MaxClientCorsOriginLength, out var normalizedOrigin))
+            if (!UriValidationHelper.TryNormalizeCorsOrigin(origin, ValidationConstants.MaxClientCorsOriginLength,
+                    out string normalizedOrigin))
             {
-                errors.AddError("Input.CorsOrigins", "Each CORS Origin must contain only an HTTP or HTTPS scheme, host, and optional port.");
+                errors.AddError("Input.CorsOrigins",
+                    "Each CORS Origin must contain only an HTTP or HTTPS scheme, host, and optional port.");
                 break;
             }
 
             if (!corsOrigins.Contains(normalizedOrigin, StringComparer.OrdinalIgnoreCase))
-            {
                 corsOrigins.Add(normalizedOrigin);
-            }
         }
 
-        if (!string.IsNullOrWhiteSpace(input.FrontChannelLogoutUri) && !UriValidationHelper.IsValidHttpOrHttpsUri(input.FrontChannelLogoutUri, ValidationConstants.MaxLogoutUriLength))
-        {
-            errors.AddError("Input.FrontChannelLogoutUri", "Front-channel logout URI must be an absolute HTTP or HTTPS URL within the configured length limit.");
-        }
+        if (!string.IsNullOrWhiteSpace(input.FrontChannelLogoutUri) &&
+            !UriValidationHelper.IsValidHttpOrHttpsUri(input.FrontChannelLogoutUri,
+                ValidationConstants.MaxLogoutUriLength))
+            errors.AddError("Input.FrontChannelLogoutUri",
+                "Front-channel logout URI must be an absolute HTTP or HTTPS URL within the configured length limit.");
 
-        if (!string.IsNullOrWhiteSpace(input.BackChannelLogoutUri) && !UriValidationHelper.IsValidHttpOrHttpsUri(input.BackChannelLogoutUri, ValidationConstants.MaxLogoutUriLength))
-        {
-            errors.AddError("Input.BackChannelLogoutUri", "Back-channel logout URI must be an absolute HTTP or HTTPS URL within the configured length limit.");
-        }
+        if (!string.IsNullOrWhiteSpace(input.BackChannelLogoutUri) &&
+            !UriValidationHelper.IsValidHttpOrHttpsUri(input.BackChannelLogoutUri,
+                ValidationConstants.MaxLogoutUriLength))
+            errors.AddError("Input.BackChannelLogoutUri",
+                "Back-channel logout URI must be an absolute HTTP or HTTPS URL within the configured length limit.");
 
         if (errors.HasErrors)
         {
-            await AuditDeniedAsync(AuditAction.UpdateAuthentication, AuditReasonCode.ValidationFailed, clientId, clientId,
+            await AuditDeniedAsync(AuditAction.UpdateAuthentication, AuditReasonCode.ValidationFailed, clientId,
+                clientId,
                 "Client authentication validation failed.", cancellationToken);
             return AdminMutationResult.ValidationFailure(errors);
         }
 
         var outcome = AdminMutationResult.NotFoundResult();
-        var targetName = clientId;
+        string targetName = clientId;
         try
         {
-            var strategy = _configurationDbContext.Database.CreateExecutionStrategy();
+            IExecutionStrategy strategy = _configurationDbContext.Database.CreateExecutionStrategy();
             await strategy.ExecuteAsync(async () =>
             {
                 _configurationDbContext.ChangeTracker.Clear();
-                await using var transaction = await _configurationDbContext.Database.BeginTransactionAsync(
-                    System.Data.IsolationLevel.Serializable, cancellationToken);
-                var client = await LoadCompleteClientAsync(clientId, asNoTracking: false, cancellationToken);
+                await using IDbContextTransaction transaction =
+                    await _configurationDbContext.Database.BeginTransactionAsync(
+                        IsolationLevel.Serializable, cancellationToken);
+                Client? client = await LoadCompleteClientAsync(clientId, false, cancellationToken);
                 if (client == null)
                 {
                     outcome = AdminMutationResult.NotFoundResult();
@@ -494,7 +498,7 @@ public partial class ClientDetailsService : IClientDetailsService
                 }
 
                 targetName = client.ClientName ?? clientId;
-                var proposed = client.ToModel();
+                Duende.IdentityServer.Models.Client proposed = client.ToModel();
                 proposed.RequirePkce = input.RequirePkce;
                 proposed.RequireClientSecret = input.RequireClientSecret;
                 proposed.AllowedGrantTypes = grantTypes;
@@ -505,7 +509,7 @@ public partial class ClientDetailsService : IClientDetailsService
                 proposed.FrontChannelLogoutSessionRequired = input.FrontChannelLogoutSessionRequired;
                 proposed.BackChannelLogoutUri = input.BackChannelLogoutUri;
                 proposed.BackChannelLogoutSessionRequired = input.BackChannelLogoutSessionRequired;
-                var validationError = await ValidateClientAsync(proposed, cancellationToken);
+                string? validationError = await ValidateClientAsync(proposed, cancellationToken);
                 if (validationError != null)
                 {
                     outcome = AdminMutationResult.ValidationFailure("Input.GrantTypes", validationError);
@@ -515,10 +519,14 @@ public partial class ClientDetailsService : IClientDetailsService
 
                 client.RequirePkce = input.RequirePkce;
                 client.RequireClientSecret = input.RequireClientSecret;
-                ReplaceCollection(client.AllowedGrantTypes, grantTypes, grantType => new ClientGrantType { GrantType = grantType });
-                ReplaceCollection(client.RedirectUris, redirectUris, uri => new ClientRedirectUri { RedirectUri = uri });
-                ReplaceCollection(client.PostLogoutRedirectUris, postLogoutUris, uri => new ClientPostLogoutRedirectUri { PostLogoutRedirectUri = uri });
-                ReplaceCollection(client.AllowedCorsOrigins, corsOrigins, origin => new ClientCorsOrigin { Origin = origin });
+                ReplaceCollection(client.AllowedGrantTypes, grantTypes,
+                    grantType => new ClientGrantType { GrantType = grantType });
+                ReplaceCollection(client.RedirectUris, redirectUris,
+                    uri => new ClientRedirectUri { RedirectUri = uri });
+                ReplaceCollection(client.PostLogoutRedirectUris, postLogoutUris,
+                    uri => new ClientPostLogoutRedirectUri { PostLogoutRedirectUri = uri });
+                ReplaceCollection(client.AllowedCorsOrigins, corsOrigins,
+                    origin => new ClientCorsOrigin { Origin = origin });
                 client.FrontChannelLogoutUri = input.FrontChannelLogoutUri;
                 client.FrontChannelLogoutSessionRequired = input.FrontChannelLogoutSessionRequired;
                 client.BackChannelLogoutUri = input.BackChannelLogoutUri;
@@ -536,7 +544,7 @@ public partial class ClientDetailsService : IClientDetailsService
 
         if (!outcome.Succeeded)
         {
-            var reason = outcome.Status == AdminMutationStatus.NotFound
+            AuditReasonCode reason = outcome.Status == AdminMutationStatus.NotFound
                 ? AuditReasonCode.NotFound
                 : AuditReasonCode.ValidationFailed;
             await AuditDeniedAsync(AuditAction.UpdateAuthentication, reason, clientId, targetName,
@@ -546,7 +554,7 @@ public partial class ClientDetailsService : IClientDetailsService
 
         await _auditWriter.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.UpdateAuthentication, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
-            TargetId: clientId, TargetName: targetName, Details: "Updated authentication settings"), cancellationToken);
+            clientId, targetName, Details: "Updated authentication settings"), cancellationToken);
         return outcome;
     }
 
@@ -554,12 +562,13 @@ public partial class ClientDetailsService : IClientDetailsService
 
     #region Permissions
 
-    public async Task<ClientPermissionsModel?> GetClientPermissionsAsync(ClientId clientId, CancellationToken cancellationToken = default)
+    public async Task<ClientPermissionsModel?> GetClientPermissionsAsync(ClientId clientId,
+        CancellationToken cancellationToken = default)
     {
         if (clientId.IsEmpty)
             return null;
 
-        var client = await _configurationDbContext.Clients
+        Client? client = await _configurationDbContext.Clients
             .AsNoTracking()
             .Include(c => c.AllowedGrantTypes)
             .Include(c => c.AllowedScopes)
@@ -568,15 +577,15 @@ public partial class ClientDetailsService : IClientDetailsService
         if (client == null)
             return null;
 
-        var isInteractive = IsInteractiveClient(client);
+        bool isInteractive = IsInteractiveClient(client);
 
-        var identityScopes = await _configurationDbContext.IdentityResources
+        List<string> identityScopes = await _configurationDbContext.IdentityResources
             .AsNoTracking()
             .Select(i => i.Name)
             .OrderBy(n => n)
             .ToListAsync(cancellationToken);
 
-        var apiScopes = await _configurationDbContext.ApiScopes
+        List<string> apiScopes = await _configurationDbContext.ApiScopes
             .AsNoTracking()
             .Select(a => a.Name)
             .OrderBy(n => n)
@@ -593,7 +602,8 @@ public partial class ClientDetailsService : IClientDetailsService
         };
     }
 
-    public Task<AdminMutationResult> UpdateClientPermissionsAsync(ClientId clientId, ScopeSet allowedScopes, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> UpdateClientPermissionsAsync(ClientId clientId, ScopeSet allowedScopes,
+        CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.UpdatePermissions,
             clientId.Value,
@@ -601,7 +611,8 @@ public partial class ClientDetailsService : IClientDetailsService
             () => UpdateClientPermissionsCoreAsync(clientId.Value, allowedScopes ?? ScopeSet.Empty, cancellationToken),
             cancellationToken);
 
-    private async Task<AdminMutationResult> UpdateClientPermissionsCoreAsync(string clientId, ScopeSet allowedScopes, CancellationToken cancellationToken = default)
+    private async Task<AdminMutationResult> UpdateClientPermissionsCoreAsync(string clientId, ScopeSet allowedScopes,
+        CancellationToken cancellationToken = default)
     {
         clientId = clientId?.Trim() ?? string.Empty;
         if (clientId.Length == 0)
@@ -611,7 +622,7 @@ public partial class ClientDetailsService : IClientDetailsService
             return AdminMutationResult.ValidationFailure("Id", "Client ID is required.");
         }
 
-        var requestedScopes = allowedScopes.ToValues();
+        IReadOnlyList<string> requestedScopes = allowedScopes.ToValues();
         if (requestedScopes.Any(scope => scope.Length > ValidationConstants.MaxScopeNameLength))
         {
             await AuditDeniedAsync(AuditAction.UpdatePermissions, AuditReasonCode.ValidationFailed, clientId, clientId,
@@ -622,16 +633,17 @@ public partial class ClientDetailsService : IClientDetailsService
         }
 
         var outcome = AdminMutationResult.NotFoundResult();
-        var targetName = clientId;
+        string targetName = clientId;
         try
         {
-            var strategy = _configurationDbContext.Database.CreateExecutionStrategy();
+            IExecutionStrategy strategy = _configurationDbContext.Database.CreateExecutionStrategy();
             await strategy.ExecuteAsync(async () =>
             {
                 _configurationDbContext.ChangeTracker.Clear();
-                await using var transaction = await _configurationDbContext.Database.BeginTransactionAsync(
-                    System.Data.IsolationLevel.Serializable, cancellationToken);
-                var client = await LoadCompleteClientAsync(clientId, asNoTracking: false, cancellationToken);
+                await using IDbContextTransaction transaction =
+                    await _configurationDbContext.Database.BeginTransactionAsync(
+                        IsolationLevel.Serializable, cancellationToken);
+                Client? client = await LoadCompleteClientAsync(clientId, false, cancellationToken);
                 if (client == null)
                 {
                     outcome = AdminMutationResult.NotFoundResult();
@@ -660,8 +672,8 @@ public partial class ClientDetailsService : IClientDetailsService
                     return;
                 }
 
-                var isInteractive = IsInteractiveClient(client);
-                var finalScopes = isInteractive
+                bool isInteractive = IsInteractiveClient(client);
+                List<string> finalScopes = isInteractive
                     ? requestedScopes.Union(new[] { "openid" }, StringComparer.Ordinal).ToList()
                     : requestedScopes.Where(scope => !identityScopeSet.Contains(scope)).ToList();
                 if (isInteractive && !identityScopeSet.Contains("openid"))
@@ -673,9 +685,9 @@ public partial class ClientDetailsService : IClientDetailsService
                     return;
                 }
 
-                var proposed = client.ToModel();
+                Duende.IdentityServer.Models.Client proposed = client.ToModel();
                 proposed.AllowedScopes = finalScopes;
-                var validationError = await ValidateClientAsync(proposed, cancellationToken);
+                string? validationError = await ValidateClientAsync(proposed, cancellationToken);
                 if (validationError != null)
                 {
                     outcome = AdminMutationResult.ValidationFailure("Input.AllowedScopes", validationError);
@@ -697,7 +709,7 @@ public partial class ClientDetailsService : IClientDetailsService
 
         if (!outcome.Succeeded)
         {
-            var reason = outcome.Status == AdminMutationStatus.NotFound
+            AuditReasonCode reason = outcome.Status == AdminMutationStatus.NotFound
                 ? AuditReasonCode.NotFound
                 : AuditReasonCode.ValidationFailed;
             await AuditDeniedAsync(AuditAction.UpdatePermissions, reason, clientId, targetName,
@@ -707,7 +719,7 @@ public partial class ClientDetailsService : IClientDetailsService
 
         await _auditWriter.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, AuditAction.UpdatePermissions, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
-            TargetId: clientId, TargetName: targetName, Details: "Updated allowed scopes"), cancellationToken);
+            clientId, targetName, Details: "Updated allowed scopes"), cancellationToken);
         return outcome;
     }
 
@@ -715,12 +727,13 @@ public partial class ClientDetailsService : IClientDetailsService
 
     #region Secrets
 
-    public async Task<ClientSecretsModel?> GetClientSecretsAsync(ClientId clientId, CancellationToken cancellationToken = default)
+    public async Task<ClientSecretsModel?> GetClientSecretsAsync(ClientId clientId,
+        CancellationToken cancellationToken = default)
     {
         if (clientId.IsEmpty)
             return null;
 
-        var client = await _configurationDbContext.Clients
+        Client? client = await _configurationDbContext.Clients
             .AsNoTracking()
             .Include(c => c.ClientSecrets)
             .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
@@ -746,7 +759,8 @@ public partial class ClientDetailsService : IClientDetailsService
         };
     }
 
-    public Task<ClientSecretGenerateResult> GenerateClientSecretAsync(ClientId clientId, string? description, DateTime? expiration = null, CancellationToken cancellationToken = default) =>
+    public Task<ClientSecretGenerateResult> GenerateClientSecretAsync(ClientId clientId, string? description,
+        DateTime? expiration = null, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.GenerateSecret,
             clientId.Value,
@@ -754,7 +768,8 @@ public partial class ClientDetailsService : IClientDetailsService
             () => GenerateClientSecretCoreAsync(clientId.Value, description, expiration, cancellationToken),
             cancellationToken);
 
-    private async Task<ClientSecretGenerateResult> GenerateClientSecretCoreAsync(string clientId, string? description, DateTime? expiration = null, CancellationToken cancellationToken = default)
+    private async Task<ClientSecretGenerateResult> GenerateClientSecretCoreAsync(string clientId, string? description,
+        DateTime? expiration = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(clientId))
         {
@@ -763,10 +778,12 @@ public partial class ClientDetailsService : IClientDetailsService
             return ClientSecretGenerateResult.Failed("Client not found.");
         }
 
-        var trimmedDescription = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
-        if (trimmedDescription != null && trimmedDescription.Length > ValidationConstants.MaxClientSecretDescriptionLength)
+        string? trimmedDescription = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+        if (trimmedDescription != null &&
+            trimmedDescription.Length > ValidationConstants.MaxClientSecretDescriptionLength)
         {
-            var message = $"Secret description cannot exceed {ValidationConstants.MaxClientSecretDescriptionLength} characters.";
+            string message =
+                $"Secret description cannot exceed {ValidationConstants.MaxClientSecretDescriptionLength} characters.";
             await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.ValidationFailed, clientId, clientId,
                 message, cancellationToken);
             return ClientSecretGenerateResult.ValidationFailure("Description", message);
@@ -774,16 +791,18 @@ public partial class ClientDetailsService : IClientDetailsService
 
         if (expiration.HasValue && expiration.Value.ToUniversalTime() <= DateTime.UtcNow)
         {
-            var message = "Expiration date must be in the future.";
+            string message = "Expiration date must be in the future.";
             await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.ValidationFailed, clientId, clientId,
                 message, cancellationToken);
             return ClientSecretGenerateResult.ValidationFailure("Expiration", message);
         }
 
-        await using var transaction = await _configurationDbContext.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken);
+        await using IDbContextTransaction transaction =
+            await _configurationDbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable,
+                cancellationToken);
         try
         {
-            var client = await _configurationDbContext.Clients
+            Client? client = await _configurationDbContext.Clients
                 .Include(c => c.ClientSecrets)
                 .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
 
@@ -795,7 +814,7 @@ public partial class ClientDetailsService : IClientDetailsService
                 return ClientSecretGenerateResult.Failed("Client not found.");
             }
 
-            var plaintextSecret = CryptoRandom.CreateUniqueId(32);
+            string plaintextSecret = CryptoRandom.CreateUniqueId();
             client.ClientSecrets.Add(new ClientSecret
             {
                 Description = trimmedDescription,
@@ -811,7 +830,7 @@ public partial class ClientDetailsService : IClientDetailsService
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.Client, AuditAction.GenerateSecret, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
-                TargetId: clientId, TargetName: client.ClientName ?? clientId,
+                clientId, client.ClientName ?? clientId,
                 Details: "Generated new client secret"), cancellationToken);
             return ClientSecretGenerateResult.Succeeded(plaintextSecret);
         }
@@ -823,7 +842,8 @@ public partial class ClientDetailsService : IClientDetailsService
         }
     }
 
-    public Task<ClientSecretRevokeResult> RevokeClientSecretAsync(ClientId clientId, int secretId, CancellationToken cancellationToken = default) =>
+    public Task<ClientSecretRevokeResult> RevokeClientSecretAsync(ClientId clientId, int secretId,
+        CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.RevokeSecret,
             clientId.Value,
@@ -831,7 +851,8 @@ public partial class ClientDetailsService : IClientDetailsService
             () => RevokeClientSecretCoreAsync(clientId.Value, secretId, cancellationToken),
             cancellationToken);
 
-    private async Task<ClientSecretRevokeResult> RevokeClientSecretCoreAsync(string clientId, int secretId, CancellationToken cancellationToken = default)
+    private async Task<ClientSecretRevokeResult> RevokeClientSecretCoreAsync(string clientId, int secretId,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(clientId))
         {
@@ -841,20 +862,21 @@ public partial class ClientDetailsService : IClientDetailsService
                 "Client not found.", AuditReasonCode.NotFound, AdminMutationStatus.NotFound);
         }
 
-        var targetName = clientId;
+        string targetName = clientId;
         var outcome = ClientSecretRevokeResult.Failed(
             "Client not found.", AuditReasonCode.NotFound, AdminMutationStatus.NotFound);
-        var utcNow = _timeProvider.GetUtcNow();
+        DateTimeOffset utcNow = _timeProvider.GetUtcNow();
         try
         {
-            var strategy = _configurationDbContext.Database.CreateExecutionStrategy();
+            IExecutionStrategy strategy = _configurationDbContext.Database.CreateExecutionStrategy();
             await strategy.ExecuteAsync(async () =>
             {
                 _configurationDbContext.ChangeTracker.Clear();
-                await using var transaction = await _configurationDbContext.Database.BeginTransactionAsync(
-                    System.Data.IsolationLevel.Serializable, cancellationToken);
+                await using IDbContextTransaction transaction =
+                    await _configurationDbContext.Database.BeginTransactionAsync(
+                        IsolationLevel.Serializable, cancellationToken);
 
-                var client = await _configurationDbContext.Clients
+                Client? client = await _configurationDbContext.Clients
                     .Include(c => c.ClientSecrets)
                     .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
 
@@ -867,7 +889,7 @@ public partial class ClientDetailsService : IClientDetailsService
                 }
 
                 targetName = client.ClientName ?? clientId;
-                var secret = client.ClientSecrets.FirstOrDefault(s => s.Id == secretId);
+                ClientSecret? secret = client.ClientSecrets.FirstOrDefault(s => s.Id == secretId);
                 if (secret == null)
                 {
                     outcome = ClientSecretRevokeResult.Failed(
@@ -876,11 +898,12 @@ public partial class ClientDetailsService : IClientDetailsService
                     return;
                 }
 
-                var hasUsableReplacement = client.ClientSecrets.Any(s =>
+                bool hasUsableReplacement = client.ClientSecrets.Any(s =>
                     s.Id != secretId && (!s.Expiration.HasValue || s.Expiration.Value > utcNow.UtcDateTime));
                 if (client.RequireClientSecret && !hasUsableReplacement)
                 {
-                    var message = "This is the last usable secret on a confidential client and cannot be revoked. Generate a usable replacement secret first, or disable the client's secret requirement.";
+                    string message =
+                        "This is the last usable secret on a confidential client and cannot be revoked. Generate a usable replacement secret first, or disable the client's secret requirement.";
                     outcome = ClientSecretRevokeResult.Failed(message, AuditReasonCode.LastUsableSecret);
                     await transaction.RollbackAsync(cancellationToken);
                     return;
@@ -894,14 +917,15 @@ public partial class ClientDetailsService : IClientDetailsService
 
             if (!outcome.Success)
             {
-                await AuditDeniedAsync(AuditAction.RevokeSecret, AuditReasonCode.From(outcome.ReasonCode), clientId, targetName,
+                await AuditDeniedAsync(AuditAction.RevokeSecret, AuditReasonCode.From(outcome.ReasonCode), clientId,
+                    targetName,
                     outcome.ErrorMessage!, cancellationToken);
                 return outcome;
             }
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.Client, AuditAction.RevokeSecret, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
-                TargetId: clientId, TargetName: targetName,
+                clientId, targetName,
                 Details: "Revoked client secret"), cancellationToken);
 
             return outcome;
@@ -917,12 +941,13 @@ public partial class ClientDetailsService : IClientDetailsService
 
     #region Token settings
 
-    public async Task<ClientTokenSettingsModel?> GetClientTokenSettingsAsync(ClientId clientId, CancellationToken cancellationToken = default)
+    public async Task<ClientTokenSettingsModel?> GetClientTokenSettingsAsync(ClientId clientId,
+        CancellationToken cancellationToken = default)
     {
         if (clientId.IsEmpty)
             return null;
 
-        var client = await _configurationDbContext.Clients
+        Client? client = await _configurationDbContext.Clients
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
@@ -939,15 +964,16 @@ public partial class ClientDetailsService : IClientDetailsService
             AllowOfflineAccess = client.AllowOfflineAccess,
             RefreshToken = new RefreshTokenSettings
             {
-                Usage = (Duende.IdentityServer.Models.TokenUsage)client.RefreshTokenUsage,
-                Expiration = (Duende.IdentityServer.Models.TokenExpiration)client.RefreshTokenExpiration,
+                Usage = (TokenUsage)client.RefreshTokenUsage,
+                Expiration = (TokenExpiration)client.RefreshTokenExpiration,
                 AbsoluteLifetime = TokenLifetime.FromSeconds(client.AbsoluteRefreshTokenLifetime),
                 SlidingLifetime = TokenLifetime.FromSeconds(client.SlidingRefreshTokenLifetime)
             }
         };
     }
 
-    public Task<AdminMutationResult> UpdateClientTokenSettingsAsync(ClientId clientId, ClientTokenSettingsInputModel input, CancellationToken cancellationToken = default) =>
+    public Task<AdminMutationResult> UpdateClientTokenSettingsAsync(ClientId clientId,
+        ClientTokenSettingsInputModel input, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
             AuditAction.UpdateTokenSettings,
             clientId.Value,
@@ -955,61 +981,49 @@ public partial class ClientDetailsService : IClientDetailsService
             () => UpdateClientTokenSettingsCoreAsync(clientId.Value, input, cancellationToken),
             cancellationToken);
 
-    private async Task<AdminMutationResult> UpdateClientTokenSettingsCoreAsync(string clientId, ClientTokenSettingsInputModel input, CancellationToken cancellationToken = default)
+    private async Task<AdminMutationResult> UpdateClientTokenSettingsCoreAsync(string clientId,
+        ClientTokenSettingsInputModel input, CancellationToken cancellationToken = default)
     {
         clientId = clientId?.Trim() ?? string.Empty;
         var errors = new ValidationErrorDictionary();
-        if (clientId.Length == 0)
-        {
-            errors.AddError("Id", "Client ID is required.");
-        }
+        if (clientId.Length == 0) errors.AddError("Id", "Client ID is required.");
         if (input == null)
-        {
             errors.AddError("Input", "Token settings are required.");
-        }
         else
         {
             if (!input.AccessTokenLifetime.IsValidAccessToken)
-            {
                 errors.AddError("Input.AccessTokenLifetime",
                     $"Access Token Lifetime must be between {ValidationConstants.MinAccessTokenLifetime} and {ValidationConstants.MaxAccessTokenLifetime} seconds.");
-            }
             if (!input.IdentityTokenLifetime.IsValidIdentityToken)
-            {
                 errors.AddError("Input.IdentityTokenLifetime",
                     $"Identity Token Lifetime must be between {ValidationConstants.MinIdentityTokenLifetime} and {ValidationConstants.MaxIdentityTokenLifetime} seconds.");
-            }
 
             if (input.AllowOfflineAccess)
             {
-                var refresh = input.RefreshToken ?? new RefreshTokenSettings();
+                RefreshTokenSettings refresh = input.RefreshToken ?? new RefreshTokenSettings();
                 if (!refresh.IsAbsoluteLifetimeValid)
-                {
                     errors.AddError("Input.AbsoluteRefreshTokenLifetime",
                         $"Absolute Refresh Token Lifetime must be between {ValidationConstants.MinRefreshTokenLifetime} and {ValidationConstants.MaxAbsoluteRefreshTokenLifetime} seconds.");
-                }
 
                 if (!refresh.IsSlidingLifetimeValid)
-                {
                     errors.AddError("Input.SlidingRefreshTokenLifetime",
                         $"Sliding Refresh Token Lifetime must be between {ValidationConstants.MinRefreshTokenLifetime} and {ValidationConstants.MaxSlidingRefreshTokenLifetime} seconds.");
-                }
 
                 if (!refresh.IsSlidingValid)
-                {
                     errors.AddError("Input.SlidingRefreshTokenLifetime",
                         "Sliding Refresh Token Lifetime cannot exceed the Absolute Refresh Token Lifetime.");
-                }
             }
         }
+
         if (errors.HasErrors)
         {
-            await AuditDeniedAsync(AuditAction.UpdateTokenSettings, AuditReasonCode.ValidationFailed, clientId, clientId,
+            await AuditDeniedAsync(AuditAction.UpdateTokenSettings, AuditReasonCode.ValidationFailed, clientId,
+                clientId,
                 "Client token settings validation failed.", cancellationToken);
             return AdminMutationResult.ValidationFailure(errors);
         }
 
-        var client = await LoadCompleteClientAsync(clientId, asNoTracking: true, cancellationToken);
+        Client? client = await LoadCompleteClientAsync(clientId, true, cancellationToken);
 
         if (client == null)
         {
@@ -1020,8 +1034,8 @@ public partial class ClientDetailsService : IClientDetailsService
 
         try
         {
-            var refresh = input!.RefreshToken ?? new RefreshTokenSettings();
-            var proposed = client.ToModel();
+            RefreshTokenSettings refresh = input!.RefreshToken ?? new RefreshTokenSettings();
+            Duende.IdentityServer.Models.Client proposed = client.ToModel();
             proposed.AccessTokenLifetime = input.AccessTokenLifetime.Seconds;
             proposed.IdentityTokenLifetime = input.IdentityTokenLifetime.Seconds;
             proposed.RequireConsent = input.RequireConsent;
@@ -1033,7 +1047,8 @@ public partial class ClientDetailsService : IClientDetailsService
                 proposed.AbsoluteRefreshTokenLifetime = refresh.AbsoluteLifetime.Seconds;
                 proposed.SlidingRefreshTokenLifetime = refresh.SlidingLifetime.Seconds;
             }
-            var validationError = await ValidateClientAsync(proposed, cancellationToken);
+
+            string? validationError = await ValidateClientAsync(proposed, cancellationToken);
             if (validationError != null)
             {
                 await AuditDeniedAsync(AuditAction.UpdateTokenSettings, AuditReasonCode.ValidationFailed, clientId,
@@ -1041,7 +1056,7 @@ public partial class ClientDetailsService : IClientDetailsService
                 return AdminMutationResult.ValidationFailure("Input.AccessTokenLifetime", validationError);
             }
 
-            var trackedClient = await _configurationDbContext.Clients
+            Client trackedClient = await _configurationDbContext.Clients
                 .FirstAsync(c => c.ClientId == clientId, cancellationToken);
             var oldValues = new ClientTokenSettingsAuditValue(
                 TokenLifetime.FromSeconds(trackedClient.AccessTokenLifetime),
@@ -1050,8 +1065,8 @@ public partial class ClientDetailsService : IClientDetailsService
                 trackedClient.AllowOfflineAccess,
                 new RefreshTokenSettings
                 {
-                    Usage = (Duende.IdentityServer.Models.TokenUsage)trackedClient.RefreshTokenUsage,
-                    Expiration = (Duende.IdentityServer.Models.TokenExpiration)trackedClient.RefreshTokenExpiration,
+                    Usage = (TokenUsage)trackedClient.RefreshTokenUsage,
+                    Expiration = (TokenExpiration)trackedClient.RefreshTokenExpiration,
                     AbsoluteLifetime = TokenLifetime.FromSeconds(trackedClient.AbsoluteRefreshTokenLifetime),
                     SlidingLifetime = TokenLifetime.FromSeconds(trackedClient.SlidingRefreshTokenLifetime)
                 });
@@ -1070,29 +1085,31 @@ public partial class ClientDetailsService : IClientDetailsService
             await _configurationDbContext.SaveChangesAsync(cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategory.Client, AuditAction.UpdateTokenSettings, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
-                TargetId: clientId, TargetName: client.ClientName ?? clientId,
-                OldValues: oldValues,
-                NewValues: new ClientTokenSettingsAuditValue(
+                AuditCategory.Client, AuditAction.UpdateTokenSettings, AuditOutcome.Succeeded,
+                AuditReasonCode.Succeeded,
+                clientId, client.ClientName ?? clientId,
+                oldValues,
+                new ClientTokenSettingsAuditValue(
                     TokenLifetime.FromSeconds(trackedClient.AccessTokenLifetime),
                     TokenLifetime.FromSeconds(trackedClient.IdentityTokenLifetime),
                     trackedClient.RequireConsent,
                     trackedClient.AllowOfflineAccess,
                     new RefreshTokenSettings
                     {
-                        Usage = (Duende.IdentityServer.Models.TokenUsage)trackedClient.RefreshTokenUsage,
-                        Expiration = (Duende.IdentityServer.Models.TokenExpiration)trackedClient.RefreshTokenExpiration,
+                        Usage = (TokenUsage)trackedClient.RefreshTokenUsage,
+                        Expiration = (TokenExpiration)trackedClient.RefreshTokenExpiration,
                         AbsoluteLifetime = TokenLifetime.FromSeconds(trackedClient.AbsoluteRefreshTokenLifetime),
                         SlidingLifetime = TokenLifetime.FromSeconds(trackedClient.SlidingRefreshTokenLifetime)
                     }
                 ),
-                Details: "Updated token and consent settings"), cancellationToken);
+                "Updated token and consent settings"), cancellationToken);
 
             return AdminMutationResult.Success();
         }
         catch (Exception ex)
         {
-            await AuditFailedAsync(AuditAction.UpdateTokenSettings, clientId, client.ClientName ?? clientId, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.UpdateTokenSettings, clientId, client.ClientName ?? clientId, ex,
+                cancellationToken);
             throw;
         }
     }
@@ -1106,7 +1123,7 @@ public partial class ClientDetailsService : IClientDetailsService
         bool asNoTracking,
         CancellationToken cancellationToken)
     {
-        var query = _configurationDbContext.Clients
+        IQueryable<Client> query = _configurationDbContext.Clients
             .AsSplitQuery()
             .Include(client => client.AllowedGrantTypes)
             .Include(client => client.RedirectUris)
@@ -1120,9 +1137,7 @@ public partial class ClientDetailsService : IClientDetailsService
             .AsQueryable();
 
         if (asNoTracking)
-        {
             query = query.AsNoTracking();
-        }
 
         return await query.FirstOrDefaultAsync(client => client.ClientId == clientId, cancellationToken);
     }
@@ -1144,16 +1159,14 @@ public partial class ClientDetailsService : IClientDetailsService
         Func<TValue, TEntity> create)
     {
         target.Clear();
-        foreach (var value in values)
-        {
-            target.Add(create(value));
-        }
+        foreach (TValue value in values) target.Add(create(value));
     }
 
-    private Task AuditDeniedAsync(AuditAction action, AuditReasonCode reasonCode, string targetId, string targetName, string details, CancellationToken cancellationToken)
+    private Task AuditDeniedAsync(AuditAction action, AuditReasonCode reasonCode, string targetId, string targetName,
+        string details, CancellationToken cancellationToken)
         => _auditWriter.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, action, AuditOutcome.Denied, reasonCode,
-            TargetId: targetId, TargetName: targetName, Details: details), cancellationToken);
+            targetId, targetName, Details: details), cancellationToken);
 
     private async Task<T> ExecuteAuditedAsync<T>(
         AuditAction action,
@@ -1173,7 +1186,8 @@ public partial class ClientDetailsService : IClientDetailsService
         }
     }
 
-    private async Task AuditFailedAsync(AuditAction action, string targetId, string targetName, Exception ex, CancellationToken cancellationToken)
+    private async Task AuditFailedAsync(AuditAction action, string targetId, string targetName, Exception ex,
+        CancellationToken cancellationToken)
     {
         const string marker = "IdentityServerProject.Audit.Client.Failed";
         if (ex.Data.Contains(marker))
@@ -1182,7 +1196,7 @@ public partial class ClientDetailsService : IClientDetailsService
         ex.Data[marker] = true;
         await _auditWriter.WriteAsync(new AdminAuditEvent(
             AuditCategory.Client, action, AuditOutcome.Failed, AuditReasonCode.PersistenceFailure,
-            TargetId: targetId, TargetName: targetName, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
+            targetId, targetName, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
     }
 
     #endregion

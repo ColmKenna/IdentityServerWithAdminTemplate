@@ -20,7 +20,7 @@ public class GrantsIndexPageModelTests
         {
             Items = new List<GrantListItem>
             {
-                new GrantListItem
+                new()
                 {
                     Key = GrantKey.Create("grant-123"),
                     Type = "user_consent",
@@ -59,14 +59,14 @@ public class GrantsIndexPageModelTests
         var mockService = new Mock<IGrantListService>();
         mockService
             .Setup(s => s.GetGrantsAsync(expectedFilter, page2, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ListResult<GrantListItem>.Empty(2, TestOptions.PageSize));
+            .ReturnsAsync(ListResult<GrantListItem>.Empty(2));
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole)
         {
             SubjectId = "user-456",
             ClientId = "client-app",
             TypeFilter = "refresh_token",
-            PageNumber = 2,
+            PageNumber = 2
         };
 
         await model.OnGetAsync(CancellationToken.None);
@@ -87,12 +87,12 @@ public class GrantsIndexPageModelTests
             PageNumber = 2,
             SubjectId = "user-456",
             ClientId = "client-app",
-            TypeFilter = "refresh_token",
+            TypeFilter = "refresh_token"
         };
 
-        var result = await model.OnPostRevokeAsync(GrantKey.Create("grant-123"), CancellationToken.None);
+        IActionResult result = await model.OnPostRevokeAsync(GrantKey.Create("grant-123"), CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.NotNull(model.SuccessMessage);
         Assert.Contains("revoked successfully", model.SuccessMessage);
         Assert.Equal(2, redirect.RouteValues!["PageNumber"]);
@@ -111,7 +111,7 @@ public class GrantsIndexPageModelTests
 
         var model = new IndexModel(mockService.Object, TestOptions.AdminConsole);
 
-        var result = await model.OnPostRevokeAsync(GrantKey.Create("nonexistent"), CancellationToken.None);
+        IActionResult result = await model.OnPostRevokeAsync(GrantKey.Create("nonexistent"), CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }

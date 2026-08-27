@@ -7,56 +7,66 @@ using Moq;
 namespace IdentityServerProject.Admin.Tests.Users;
 
 /// <summary>
-/// Unit tests for <see cref="IndexModel"/> handler logic, exercised directly
-/// against a mocked <see cref="IUserListService"/> (no HTTP pipeline involved).
+///     Unit tests for <see cref="IndexModel" /> handler logic, exercised directly
+///     against a mocked <see cref="IUserListService" /> (no HTTP pipeline involved).
 /// </summary>
 public class UsersIndexPageModelTests
 {
+    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
+
     private static ListResult<UserListItem> MakeResult(int pageNumber = 1, int pageSize = 10) => new()
     {
         Items = new[]
         {
-            new UserListItem { Id = UserId.Create("u1"), UserName = "admin@sales.local", Email = "admin@sales.local", FullName = "Sys Admin", IsLockedOut = false, LockoutEnd = null },
+            new UserListItem
+            {
+                Id = UserId.Create("u1"), UserName = "admin@sales.local", Email = "admin@sales.local",
+                FullName = "Sys Admin", IsLockedOut = false, LockoutEnd = null
+            }
         },
         TotalCount = 1,
         PageNumber = pageNumber,
-        PageSize = pageSize,
+        PageSize = pageSize
     };
-
-    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
 
     [Fact]
     public async Task OnGetAsync_NoQueryParameters_CallsServiceWithNullFilterAndFirstPage()
     {
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == DefaultPagination),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(
+            s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == DefaultPagination),
+                It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task OnGetAsync_FilterSpecified_PassesFilterToService()
     {
         var mock = new Mock<IUserListService>();
-        mock.Setup(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == "admin" && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == "admin" && q.Pagination == DefaultPagination),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { Filter = "admin" };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == "admin" && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(
+            s => s.GetUsersAsync(It.Is<ListQuery>(q => q.Filter == "admin" && q.Pagination == DefaultPagination),
+                It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task OnGetAsync_ServiceReturnsResult_PopulatesUsersProperty()
     {
-        var expected = MakeResult();
+        ListResult<UserListItem> expected = MakeResult();
         var mock = new Mock<IUserListService>();
         mock.Setup(s => s.GetUsersAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
@@ -77,9 +87,9 @@ public class UsersIndexPageModelTests
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
-        var result = await model.OnPostUnlockAsync("u1", CancellationToken.None);
+        IActionResult result = await model.OnPostUnlockAsync("u1", CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.NotNull(model.StatusMessage);
         mock.Verify(s => s.UnlockUserAsync(UserId.Create("u1"), It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -93,7 +103,7 @@ public class UsersIndexPageModelTests
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
-        var result = await model.OnPostUnlockAsync("invalid", CancellationToken.None);
+        IActionResult result = await model.OnPostUnlockAsync("invalid", CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -109,7 +119,7 @@ public class UsersIndexPageModelTests
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
-        var result = await model.OnPostUnlockAsync("u1", CancellationToken.None);
+        IActionResult result = await model.OnPostUnlockAsync("u1", CancellationToken.None);
 
         Assert.IsType<RedirectToPageResult>(result);
         Assert.Contains("could not be updated", model.StatusMessage);

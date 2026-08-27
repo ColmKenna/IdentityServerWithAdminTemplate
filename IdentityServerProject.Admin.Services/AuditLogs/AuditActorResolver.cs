@@ -9,11 +9,11 @@ public static class AuditActorResolver
         if (user?.Identity?.IsAuthenticated != true)
             return (string.Empty, string.Empty);
 
-        var subjectId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? user.FindFirst("sub")?.Value
-            ?? string.Empty;
+        string subjectId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? user.FindFirst("sub")?.Value
+                           ?? string.Empty;
 
-        var name = user.Identity.Name ?? string.Empty;
+        string name = user.Identity.Name ?? string.Empty;
 
         return (subjectId, name);
     }

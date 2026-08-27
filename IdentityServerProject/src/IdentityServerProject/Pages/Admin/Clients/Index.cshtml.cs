@@ -18,11 +18,9 @@ public class IndexModel : PageModel
         _options = options.Value;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public int PageNumber { get; set; } = 1;
+    [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
 
-    [BindProperty(SupportsGet = true)]
-    public string? Filter { get; set; }
+    [BindProperty(SupportsGet = true)] public string? Filter { get; set; }
 
     public ListResult<ClientListItem> Clients { get; private set; } = default!;
 

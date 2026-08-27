@@ -13,21 +13,17 @@ public class CreateModel : PageModel
         _userCreateService = userCreateService;
     }
 
-    [BindProperty]
-    public UserCreateInputModel Input { get; set; } = new();
+    [BindProperty] public UserCreateInputModel Input { get; set; } = new();
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
             return Page();
 
-        var result = await _userCreateService.CreateUserAsync(Input, cancellationToken);
+        UserCreateResult result = await _userCreateService.CreateUserAsync(Input, cancellationToken);
         if (!result.Success)
         {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error);
-            }
+            foreach (string error in result.Errors) ModelState.AddModelError(string.Empty, error);
 
             return Page();
         }

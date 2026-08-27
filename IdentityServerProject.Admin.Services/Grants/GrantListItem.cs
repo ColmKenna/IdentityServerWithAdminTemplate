@@ -4,7 +4,7 @@ using IdentityServerProject.Services.Users;
 namespace IdentityServerProject.Services.Grants;
 
 /// <summary>
-/// A single row projected for display on the Admin &gt; Persisted Grants list page.
+///     A single row projected for display on the Admin &gt; Persisted Grants list page.
 /// </summary>
 public sealed class GrantListItem
 {

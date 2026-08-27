@@ -1,7 +1,7 @@
 namespace IdentityServerProject.Services.Users;
 
 /// <summary>
-/// A single user row projected for display on the Admin &gt; Users list page.
+///     A single user row projected for display on the Admin &gt; Users list page.
 /// </summary>
 public sealed class UserListItem
 {

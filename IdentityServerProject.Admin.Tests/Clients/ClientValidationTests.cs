@@ -1,6 +1,6 @@
 using Duende.IdentityServer.EntityFramework.DbContexts;
+using Duende.IdentityServer.EntityFramework.Entities;
 using Duende.IdentityServer.EntityFramework.Mappers;
-using Duende.IdentityServer.Models;
 using IdentityServerProject.Admin.Tests.Infrastructure;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.Validation;
@@ -34,20 +34,20 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
     public void TryNormalizeCorsOrigin_RootTrailingSlash_IsRemoved()
     {
         Assert.True(UriValidationHelper.TryNormalizeCorsOrigin(
-            "https://Example.com:8443/", ValidationConstants.MaxClientCorsOriginLength, out var normalized));
+            "https://Example.com:8443/", ValidationConstants.MaxClientCorsOriginLength, out string normalized));
         Assert.Equal("https://example.com:8443", normalized);
     }
 
     [Fact]
     public async Task CreateClientAsync_CorsOrigins_AreNormalizedAndDeduplicated()
     {
-        var clientId = $"cors-create-{Guid.NewGuid():N}";
+        string clientId = $"cors-create-{Guid.NewGuid():N}";
         await _factory.RunInScopeAsync(async sp =>
         {
-            var configurationDb = sp.GetRequiredService<ConfigurationDbContext>();
+            ConfigurationDbContext configurationDb = sp.GetRequiredService<ConfigurationDbContext>();
             if (!await configurationDb.IdentityResources.AnyAsync(resource => resource.Name == "openid"))
             {
-                configurationDb.IdentityResources.Add(new Duende.IdentityServer.EntityFramework.Entities.IdentityResource
+                configurationDb.IdentityResources.Add(new IdentityResource
                 {
                     Name = "openid",
                     DisplayName = "OpenID"
@@ -55,8 +55,8 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
                 await configurationDb.SaveChangesAsync();
             }
 
-            var service = sp.GetRequiredService<IClientCreateService>();
-            var result = await service.CreateClientAsync(new ClientCreateInputModel
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
+            ClientCreateResult result = await service.CreateClientAsync(new ClientCreateInputModel
             {
                 ClientId = clientId,
                 ClientName = "CORS Normalization Client",
@@ -71,7 +71,7 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var client = await sp.GetRequiredService<ConfigurationDbContext>().Clients
+            Client client = await sp.GetRequiredService<ConfigurationDbContext>().Clients
                 .AsNoTracking()
                 .Include(entity => entity.AllowedCorsOrigins)
                 .SingleAsync(entity => entity.ClientId == clientId);
@@ -86,12 +86,12 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
     [InlineData("not-a-url")]
     public async Task CreateClientAsync_InvalidRedirectUri_FailsValidation(string invalidUri)
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var clientId = $"{tag}-client";
+        string tag = Guid.NewGuid().ToString("N");
+        string clientId = $"{tag}-client";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientCreateService>();
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
 
             var input = new ClientCreateInputModel
             {
@@ -100,7 +100,7 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
                 RedirectUris = new List<string> { invalidUri }
             };
 
-            var result = await service.CreateClientAsync(input);
+            ClientCreateResult result = await service.CreateClientAsync(input);
 
             Assert.False(result.Success);
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
@@ -111,12 +111,12 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task CreateClientAsync_UnknownAllowedScope_FailsValidation()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var clientId = $"{tag}-client";
+        string tag = Guid.NewGuid().ToString("N");
+        string clientId = $"{tag}-client";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientCreateService>();
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
 
             var input = new ClientCreateInputModel
             {
@@ -126,7 +126,7 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
                 AllowedScopes = new List<string> { "unknown.nonexistent.scope" }
             };
 
-            var result = await service.CreateClientAsync(input);
+            ClientCreateResult result = await service.CreateClientAsync(input);
 
             Assert.False(result.Success);
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
@@ -137,23 +137,28 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task CreateClientAsync_OverlongCollectionValues_ReturnsFieldErrorsAndDoesNotMutate()
     {
-        var clientId = $"length-create-{Guid.NewGuid():N}";
+        string clientId = $"length-create-{Guid.NewGuid():N}";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientCreateService>();
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
+            IClientCreateService service = sp.GetRequiredService<IClientCreateService>();
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
             var input = new ClientCreateInputModel
             {
                 ClientId = clientId,
                 ClientName = "Length Validation Client",
                 GrantTypes = new List<string> { new('g', ValidationConstants.MaxGrantTypeLength + 1) },
-                RedirectUris = new List<string> { "https://example.com/" + new string('r', ValidationConstants.MaxClientRedirectUriLength) },
-                PostLogoutRedirectUris = new List<string> { "https://example.com/" + new string('p', ValidationConstants.MaxClientPostLogoutRedirectUriLength) },
-                CorsOrigins = new List<string> { "https://example.com/" + new string('c', ValidationConstants.MaxClientCorsOriginLength) }
+                RedirectUris = new List<string>
+                    { "https://example.com/" + new string('r', ValidationConstants.MaxClientRedirectUriLength) },
+                PostLogoutRedirectUris = new List<string>
+                {
+                    "https://example.com/" + new string('p', ValidationConstants.MaxClientPostLogoutRedirectUriLength)
+                },
+                CorsOrigins = new List<string>
+                    { "https://example.com/" + new string('c', ValidationConstants.MaxClientCorsOriginLength) }
             };
 
-            var result = await service.CreateClientAsync(input);
+            ClientCreateResult result = await service.CreateClientAsync(input);
 
             Assert.False(result.Success);
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
@@ -168,13 +173,13 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UpdateClientAuthenticationAsync_InvalidCorsOrigin_FailsValidation()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var clientId = $"{tag}-client";
+        string tag = Guid.NewGuid().ToString("N");
+        string clientId = $"{tag}-client";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            db.Clients.Add(new Client
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            db.Clients.Add(new Duende.IdentityServer.Models.Client
             {
                 ClientId = clientId,
                 ClientName = "Test Client",
@@ -188,7 +193,7 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var detailsService = sp.GetRequiredService<IClientDetailsService>();
+            IClientDetailsService detailsService = sp.GetRequiredService<IClientDetailsService>();
 
             var input = new ClientAuthenticationInputModel
             {
@@ -197,7 +202,8 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
                 CorsOrigins = new List<string> { "invalid-origin" }
             };
 
-            var result = await detailsService.UpdateClientAuthenticationAsync(ClientId.Create(clientId), input);
+            AdminMutationResult result =
+                await detailsService.UpdateClientAuthenticationAsync(ClientId.Create(clientId), input);
 
             Assert.False(result.Succeeded);
             Assert.NotNull(result.ErrorMessage);
@@ -207,11 +213,11 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UpdateClientAuthenticationAsync_CorsOrigins_AreNormalizedAndDeduplicated()
     {
-        var clientId = $"cors-edit-{Guid.NewGuid():N}";
+        string clientId = $"cors-edit-{Guid.NewGuid():N}";
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            db.Clients.Add(new Client
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            db.Clients.Add(new Duende.IdentityServer.Models.Client
             {
                 ClientId = clientId,
                 ClientName = "CORS Edit Client",
@@ -225,21 +231,22 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
-            var result = await service.UpdateClientAuthenticationAsync(ClientId.Create(clientId), new ClientAuthenticationInputModel
-            {
-                RequirePkce = true,
-                RequireClientSecret = false,
-                GrantTypes = new List<string> { "authorization_code" },
-                RedirectUris = new List<string> { "https://example.com/callback" },
-                CorsOrigins = new List<string> { "http://LOCALHOST:5173/", "http://localhost:5173" }
-            });
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            AdminMutationResult result = await service.UpdateClientAuthenticationAsync(ClientId.Create(clientId),
+                new ClientAuthenticationInputModel
+                {
+                    RequirePkce = true,
+                    RequireClientSecret = false,
+                    GrantTypes = new List<string> { "authorization_code" },
+                    RedirectUris = new List<string> { "https://example.com/callback" },
+                    CorsOrigins = new List<string> { "http://LOCALHOST:5173/", "http://localhost:5173" }
+                });
             Assert.True(result.Succeeded, result.ErrorMessage);
         });
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var client = await sp.GetRequiredService<ConfigurationDbContext>().Clients
+            Client client = await sp.GetRequiredService<ConfigurationDbContext>().Clients
                 .AsNoTracking()
                 .Include(entity => entity.AllowedCorsOrigins)
                 .SingleAsync(entity => entity.ClientId == clientId);
@@ -250,11 +257,11 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UpdateClientAuthenticationAsync_OverlongCollectionValues_ReturnsFieldErrorsAndDoesNotMutate()
     {
-        var clientId = $"length-edit-{Guid.NewGuid():N}";
+        string clientId = $"length-edit-{Guid.NewGuid():N}";
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            db.Clients.Add(new Client
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            db.Clients.Add(new Duende.IdentityServer.Models.Client
             {
                 ClientId = clientId,
                 ClientName = "Length Validation Client",
@@ -270,16 +277,22 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var service = sp.GetRequiredService<IClientDetailsService>();
+            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
             var input = new ClientAuthenticationInputModel
             {
                 GrantTypes = new List<string> { new('g', ValidationConstants.MaxGrantTypeLength + 1) },
-                RedirectUris = new List<string> { "https://example.com/" + new string('r', ValidationConstants.MaxClientRedirectUriLength) },
-                PostLogoutRedirectUris = new List<string> { "https://example.com/" + new string('p', ValidationConstants.MaxClientPostLogoutRedirectUriLength) },
-                CorsOrigins = new List<string> { "https://example.com/" + new string('c', ValidationConstants.MaxClientCorsOriginLength) }
+                RedirectUris = new List<string>
+                    { "https://example.com/" + new string('r', ValidationConstants.MaxClientRedirectUriLength) },
+                PostLogoutRedirectUris = new List<string>
+                {
+                    "https://example.com/" + new string('p', ValidationConstants.MaxClientPostLogoutRedirectUriLength)
+                },
+                CorsOrigins = new List<string>
+                    { "https://example.com/" + new string('c', ValidationConstants.MaxClientCorsOriginLength) }
             };
 
-            var result = await service.UpdateClientAuthenticationAsync(ClientId.Create(clientId), input);
+            AdminMutationResult result =
+                await service.UpdateClientAuthenticationAsync(ClientId.Create(clientId), input);
 
             Assert.False(result.Succeeded);
             Assert.Equal(AdminMutationStatus.ValidationFailed, result.Status);
@@ -291,8 +304,8 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            var entity = await db.Clients
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            Client entity = await db.Clients
                 .AsNoTracking()
                 .Include(client => client.AllowedGrantTypes)
                 .Include(client => client.RedirectUris)
@@ -301,7 +314,8 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
                 .SingleAsync(client => client.ClientId == clientId);
             Assert.Equal("authorization_code", entity.AllowedGrantTypes.Single().GrantType);
             Assert.Equal("https://example.com/callback", entity.RedirectUris.Single().RedirectUri);
-            Assert.Equal("https://example.com/signed-out", entity.PostLogoutRedirectUris.Single().PostLogoutRedirectUri);
+            Assert.Equal("https://example.com/signed-out",
+                entity.PostLogoutRedirectUris.Single().PostLogoutRedirectUri);
             Assert.Equal("https://example.com", entity.AllowedCorsOrigins.Single().Origin);
         });
     }
@@ -309,13 +323,13 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
     [Fact]
     public async Task UpdateClientTokenSettingsAsync_InvalidTokenLifetime_FailsValidation()
     {
-        var tag = Guid.NewGuid().ToString("N");
-        var clientId = $"{tag}-client";
+        string tag = Guid.NewGuid().ToString("N");
+        string clientId = $"{tag}-client";
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var db = sp.GetRequiredService<ConfigurationDbContext>();
-            db.Clients.Add(new Client
+            ConfigurationDbContext db = sp.GetRequiredService<ConfigurationDbContext>();
+            db.Clients.Add(new Duende.IdentityServer.Models.Client
             {
                 ClientId = clientId,
                 ClientName = "Test Client",
@@ -329,15 +343,17 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            var detailsService = sp.GetRequiredService<IClientDetailsService>();
+            IClientDetailsService detailsService = sp.GetRequiredService<IClientDetailsService>();
 
             var input = new ClientTokenSettingsInputModel
             {
                 AccessTokenLifetime = TokenLifetime.FromSeconds(-1),
                 IdentityTokenLifetime = TokenLifetime.FromSeconds(300
-            )};
+                )
+            };
 
-            var result = await detailsService.UpdateClientTokenSettingsAsync(ClientId.Create(clientId), input);
+            AdminMutationResult result =
+                await detailsService.UpdateClientTokenSettingsAsync(ClientId.Create(clientId), input);
 
             Assert.False(result.Succeeded);
         });

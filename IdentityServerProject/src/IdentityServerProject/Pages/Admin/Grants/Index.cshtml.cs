@@ -18,25 +18,19 @@ public class IndexModel : PageModel
         _options = options.Value;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public int PageNumber { get; set; } = 1;
+    [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
 
-    [BindProperty(SupportsGet = true)]
-    public string? SubjectId { get; set; }
+    [BindProperty(SupportsGet = true)] public string? SubjectId { get; set; }
 
-    [BindProperty(SupportsGet = true)]
-    public string? ClientId { get; set; }
+    [BindProperty(SupportsGet = true)] public string? ClientId { get; set; }
 
-    [BindProperty(SupportsGet = true)]
-    public string? TypeFilter { get; set; }
+    [BindProperty(SupportsGet = true)] public string? TypeFilter { get; set; }
 
     public ListResult<GrantListItem> Grants { get; private set; } = default!;
 
-    [TempData]
-    public string? SuccessMessage { get; set; }
+    [TempData] public string? SuccessMessage { get; set; }
 
-    [TempData]
-    public string? ErrorMessage { get; set; }
+    [TempData] public string? ErrorMessage { get; set; }
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
@@ -55,7 +49,7 @@ public class IndexModel : PageModel
         if (key.IsEmpty)
             return NotFound();
 
-        var result = await _grantListService.RevokeGrantAsync(key, cancellationToken);
+        RevokeGrantResult result = await _grantListService.RevokeGrantAsync(key, cancellationToken);
         if (result == RevokeGrantResult.NotFound)
             return NotFound();
 

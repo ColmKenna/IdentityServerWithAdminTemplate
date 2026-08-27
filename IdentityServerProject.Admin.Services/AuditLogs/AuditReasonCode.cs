@@ -5,10 +5,11 @@ using System.Text.Json.Serialization;
 namespace IdentityServerProject.Services.AuditLogs;
 
 /// <summary>
-/// Strongly typed domain value object representing an audit log reason code.
+///     Strongly typed domain value object representing an audit log reason code.
 /// </summary>
 [JsonConverter(typeof(AuditReasonCodeJsonConverter))]
-public readonly record struct AuditReasonCode(string Value) : IComparable<AuditReasonCode>, IEquatable<AuditReasonCode>, IParsable<AuditReasonCode>
+public readonly record struct AuditReasonCode(string Value)
+    : IComparable<AuditReasonCode>, IEquatable<AuditReasonCode>, IParsable<AuditReasonCode>
 {
     public static readonly AuditReasonCode Empty = new(string.Empty);
 
@@ -35,15 +36,8 @@ public readonly record struct AuditReasonCode(string Value) : IComparable<AuditR
 
     public bool IsEmpty => string.IsNullOrWhiteSpace(Value);
 
-    public static AuditReasonCode From(string? value) => new(value?.Trim() ?? string.Empty);
-
-    public static implicit operator string(AuditReasonCode code) => code.Value ?? string.Empty;
-
-    public static explicit operator AuditReasonCode(string? value) => From(value);
-
-    public override string ToString() => Value ?? string.Empty;
-
-    public int CompareTo(AuditReasonCode other) => string.Compare(Value, other.Value, StringComparison.OrdinalIgnoreCase);
+    public int CompareTo(AuditReasonCode other) =>
+        string.Compare(Value, other.Value, StringComparison.OrdinalIgnoreCase);
 
     public static AuditReasonCode Parse(string s, IFormatProvider? provider = null) => From(s);
 
@@ -59,6 +53,14 @@ public readonly record struct AuditReasonCode(string Value) : IComparable<AuditR
         return true;
     }
 
+    public static AuditReasonCode From(string? value) => new(value?.Trim() ?? string.Empty);
+
+    public static implicit operator string(AuditReasonCode code) => code.Value ?? string.Empty;
+
+    public static explicit operator AuditReasonCode(string? value) => From(value);
+
+    public override string ToString() => Value ?? string.Empty;
+
     public static bool TryParse([NotNullWhen(true)] string? s, out AuditReasonCode result) =>
         TryParse(s, null, out result);
 }
@@ -72,8 +74,6 @@ public sealed class AuditReasonCodeJsonConverter : JsonConverter<AuditReasonCode
             : AuditReasonCode.Empty;
     }
 
-    public override void Write(Utf8JsonWriter writer, AuditReasonCode value, JsonSerializerOptions options)
-    {
+    public override void Write(Utf8JsonWriter writer, AuditReasonCode value, JsonSerializerOptions options) =>
         writer.WriteStringValue(value.Value ?? string.Empty);
-    }
 }

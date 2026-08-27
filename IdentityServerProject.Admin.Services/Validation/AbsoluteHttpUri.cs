@@ -1,16 +1,18 @@
 namespace IdentityServerProject.Services.Validation;
 
 /// <summary>
-/// Represents a validated absolute HTTP or HTTPS URI.
+///     Represents a validated absolute HTTP or HTTPS URI.
 /// </summary>
 public readonly record struct AbsoluteHttpUri
 {
-    public string Value { get; }
-
     public AbsoluteHttpUri(string value)
     {
         Value = value ?? string.Empty;
     }
+
+    public string Value { get; }
+
+    public bool IsEmpty => string.IsNullOrWhiteSpace(Value);
 
     public static AbsoluteHttpUri Create(string value) => new(value);
 
@@ -23,7 +25,7 @@ public readonly record struct AbsoluteHttpUri
             return false;
         }
 
-        var trimmed = candidate.Trim();
+        string trimmed = candidate.Trim();
         if (trimmed.Length > maxLength)
         {
             uri = default;
@@ -31,7 +33,7 @@ public readonly record struct AbsoluteHttpUri
             return false;
         }
 
-        if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var parsed) ||
+        if (!Uri.TryCreate(trimmed, UriKind.Absolute, out Uri? parsed) ||
             (parsed.Scheme != Uri.UriSchemeHttp && parsed.Scheme != Uri.UriSchemeHttps))
         {
             uri = default;
@@ -43,8 +45,6 @@ public readonly record struct AbsoluteHttpUri
         errorMessage = null;
         return true;
     }
-
-    public bool IsEmpty => string.IsNullOrWhiteSpace(Value);
 
     public static implicit operator string(AbsoluteHttpUri uri) => uri.Value ?? string.Empty;
     public static explicit operator AbsoluteHttpUri(string value) => Create(value);

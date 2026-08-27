@@ -1,5 +1,5 @@
 @page
-@model IdentityServerProject.Pages.Admin.ApiScopes.CreateModel
+@model CreateModel
 @{
     ViewData["Title"] = "Create API Scope";
 }
@@ -10,7 +10,8 @@
         <p class="page-sub">Add a new API scope that clients can request access to.</p>
     </div>
     <a asp-page="./Index" class="back-link">
-        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
@@ -24,14 +25,15 @@
 
         <div class="form-field">
             <label class="form-label" for="scope-name">Scope Name *</label>
-            <input class="form-control" id="scope-name" asp-for="Input.Name" />
+            <input class="form-control" id="scope-name" asp-for="Input.Name"/>
             <span asp-validation-for="Input.Name" class="field-validation-error"></span>
-            <small class="form-text">A unique identifier for this scope (e.g., 'api.read', 'api.write'). This cannot be changed after creation.</small>
+            <small class="form-text">A unique identifier for this scope (e.g., 'api.read', 'api.write'). This cannot be
+                changed after creation.</small>
         </div>
 
         <div class="form-field">
             <label class="form-label" for="scope-display-name">Display Name</label>
-            <input class="form-control" id="scope-display-name" asp-for="Input.DisplayName" />
+            <input class="form-control" id="scope-display-name" asp-for="Input.DisplayName"/>
             <span asp-validation-for="Input.DisplayName" class="field-validation-error"></span>
         </div>
 

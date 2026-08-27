@@ -7,12 +7,12 @@ public readonly record struct Pagination(int PageNumber, int PageSize, int Skip)
 
     public static Pagination Normalize(int pageNumber, int pageSize)
     {
-        var normalizedPageSize = Math.Clamp(pageSize, MinPageSize, MaxPageSize);
-        var maximumPageNumber = (int)Math.Min(
+        int normalizedPageSize = Math.Clamp(pageSize, MinPageSize, MaxPageSize);
+        int maximumPageNumber = (int)Math.Min(
             int.MaxValue,
-            ((long)int.MaxValue / normalizedPageSize) + 1);
-        var normalizedPageNumber = Math.Clamp(pageNumber, 1, maximumPageNumber);
-        var skip = (normalizedPageNumber - 1) * normalizedPageSize;
+            (long)int.MaxValue / normalizedPageSize + 1);
+        int normalizedPageNumber = Math.Clamp(pageNumber, 1, maximumPageNumber);
+        int skip = (normalizedPageNumber - 1) * normalizedPageSize;
         return new Pagination(normalizedPageNumber, normalizedPageSize, skip);
     }
 

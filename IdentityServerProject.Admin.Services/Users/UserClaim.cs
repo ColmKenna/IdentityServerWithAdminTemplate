@@ -1,7 +1,7 @@
 namespace IdentityServerProject.Services.Users;
 
 /// <summary>
-/// Strongly typed domain value object representing a user claim type and value pair.
+///     Strongly typed domain value object representing a user claim type and value pair.
 /// </summary>
 public readonly record struct UserClaim(string Type, string Value)
 {

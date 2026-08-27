@@ -7,23 +7,24 @@ using Moq;
 namespace IdentityServerProject.Admin.Tests.ApiScopes;
 
 /// <summary>
-/// Unit tests for <see cref="IndexModel"/> handler logic, exercised directly
-/// against a mocked <see cref="IApiScopeListService"/> (no HTTP pipeline involved).
+///     Unit tests for <see cref="IndexModel" /> handler logic, exercised directly
+///     against a mocked <see cref="IApiScopeListService" /> (no HTTP pipeline involved).
 /// </summary>
 public class ApiScopesIndexPageModelTests
 {
+    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
+
     private static ListResult<ApiScopeListItem> MakeResult(int pageNumber = 1, int pageSize = 10) => new()
     {
         Items = new[]
         {
-            new ApiScopeListItem { Name = "sales.read", DisplayName = "Read Sales Data", Enabled = true, ClientReferenceCount = 2 },
+            new ApiScopeListItem
+                { Name = "sales.read", DisplayName = "Read Sales Data", Enabled = true, ClientReferenceCount = 2 }
         },
         TotalCount = 1,
         PageNumber = pageNumber,
-        PageSize = pageSize,
+        PageSize = pageSize
     };
-
-    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
 
     [Fact]
     public async Task OnGetAsync_NoQueryParameters_CallsServiceWithNullFilterAndFirstPage()
@@ -36,13 +37,14 @@ public class ApiScopesIndexPageModelTests
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiScopesAsync(new ListQuery(null, DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiScopesAsync(new ListQuery(null, DefaultPagination), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
     public async Task OnGetAsync_ServiceReturnsResult_PopulatesApiScopesProperty()
     {
-        var expected = MakeResult();
+        ListResult<ApiScopeListItem> expected = MakeResult();
         var mock = new Mock<IApiScopeListService>();
         mock.Setup(s => s.GetApiScopesAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
@@ -64,7 +66,8 @@ public class ApiScopesIndexPageModelTests
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiScopesAsync(new ListQuery("sales", DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiScopesAsync(new ListQuery("sales", DefaultPagination), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -78,7 +81,8 @@ public class ApiScopesIndexPageModelTests
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetApiScopesAsync(new ListQuery(null, DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(s => s.GetApiScopesAsync(new ListQuery(null, DefaultPagination), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -90,7 +94,7 @@ public class ApiScopesIndexPageModelTests
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
-        var result = await model.OnPostDeleteAsync("sales.read", CancellationToken.None);
+        IActionResult result = await model.OnPostDeleteAsync("sales.read", CancellationToken.None);
 
         Assert.IsType<RedirectToPageResult>(result);
         Assert.Null(model.DeleteErrorMessage);
@@ -105,7 +109,7 @@ public class ApiScopesIndexPageModelTests
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
-        var result = await model.OnPostDeleteAsync("sales.read", CancellationToken.None);
+        IActionResult result = await model.OnPostDeleteAsync("sales.read", CancellationToken.None);
 
         Assert.IsType<RedirectToPageResult>(result);
         Assert.Contains("sales.read", model.DeleteErrorMessage);
@@ -120,7 +124,7 @@ public class ApiScopesIndexPageModelTests
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
-        var result = await model.OnPostDeleteAsync("missing.scope", CancellationToken.None);
+        IActionResult result = await model.OnPostDeleteAsync("missing.scope", CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -131,7 +135,7 @@ public class ApiScopesIndexPageModelTests
         var mock = new Mock<IApiScopeListService>();
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
-        var result = await model.OnPostDeleteAsync("   ", CancellationToken.None);
+        IActionResult result = await model.OnPostDeleteAsync("   ", CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
         mock.Verify(s => s.DeleteApiScopeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);

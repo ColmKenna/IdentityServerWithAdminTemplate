@@ -5,10 +5,11 @@ using System.Text.Json.Serialization;
 namespace IdentityServerProject.Services.AuditLogs;
 
 /// <summary>
-/// Strongly typed domain value object representing an audit log category.
+///     Strongly typed domain value object representing an audit log category.
 /// </summary>
 [JsonConverter(typeof(AuditCategoryJsonConverter))]
-public readonly record struct AuditCategory(string Value) : IComparable<AuditCategory>, IEquatable<AuditCategory>, IParsable<AuditCategory>
+public readonly record struct AuditCategory(string Value)
+    : IComparable<AuditCategory>, IEquatable<AuditCategory>, IParsable<AuditCategory>
 {
     public static readonly AuditCategory Empty = new(string.Empty);
     public static readonly AuditCategory User = new("User");
@@ -21,14 +22,6 @@ public readonly record struct AuditCategory(string Value) : IComparable<AuditCat
     public static readonly AuditCategory Role = new("Role");
 
     public bool IsEmpty => string.IsNullOrWhiteSpace(Value);
-
-    public static AuditCategory Create(string? value) => new(value?.Trim() ?? string.Empty);
-
-    public static implicit operator string(AuditCategory category) => category.Value ?? string.Empty;
-
-    public static explicit operator AuditCategory(string? value) => Create(value);
-
-    public override string ToString() => Value ?? string.Empty;
 
     public int CompareTo(AuditCategory other) => string.Compare(Value, other.Value, StringComparison.OrdinalIgnoreCase);
 
@@ -46,6 +39,14 @@ public readonly record struct AuditCategory(string Value) : IComparable<AuditCat
         return true;
     }
 
+    public static AuditCategory Create(string? value) => new(value?.Trim() ?? string.Empty);
+
+    public static implicit operator string(AuditCategory category) => category.Value ?? string.Empty;
+
+    public static explicit operator AuditCategory(string? value) => Create(value);
+
+    public override string ToString() => Value ?? string.Empty;
+
     public static bool TryParse([NotNullWhen(true)] string? s, out AuditCategory result) =>
         TryParse(s, null, out result);
 }
@@ -59,8 +60,6 @@ public sealed class AuditCategoryJsonConverter : JsonConverter<AuditCategory>
             : AuditCategory.Empty;
     }
 
-    public override void Write(Utf8JsonWriter writer, AuditCategory value, JsonSerializerOptions options)
-    {
+    public override void Write(Utf8JsonWriter writer, AuditCategory value, JsonSerializerOptions options) =>
         writer.WriteStringValue(value.Value ?? string.Empty);
-    }
 }

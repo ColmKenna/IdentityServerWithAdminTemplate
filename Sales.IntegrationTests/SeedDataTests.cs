@@ -1,10 +1,12 @@
 using Duende.IdentityServer.EntityFramework.DbContexts;
+using Duende.IdentityServer.EntityFramework.Options;
 using IdentityServerProject;
 using IdentityServerProject.Data;
 using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 
 namespace Sales.Tests;
@@ -23,8 +25,8 @@ public class SeedDataTests
     {
         var services = new ServiceCollection();
 
-        services.AddSingleton(new Duende.IdentityServer.EntityFramework.Options.ConfigurationStoreOptions());
-        services.AddSingleton(new Duende.IdentityServer.EntityFramework.Options.OperationalStoreOptions());
+        services.AddSingleton(new ConfigurationStoreOptions());
+        services.AddSingleton(new OperationalStoreOptions());
 
         services.AddDbContext<ApplicationDbContext>(o => o.UseInMemoryDatabase($"{dbName}-identity"));
         services.AddDbContext<ConfigurationDbContext>(o => o.UseInMemoryDatabase($"{dbName}-config"),
@@ -43,13 +45,13 @@ public class SeedDataTests
 
     private static async Task SeedOnceAsync(ServiceProvider provider)
     {
-        using var scope = provider.CreateScope();
-        var services = scope.ServiceProvider;
+        using IServiceScope scope = provider.CreateScope();
+        IServiceProvider services = scope.ServiceProvider;
 
         var clients = new List<SeedClientSpec>
         {
             new("razorclient", "Sales Razor Client", AbsoluteHttpUri.Create(RazorUri), RazorSecret),
-            new("blazorclient", "Sales Blazor Client", AbsoluteHttpUri.Create(BlazorUri), BlazorSecret),
+            new("blazorclient", "Sales Blazor Client", AbsoluteHttpUri.Create(BlazorUri), BlazorSecret)
         };
 
         await SeedData.SeedAsync(
@@ -65,55 +67,57 @@ public class SeedDataTests
     [Fact]
     public async Task SeedAsync_CreatesExpectedClientsRolesAndUsers()
     {
-        using var provider = BuildProvider(nameof(SeedAsync_CreatesExpectedClientsRolesAndUsers));
+        using ServiceProvider provider = BuildProvider(nameof(SeedAsync_CreatesExpectedClientsRolesAndUsers));
 
         await SeedOnceAsync(provider);
 
-        using var scope = provider.CreateScope();
-        var configDb = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        using IServiceScope scope = provider.CreateScope();
+        ConfigurationDbContext configDb = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+        UserManager<ApplicationUser> userManager =
+            scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        RoleManager<IdentityRole> roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
         Assert.Equal(2, configDb.Clients.Count());
         Assert.Contains(configDb.Clients, c => c.ClientId == "razorclient");
         Assert.Contains(configDb.Clients, c => c.ClientId == "blazorclient");
 
-        Assert.True(await roleManager.RoleExistsAsync(IdentityServerProject.Config.SysAdminRole));
+        Assert.True(await roleManager.RoleExistsAsync(Config.SysAdminRole));
 
-        var admin = await userManager.FindByNameAsync("admin@sales.local");
+        ApplicationUser? admin = await userManager.FindByNameAsync("admin@sales.local");
         Assert.NotNull(admin);
-        Assert.True(await userManager.IsInRoleAsync(admin!, IdentityServerProject.Config.SysAdminRole));
+        Assert.True(await userManager.IsInRoleAsync(admin!, Config.SysAdminRole));
 
-        var testUser = await userManager.FindByNameAsync("testuser@sales.local");
+        ApplicationUser? testUser = await userManager.FindByNameAsync("testuser@sales.local");
         Assert.NotNull(testUser);
-        Assert.False(await userManager.IsInRoleAsync(testUser!, IdentityServerProject.Config.SysAdminRole));
+        Assert.False(await userManager.IsInRoleAsync(testUser!, Config.SysAdminRole));
     }
 
     [Fact]
     public async Task SeedAsync_IsIdempotent_WhenRunTwice()
     {
-        using var provider = BuildProvider(nameof(SeedAsync_IsIdempotent_WhenRunTwice));
+        using ServiceProvider provider = BuildProvider(nameof(SeedAsync_IsIdempotent_WhenRunTwice));
 
         await SeedOnceAsync(provider);
         await SeedOnceAsync(provider);
 
-        using var scope = provider.CreateScope();
-        var configDb = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        using IServiceScope scope = provider.CreateScope();
+        ConfigurationDbContext configDb = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+        UserManager<ApplicationUser> userManager =
+            scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
         Assert.Equal(2, configDb.Clients.Count());
         Assert.Equal(4, configDb.IdentityResources.Count());
         Assert.Single(configDb.ApiScopes);
         Assert.Single(configDb.ApiResources);
 
-        var admins = userManager.Users.Count(u => u.UserName == "admin@sales.local");
+        int admins = userManager.Users.Count(u => u.UserName == "admin@sales.local");
         Assert.Equal(1, admins);
     }
 
     [Fact]
     public async Task SeedIfDevelopmentAsync_RunsSeed_OnlyInDevelopmentEnvironment()
     {
-        var ranInDevelopment = false;
+        bool ranInDevelopment = false;
         await DevelopmentSeeder.SeedIfDevelopmentAsync(new FakeHostEnvironment(Environments.Development), () =>
         {
             ranInDevelopment = true;
@@ -121,7 +125,7 @@ public class SeedDataTests
         });
         Assert.True(ranInDevelopment);
 
-        var ranInProduction = false;
+        bool ranInProduction = false;
         await DevelopmentSeeder.SeedIfDevelopmentAsync(new FakeHostEnvironment(Environments.Production), () =>
         {
             ranInProduction = true;
@@ -140,7 +144,8 @@ public class SeedDataTests
         public string EnvironmentName { get; set; }
         public string ApplicationName { get; set; } = "Sales.Tests";
         public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
-        public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } =
-            new Microsoft.Extensions.FileProviders.NullFileProvider();
+
+        public IFileProvider ContentRootFileProvider { get; set; } =
+            new NullFileProvider();
     }
 }

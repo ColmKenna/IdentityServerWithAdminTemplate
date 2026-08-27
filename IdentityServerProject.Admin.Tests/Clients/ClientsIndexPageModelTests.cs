@@ -6,42 +6,46 @@ using Moq;
 namespace IdentityServerProject.Admin.Tests.Clients;
 
 /// <summary>
-/// Unit tests for <see cref="IndexModel"/> handler logic, exercised directly
-/// against a mocked <see cref="IClientListService"/> (no HTTP pipeline involved).
+///     Unit tests for <see cref="IndexModel" /> handler logic, exercised directly
+///     against a mocked <see cref="IClientListService" /> (no HTTP pipeline involved).
 /// </summary>
 public class ClientsIndexPageModelTests
 {
+    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
+
     private static ListResult<ClientListItem> MakeResult(int pageNumber = 1, int pageSize = 10) => new()
     {
         Items = new[]
         {
-            new ClientListItem { ClientId = "c1", ClientName = "Client One", ClientType = "Authorization Code", Enabled = true },
+            new ClientListItem
+                { ClientId = "c1", ClientName = "Client One", ClientType = "Authorization Code", Enabled = true }
         },
         TotalCount = 1,
         PageNumber = pageNumber,
-        PageSize = pageSize,
+        PageSize = pageSize
     };
-
-    private static Pagination DefaultPagination => Pagination.From(1, TestOptions.PageSize);
 
     [Fact]
     public async Task OnGetAsync_NoQueryParameters_CallsServiceWithNullFilterAndFirstPage()
     {
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()))
+        mock.Setup(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == DefaultPagination),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole);
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(
+            s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == DefaultPagination),
+                It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task OnGetAsync_ServiceReturnsResult_PopulatesClientsProperty()
     {
-        var expected = MakeResult();
+        ListResult<ClientListItem> expected = MakeResult();
         var mock = new Mock<IClientListService>();
         mock.Setup(s => s.GetClientsAsync(It.IsAny<ListQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
@@ -57,13 +61,17 @@ public class ClientsIndexPageModelTests
     public async Task OnGetAsync_FilterSet_PassesFilterToService()
     {
         var mock = new Mock<IClientListService>();
-        mock.Setup(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == "portal" && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()))
+        mock.Setup(s =>
+                s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == "portal" && q.Pagination == DefaultPagination),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeResult());
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { Filter = "portal" };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == "portal" && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(
+            s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == "portal" && q.Pagination == DefaultPagination),
+                It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -72,13 +80,15 @@ public class ClientsIndexPageModelTests
         var page3 = Pagination.From(3, TestOptions.PageSize);
         var mock = new Mock<IClientListService>();
         mock.Setup(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Pagination == page3), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(MakeResult(pageNumber: 3));
+            .ReturnsAsync(MakeResult(3));
 
         var model = new IndexModel(mock.Object, TestOptions.AdminConsole) { PageNumber = 3 };
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == page3), It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(
+            s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == page3),
+                It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -92,6 +102,8 @@ public class ClientsIndexPageModelTests
 
         await model.OnGetAsync(CancellationToken.None);
 
-        mock.Verify(s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == DefaultPagination), It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(
+            s => s.GetClientsAsync(It.Is<ListQuery>(q => q.Filter == null && q.Pagination == DefaultPagination),
+                It.IsAny<CancellationToken>()), Times.Once);
     }
 }

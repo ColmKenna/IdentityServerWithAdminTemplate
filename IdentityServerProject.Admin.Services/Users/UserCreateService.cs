@@ -4,8 +4,8 @@ namespace IdentityServerProject.Services.Users;
 
 public class UserCreateService : IUserCreateService
 {
-    private readonly IIdentityUserAdministrationStore _store;
     private readonly IAuditWriter _auditWriter;
+    private readonly IIdentityUserAdministrationStore _store;
 
     public UserCreateService(IIdentityUserAdministrationStore store, IAuditWriter auditWriter)
     {
@@ -13,21 +13,22 @@ public class UserCreateService : IUserCreateService
         _auditWriter = auditWriter;
     }
 
-    public async Task<UserCreateResult> CreateUserAsync(UserCreateInputModel input, CancellationToken cancellationToken = default)
+    public async Task<UserCreateResult> CreateUserAsync(UserCreateInputModel input,
+        CancellationToken cancellationToken = default)
     {
-        var userName = input.UserName?.Trim() ?? string.Empty;
+        string userName = input.UserName?.Trim() ?? string.Empty;
 
         try
         {
-            var outcome = await _store.CreateUserAsync(input, cancellationToken);
-            var result = outcome.Result;
-            var reasonCode = outcome.ReasonCode;
+            UserCreateOutcome outcome = await _store.CreateUserAsync(input, cancellationToken);
+            UserCreateResult result = outcome.Result;
+            AuditReasonCode reasonCode = outcome.ReasonCode;
 
             if (!result.Success)
             {
                 await _auditWriter.WriteAsync(new AdminAuditEvent(
                     AuditCategory.User, AuditAction.Create, AuditOutcome.Denied, reasonCode,
-                    TargetId: userName, TargetName: userName,
+                    userName, userName,
                     Details: "User creation validation failed."), cancellationToken);
 
                 return result;
@@ -35,7 +36,7 @@ public class UserCreateService : IUserCreateService
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.User, AuditAction.Create, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
-                TargetId: result.UserId, TargetName: userName,
+                result.UserId, userName,
                 Details: $"Created user '{userName}'"), cancellationToken);
 
             return result;
@@ -44,7 +45,7 @@ public class UserCreateService : IUserCreateService
         {
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.User, AuditAction.Create, AuditOutcome.Failed, AuditReasonCode.PersistenceFailure,
-                TargetId: userName, TargetName: userName,
+                userName, userName,
                 Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
             throw;
         }

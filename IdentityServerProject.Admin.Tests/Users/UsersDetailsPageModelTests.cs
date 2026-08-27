@@ -42,12 +42,12 @@ public class UsersDetailsPageModelTests
         var service = new Mock<IUserDetailsService>();
         service.Setup(s => s.UnlockUserAsync(UserId.Create("user-1"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserUnlockResult(UserUnlockStatus.Failed, Array.Empty<string>()));
-        var model = CreateModel(service);
+        DetailsModel model = CreateModel(service);
         model.Id = "user-1";
 
-        var result = await model.OnPostUnlockAsync(CancellationToken.None);
+        IActionResult result = await model.OnPostUnlockAsync(CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("overview", redirect.RouteValues!["tab"]);
         Assert.Equal("Unable to unlock the user account.", model.ErrorMessage);
     }
@@ -58,10 +58,10 @@ public class UsersDetailsPageModelTests
         var service = new Mock<IUserDetailsService>();
         service.Setup(s => s.AddRoleAsync(UserId.Create("user-1"), "missing-role", It.IsAny<CancellationToken>()))
             .ReturnsAsync(RoleChangeResult.Failed("Role not found."));
-        var model = CreateModel(service);
+        DetailsModel model = CreateModel(service);
         model.Id = "user-1";
 
-        var result = await model.OnPostAddRoleAsync("missing-role", CancellationToken.None);
+        IActionResult result = await model.OnPostAddRoleAsync("missing-role", CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -70,14 +70,16 @@ public class UsersDetailsPageModelTests
     public async Task OnPostRevokeUserAccessAsync_ServiceFailure_RedirectsToAccessWithServiceError()
     {
         var service = new Mock<IUserDetailsService>();
-        service.Setup(s => s.RevokeUserAccessAsync(new UserActionContext(UserId.Create("user-1"), UserId.Create("admin")), It.IsAny<CancellationToken>()))
+        service.Setup(s =>
+                s.RevokeUserAccessAsync(new UserActionContext(UserId.Create("user-1"), UserId.Create("admin")),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserAccessRevokeResult.Failed("The current administrator cannot revoke their own access."));
-        var model = CreateModel(service);
+        DetailsModel model = CreateModel(service);
         model.Id = "user-1";
 
-        var result = await model.OnPostRevokeUserAccessAsync(CancellationToken.None);
+        IActionResult result = await model.OnPostRevokeUserAccessAsync(CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("access", redirect.RouteValues!["tab"]);
         Assert.Equal("The current administrator cannot revoke their own access.", model.ErrorMessage);
     }
@@ -86,15 +88,16 @@ public class UsersDetailsPageModelTests
     public async Task OnPostDeleteAsync_InvalidConfirmation_RedirectsWithoutCallingService()
     {
         var service = new Mock<IUserDetailsService>();
-        var model = CreateModel(service);
+        DetailsModel model = CreateModel(service);
         model.Id = "user-1";
         model.DeleteConfirmation = "delete";
 
-        var result = await model.OnPostDeleteAsync(CancellationToken.None);
+        IActionResult result = await model.OnPostDeleteAsync(CancellationToken.None);
 
-        var redirect = Assert.IsType<RedirectToPageResult>(result);
+        RedirectToPageResult redirect = Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal("danger", redirect.RouteValues!["tab"]);
         Assert.Equal("Type DELETE exactly to confirm permanent deletion.", model.ErrorMessage);
-        service.Verify(s => s.DeleteUserAsync(It.IsAny<UserActionContext>(), It.IsAny<CancellationToken>()), Times.Never);
+        service.Verify(s => s.DeleteUserAsync(It.IsAny<UserActionContext>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }

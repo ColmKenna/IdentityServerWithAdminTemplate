@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using IdentityServerProject.Services.ApiScopes;
+using IdentityServerProject.Services.Scopes;
+using IdentityServerProject.Services.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -29,8 +31,7 @@ public class CreateModel : PageModel
         _apiScopeEditorService = apiScopeEditorService;
     }
 
-    [BindProperty]
-    public CreateInputModel Input { get; set; } = new();
+    [BindProperty] public CreateInputModel Input { get; set; } = new();
 
     public void OnGet()
     {
@@ -47,9 +48,9 @@ public class CreateModel : PageModel
             return Page();
         }
 
-        var result = await _apiScopeEditorService.CreateAsync(
+        AdminMutationResult result = await _apiScopeEditorService.CreateAsync(
             new CreateApiScopeCommand(
-                IdentityServerProject.Services.Scopes.ScopeName.Create(Input.Name),
+                ScopeName.Create(Input.Name),
                 Input.DisplayName,
                 Input.Description),
             cancellationToken);

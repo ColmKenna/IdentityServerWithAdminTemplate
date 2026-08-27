@@ -20,8 +20,7 @@ public class SecretsModel : PageModel
         _secretRevealService = secretRevealService;
     }
 
-    [BindProperty(SupportsGet = true)]
-    public string Id { get; set; } = string.Empty;
+    [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
     [BindProperty]
     [StringLength(ValidationConstants.MaxClientSecretDescriptionLength)]
@@ -33,11 +32,9 @@ public class SecretsModel : PageModel
 
     public string? GeneratedSecret { get; set; }
 
-    [TempData]
-    public string? SecretRevealHandle { get; set; }
+    [TempData] public string? SecretRevealHandle { get; set; }
 
-    [TempData]
-    public string? RevokeErrorMessage { get; set; }
+    [TempData] public string? RevokeErrorMessage { get; set; }
 
     public ClientSecretsModel Client { get; private set; } = default!;
 
@@ -48,16 +45,18 @@ public class SecretsModel : PageModel
         if (string.IsNullOrWhiteSpace(Id))
             return NotFound();
 
-        var handle = SecretRevealHandle;
+        string? handle = SecretRevealHandle;
         if (!string.IsNullOrEmpty(handle))
         {
-            var reveal = await _secretRevealService.ConsumeAsync(
-                new SecretRevealTarget(SecretRevealPurpose.ClientSecretGenerated, Id), IdentityServerProject.Services.SecretReveals.SecretRevealHandle.Create(handle), cancellationToken);
+            SecretRevealConsumeResult reveal = await _secretRevealService.ConsumeAsync(
+                new SecretRevealTarget(SecretRevealPurpose.ClientSecretGenerated, Id),
+                Services.SecretReveals.SecretRevealHandle.Create(handle), cancellationToken);
             if (reveal.Status == SecretRevealConsumeStatus.Revealed)
                 GeneratedSecret = reveal.Plaintext;
         }
 
-        var secrets = await _clientDetailsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
+        ClientSecretsModel? secrets =
+            await _clientDetailsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
         if (secrets == null)
             return NotFound();
 
@@ -73,26 +72,24 @@ public class SecretsModel : PageModel
         if (!ModelState.IsValid)
             return await LoadPageAsync(cancellationToken);
 
-        var result = await _clientDetailsService.GenerateClientSecretAsync(ClientId.Create(Id), Description, Expiration, cancellationToken);
+        ClientSecretGenerateResult result =
+            await _clientDetailsService.GenerateClientSecretAsync(ClientId.Create(Id), Description, Expiration,
+                cancellationToken);
         if (!result.Success)
         {
             if (result.Status == AdminMutationStatus.NotFound)
                 return NotFound();
 
-            foreach (var (field, messages) in result.Errors)
-            {
-                foreach (var message in messages)
-                {
-                    ModelState.AddModelError(field, message);
-                }
-            }
+            foreach ((string field, string[] messages) in result.Errors)
+            foreach (string message in messages)
+                ModelState.AddModelError(field, message);
 
             return await LoadPageAsync(cancellationToken);
         }
 
         if (!string.IsNullOrEmpty(result.PlaintextSecret))
         {
-            var ticket = await _secretRevealService.IssueAsync(
+            SecretRevealTicket ticket = await _secretRevealService.IssueAsync(
                 new SecretRevealTarget(SecretRevealPurpose.ClientSecretGenerated, Id),
                 result.PlaintextSecret,
                 cancellationToken);
@@ -107,7 +104,8 @@ public class SecretsModel : PageModel
         if (string.IsNullOrWhiteSpace(Id))
             return NotFound();
 
-        var result = await _clientDetailsService.RevokeClientSecretAsync(ClientId.Create(Id), secretId, cancellationToken);
+        ClientSecretRevokeResult result =
+            await _clientDetailsService.RevokeClientSecretAsync(ClientId.Create(Id), secretId, cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage is "Client not found." or "Secret not found.")
@@ -121,7 +119,8 @@ public class SecretsModel : PageModel
 
     private async Task<IActionResult> LoadPageAsync(CancellationToken cancellationToken)
     {
-        var secrets = await _clientDetailsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
+        ClientSecretsModel? secrets =
+            await _clientDetailsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
         if (secrets == null)
             return NotFound();
 

@@ -14,8 +14,6 @@ public class IndexModel : PageModel
 
     public DiagnosticsModel Diagnostics { get; private set; } = new();
 
-    public async Task OnGetAsync(CancellationToken cancellationToken)
-    {
+    public async Task OnGetAsync(CancellationToken cancellationToken) =>
         Diagnostics = await _diagnosticsService.GetDiagnosticsAsync(cancellationToken);
-    }
 }

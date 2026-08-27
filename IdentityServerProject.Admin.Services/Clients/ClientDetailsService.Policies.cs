@@ -14,13 +14,14 @@ public partial class ClientDetailsService
         return grantTypes.Any(g => g != GrantTypeClientCredentials);
     }
 
-    private static (bool HasDrifted, string? DriftDetails) EvaluatePresetDrift(Client entity, List<string> currentGrantTypes)
+    private static (bool HasDrifted, string? DriftDetails) EvaluatePresetDrift(Client entity,
+        List<string> currentGrantTypes)
     {
-        var preset = entity.Properties.FirstOrDefault(p => p.Key == ClientCreateService.PresetPropertyKey)?.Value;
+        string? preset = entity.Properties.FirstOrDefault(p => p.Key == ClientCreateService.PresetPropertyKey)?.Value;
         if (string.IsNullOrWhiteSpace(preset))
             return (false, null);
 
-        var (expectedPkce, expectedSecret, expectedGrantTypes) = preset switch
+        (bool expectedPkce, bool expectedSecret, string[] expectedGrantTypes) = preset switch
         {
             "m2m" => (false, true, new[] { GrantTypeClientCredentials }),
             "spa-nobff" => (true, false, new[] { GrantTypeAuthorizationCode }),
@@ -29,20 +30,17 @@ public partial class ClientDetailsService
 
         var mismatches = new List<string>();
         if (entity.RequirePkce != expectedPkce)
-        {
-            mismatches.Add($"PKCE is {(entity.RequirePkce ? "required" : "optional")}, preset '{preset}' expects {(expectedPkce ? "required" : "optional")}");
-        }
+            mismatches.Add(
+                $"PKCE is {(entity.RequirePkce ? "required" : "optional")}, preset '{preset}' expects {(expectedPkce ? "required" : "optional")}");
 
         if (entity.RequireClientSecret != expectedSecret)
-        {
-            mismatches.Add($"Client secret is {(entity.RequireClientSecret ? "required" : "not required")}, preset '{preset}' expects {(expectedSecret ? "required" : "not required")}");
-        }
+            mismatches.Add(
+                $"Client secret is {(entity.RequireClientSecret ? "required" : "not required")}, preset '{preset}' expects {(expectedSecret ? "required" : "not required")}");
 
         var expectedSorted = expectedGrantTypes.OrderBy(g => g, StringComparer.Ordinal).ToList();
         if (!currentGrantTypes.SequenceEqual(expectedSorted, StringComparer.Ordinal))
-        {
-            mismatches.Add($"Grant types are [{string.Join(", ", currentGrantTypes)}], preset '{preset}' expects [{string.Join(", ", expectedSorted)}]");
-        }
+            mismatches.Add(
+                $"Grant types are [{string.Join(", ", currentGrantTypes)}], preset '{preset}' expects [{string.Join(", ", expectedSorted)}]");
 
         return mismatches.Count > 0
             ? (true, string.Join("; ", mismatches))
@@ -54,15 +52,18 @@ public partial class ClientDetailsService
         if (entity.Enabled)
             return (false, "Client must be disabled before it can be deleted.");
 
-        var disabledAtValue = entity.Properties.FirstOrDefault(p => p.Key == DisabledAtPropertyKey)?.Value;
-        if (!DateTime.TryParse(disabledAtValue, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var disabledAt))
-            return (false, $"Client must be disabled for at least {MinimumDisabledDaysBeforeDelete} days before it can be deleted.");
+        string? disabledAtValue = entity.Properties.FirstOrDefault(p => p.Key == DisabledAtPropertyKey)?.Value;
+        if (!DateTime.TryParse(disabledAtValue, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind,
+                out DateTime disabledAt))
+            return (false,
+                $"Client must be disabled for at least {MinimumDisabledDaysBeforeDelete} days before it can be deleted.");
 
-        var daysDisabled = (utcNow.UtcDateTime - disabledAt.ToUniversalTime()).TotalDays;
+        double daysDisabled = (utcNow.UtcDateTime - disabledAt.ToUniversalTime()).TotalDays;
         if (daysDisabled < MinimumDisabledDaysBeforeDelete)
         {
-            var daysRemaining = MinimumDisabledDaysBeforeDelete - (int)Math.Floor(daysDisabled);
-            return (false, $"Client has been disabled for {(int)Math.Floor(daysDisabled)} day(s). It can be deleted in {daysRemaining} more day(s) (90-day retention rule).");
+            int daysRemaining = MinimumDisabledDaysBeforeDelete - (int)Math.Floor(daysDisabled);
+            return (false,
+                $"Client has been disabled for {(int)Math.Floor(daysDisabled)} day(s). It can be deleted in {daysRemaining} more day(s) (90-day retention rule).");
         }
 
         return (true, null);
@@ -70,7 +71,7 @@ public partial class ClientDetailsService
 
     private static string DeriveClientType(Client entity)
     {
-        var grantType = entity.AllowedGrantTypes.Select(g => g.GrantType).FirstOrDefault();
+        string? grantType = entity.AllowedGrantTypes.Select(g => g.GrantType).FirstOrDefault();
 
         return grantType switch
         {
@@ -86,7 +87,7 @@ public partial class ClientDetailsService
 
     private static string Prettify(string grantType)
     {
-        var words = grantType.Replace('_', ' ').Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        string[] words = grantType.Replace('_', ' ').Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return string.Join(" ", words.Select(w => CultureInfo.InvariantCulture.TextInfo.ToTitleCase(w)));
     }
 }

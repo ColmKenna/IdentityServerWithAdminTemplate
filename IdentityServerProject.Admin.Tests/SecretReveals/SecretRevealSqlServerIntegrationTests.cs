@@ -27,32 +27,31 @@ public sealed class SecretRevealSqlServerIntegrationTests
     {
         const string plaintext = "cross-instance-secret";
         SecretRevealTicket ticket;
-        await using (var issuer = BuildInstance("shared-actor"))
-        await using (var scope = issuer.CreateAsyncScope())
-        {
+        await using (ServiceProvider issuer = BuildInstance("shared-actor"))
+        await using (AsyncServiceScope scope = issuer.CreateAsyncScope())
             ticket = await scope.ServiceProvider.GetRequiredService<ISecretRevealService>().IssueAsync(
                 new SecretRevealTarget(SecretRevealPurpose.ClientCreated, "cross-instance-client"), plaintext);
-        }
 
-        await using (var verifier = BuildInstance("shared-actor"))
-        await using (var scope = verifier.CreateAsyncScope())
+        await using (ServiceProvider verifier = BuildInstance("shared-actor"))
+        await using (AsyncServiceScope scope = verifier.CreateAsyncScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var record = await db.SecretRevealRecords.AsNoTracking().SingleAsync(
-                reveal => reveal.TargetId == "cross-instance-client");
+            ApplicationDbContext db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            SecretRevealRecord record = await db.SecretRevealRecords.AsNoTracking()
+                .SingleAsync(reveal => reveal.TargetId == "cross-instance-client");
             Assert.Equal(32, record.HandleDigest.Length);
             Assert.DoesNotContain(ticket.Handle, record.ProtectedPayload, StringComparison.Ordinal);
             Assert.DoesNotContain(plaintext, record.ProtectedPayload, StringComparison.Ordinal);
             Assert.True(await db.DataProtectionKeys.AnyAsync());
 
-            var result = await scope.ServiceProvider.GetRequiredService<ISecretRevealService>().ConsumeAsync(
-                new SecretRevealTarget(SecretRevealPurpose.ClientCreated, "cross-instance-client"), ticket.Handle);
+            SecretRevealConsumeResult result = await scope.ServiceProvider.GetRequiredService<ISecretRevealService>()
+                .ConsumeAsync(
+                    new SecretRevealTarget(SecretRevealPurpose.ClientCreated, "cross-instance-client"), ticket.Handle);
             Assert.Equal(SecretRevealConsumeStatus.Revealed, result.Status);
             Assert.Equal(plaintext, result.Plaintext);
         }
 
-        await using var finalVerifier = BuildInstance("shared-actor");
-        await using var finalScope = finalVerifier.CreateAsyncScope();
+        await using ServiceProvider finalVerifier = BuildInstance("shared-actor");
+        await using AsyncServiceScope finalScope = finalVerifier.CreateAsyncScope();
         Assert.False(await finalScope.ServiceProvider.GetRequiredService<ApplicationDbContext>()
             .SecretRevealRecords.AnyAsync(reveal => reveal.TargetId == "cross-instance-client"));
     }
@@ -61,20 +60,18 @@ public sealed class SecretRevealSqlServerIntegrationTests
     public async Task TwoConcurrentSqlServerConsumers_ReceiveExactlyOnePlaintextResult()
     {
         SecretRevealTicket ticket;
-        await using (var issuer = BuildInstance("concurrent-actor"))
-        await using (var scope = issuer.CreateAsyncScope())
-        {
+        await using (ServiceProvider issuer = BuildInstance("concurrent-actor"))
+        await using (AsyncServiceScope scope = issuer.CreateAsyncScope())
             ticket = await scope.ServiceProvider.GetRequiredService<ISecretRevealService>().IssueAsync(
                 new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, "concurrent.api"),
                 "one-consumer-only");
-        }
 
         using var start = new Barrier(3);
-        var attempts = Enumerable.Range(0, 2).Select(_ => Task.Run(async () =>
+        Task<SecretRevealConsumeResult>[] attempts = Enumerable.Range(0, 2).Select(_ => Task.Run(async () =>
         {
-            await using var instance = BuildInstance("concurrent-actor");
-            await using var scope = instance.CreateAsyncScope();
-            var service = scope.ServiceProvider.GetRequiredService<ISecretRevealService>();
+            await using ServiceProvider instance = BuildInstance("concurrent-actor");
+            await using AsyncServiceScope scope = instance.CreateAsyncScope();
+            ISecretRevealService service = scope.ServiceProvider.GetRequiredService<ISecretRevealService>();
             start.SignalAndWait();
             return await service.ConsumeAsync(
                 new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, "concurrent.api"),
@@ -82,7 +79,7 @@ public sealed class SecretRevealSqlServerIntegrationTests
         })).ToArray();
 
         start.SignalAndWait();
-        var results = await Task.WhenAll(attempts);
+        SecretRevealConsumeResult[] results = await Task.WhenAll(attempts);
 
         Assert.Single(results, result =>
             result.Status == SecretRevealConsumeStatus.Revealed
@@ -108,7 +105,7 @@ public sealed class SecretRevealSqlServerIntegrationTests
         services.AddScoped<ISecretRevealStore, EfSecretRevealStore>();
         services.AddScoped<ISecretRevealService, SecretRevealService>();
 
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
         provider.GetRequiredService<IHttpContextAccessor>().HttpContext = new DefaultHttpContext
         {
             User = new ClaimsPrincipal(new ClaimsIdentity(

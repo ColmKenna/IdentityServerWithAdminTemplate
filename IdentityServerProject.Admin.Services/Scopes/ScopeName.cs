@@ -5,7 +5,7 @@ using IdentityServerProject.Services.Validation;
 namespace IdentityServerProject.Services.Scopes;
 
 /// <summary>
-/// Strongly typed domain identifier for an OAuth/OIDC scope (API scope or Identity resource).
+///     Strongly typed domain identifier for an OAuth/OIDC scope (API scope or Identity resource).
 /// </summary>
 [JsonConverter(typeof(ScopeNameJsonConverter))]
 public readonly record struct ScopeName(string Value) : IComparable<ScopeName>, IEquatable<ScopeName>
@@ -14,7 +14,10 @@ public readonly record struct ScopeName(string Value) : IComparable<ScopeName>, 
 
     public bool IsEmpty => string.IsNullOrWhiteSpace(Value);
 
-    public bool IsValid => !IsEmpty && Value.Length <= ValidationConstants.MaxScopeNameLength && ScopeValidationHelper.IsValidScopeName(Value);
+    public bool IsValid => !IsEmpty && Value.Length <= ValidationConstants.MaxScopeNameLength &&
+                           ScopeValidationHelper.IsValidScopeName(Value);
+
+    public int CompareTo(ScopeName other) => string.Compare(Value, other.Value, StringComparison.Ordinal);
 
     public static ScopeName Create(string? value) => new(value?.Trim() ?? string.Empty);
 
@@ -23,8 +26,6 @@ public readonly record struct ScopeName(string Value) : IComparable<ScopeName>, 
     public static explicit operator ScopeName(string? value) => Create(value);
 
     public override string ToString() => Value ?? string.Empty;
-
-    public int CompareTo(ScopeName other) => string.Compare(Value, other.Value, StringComparison.Ordinal);
 }
 
 public sealed class ScopeNameJsonConverter : JsonConverter<ScopeName>
@@ -36,8 +37,6 @@ public sealed class ScopeNameJsonConverter : JsonConverter<ScopeName>
             : ScopeName.Empty;
     }
 
-    public override void Write(Utf8JsonWriter writer, ScopeName value, JsonSerializerOptions options)
-    {
+    public override void Write(Utf8JsonWriter writer, ScopeName value, JsonSerializerOptions options) =>
         writer.WriteStringValue(value.Value ?? string.Empty);
-    }
 }

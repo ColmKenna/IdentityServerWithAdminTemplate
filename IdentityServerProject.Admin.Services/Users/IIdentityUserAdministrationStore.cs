@@ -3,9 +3,9 @@ using IdentityServerProject.Services.AuditLogs;
 namespace IdentityServerProject.Services.Users;
 
 /// <summary>
-/// A user's roles, claims, and profile fields, projected for the Admin &gt; Users &gt; Details
-/// workspace. Persisted-grant count is deliberately excluded: it comes from the Duende operational store,
-/// which the library already reaches directly.
+///     A user's roles, claims, and profile fields, projected for the Admin &gt; Users &gt; Details
+///     workspace. Persisted-grant count is deliberately excluded: it comes from the Duende operational store,
+///     which the library already reaches directly.
 /// </summary>
 public sealed record UserAccountDetails(
     UserId Id,
@@ -24,7 +24,7 @@ public enum RoleAdditionStatus
     AlreadyMember,
     UserNotFound,
     RoleNotFound,
-    ValidationFailed,
+    ValidationFailed
 }
 
 public sealed record RoleAdditionOutcome(RoleAdditionStatus Status, string TargetName, string? ErrorMessage);
@@ -37,17 +37,21 @@ public enum RoleRemovalStatus
     RoleNotFound,
     SelfDemotionBlocked,
     LastProtectedMemberBlocked,
-    ValidationFailed,
+    ValidationFailed
 }
 
-public sealed record RoleRemovalOutcome(RoleRemovalStatus Status, string TargetName, bool RoleWasRemoved, string? ErrorMessage);
+public sealed record RoleRemovalOutcome(
+    RoleRemovalStatus Status,
+    string TargetName,
+    bool RoleWasRemoved,
+    string? ErrorMessage);
 
 public enum ClaimMutationStatus
 {
     Applied,
     AlreadyExists,
     UserNotFound,
-    ValidationFailed,
+    ValidationFailed
 }
 
 public sealed record ClaimMutationOutcome(ClaimMutationStatus Status, string TargetName, string? ErrorMessage);
@@ -56,7 +60,7 @@ public enum SecurityStampRotationStatus
 {
     Succeeded,
     UserNotFound,
-    SelfActionBlocked,
+    SelfActionBlocked
 }
 
 public sealed record SecurityStampRotationOutcome(SecurityStampRotationStatus Status, string TargetName);
@@ -95,11 +99,11 @@ public enum UserDeleteStatus
 public sealed record UserDeleteOutcome(UserDeleteStatus Status, string TargetName, string? ErrorMessage = null);
 
 /// <summary>
-/// Host-owned persistence for Identity user administration: listing, unlock, creation, role and
-/// claim mutation (including the protected-admin invariants — self-demotion and last-administrator
-/// protection — that must be enforced inside the same transaction as the membership check), and
-/// session-revocation's security-stamp rotation. Persisted-grant deletion is deliberately excluded:
-/// it is Duende operational-store data the library already reaches directly.
+///     Host-owned persistence for Identity user administration: listing, unlock, creation, role and
+///     claim mutation (including the protected-admin invariants — self-demotion and last-administrator
+///     protection — that must be enforced inside the same transaction as the membership check), and
+///     session-revocation's security-stamp rotation. Persisted-grant deletion is deliberately excluded:
+///     it is Duende operational-store data the library already reaches directly.
 /// </summary>
 public interface IIdentityUserAdministrationStore
 {

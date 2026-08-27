@@ -18,22 +18,21 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        var diagnostics = await _diagnosticsService.GetDiagnosticsAsync(cancellationToken);
+        DiagnosticsModel diagnostics = await _diagnosticsService.GetDiagnosticsAsync(cancellationToken);
 
         var issues = new List<string>();
 
-        foreach (var store in diagnostics.StoreHealth.Where(s => !s.IsHealthy))
-        {
+        foreach (StoreHealthStatus store in diagnostics.StoreHealth.Where(s => !s.IsHealthy))
             issues.Add($"{store.Name} store is degraded: {store.Detail ?? "connection unhealthy"}.");
-        }
 
         if (string.IsNullOrEmpty(diagnostics.SigningKeyId))
             issues.Add("No active signing key is configured.");
 
         if (diagnostics.ReservedClaimHolders.Count > 0)
         {
-            var count = diagnostics.ReservedClaimHolders.Count;
-            issues.Add($"{count} user{(count == 1 ? "" : "s")} holding unauthorized reserved claim type{(count == 1 ? "" : "s")}.");
+            int count = diagnostics.ReservedClaimHolders.Count;
+            issues.Add(
+                $"{count} user{(count == 1 ? "" : "s")} holding unauthorized reserved claim type{(count == 1 ? "" : "s")}.");
         }
 
         Issues = issues;

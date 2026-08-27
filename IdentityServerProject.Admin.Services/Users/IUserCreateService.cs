@@ -35,14 +35,14 @@ public class UserCreateResult
 }
 
 /// <summary>
-/// Provisions new ASP.NET Core Identity user accounts for the Admin console.
+///     Provisions new ASP.NET Core Identity user accounts for the Admin console.
 /// </summary>
 public interface IUserCreateService
 {
     /// <summary>
-    /// Creates a new user account with validated credentials via UserManager.CreateAsync.
-    /// Returns Success = false with Identity's validation errors (e.g. duplicate username/email,
-    /// password policy violations) when creation fails.
+    ///     Creates a new user account with validated credentials via UserManager.CreateAsync.
+    ///     Returns Success = false with Identity's validation errors (e.g. duplicate username/email,
+    ///     password policy violations) when creation fails.
     /// </summary>
     Task<UserCreateResult> CreateUserAsync(UserCreateInputModel input, CancellationToken cancellationToken = default);
 }

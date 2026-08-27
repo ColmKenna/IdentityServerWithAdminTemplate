@@ -1,8 +1,9 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-    typeof define === 'function' && define.amd ? define(['exports'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global["WebComponentLibrary/ck-tabs"] = {}));
-})(this, (function (exports) { 'use strict';
+        typeof define === 'function' && define.amd ? define(['exports'], factory) :
+            (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global["WebComponentLibrary/ck-tabs"] = {}));
+})(this, (function (exports) {
+    'use strict';
 
     /**
      * Individual tab element that holds tab content and label
@@ -11,39 +12,44 @@
         constructor() {
             super();
         }
+
         connectedCallback() {
             // Tab content is handled by the parent ck-tabs component
         }
+
         /**
          * Gets the label text for this tab
          */
         get label() {
             return this.getAttribute('label') || 'Tab';
         }
+
         /**
          * Sets the label text for this tab
          */
         set label(value) {
             this.setAttribute('label', value);
         }
+
         /**
          * Gets whether this tab is currently active
          */
         get active() {
             return this.hasAttribute('active');
         }
+
         /**
          * Sets whether this tab is currently active
          */
         set active(value) {
             if (value) {
                 this.setAttribute('active', '');
-            }
-            else {
+            } else {
                 this.removeAttribute('active');
             }
         }
     }
+
     /**
      * Container element that manages tab state and presentation
      */
@@ -51,12 +57,14 @@
         constructor() {
             super();
             this.currentActiveIndex = 0;
-            this.shadow = this.attachShadow({ mode: 'open' });
+            this.shadow = this.attachShadow({mode: 'open'});
         }
+
         connectedCallback() {
             this.render();
             this.setupEventListeners();
         }
+
         /**
          * Creates and applies styles using Constructable Stylesheet Pattern with fallback
          */
@@ -237,14 +245,14 @@
                     this.styleSheet.replaceSync(cssText);
                     this.shadow.adoptedStyleSheets = [this.styleSheet];
                     return '';
-                }
-                catch (error) {
+                } catch (error) {
                     console.warn('Constructable Stylesheets not supported, falling back to style element');
                 }
             }
             // Fallback for Safari and older browsers
             return `<style>${cssText}</style>`;
         }
+
         /**
          * Renders the tab component with all tabs and panels
          */
@@ -299,6 +307,7 @@
                 tab.setAttribute('slot', `tab-${index}`);
             });
         }
+
         /**
          * Sets up event listeners for tab interaction
          */
@@ -350,6 +359,7 @@
                 }
             });
         }
+
         /**
          * Sets the active tab by index
          */
@@ -402,6 +412,7 @@
                 bubbles: true,
             }));
         }
+
         /**
          * Escapes HTML to prevent XSS
          */
@@ -410,6 +421,7 @@
             div.textContent = text;
             return div.innerHTML;
         }
+
         // Public API methods
         /**
          * Gets the currently active tab element
@@ -418,12 +430,14 @@
             const tabs = this.querySelectorAll('ck-tab');
             return tabs[this.currentActiveIndex];
         }
+
         /**
          * Gets the index of the currently active tab
          */
         getActiveIndex() {
             return this.currentActiveIndex;
         }
+
         /**
          * Activates a tab by index
          */
@@ -433,6 +447,7 @@
                 this.setActiveTab(index);
             }
         }
+
         /**
          * Adds a new tab programmatically
          */
@@ -452,6 +467,7 @@
             this.render();
             return tab;
         }
+
         /**
          * Removes a tab by index
          */
@@ -469,6 +485,7 @@
             return false;
         }
     }
+
     // Register the custom elements
     if (!customElements.get('ck-tab')) {
         customElements.define('ck-tab', CKTab);

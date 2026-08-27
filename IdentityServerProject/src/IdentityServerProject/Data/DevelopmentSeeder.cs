@@ -5,10 +5,7 @@ public static class DevelopmentSeeder
 {
     public static async Task SeedIfDevelopmentAsync(IHostEnvironment environment, Func<Task> seed)
     {
-        if (!environment.IsDevelopment())
-        {
-            return;
-        }
+        if (!environment.IsDevelopment()) return;
 
         await seed();
     }

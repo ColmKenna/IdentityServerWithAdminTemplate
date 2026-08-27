@@ -3,7 +3,7 @@ using IdentityServerProject.Services.Secrets;
 namespace IdentityServerProject.Services.Apis;
 
 /// <summary>
-/// Full detail view of a single API resource for the Admin &gt; API Resources tabbed editor.
+///     Full detail view of a single API resource for the Admin &gt; API Resources tabbed editor.
 /// </summary>
 public sealed class ApiResourceEditorModel
 {
@@ -32,13 +32,13 @@ public sealed class ApiResourceEditorModel
         Enabled = true,
         Secrets = new List<ApiResourceSecretItem>(),
         Scopes = new List<string>(),
-        Claims = new List<string>(),
+        Claims = new List<string>()
     };
 }
 
 /// <summary>
-/// A single registered secret on an API resource. <see cref="Value"/> is intentionally
-/// omitted; only the hashed value is ever persisted and it is never read back.
+///     A single registered secret on an API resource. <see cref="Value" /> is intentionally
+///     omitted; only the hashed value is ever persisted and it is never read back.
 /// </summary>
 public sealed class ApiResourceSecretItem
 {
@@ -48,7 +48,7 @@ public sealed class ApiResourceSecretItem
 
     public required SecretType Type { get; init; }
 
-    public required System.DateTime? Expiration { get; init; }
+    public required DateTime? Expiration { get; init; }
 
-    public required System.DateTime Created { get; init; }
+    public required DateTime Created { get; init; }
 }

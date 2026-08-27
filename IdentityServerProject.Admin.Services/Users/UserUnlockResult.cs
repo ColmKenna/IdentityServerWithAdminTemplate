@@ -6,7 +6,7 @@ public enum UserUnlockStatus
 {
     Succeeded,
     NotFound,
-    Failed,
+    Failed
 }
 
 public sealed record UserUnlockResult(UserUnlockStatus Status, IReadOnlyList<string> Errors)
