@@ -264,12 +264,16 @@ public class EditorModel : PageModel
         if (result.ValidationErrors != null)
             result.ValidationErrors.AddToModelState(ModelState);
         else
-        {
-            IEnumerable<(string Key, string message)> errors =
-                result.Errors.SelectMany(error => error.Value.Select(message => (error.Key, message)));
+            AddErrorsToModelState(result.Errors);
+    }
 
-            foreach ((string key, string message) in errors) ModelState.AddModelError(key, message);
-        }
+    private void AddErrorsToModelState(IReadOnlyDictionary<string, string[]> errors)
+    {
+        IEnumerable<(string Key, string Message)> flattened =
+            errors.SelectMany(error => error.Value.Select(message => (error.Key, message)));
+
+        foreach ((string key, string message) in flattened)
+            ModelState.AddModelError(key, message);
     }
 
     private IActionResult RedirectToTabWithError(string tab, string message)
@@ -304,9 +308,7 @@ public class EditorModel : PageModel
         string tab,
         CancellationToken cancellationToken)
     {
-        foreach ((string key, string[] messages) in errors)
-        foreach (string message in messages)
-            ModelState.AddModelError(key, message);
+        AddErrorsToModelState(errors);
 
         await PopulateEditorAsync(cancellationToken);
         Tab = tab;
