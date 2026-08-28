@@ -31,7 +31,7 @@ public class EditorModel : PageModel
 
     [BindProperty(SupportsGet = true)] public string? Name { get; set; }
 
-    [BindProperty(SupportsGet = true)] public string Tab { get; set; } = "basics";
+    [BindProperty(SupportsGet = true)] public string Tab { get; set; } = EditorTab.Basics;
 
     public ApiResourceEditorModel Editor { get; private set; } = ApiResourceEditorModel.Empty();
 
@@ -77,7 +77,7 @@ public class EditorModel : PageModel
             Description = editor.Description
         };
 
-        if (Tab == "scopes")
+        if (Tab == EditorTab.Scopes)
             await LoadAttachableScopeNamesAsync(editor.Scopes, cancellationToken);
 
         string? handle = SecretRevealHandle;
@@ -108,9 +108,9 @@ public class EditorModel : PageModel
             return NotFound();
 
         if (!result.Succeeded)
-            return await RedisplayWithErrorsAsync(result, "basics", cancellationToken);
+            return await RedisplayWithErrorsAsync(result, EditorTab.Basics, cancellationToken);
 
-        return RedirectToPage(new { name = Basics.Name, tab = "basics" });
+        return RedirectToPage(new { name = Basics.Name, tab = EditorTab.Basics });
     }
 
     public async Task<IActionResult> OnPostAddSecretAsync(CancellationToken cancellationToken = default)
@@ -125,14 +125,14 @@ public class EditorModel : PageModel
             return NotFound();
 
         if (!result.Success)
-            return await RedisplayWithErrorsAsync(result.Errors, "secrets", cancellationToken);
+            return await RedisplayWithErrorsAsync(result.Errors, EditorTab.Secrets, cancellationToken);
 
         SecretRevealTicket ticket = await _secretRevealService.IssueAsync(
             new SecretRevealTarget(SecretRevealPurpose.ApiResourceSecretGenerated, ResourceName),
             result.PlaintextSecret!,
             cancellationToken);
         SecretRevealHandle = ticket.Handle;
-        return RedirectToEditorTab("secrets");
+        return RedirectToEditorTab(EditorTab.Secrets);
     }
 
     public async Task<IActionResult> OnPostRevokeSecretAsync(int secretId, string? confirmation = null,
@@ -141,8 +141,8 @@ public class EditorModel : PageModel
         if (!HasResourceName)
             return NotFound();
 
-        if (!HasConfirmation(confirmation, "REVOKE"))
-            return RedirectToTabWithError("secrets", "Type REVOKE to confirm secret revocation.");
+        if (!HasConfirmation(confirmation, ConfirmationWord.Revoke))
+            return RedirectToTabWithError(EditorTab.Secrets, "Type REVOKE to confirm secret revocation.");
 
         AdminMutationResult result =
             await _apiResourceEditorService.RevokeSecretAsync(ResourceScopeName, secretId, cancellationToken);
@@ -150,16 +150,16 @@ public class EditorModel : PageModel
             return NotFound();
 
         if (!result.Succeeded)
-            return await RedisplayWithErrorsAsync(result.Errors, "secrets", cancellationToken);
+            return await RedisplayWithErrorsAsync(result.Errors, EditorTab.Secrets, cancellationToken);
 
-        return RedirectToEditorTab("secrets");
+        return RedirectToEditorTab(EditorTab.Secrets);
     }
 
     public Task<IActionResult> OnPostAttachScopeAsync(CancellationToken cancellationToken = default) =>
         ExecuteEditorMutationAsync(
             () => _apiResourceEditorService.AttachScopeAsync(ResourceScopeName,
                 ScopeName.Create(AttachScope.ScopeName), cancellationToken),
-            "scopes",
+            EditorTab.Scopes,
             cancellationToken);
 
     public Task<IActionResult> OnPostCreateScopeAsync(CancellationToken cancellationToken = default) =>
@@ -168,7 +168,7 @@ public class EditorModel : PageModel
                 new CreateApiResourceScopeCommand(ResourceScopeName, CreateScope.ScopeName,
                     CreateScope.ScopeDisplayName),
                 cancellationToken),
-            "scopes",
+            EditorTab.Scopes,
             cancellationToken);
 
     public Task<IActionResult> OnPostDetachScopeAsync(string scopeName,
@@ -176,7 +176,7 @@ public class EditorModel : PageModel
         ExecuteEditorMutationAsync(
             () => _apiResourceEditorService.DetachScopeAsync(ResourceScopeName, ScopeName.Create(scopeName),
                 cancellationToken),
-            "scopes",
+            EditorTab.Scopes,
             cancellationToken);
 
     public Task<IActionResult> OnPostAddClaimAsync(CancellationToken cancellationToken = default) =>
@@ -184,7 +184,7 @@ public class EditorModel : PageModel
             () => _apiResourceEditorService.AddClaimAsync(
                 new AddApiResourceClaimCommand(ResourceScopeName, ClaimType.Create(Claim.ClaimType)),
                 cancellationToken),
-            "claims",
+            EditorTab.Claims,
             cancellationToken);
 
     public Task<IActionResult> OnPostRemoveClaimAsync(string claimType,
@@ -192,7 +192,7 @@ public class EditorModel : PageModel
         ExecuteEditorMutationAsync(
             () => _apiResourceEditorService.RemoveClaimAsync(ResourceScopeName, ClaimType.Create(claimType),
                 cancellationToken),
-            "claims",
+            EditorTab.Claims,
             cancellationToken);
 
     public async Task<IActionResult> OnPostEnableAsync(CancellationToken cancellationToken = default)
@@ -205,7 +205,7 @@ public class EditorModel : PageModel
         if (result.Status == AdminMutationStatus.NotFound)
             return NotFound();
 
-        return RedirectToEditorTab("basics");
+        return RedirectToEditorTab(EditorTab.Basics);
     }
 
     public async Task<IActionResult> OnPostDisableAsync(string? confirmation = null,
@@ -214,15 +214,15 @@ public class EditorModel : PageModel
         if (!HasResourceName)
             return NotFound();
 
-        if (!HasConfirmation(confirmation, "DISABLE"))
-            return RedirectToTabWithError("basics", "Type DISABLE to confirm disabling this API resource.");
+        if (!HasConfirmation(confirmation, ConfirmationWord.Disable))
+            return RedirectToTabWithError(EditorTab.Basics, "Type DISABLE to confirm disabling this API resource.");
 
         AdminMutationResult result =
             await _apiResourceEditorService.SetEnabledAsync(ResourceScopeName, false, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
             return NotFound();
 
-        return RedirectToEditorTab("basics");
+        return RedirectToEditorTab(EditorTab.Basics);
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(string? confirmation = null,
@@ -231,8 +231,8 @@ public class EditorModel : PageModel
         if (!HasResourceName)
             return NotFound();
 
-        if (!HasConfirmation(confirmation, "DELETE"))
-            return RedirectToTabWithError("basics", "Type DELETE to confirm deleting this API resource.");
+        if (!HasConfirmation(confirmation, ConfirmationWord.Delete))
+            return RedirectToTabWithError(EditorTab.Basics, "Type DELETE to confirm deleting this API resource.");
 
         AdminMutationResult result = await _apiResourceEditorService.DeleteAsync(ResourceScopeName, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
@@ -244,7 +244,7 @@ public class EditorModel : PageModel
     private IActionResult InitializeApiResourceEditor()
     {
         Editor = ApiResourceEditorModel.Empty();
-        Tab = "basics";
+        Tab = EditorTab.Basics;
         return Page();
     }
 
@@ -335,16 +335,29 @@ public class EditorModel : PageModel
     private RedirectToPageResult RedirectToEditorTab(string tab) =>
         RedirectToPage(new { name = ResourceName, tab });
 
-    private static string NormalizeTab(string? tab)
+    private static class EditorTab
     {
-        return tab?.ToLowerInvariant() switch
-        {
-            "secrets" => "secrets",
-            "scopes" => "scopes",
-            "claims" => "claims",
-            _ => "basics"
-        };
+        public const string Basics = "basics";
+        public const string Secrets = "secrets";
+        public const string Scopes = "scopes";
+        public const string Claims = "claims";
     }
+
+    private static class ConfirmationWord
+    {
+        public const string Revoke = "REVOKE";
+        public const string Disable = "DISABLE";
+        public const string Delete = "DELETE";
+    }
+
+    private static string NormalizeTab(string? tab) =>
+        tab?.ToLowerInvariant() switch
+        {
+            EditorTab.Secrets => EditorTab.Secrets,
+            EditorTab.Scopes => EditorTab.Scopes,
+            EditorTab.Claims => EditorTab.Claims,
+            _ => EditorTab.Basics
+        };
 
     private static bool HasConfirmation(string? confirmation, string expected) =>
         string.Equals(confirmation?.Trim(), expected, StringComparison.Ordinal);
