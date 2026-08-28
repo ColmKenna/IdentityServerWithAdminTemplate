@@ -155,93 +155,45 @@ public class EditorModel : PageModel
         return RedirectToEditorTab("secrets");
     }
 
-    public async Task<IActionResult> OnPostAttachScopeAsync(CancellationToken cancellationToken = default)
-    {
-        if (!HasResourceName)
-            return NotFound();
+    public Task<IActionResult> OnPostAttachScopeAsync(CancellationToken cancellationToken = default) =>
+        ExecuteEditorMutationAsync(
+            () => _apiResourceEditorService.AttachScopeAsync(ResourceScopeName,
+                ScopeName.Create(AttachScope.ScopeName), cancellationToken),
+            "scopes",
+            cancellationToken);
 
-        AdminMutationResult result = await _apiResourceEditorService.AttachScopeAsync(ResourceScopeName,
-            ScopeName.Create(AttachScope.ScopeName), cancellationToken);
+    public Task<IActionResult> OnPostCreateScopeAsync(CancellationToken cancellationToken = default) =>
+        ExecuteEditorMutationAsync(
+            () => _apiResourceEditorService.CreateScopeAsync(
+                new CreateApiResourceScopeCommand(ResourceScopeName, CreateScope.ScopeName,
+                    CreateScope.ScopeDisplayName),
+                cancellationToken),
+            "scopes",
+            cancellationToken);
 
-        if (result.Status == AdminMutationStatus.NotFound)
-            return NotFound();
+    public Task<IActionResult> OnPostDetachScopeAsync(string scopeName,
+        CancellationToken cancellationToken = default) =>
+        ExecuteEditorMutationAsync(
+            () => _apiResourceEditorService.DetachScopeAsync(ResourceScopeName, ScopeName.Create(scopeName),
+                cancellationToken),
+            "scopes",
+            cancellationToken);
 
-        if (!result.Succeeded)
-            return await RedisplayWithErrorsAsync(result.Errors, "scopes", cancellationToken);
+    public Task<IActionResult> OnPostAddClaimAsync(CancellationToken cancellationToken = default) =>
+        ExecuteEditorMutationAsync(
+            () => _apiResourceEditorService.AddClaimAsync(
+                new AddApiResourceClaimCommand(ResourceScopeName, ClaimType.Create(Claim.ClaimType)),
+                cancellationToken),
+            "claims",
+            cancellationToken);
 
-        return RedirectToEditorTab("scopes");
-    }
-
-    public async Task<IActionResult> OnPostCreateScopeAsync(CancellationToken cancellationToken = default)
-    {
-        if (!HasResourceName)
-            return NotFound();
-
-        var command =
-            new CreateApiResourceScopeCommand(ResourceScopeName, CreateScope.ScopeName, CreateScope.ScopeDisplayName);
-        AdminMutationResult result = await _apiResourceEditorService.CreateScopeAsync(command, cancellationToken);
-
-        if (result.Status == AdminMutationStatus.NotFound)
-            return NotFound();
-
-        if (!result.Succeeded)
-            return await RedisplayWithErrorsAsync(result.Errors, "scopes", cancellationToken);
-
-        return RedirectToEditorTab("scopes");
-    }
-
-    public async Task<IActionResult> OnPostDetachScopeAsync(string scopeName,
-        CancellationToken cancellationToken = default)
-    {
-        if (!HasResourceName)
-            return NotFound();
-
-        AdminMutationResult result =
-            await _apiResourceEditorService.DetachScopeAsync(ResourceScopeName, ScopeName.Create(scopeName),
-                cancellationToken);
-        if (result.Status == AdminMutationStatus.NotFound)
-            return NotFound();
-
-        if (!result.Succeeded)
-            return await RedisplayWithErrorsAsync(result.Errors, "scopes", cancellationToken);
-
-        return RedirectToEditorTab("scopes");
-    }
-
-    public async Task<IActionResult> OnPostAddClaimAsync(CancellationToken cancellationToken = default)
-    {
-        if (!HasResourceName)
-            return NotFound();
-
-        var command = new AddApiResourceClaimCommand(ResourceScopeName, ClaimType.Create(Claim.ClaimType));
-        AdminMutationResult result = await _apiResourceEditorService.AddClaimAsync(command, cancellationToken);
-
-        if (result.Status == AdminMutationStatus.NotFound)
-            return NotFound();
-
-        if (!result.Succeeded)
-            return await RedisplayWithErrorsAsync(result.Errors, "claims", cancellationToken);
-
-        return RedirectToEditorTab("claims");
-    }
-
-    public async Task<IActionResult> OnPostRemoveClaimAsync(string claimType,
-        CancellationToken cancellationToken = default)
-    {
-        if (!HasResourceName)
-            return NotFound();
-
-        AdminMutationResult result = await _apiResourceEditorService
-            .RemoveClaimAsync(ResourceScopeName, ClaimType.Create(claimType), cancellationToken);
-
-        if (result.Status == AdminMutationStatus.NotFound)
-            return NotFound();
-
-        if (!result.Succeeded)
-            return await RedisplayWithErrorsAsync(result.Errors, "claims", cancellationToken);
-
-        return RedirectToEditorTab("claims");
-    }
+    public Task<IActionResult> OnPostRemoveClaimAsync(string claimType,
+        CancellationToken cancellationToken = default) =>
+        ExecuteEditorMutationAsync(
+            () => _apiResourceEditorService.RemoveClaimAsync(ResourceScopeName, ClaimType.Create(claimType),
+                cancellationToken),
+            "claims",
+            cancellationToken);
 
     public async Task<IActionResult> OnPostEnableAsync(CancellationToken cancellationToken = default)
     {
@@ -359,6 +311,25 @@ public class EditorModel : PageModel
         await PopulateEditorAsync(cancellationToken);
         Tab = tab;
         return Page();
+    }
+
+    private async Task<IActionResult> ExecuteEditorMutationAsync(
+        Func<Task<AdminMutationResult>> mutation,
+        string tab,
+        CancellationToken cancellationToken)
+    {
+        if (!HasResourceName)
+            return NotFound();
+
+        AdminMutationResult result = await mutation();
+
+        if (result.Status == AdminMutationStatus.NotFound)
+            return NotFound();
+
+        if (!result.Succeeded)
+            return await RedisplayWithErrorsAsync(result.Errors, tab, cancellationToken);
+
+        return RedirectToEditorTab(tab);
     }
 
     private RedirectToPageResult RedirectToEditorTab(string tab) =>
