@@ -30,8 +30,6 @@ public partial class ClientCreateService : IClientCreateService
         _clientConfigurationValidator = clientConfigurationValidator;
     }
 
-    #region Scope discovery
-
     public async Task<List<string>> GetAvailableScopesAsync(CancellationToken cancellationToken = default)
     {
         List<string> identityScopes = await _configurationDbContext.IdentityResources
@@ -52,10 +50,6 @@ public partial class ClientCreateService : IClientCreateService
 
         return availableScopes;
     }
-
-    #endregion
-
-    #region Client creation and cloning
 
     public Task<ClientCreateResult> CreateClientAsync(ClientCreateInputModel input,
         CancellationToken cancellationToken = default)
@@ -159,7 +153,7 @@ public partial class ClientCreateService : IClientCreateService
             RedirectUris = sourceClient.RedirectUris.Select(u => new ClientRedirectUri { RedirectUri = u.RedirectUri })
                 .ToList(),
             PostLogoutRedirectUris = sourceClient.PostLogoutRedirectUris.Select(u => new ClientPostLogoutRedirectUri
-                { PostLogoutRedirectUri = u.PostLogoutRedirectUri }).ToList(),
+            { PostLogoutRedirectUri = u.PostLogoutRedirectUri }).ToList(),
             AllowedCorsOrigins = sourceClient.AllowedCorsOrigins.Select(c => new ClientCorsOrigin { Origin = c.Origin })
                 .ToList(),
             AllowedScopes = sourceClient.AllowedScopes.Select(s => new ClientScope { Scope = s.Scope }).ToList(),
@@ -425,10 +419,6 @@ public partial class ClientCreateService : IClientCreateService
         }
     }
 
-    #endregion
-
-    #region Auditing
-
     private async Task<ClientCreateResult> ExecuteAuditedAsync(
         string targetId,
         string targetName,
@@ -509,6 +499,4 @@ public partial class ClientCreateService : IClientCreateService
             "AllowedScopes",
             "The required 'openid' identity resource is not configured.");
     }
-
-    #endregion
 }

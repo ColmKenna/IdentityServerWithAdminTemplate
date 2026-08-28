@@ -18,8 +18,6 @@ public class ApiScopeEditorService : IApiScopeEditorService
         _auditWriter = auditWriter;
     }
 
-    #region Basics
-
     public Task<AdminMutationResult> CreateAsync(CreateApiScopeCommand command,
         CancellationToken cancellationToken = default) =>
         CreateAsync(command.Name.Value, command.DisplayName, command.Description, cancellationToken);
@@ -182,10 +180,6 @@ public class ApiScopeEditorService : IApiScopeEditorService
         }
     }
 
-    #endregion
-
-    #region Claims
-
     public Task<bool> AddClaimAsync(ScopeName name, ClaimType claimType,
         CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
@@ -276,10 +270,6 @@ public class ApiScopeEditorService : IApiScopeEditorService
         return false;
     }
 
-    #endregion
-
-    #region Shared infrastructure
-
     private async Task<ApiScope?> LoadScopeAsync(string name, bool asNoTracking, CancellationToken cancellationToken)
     {
         IQueryable<ApiScope> query = _configurationDbContext.ApiScopes
@@ -362,6 +352,4 @@ public class ApiScopeEditorService : IApiScopeEditorService
             $"API Scope '{name}' was not found.", cancellationToken);
         return false;
     }
-
-    #endregion
 }

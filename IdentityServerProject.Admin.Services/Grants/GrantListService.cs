@@ -23,8 +23,6 @@ public class GrantListService : IGrantListService
         _auditWriter = auditWriter;
     }
 
-    #region Listing
-
     public async Task<ListResult<GrantListItem>> GetGrantsAsync(
         GrantFilter? filter = null,
         Pagination pagination = default,
@@ -103,10 +101,6 @@ public class GrantListService : IGrantListService
         };
     }
 
-    #endregion
-
-    #region Formatting
-
     public static string FormatRelativeExpiration(DateTime? expiration, DateTime utcNow)
     {
         if (!expiration.HasValue)
@@ -132,10 +126,6 @@ public class GrantListService : IGrantListService
         int minutes = Math.Max(1, (int)Math.Round(diff.TotalMinutes));
         return $"in {minutes} minute{(minutes == 1 ? "" : "s")}";
     }
-
-    #endregion
-
-    #region Revocation
 
     public Task<RevokeGrantResult> RevokeGrantAsync(GrantKey key, CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
@@ -222,10 +212,6 @@ public class GrantListService : IGrantListService
         }
     }
 
-    #endregion
-
-    #region Auditing
-
     private async Task<T> ExecuteAuditedAsync<T>(
         AuditAction action,
         string targetId,
@@ -260,6 +246,4 @@ public class GrantListService : IGrantListService
             AuditCategory.Grant, action, AuditOutcome.Failed, AuditReasonCode.PersistenceFailure,
             targetId, targetName, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
     }
-
-    #endregion
 }

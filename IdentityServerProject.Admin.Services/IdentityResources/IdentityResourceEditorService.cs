@@ -19,8 +19,6 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
         _auditWriter = auditWriter;
     }
 
-    #region Basics
-
     public Task<AdminMutationResult> CreateAsync(CreateIdentityResourceCommand command,
         CancellationToken cancellationToken = default) =>
         CreateAsync(command.Name.Value, command.DisplayName, command.Description, command.Enabled, command.Required,
@@ -233,10 +231,6 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
         return IdentityResourceEditResult.Protected(message);
     }
 
-    #endregion
-
-    #region Claims
-
     public Task<IdentityResourceEditResult> AddClaimAsync(ScopeName name, ClaimType claimType,
         CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
@@ -401,10 +395,6 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
         return IdentityResourceEditResult.NotFound;
     }
 
-    #endregion
-
-    #region Shared infrastructure
-
     private async Task<IdentityResource?> LoadIdentityResourceAsync(string name, bool asNoTracking,
         CancellationToken cancellationToken)
     {
@@ -470,6 +460,4 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
             AuditCategory.IdentityResource, action, AuditOutcome.Failed, AuditReasonCode.PersistenceFailure,
             targetId, targetName, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
     }
-
-    #endregion
 }
