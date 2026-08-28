@@ -39,7 +39,9 @@ public class ClientCreateResult
         AdminMutationStatus status = AdminMutationStatus.ValidationFailed) =>
         new()
         {
-            Status = status, Success = false, ErrorMessage = errorMessage,
+            Status = status,
+            Success = false,
+            ErrorMessage = errorMessage,
             Errors = new ValidationErrorDictionary().AddError(string.Empty, errorMessage)
         };
 
@@ -47,7 +49,9 @@ public class ClientCreateResult
         AdminMutationStatus status = AdminMutationStatus.ValidationFailed) =>
         new()
         {
-            Status = status, Success = false, ErrorMessage = errorMessage,
+            Status = status,
+            Success = false,
+            ErrorMessage = errorMessage,
             Errors = new ValidationErrorDictionary().AddError(field, errorMessage)
         };
 
@@ -58,7 +62,9 @@ public class ClientCreateResult
     public static ClientCreateResult Succeeded(string clientId, string? plaintextSecret = null) =>
         new()
         {
-            Status = AdminMutationStatus.Succeeded, Success = true, ClientId = clientId,
+            Status = AdminMutationStatus.Succeeded,
+            Success = true,
+            ClientId = clientId,
             PlaintextSecret = plaintextSecret
         };
 }

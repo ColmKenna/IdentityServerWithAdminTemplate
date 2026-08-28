@@ -45,7 +45,9 @@ public class ClientDeleteResult
         AdminMutationStatus status = AdminMutationStatus.Denied) =>
         new()
         {
-            Success = false, Status = status, ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed,
+            Success = false,
+            Status = status,
+            ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed,
             ErrorMessage = errorMessage
         };
 }
@@ -271,7 +273,9 @@ public class ClientSecretRevokeResult
         AdminMutationStatus status = AdminMutationStatus.Denied) =>
         new()
         {
-            Success = false, Status = status, ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed,
+            Success = false,
+            Status = status,
+            ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed,
             ErrorMessage = errorMessage
         };
 }

@@ -55,7 +55,9 @@ public class RoleChangeResult
         AdminMutationStatus status = AdminMutationStatus.Denied) =>
         new()
         {
-            Success = false, Status = status, ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed,
+            Success = false,
+            Status = status,
+            ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed,
             ErrorMessage = errorMessage
         };
 }
