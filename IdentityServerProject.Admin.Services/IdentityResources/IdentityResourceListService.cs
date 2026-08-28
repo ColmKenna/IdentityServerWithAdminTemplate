@@ -75,7 +75,7 @@ public class IdentityResourceListService : IIdentityResourceListService
         CancellationToken cancellationToken = default)
     {
         if (BuiltInIdentityResourcePolicy.IsProtectedName(name))
-            return await BuildProtectedNameBlockedResultAsync(name, cancellationToken);
+            return await DenyProtectedNameBlockedAsync(name, cancellationToken);
 
         try
         {
@@ -87,15 +87,15 @@ public class IdentityResourceListService : IIdentityResourceListService
                 .FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
 
             if (resource == null)
-                return await BuildResourceNotFoundResultAsync(transaction, name, cancellationToken);
+                return await DenyResourceNotFoundAsync(transaction, name, cancellationToken);
 
             if (resource.NonEditable)
-                return await BuildNonEditableResultAsync(transaction, name, resource, cancellationToken);
+                return await DenyNonEditableAsync(transaction, name, resource, cancellationToken);
 
             ScopeUsageCounts referenceCounts = await _scopeUsageService.GetClientReferenceCountsAsync(
                 ScopeSet.FromStrings(new[] { name }), cancellationToken);
             if (referenceCounts[ScopeName.Create(name)] > 0)
-                return await BuildReferencedResourceResultAsync(transaction, name, resource, cancellationToken);
+                return await DenyReferencedResourceAsync(transaction, name, resource, cancellationToken);
 
             _configurationDbContext.IdentityResources.Remove(resource);
             await _configurationDbContext.SaveChangesAsync(cancellationToken);
@@ -118,7 +118,7 @@ public class IdentityResourceListService : IIdentityResourceListService
         }
     }
 
-    private async Task<IdentityResourceDeleteResult> BuildProtectedNameBlockedResultAsync(string name, CancellationToken cancellationToken)
+    private async Task<IdentityResourceDeleteResult> DenyProtectedNameBlockedAsync(string name, CancellationToken cancellationToken)
     {
         await _auditWriter.WriteAsync(new AdminAuditEvent(
             AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Denied,
@@ -127,7 +127,7 @@ public class IdentityResourceListService : IIdentityResourceListService
         return IdentityResourceDeleteResult.Blocked;
     }
 
-    private async Task<IdentityResourceDeleteResult> BuildResourceNotFoundResultAsync(
+    private async Task<IdentityResourceDeleteResult> DenyResourceNotFoundAsync(
         IDbContextTransaction transaction, string name, CancellationToken cancellationToken)
     {
         await transaction.RollbackAsync(cancellationToken);
@@ -137,7 +137,7 @@ public class IdentityResourceListService : IIdentityResourceListService
         return IdentityResourceDeleteResult.NotFound;
     }
 
-    private async Task<IdentityResourceDeleteResult> BuildNonEditableResultAsync(
+    private async Task<IdentityResourceDeleteResult> DenyNonEditableAsync(
         IDbContextTransaction transaction, string name, IdentityResource resource, CancellationToken cancellationToken)
     {
         await transaction.RollbackAsync(cancellationToken);
@@ -149,7 +149,7 @@ public class IdentityResourceListService : IIdentityResourceListService
         return IdentityResourceDeleteResult.Blocked;
     }
 
-    private async Task<IdentityResourceDeleteResult> BuildReferencedResourceResultAsync(
+    private async Task<IdentityResourceDeleteResult> DenyReferencedResourceAsync(
         IDbContextTransaction transaction, string name, IdentityResource resource, CancellationToken cancellationToken)
     {
         await transaction.RollbackAsync(cancellationToken);

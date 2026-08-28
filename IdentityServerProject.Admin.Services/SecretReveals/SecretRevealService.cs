@@ -132,7 +132,7 @@ public sealed class SecretRevealService : ISecretRevealService
             || normalizedTarget.Length == 0
             || actorSubjectId.IsEmpty
             || !TryDigestHandle(handle.Value, out byte[] digest))
-            return await BuildConsumeUnavailableResultAsync(normalizedTarget, cancellationToken);
+            return await DenyConsumeUnavailableAsync(normalizedTarget, cancellationToken);
 
         var securityContext = SecretSecurityContext.Create(actorSubjectId, purpose, normalizedTarget);
         SecretRevealLookup lookup;
@@ -149,7 +149,7 @@ public sealed class SecretRevealService : ISecretRevealService
         }
 
         if (lookup.Status != SecretRevealLookupStatus.Revealed)
-            return await BuildLookupUnavailableResultAsync(lookup, normalizedTarget, cancellationToken);
+            return await DenyLookupUnavailableAsync(lookup, normalizedTarget, cancellationToken);
 
         try
         {
@@ -170,14 +170,14 @@ public sealed class SecretRevealService : ISecretRevealService
         }
     }
 
-    private async Task<SecretRevealConsumeResult> BuildConsumeUnavailableResultAsync(string normalizedTarget, CancellationToken cancellationToken)
+    private async Task<SecretRevealConsumeResult> DenyConsumeUnavailableAsync(string normalizedTarget, CancellationToken cancellationToken)
     {
         await AuditAsync(AuditAction.Consume, AuditOutcome.Denied, AuditReasonCode.WrongContext,
             normalizedTarget, "Secret reveal is unavailable.", cancellationToken);
         return SecretRevealConsumeResult.Unavailable();
     }
 
-    private async Task<SecretRevealConsumeResult> BuildLookupUnavailableResultAsync(
+    private async Task<SecretRevealConsumeResult> DenyLookupUnavailableAsync(
         SecretRevealLookup lookup, string normalizedTarget, CancellationToken cancellationToken)
     {
         AuditReasonCode unavailableReason = lookup.Status switch

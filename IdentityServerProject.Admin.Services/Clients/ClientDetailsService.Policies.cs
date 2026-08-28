@@ -60,12 +60,12 @@ public partial class ClientDetailsService
 
         double daysDisabled = (utcNow.UtcDateTime - disabledAt.ToUniversalTime()).TotalDays;
         if (daysDisabled < MinimumDisabledDaysBeforeDelete)
-            return BuildRetentionPeriodBlockedResult(daysDisabled);
+            return DenyRetentionPeriodBlocked(daysDisabled);
 
         return (true, null);
     }
 
-    private static (bool CanDelete, string? BlockReason) BuildRetentionPeriodBlockedResult(double daysDisabled)
+    private static (bool CanDelete, string? BlockReason) DenyRetentionPeriodBlocked(double daysDisabled)
     {
         int daysRemaining = MinimumDisabledDaysBeforeDelete - (int)Math.Floor(daysDisabled);
         return (false,

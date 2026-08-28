@@ -98,7 +98,7 @@ public partial class ClientCreateService : IClientCreateService
             .FirstOrDefaultAsync(c => c.ClientId == sourceClientId, cancellationToken);
 
         if (sourceClient == null)
-            return await BuildSourceClientNotFoundResultAsync(sourceClientId, input.ClientId, input.ClientName, cancellationToken);
+            return await DenySourceClientNotFoundAsync(sourceClientId, input.ClientId, input.ClientName, cancellationToken);
 
         string? clientId = input.ClientId?.Trim();
         string? clientName = input.ClientName?.Trim();
@@ -109,7 +109,7 @@ public partial class ClientCreateService : IClientCreateService
             .AnyAsync(c => c.ClientId == clientId, cancellationToken);
 
         if (clientIdIsInUse)
-            return await BuildClientIdInUseResultAsync(clientId!, clientName!, cancellationToken);
+            return await DenyClientIdInUseAsync(clientId!, clientName!, cancellationToken);
 
         var clonedClient = new Client
         {
@@ -186,7 +186,7 @@ public partial class ClientCreateService : IClientCreateService
         await _clientConfigurationValidator.ValidateAsync(validationContext, cancellationToken);
 
         if (!validationContext.IsValid)
-            return await BuildInvalidClientConfigurationResultAsync(clientId!, clientName!, validationContext.ErrorMessage, cancellationToken);
+            return await DenyInvalidClientConfigurationAsync(clientId!, clientName!, validationContext.ErrorMessage, cancellationToken);
 
         try
         {
@@ -318,14 +318,14 @@ public partial class ClientCreateService : IClientCreateService
         }
 
         if (errors.HasErrors)
-            return await BuildClientCreationValidationFailureResultAsync(clientId, clientName, errors, cancellationToken);
+            return await DenyClientCreationValidationFailureAsync(clientId, clientName, errors, cancellationToken);
 
         bool clientIdIsInUse = await _configurationDbContext.Clients
             .AsNoTracking()
             .AnyAsync(c => c.ClientId == clientId, cancellationToken);
 
         if (clientIdIsInUse)
-            return await BuildClientIdInUseResultAsync(clientId!, clientName!, cancellationToken);
+            return await DenyClientIdInUseAsync(clientId!, clientName!, cancellationToken);
 
         var client = new Client
         {
@@ -371,7 +371,7 @@ public partial class ClientCreateService : IClientCreateService
         if (scopes.Count == 0 && input.SelectedPreset != "m2m")
         {
             if (!validSystemScopes.Contains("openid"))
-                return await BuildMissingOpenIdResultAsync(clientId!, clientName!, cancellationToken);
+                return await DenyMissingOpenIdAsync(clientId!, clientName!, cancellationToken);
 
             scopes.Add("openid");
             if (validSystemScopes.Contains("profile")) scopes.Add("profile");
@@ -397,7 +397,7 @@ public partial class ClientCreateService : IClientCreateService
         await _clientConfigurationValidator.ValidateAsync(validationContext, cancellationToken);
 
         if (!validationContext.IsValid)
-            return await BuildInvalidClientConfigurationResultAsync(clientId!, clientName!, validationContext.ErrorMessage, cancellationToken);
+            return await DenyInvalidClientConfigurationAsync(clientId!, clientName!, validationContext.ErrorMessage, cancellationToken);
 
         try
         {
@@ -469,7 +469,7 @@ public partial class ClientCreateService : IClientCreateService
             AuditCategory.Client, AuditAction.Create, AuditOutcome.Denied, reasonCode,
             targetId, targetName, Details: details), cancellationToken);
 
-    private async Task<ClientCreateResult> BuildSourceClientNotFoundResultAsync(
+    private async Task<ClientCreateResult> DenySourceClientNotFoundAsync(
         string sourceClientId, string? clientId, string? clientName, CancellationToken cancellationToken)
     {
         await AuditDeniedAsync(AuditReasonCode.NotFound, clientId ?? string.Empty, clientName ?? string.Empty,
@@ -477,7 +477,7 @@ public partial class ClientCreateService : IClientCreateService
         return ClientCreateResult.Failed("Source client not found.");
     }
 
-    private async Task<ClientCreateResult> BuildClientIdInUseResultAsync(string clientId, string clientName, CancellationToken cancellationToken)
+    private async Task<ClientCreateResult> DenyClientIdInUseAsync(string clientId, string clientName, CancellationToken cancellationToken)
     {
         await AuditDeniedAsync(AuditReasonCode.NameCollision, clientId, clientName,
             $"A client with ID '{clientId}' already exists.", cancellationToken);
@@ -485,7 +485,7 @@ public partial class ClientCreateService : IClientCreateService
             AdminMutationStatus.Conflict);
     }
 
-    private async Task<ClientCreateResult> BuildInvalidClientConfigurationResultAsync(
+    private async Task<ClientCreateResult> DenyInvalidClientConfigurationAsync(
         string clientId, string clientName, string? errorMessage, CancellationToken cancellationToken)
     {
         await AuditDeniedAsync(AuditReasonCode.ValidationFailed, clientId, clientName,
@@ -493,7 +493,7 @@ public partial class ClientCreateService : IClientCreateService
         return ClientCreateResult.Failed(errorMessage ?? "Invalid client configuration.");
     }
 
-    private async Task<ClientCreateResult> BuildClientCreationValidationFailureResultAsync(
+    private async Task<ClientCreateResult> DenyClientCreationValidationFailureAsync(
         string? clientId, string? clientName, ValidationErrorDictionary errors, CancellationToken cancellationToken)
     {
         await AuditDeniedAsync(AuditReasonCode.ValidationFailed, clientId ?? string.Empty, clientName ?? string.Empty,
@@ -501,7 +501,7 @@ public partial class ClientCreateService : IClientCreateService
         return ClientCreateResult.Failed(errors);
     }
 
-    private async Task<ClientCreateResult> BuildMissingOpenIdResultAsync(string clientId, string clientName, CancellationToken cancellationToken)
+    private async Task<ClientCreateResult> DenyMissingOpenIdAsync(string clientId, string clientName, CancellationToken cancellationToken)
     {
         await AuditDeniedAsync(AuditReasonCode.ValidationFailed, clientId, clientName,
             "Client creation requires the 'openid' identity resource.", cancellationToken);

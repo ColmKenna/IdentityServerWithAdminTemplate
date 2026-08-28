@@ -81,7 +81,7 @@ public class ApiScopeListService : IApiScopeListService
             ScopeUsageCounts referenceCounts = await _scopeUsageService.GetClientReferenceCountsAsync(
                 ScopeSet.FromStrings(new[] { name }), cancellationToken);
             if (referenceCounts[ScopeName.Create(name)] > 0)
-                return await BuildReferencedScopeResultAsync(transaction, name, scope, cancellationToken);
+                return await DenyReferencedScopeAsync(transaction, name, scope, cancellationToken);
 
             _configurationDbContext.ApiScopes.Remove(scope);
             await _configurationDbContext.SaveChangesAsync(cancellationToken);
@@ -113,7 +113,7 @@ public class ApiScopeListService : IApiScopeListService
         return ApiScopeDeleteResult.NotFound;
     }
 
-    private async Task<ApiScopeDeleteResult> BuildReferencedScopeResultAsync(
+    private async Task<ApiScopeDeleteResult> DenyReferencedScopeAsync(
         IDbContextTransaction transaction, string name, ApiScope scope, CancellationToken cancellationToken)
     {
         await transaction.RollbackAsync(cancellationToken);
