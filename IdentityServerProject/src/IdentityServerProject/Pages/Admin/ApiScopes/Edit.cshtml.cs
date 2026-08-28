@@ -45,7 +45,7 @@ public class EditModel : PageModel
         Name = string.Empty,
         DisplayName = null,
         Description = null,
-        Claims = new List<string>()
+        Claims = []
     };
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)

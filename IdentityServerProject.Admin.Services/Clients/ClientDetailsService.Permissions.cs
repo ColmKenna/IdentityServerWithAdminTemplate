@@ -47,7 +47,7 @@ public partial class ClientDetailsService
             ClientName = string.IsNullOrWhiteSpace(client.ClientName) ? client.ClientId : client.ClientName,
             IsInteractive = isInteractive,
             AllowedScopes = client.AllowedScopes.OrderBy(s => s.Id).Select(s => s.Scope).ToList(),
-            AvailableIdentityScopes = isInteractive ? identityScopes : new List<string>(),
+            AvailableIdentityScopes = isInteractive ? identityScopes : [],
             AvailableApiScopes = apiScopes
         };
     }

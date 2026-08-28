@@ -96,7 +96,7 @@ public class AuthenticationModel : PageModel
             GrantTypes = Input.GrantTypes,
             RedirectUris = Input.RedirectUris,
             PostLogoutRedirectUris = Input.PostLogoutRedirectUris,
-            CorsOrigins = Input.CorsOrigins ?? new List<string>(),
+            CorsOrigins = Input.CorsOrigins ?? [],
             FrontChannelLogoutUri = Input.FrontChannelLogoutUri,
             FrontChannelLogoutSessionRequired = Input.FrontChannelLogoutSessionRequired,
             BackChannelLogoutUri = Input.BackChannelLogoutUri,
@@ -137,10 +137,10 @@ public class AuthenticationModel : PageModel
 
     private void NormalizeCollectionInputs()
     {
-        Input.GrantTypes ??= new List<string>();
-        Input.RedirectUris ??= new List<string>();
-        Input.PostLogoutRedirectUris ??= new List<string>();
-        Input.CorsOrigins ??= new List<string>();
+        Input.GrantTypes ??= [];
+        Input.RedirectUris ??= [];
+        Input.PostLogoutRedirectUris ??= [];
+        Input.CorsOrigins ??= [];
     }
 
     private void ValidateInput()

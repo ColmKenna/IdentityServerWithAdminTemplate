@@ -11,8 +11,8 @@ public class ClientPresetService : IClientPresetService
             "🌐",
             true,
             true,
-            new List<string> { "authorization_code" },
-            new List<string> { "openid", "profile" }),
+            ["authorization_code"],
+            ["openid", "profile"]),
 
         new ClientPreset(
             "spa-bff",
@@ -21,8 +21,8 @@ public class ClientPresetService : IClientPresetService
             "🛡️",
             true,
             true,
-            new List<string> { "authorization_code" },
-            new List<string> { "openid", "profile" }),
+            ["authorization_code"],
+            ["openid", "profile"]),
 
         new ClientPreset(
             "spa-nobff",
@@ -31,8 +31,8 @@ public class ClientPresetService : IClientPresetService
             "💻",
             true,
             false,
-            new List<string> { "authorization_code" },
-            new List<string> { "openid", "profile" }),
+            ["authorization_code"],
+            ["openid", "profile"]),
 
         new ClientPreset(
             "m2m",
@@ -41,8 +41,8 @@ public class ClientPresetService : IClientPresetService
             "⚙️",
             false,
             true,
-            new List<string> { "client_credentials" },
-            new List<string>())
+            ["client_credentials"],
+            [])
     };
 
     public IReadOnlyList<ClientPreset> GetAvailablePresets() => _presets;

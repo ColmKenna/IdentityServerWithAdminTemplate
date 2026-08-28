@@ -298,8 +298,7 @@ public class EditorModel : PageModel
         IEnumerable<string> attachedScopeNames,
         CancellationToken cancellationToken)
     {
-        List<string> allScopeNames = await _apiResourceEditorService.GetAllApiScopeNamesAsync(cancellationToken) ??
-                                     new List<string>();
+        List<string> allScopeNames = await _apiResourceEditorService.GetAllApiScopeNamesAsync(cancellationToken) ?? [];
         AttachableScopeNames = allScopeNames.Where(scopeName => !attachedScopeNames.Contains(scopeName)).ToList();
     }
 

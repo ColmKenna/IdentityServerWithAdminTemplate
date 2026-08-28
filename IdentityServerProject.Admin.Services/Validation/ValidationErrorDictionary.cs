@@ -46,7 +46,7 @@ public sealed class ValidationErrorDictionary : IReadOnlyDictionary<string, stri
         string key = field ?? string.Empty;
         if (!_errors.TryGetValue(key, out List<string>? list))
         {
-            list = new List<string>();
+            list = [];
             _errors[key] = list;
         }
 
@@ -59,7 +59,7 @@ public sealed class ValidationErrorDictionary : IReadOnlyDictionary<string, stri
         string key = field ?? string.Empty;
         if (!_errors.TryGetValue(key, out List<string>? list))
         {
-            list = new List<string>();
+            list = [];
             _errors[key] = list;
         }
 

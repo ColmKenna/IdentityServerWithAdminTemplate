@@ -35,7 +35,7 @@ public static class IdentityResourceTemplates
                     Name = "email",
                     DisplayName = "Email Address",
                     Description = "Your email address",
-                    Claims = new List<string> { "email", "email_verified" }
+                    Claims = ["email", "email_verified"]
                 }
             },
             {
@@ -45,7 +45,7 @@ public static class IdentityResourceTemplates
                     Name = "address",
                     DisplayName = "Address",
                     Description = "Your address information",
-                    Claims = new List<string> { "address" }
+                    Claims = ["address"]
                 }
             },
             {
@@ -55,7 +55,7 @@ public static class IdentityResourceTemplates
                     Name = "phone",
                     DisplayName = "Phone Number",
                     Description = "Your phone number",
-                    Claims = new List<string> { "phone_number", "phone_number_verified" }
+                    Claims = ["phone_number", "phone_number_verified"]
                 }
             }
         };

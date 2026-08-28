@@ -52,7 +52,7 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
             name ?? string.Empty,
             displayName ?? name ?? string.Empty,
             () => CreateCoreAsync(name ?? string.Empty, displayName, description, enabled, required, emphasize,
-                showInDiscoveryDocument, userClaims ?? new List<string>(), cancellationToken),
+                showInDiscoveryDocument, userClaims ?? [], cancellationToken),
             cancellationToken);
 
     private async Task<AdminMutationResult> CreateCoreAsync(
@@ -102,8 +102,7 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
                 Required = required,
                 Emphasize = emphasize,
                 ShowInDiscoveryDocument = showInDiscoveryDocument,
-                UserClaims = userClaims?.Select(c => new IdentityResourceClaim { Type = c }).ToList() ??
-                             new List<IdentityResourceClaim>()
+                UserClaims = userClaims?.Select(c => new IdentityResourceClaim { Type = c }).ToList() ?? []
             };
 
             _configurationDbContext.IdentityResources.Add(newResource);

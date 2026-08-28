@@ -20,9 +20,9 @@ public sealed record ClientEndpoints
         string? backChannelLogoutUri = null,
         bool backChannelLogoutSessionRequired = false)
     {
-        RedirectUris = redirectUris?.ToList() ?? new List<string>();
-        PostLogoutRedirectUris = postLogoutRedirectUris?.ToList() ?? new List<string>();
-        AllowedCorsOrigins = allowedCorsOrigins?.ToList() ?? new List<string>();
+        RedirectUris = redirectUris?.ToList() ?? [];
+        PostLogoutRedirectUris = postLogoutRedirectUris?.ToList() ?? [];
+        AllowedCorsOrigins = allowedCorsOrigins?.ToList() ?? [];
         FrontChannelLogoutUri = frontChannelLogoutUri;
         FrontChannelLogoutSessionRequired = frontChannelLogoutSessionRequired;
         BackChannelLogoutUri = backChannelLogoutUri;
@@ -42,20 +42,20 @@ public sealed record ClientEndpoints
     /// </summary>
     public ClientEndpoints Normalize()
     {
-        var normalizedRedirects = (RedirectUris ?? new List<string>())
+        var normalizedRedirects = (RedirectUris ?? [])
             .Where(u => !string.IsNullOrWhiteSpace(u))
             .Select(u => u.Trim())
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
-        var normalizedPostLogout = (PostLogoutRedirectUris ?? new List<string>())
+        var normalizedPostLogout = (PostLogoutRedirectUris ?? [])
             .Where(u => !string.IsNullOrWhiteSpace(u))
             .Select(u => u.Trim())
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
         var normalizedCors = new List<string>();
-        foreach (string origin in (AllowedCorsOrigins ?? new List<string>()).Where(o => !string.IsNullOrWhiteSpace(o)))
+        foreach (string origin in (AllowedCorsOrigins ?? []).Where(o => !string.IsNullOrWhiteSpace(o)))
             if (UriValidationHelper.TryNormalizeCorsOrigin(origin, ValidationConstants.MaxClientCorsOriginLength,
                     out string norm))
             {

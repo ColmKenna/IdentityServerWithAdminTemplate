@@ -30,9 +30,9 @@ public sealed class ApiResourceEditorModel
         DisplayName = null,
         Description = null,
         Enabled = true,
-        Secrets = new List<ApiResourceSecretItem>(),
-        Scopes = new List<string>(),
-        Claims = new List<string>()
+        Secrets = [],
+        Scopes = [],
+        Claims = []
     };
 }
 

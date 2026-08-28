@@ -47,7 +47,7 @@ public class EditModel : PageModel
         Required = false,
         Emphasize = false,
         ShowInDiscoveryDocument = true,
-        UserClaims = new List<string>()
+        UserClaims = []
     };
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)

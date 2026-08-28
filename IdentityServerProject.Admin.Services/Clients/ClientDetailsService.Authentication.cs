@@ -80,7 +80,7 @@ public partial class ClientDetailsService
             .Where(grantType => !string.IsNullOrWhiteSpace(grantType))
             .Select(grantType => grantType.Trim())
             .Distinct(StringComparer.Ordinal)
-            .ToList() ?? new List<string>();
+            .ToList() ?? [];
         if (grantTypes.Count == 0)
             errors.AddError("Input.GrantTypes", "At least one grant type must be selected.");
         else if (grantTypes.Any(grantType => grantType.Length > ValidationConstants.MaxGrantTypeLength))
@@ -91,7 +91,7 @@ public partial class ClientDetailsService
             .Where(u => !string.IsNullOrWhiteSpace(u))
             .Select(u => u.Trim())
             .Distinct(StringComparer.Ordinal)
-            .ToList() ?? new List<string>();
+            .ToList() ?? [];
 
         if (redirectUris.Any(uri =>
                 !UriValidationHelper.IsValidHttpOrHttpsUri(uri, ValidationConstants.MaxClientRedirectUriLength)))
@@ -102,7 +102,7 @@ public partial class ClientDetailsService
             .Where(u => !string.IsNullOrWhiteSpace(u))
             .Select(u => u.Trim())
             .Distinct(StringComparer.Ordinal)
-            .ToList() ?? new List<string>();
+            .ToList() ?? [];
 
         if (postLogoutUris.Any(uri =>
                 !UriValidationHelper.IsValidHttpOrHttpsUri(uri,
@@ -113,7 +113,7 @@ public partial class ClientDetailsService
         List<string> rawCorsOrigins = input.CorsOrigins?
             .Where(o => !string.IsNullOrWhiteSpace(o))
             .Select(o => o.Trim())
-            .ToList() ?? new List<string>();
+            .ToList() ?? [];
         var corsOrigins = new List<string>();
         foreach (string origin in rawCorsOrigins)
         {

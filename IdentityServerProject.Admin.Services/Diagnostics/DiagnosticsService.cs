@@ -76,7 +76,7 @@ public class DiagnosticsService : IDiagnosticsService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load validation keys from key material service.");
-            model.ActiveValidationKeys = new List<SigningKeySummary>();
+            model.ActiveValidationKeys = [];
         }
 
         try
@@ -86,7 +86,7 @@ public class DiagnosticsService : IDiagnosticsService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to query reserved claim holders.");
-            model.ReservedClaimHolders = new List<ReservedClaimHolder>();
+            model.ReservedClaimHolders = [];
         }
 
         return model;

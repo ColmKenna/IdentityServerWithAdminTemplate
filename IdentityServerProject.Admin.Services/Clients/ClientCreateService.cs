@@ -159,7 +159,7 @@ public partial class ClientCreateService : IClientCreateService
             AllowedScopes = sourceClient.AllowedScopes.Select(s => new ClientScope { Scope = s.Scope }).ToList(),
             Properties = sourceClient.Properties.Select(p => new ClientProperty { Key = p.Key, Value = p.Value })
                 .ToList(),
-            ClientSecrets = new List<ClientSecret>()
+            ClientSecrets = []
         };
 
         string? plaintextSecret = null;
@@ -237,7 +237,7 @@ public partial class ClientCreateService : IClientCreateService
             .Where(u => !string.IsNullOrWhiteSpace(u))
             .Select(u => u.Trim())
             .Distinct()
-            .ToList() ?? new List<string>();
+            .ToList() ?? [];
 
         foreach (string uri in redirectUris)
             if (!UriValidationHelper.IsValidHttpOrHttpsUri(uri, ValidationConstants.MaxClientRedirectUriLength))
@@ -250,7 +250,7 @@ public partial class ClientCreateService : IClientCreateService
             .Where(u => !string.IsNullOrWhiteSpace(u))
             .Select(u => u.Trim())
             .Distinct()
-            .ToList() ?? new List<string>();
+            .ToList() ?? [];
 
         foreach (string uri in postLogoutUris)
             if (!UriValidationHelper.IsValidHttpOrHttpsUri(uri,
@@ -264,7 +264,7 @@ public partial class ClientCreateService : IClientCreateService
         List<string> rawCorsOrigins = input.CorsOrigins?
             .Where(o => !string.IsNullOrWhiteSpace(o))
             .Select(o => o.Trim())
-            .ToList() ?? new List<string>();
+            .ToList() ?? [];
         var corsOrigins = new List<string>();
         foreach (string origin in rawCorsOrigins)
         {
@@ -284,7 +284,7 @@ public partial class ClientCreateService : IClientCreateService
             .Where(grantType => !string.IsNullOrWhiteSpace(grantType))
             .Select(grantType => grantType.Trim())
             .Distinct(StringComparer.Ordinal)
-            .ToList() ?? new List<string>();
+            .ToList() ?? [];
         if (grantTypes.Any(grantType => grantType.Length > ValidationConstants.MaxGrantTypeLength))
             errors.AddError("GrantTypes",
                 $"Grant types cannot exceed {ValidationConstants.MaxGrantTypeLength} characters.");
@@ -298,7 +298,7 @@ public partial class ClientCreateService : IClientCreateService
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Select(s => s.Trim())
             .Distinct(StringComparer.Ordinal)
-            .ToList() ?? new List<string>();
+            .ToList() ?? [];
 
         if (scopes.Any(scope => scope.Length > ValidationConstants.MaxScopeNameLength))
             errors.AddError("AllowedScopes",
@@ -331,13 +331,13 @@ public partial class ClientCreateService : IClientCreateService
             RequireClientSecret = input.RequireClientSecret,
             AccessTokenLifetime = 3600,
             IdentityTokenLifetime = 300,
-            AllowedGrantTypes = new List<ClientGrantType>(),
-            RedirectUris = new List<ClientRedirectUri>(),
-            PostLogoutRedirectUris = new List<ClientPostLogoutRedirectUri>(),
-            AllowedCorsOrigins = new List<ClientCorsOrigin>(),
-            AllowedScopes = new List<ClientScope>(),
-            ClientSecrets = new List<ClientSecret>(),
-            Properties = new List<ClientProperty>()
+            AllowedGrantTypes = [],
+            RedirectUris = [],
+            PostLogoutRedirectUris = [],
+            AllowedCorsOrigins = [],
+            AllowedScopes = [],
+            ClientSecrets = [],
+            Properties = []
         };
 
         if (!string.IsNullOrWhiteSpace(input.SelectedPreset))
@@ -349,8 +349,8 @@ public partial class ClientCreateService : IClientCreateService
 
         if (grantTypes.Count == 0)
             grantTypes = input.SelectedPreset == "m2m"
-                ? new List<string> { "client_credentials" }
-                : new List<string> { "authorization_code" };
+                ? ["client_credentials"]
+                : ["authorization_code"];
 
         foreach (string grantType in grantTypes)
             client.AllowedGrantTypes.Add(new ClientGrantType { GrantType = grantType });
