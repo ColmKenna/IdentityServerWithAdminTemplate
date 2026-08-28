@@ -12,24 +12,16 @@ public interface IDatabaseSchemaReadinessValidator
 ///     Performs a read-only migration-history check. Schema changes remain a deployment
 ///     responsibility; the web process fails closed and never calls Migrate/EnsureCreated.
 /// </summary>
-public sealed class DatabaseSchemaReadinessValidator : IDatabaseSchemaReadinessValidator
+public sealed class DatabaseSchemaReadinessValidator(
+    ApplicationDbContext applicationDb,
+    ConfigurationDbContext configurationDb,
+    PersistedGrantDbContext operationalDb,
+    ILogger<DatabaseSchemaReadinessValidator> logger) : IDatabaseSchemaReadinessValidator
 {
-    private readonly ApplicationDbContext _applicationDb;
-    private readonly ConfigurationDbContext _configurationDb;
-    private readonly ILogger<DatabaseSchemaReadinessValidator> _logger;
-    private readonly PersistedGrantDbContext _operationalDb;
-
-    public DatabaseSchemaReadinessValidator(
-        ApplicationDbContext applicationDb,
-        ConfigurationDbContext configurationDb,
-        PersistedGrantDbContext operationalDb,
-        ILogger<DatabaseSchemaReadinessValidator> logger)
-    {
-        _applicationDb = applicationDb;
-        _configurationDb = configurationDb;
-        _operationalDb = operationalDb;
-        _logger = logger;
-    }
+    private readonly ApplicationDbContext _applicationDb = applicationDb;
+    private readonly ConfigurationDbContext _configurationDb = configurationDb;
+    private readonly ILogger<DatabaseSchemaReadinessValidator> _logger = logger;
+    private readonly PersistedGrantDbContext _operationalDb = operationalDb;
 
     public async Task EnsureReadyAsync(CancellationToken cancellationToken = default)
     {

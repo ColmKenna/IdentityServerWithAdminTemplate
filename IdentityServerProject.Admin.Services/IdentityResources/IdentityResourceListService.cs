@@ -8,21 +8,14 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace IdentityServerProject.Services.IdentityResources;
 
-public class IdentityResourceListService : IIdentityResourceListService
+public class IdentityResourceListService(
+    ConfigurationDbContext configurationDbContext,
+    IScopeUsageService scopeUsageService,
+    IAuditWriter auditWriter) : IIdentityResourceListService
 {
-    private readonly IAuditWriter _auditWriter;
-    private readonly ConfigurationDbContext _configurationDbContext;
-    private readonly IScopeUsageService _scopeUsageService;
-
-    public IdentityResourceListService(
-        ConfigurationDbContext configurationDbContext,
-        IScopeUsageService scopeUsageService,
-        IAuditWriter auditWriter)
-    {
-        _configurationDbContext = configurationDbContext;
-        _scopeUsageService = scopeUsageService;
-        _auditWriter = auditWriter;
-    }
+    private readonly IAuditWriter _auditWriter = auditWriter;
+    private readonly ConfigurationDbContext _configurationDbContext = configurationDbContext;
+    private readonly IScopeUsageService _scopeUsageService = scopeUsageService;
 
     public async Task<ListResult<IdentityResourceListItem>> GetIdentityResourcesAsync(
         ListQuery query,

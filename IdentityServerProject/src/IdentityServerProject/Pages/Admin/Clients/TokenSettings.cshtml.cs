@@ -37,14 +37,9 @@ public class TokenSettingsInputModel
     public int SlidingRefreshTokenLifetime { get; set; }
 }
 
-public class TokenSettingsModel : PageModel
+public class TokenSettingsModel(IClientDetailsService clientDetailsService) : PageModel
 {
-    private readonly IClientDetailsService _clientDetailsService;
-
-    public TokenSettingsModel(IClientDetailsService clientDetailsService)
-    {
-        _clientDetailsService = clientDetailsService;
-    }
+    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
 
     [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
@@ -146,7 +141,7 @@ public class TokenSettingsModel : PageModel
     private void AddErrorsToModelState(IReadOnlyDictionary<string, string[]> errors)
     {
         foreach ((string key, string[] messages) in errors)
-        foreach (string message in messages)
-            ModelState.AddModelError(key, message);
+            foreach (string message in messages)
+                ModelState.AddModelError(key, message);
     }
 }

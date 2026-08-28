@@ -5,28 +5,19 @@ using Microsoft.AspNetCore.Http;
 
 namespace IdentityServerProject.Services.Users;
 
-public partial class UserDetailsService : IUserDetailsService
+public partial class UserDetailsService(
+    IIdentityUserAdministrationStore store,
+    PersistedGrantDbContext persistedGrantDbContext,
+    ReservedClaimTypePolicy reservedClaimTypes,
+    IBackChannelLogoutService backChannelLogoutService,
+    IAuditWriter auditWriter,
+    IHttpContextAccessor httpContextAccessor) : IUserDetailsService
 {
-    private readonly IAuditWriter _auditWriter;
-    private readonly IBackChannelLogoutService _backChannelLogoutService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly PersistedGrantDbContext _persistedGrantDbContext;
-    private readonly ReservedClaimTypePolicy _reservedClaimTypes;
-    private readonly IIdentityUserAdministrationStore _store;
+    private readonly IAuditWriter _auditWriter = auditWriter;
+    private readonly IBackChannelLogoutService _backChannelLogoutService = backChannelLogoutService;
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+    private readonly PersistedGrantDbContext _persistedGrantDbContext = persistedGrantDbContext;
+    private readonly ReservedClaimTypePolicy _reservedClaimTypes = reservedClaimTypes;
+    private readonly IIdentityUserAdministrationStore _store = store;
 
-    public UserDetailsService(
-        IIdentityUserAdministrationStore store,
-        PersistedGrantDbContext persistedGrantDbContext,
-        ReservedClaimTypePolicy reservedClaimTypes,
-        IBackChannelLogoutService backChannelLogoutService,
-        IAuditWriter auditWriter,
-        IHttpContextAccessor httpContextAccessor)
-    {
-        _store = store;
-        _persistedGrantDbContext = persistedGrantDbContext;
-        _reservedClaimTypes = reservedClaimTypes;
-        _backChannelLogoutService = backChannelLogoutService;
-        _auditWriter = auditWriter;
-        _httpContextAccessor = httpContextAccessor;
-    }
 }

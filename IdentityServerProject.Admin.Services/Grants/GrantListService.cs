@@ -7,21 +7,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IdentityServerProject.Services.Grants;
 
-public class GrantListService : IGrantListService
+public class GrantListService(
+    PersistedGrantDbContext persistedGrantDbContext,
+    ConfigurationDbContext configurationDbContext,
+    IAuditWriter auditWriter) : IGrantListService
 {
-    private readonly IAuditWriter _auditWriter;
-    private readonly ConfigurationDbContext _configurationDbContext;
-    private readonly PersistedGrantDbContext _persistedGrantDbContext;
-
-    public GrantListService(
-        PersistedGrantDbContext persistedGrantDbContext,
-        ConfigurationDbContext configurationDbContext,
-        IAuditWriter auditWriter)
-    {
-        _persistedGrantDbContext = persistedGrantDbContext;
-        _configurationDbContext = configurationDbContext;
-        _auditWriter = auditWriter;
-    }
+    private readonly IAuditWriter _auditWriter = auditWriter;
+    private readonly ConfigurationDbContext _configurationDbContext = configurationDbContext;
+    private readonly PersistedGrantDbContext _persistedGrantDbContext = persistedGrantDbContext;
 
     public async Task<ListResult<GrantListItem>> GetGrantsAsync(
         GrantFilter? filter = null,

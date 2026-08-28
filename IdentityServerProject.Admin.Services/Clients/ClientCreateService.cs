@@ -12,23 +12,16 @@ using Client = Duende.IdentityServer.EntityFramework.Entities.Client;
 
 namespace IdentityServerProject.Services.Clients;
 
-public partial class ClientCreateService : IClientCreateService
+public partial class ClientCreateService(
+    ConfigurationDbContext configurationDbContext,
+    IAuditWriter auditWriter,
+    IClientConfigurationValidator clientConfigurationValidator) : IClientCreateService
 {
     public const string PresetPropertyKey = "admin:preset";
-    private readonly IAuditWriter _auditWriter;
-    private readonly IClientConfigurationValidator _clientConfigurationValidator;
+    private readonly IAuditWriter _auditWriter = auditWriter;
+    private readonly IClientConfigurationValidator _clientConfigurationValidator = clientConfigurationValidator;
 
-    private readonly ConfigurationDbContext _configurationDbContext;
-
-    public ClientCreateService(
-        ConfigurationDbContext configurationDbContext,
-        IAuditWriter auditWriter,
-        IClientConfigurationValidator clientConfigurationValidator)
-    {
-        _configurationDbContext = configurationDbContext;
-        _auditWriter = auditWriter;
-        _clientConfigurationValidator = clientConfigurationValidator;
-    }
+    private readonly ConfigurationDbContext _configurationDbContext = configurationDbContext;
 
     public async Task<List<string>> GetAvailableScopesAsync(CancellationToken cancellationToken = default)
     {

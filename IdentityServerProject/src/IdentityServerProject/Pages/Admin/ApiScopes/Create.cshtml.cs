@@ -22,14 +22,9 @@ public class CreateInputModel
     public string? Description { get; set; }
 }
 
-public class CreateModel : PageModel
+public class CreateModel(IApiScopeEditorService apiScopeEditorService) : PageModel
 {
-    private readonly IApiScopeEditorService _apiScopeEditorService;
-
-    public CreateModel(IApiScopeEditorService apiScopeEditorService)
-    {
-        _apiScopeEditorService = apiScopeEditorService;
-    }
+    private readonly IApiScopeEditorService _apiScopeEditorService = apiScopeEditorService;
 
     [BindProperty] public CreateInputModel Input { get; set; } = new();
 

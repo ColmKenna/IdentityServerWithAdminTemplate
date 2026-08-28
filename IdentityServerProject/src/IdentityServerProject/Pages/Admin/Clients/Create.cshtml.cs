@@ -5,21 +5,14 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Admin.Clients;
 
-public class CreateModel : PageModel
+public class CreateModel(
+    IClientCreateService clientCreateService,
+    IClientPresetService clientPresetService,
+    ISecretRevealService secretRevealService) : PageModel
 {
-    private readonly IClientCreateService _clientCreateService;
-    private readonly IClientPresetService _clientPresetService;
-    private readonly ISecretRevealService _secretRevealService;
-
-    public CreateModel(
-        IClientCreateService clientCreateService,
-        IClientPresetService clientPresetService,
-        ISecretRevealService secretRevealService)
-    {
-        _clientCreateService = clientCreateService;
-        _clientPresetService = clientPresetService;
-        _secretRevealService = secretRevealService;
-    }
+    private readonly IClientCreateService _clientCreateService = clientCreateService;
+    private readonly IClientPresetService _clientPresetService = clientPresetService;
+    private readonly ISecretRevealService _secretRevealService = secretRevealService;
 
     [BindProperty] public ClientCreateInputModel Input { get; set; } = new();
 

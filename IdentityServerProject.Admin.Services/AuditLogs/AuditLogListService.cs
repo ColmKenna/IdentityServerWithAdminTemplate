@@ -1,13 +1,8 @@
 namespace IdentityServerProject.Services.AuditLogs;
 
-public sealed class AuditLogListService : IAuditLogListService
+public sealed class AuditLogListService(IAdminAuditStore store) : IAuditLogListService
 {
-    private readonly IAdminAuditStore _store;
-
-    public AuditLogListService(IAdminAuditStore store)
-    {
-        _store = store;
-    }
+    private readonly IAdminAuditStore _store = store;
 
     public Task<ListResult<AuditLogListItem>> GetAuditLogEntriesAsync(
         AuditLogFilter filter,

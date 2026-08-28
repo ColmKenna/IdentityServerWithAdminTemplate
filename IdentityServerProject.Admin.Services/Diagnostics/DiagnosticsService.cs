@@ -7,30 +7,20 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace IdentityServerProject.Services.Diagnostics;
 
-public class DiagnosticsService : IDiagnosticsService
+public class DiagnosticsService(
+    IIdentityDiagnosticsStore identityStore,
+    ConfigurationDbContext configurationDbContext,
+    PersistedGrantDbContext persistedGrantDbContext,
+    IKeyMaterialService keyMaterialService,
+    ReservedClaimTypePolicy reservedClaimTypes,
+    ILogger<DiagnosticsService> logger) : IDiagnosticsService
 {
-    private readonly ConfigurationDbContext _configurationDbContext;
-    private readonly IIdentityDiagnosticsStore _identityStore;
-    private readonly IKeyMaterialService _keyMaterialService;
-    private readonly ILogger<DiagnosticsService> _logger;
-    private readonly PersistedGrantDbContext _persistedGrantDbContext;
-    private readonly ReservedClaimTypePolicy _reservedClaimTypes;
-
-    public DiagnosticsService(
-        IIdentityDiagnosticsStore identityStore,
-        ConfigurationDbContext configurationDbContext,
-        PersistedGrantDbContext persistedGrantDbContext,
-        IKeyMaterialService keyMaterialService,
-        ReservedClaimTypePolicy reservedClaimTypes,
-        ILogger<DiagnosticsService> logger)
-    {
-        _identityStore = identityStore;
-        _configurationDbContext = configurationDbContext;
-        _persistedGrantDbContext = persistedGrantDbContext;
-        _keyMaterialService = keyMaterialService;
-        _reservedClaimTypes = reservedClaimTypes;
-        _logger = logger;
-    }
+    private readonly ConfigurationDbContext _configurationDbContext = configurationDbContext;
+    private readonly IIdentityDiagnosticsStore _identityStore = identityStore;
+    private readonly IKeyMaterialService _keyMaterialService = keyMaterialService;
+    private readonly ILogger<DiagnosticsService> _logger = logger;
+    private readonly PersistedGrantDbContext _persistedGrantDbContext = persistedGrantDbContext;
+    private readonly ReservedClaimTypePolicy _reservedClaimTypes = reservedClaimTypes;
 
     public async Task<DiagnosticsModel> GetDiagnosticsAsync(CancellationToken cancellationToken = default)
     {

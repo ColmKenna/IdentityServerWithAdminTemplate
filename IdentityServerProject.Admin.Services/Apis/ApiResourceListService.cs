@@ -4,14 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IdentityServerProject.Services.Apis;
 
-public class ApiResourceListService : IApiResourceListService
+public class ApiResourceListService(ConfigurationDbContext configurationDbContext) : IApiResourceListService
 {
-    private readonly ConfigurationDbContext _configurationDbContext;
-
-    public ApiResourceListService(ConfigurationDbContext configurationDbContext)
-    {
-        _configurationDbContext = configurationDbContext;
-    }
+    private readonly ConfigurationDbContext _configurationDbContext = configurationDbContext;
 
     public async Task<ListResult<ApiResourceListItem>> GetApiResourcesAsync(
         ListQuery query,

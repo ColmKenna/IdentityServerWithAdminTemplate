@@ -5,21 +5,14 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Admin.Clients;
 
-public class CloneModel : PageModel
+public class CloneModel(
+    IClientCreateService clientCreateService,
+    IClientDetailsService clientDetailsService,
+    ISecretRevealService secretRevealService) : PageModel
 {
-    private readonly IClientCreateService _clientCreateService;
-    private readonly IClientDetailsService _clientDetailsService;
-    private readonly ISecretRevealService _secretRevealService;
-
-    public CloneModel(
-        IClientCreateService clientCreateService,
-        IClientDetailsService clientDetailsService,
-        ISecretRevealService secretRevealService)
-    {
-        _clientCreateService = clientCreateService;
-        _clientDetailsService = clientDetailsService;
-        _secretRevealService = secretRevealService;
-    }
+    private readonly IClientCreateService _clientCreateService = clientCreateService;
+    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
+    private readonly ISecretRevealService _secretRevealService = secretRevealService;
 
     [BindProperty(SupportsGet = true)] public string SourceClientId { get; set; } = string.Empty;
 

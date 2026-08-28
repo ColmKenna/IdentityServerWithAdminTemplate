@@ -7,18 +7,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Admin.Clients;
 
-public class SecretsModel : PageModel
+public class SecretsModel(
+    IClientDetailsService clientDetailsService,
+    ISecretRevealService secretRevealService) : PageModel
 {
-    private readonly IClientDetailsService _clientDetailsService;
-    private readonly ISecretRevealService _secretRevealService;
-
-    public SecretsModel(
-        IClientDetailsService clientDetailsService,
-        ISecretRevealService secretRevealService)
-    {
-        _clientDetailsService = clientDetailsService;
-        _secretRevealService = secretRevealService;
-    }
+    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
+    private readonly ISecretRevealService _secretRevealService = secretRevealService;
 
     [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
@@ -81,8 +75,8 @@ public class SecretsModel : PageModel
                 return NotFound();
 
             foreach ((string field, string[] messages) in result.Errors)
-            foreach (string message in messages)
-                ModelState.AddModelError(field, message);
+                foreach (string message in messages)
+                    ModelState.AddModelError(field, message);
 
             return await LoadPageAsync(cancellationToken);
         }

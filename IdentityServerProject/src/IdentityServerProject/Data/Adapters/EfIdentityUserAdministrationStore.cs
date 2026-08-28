@@ -15,21 +15,14 @@ namespace IdentityServerProject.Data.Adapters;
 ///     including the transactional protected-admin invariants (self-demotion and last-administrator
 ///     protection) that must be evaluated atomically alongside the role-membership check they guard.
 /// </summary>
-public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrationStore
+public sealed class EfIdentityUserAdministrationStore(
+    ApplicationDbContext dbContext,
+    UserManager<ApplicationUser> userManager,
+    RoleManager<IdentityRole> roleManager) : IIdentityUserAdministrationStore
 {
-    private readonly ApplicationDbContext _dbContext;
-    private readonly RoleManager<IdentityRole> _roleManager;
-    private readonly UserManager<ApplicationUser> _userManager;
-
-    public EfIdentityUserAdministrationStore(
-        ApplicationDbContext dbContext,
-        UserManager<ApplicationUser> userManager,
-        RoleManager<IdentityRole> roleManager)
-    {
-        _dbContext = dbContext;
-        _userManager = userManager;
-        _roleManager = roleManager;
-    }
+    private readonly ApplicationDbContext _dbContext = dbContext;
+    private readonly RoleManager<IdentityRole> _roleManager = roleManager;
+    private readonly UserManager<ApplicationUser> _userManager = userManager;
 
     public async Task<ListResult<UserListItem>> GetUsersAsync(
         ListQuery query,

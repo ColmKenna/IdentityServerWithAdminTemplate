@@ -8,21 +8,14 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace IdentityServerProject.Services.ApiScopes;
 
-public class ApiScopeListService : IApiScopeListService
+public class ApiScopeListService(
+    ConfigurationDbContext configurationDbContext,
+    IScopeUsageService scopeUsageService,
+    IAuditWriter auditWriter) : IApiScopeListService
 {
-    private readonly IAuditWriter _auditWriter;
-    private readonly ConfigurationDbContext _configurationDbContext;
-    private readonly IScopeUsageService _scopeUsageService;
-
-    public ApiScopeListService(
-        ConfigurationDbContext configurationDbContext,
-        IScopeUsageService scopeUsageService,
-        IAuditWriter auditWriter)
-    {
-        _configurationDbContext = configurationDbContext;
-        _scopeUsageService = scopeUsageService;
-        _auditWriter = auditWriter;
-    }
+    private readonly IAuditWriter _auditWriter = auditWriter;
+    private readonly ConfigurationDbContext _configurationDbContext = configurationDbContext;
+    private readonly IScopeUsageService _scopeUsageService = scopeUsageService;
 
     public async Task<ListResult<ApiScopeListItem>> GetApiScopesAsync(
         ListQuery query,

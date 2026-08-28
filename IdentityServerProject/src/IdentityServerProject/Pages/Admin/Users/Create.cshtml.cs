@@ -4,14 +4,9 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Admin.Users;
 
-public class CreateModel : PageModel
+public class CreateModel(IUserCreateService userCreateService) : PageModel
 {
-    private readonly IUserCreateService _userCreateService;
-
-    public CreateModel(IUserCreateService userCreateService)
-    {
-        _userCreateService = userCreateService;
-    }
+    private readonly IUserCreateService _userCreateService = userCreateService;
 
     [BindProperty] public UserCreateInputModel Input { get; set; } = new();
 

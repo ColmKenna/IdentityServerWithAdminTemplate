@@ -9,21 +9,14 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Account;
 
-public class LogoutModel : PageModel
+public class LogoutModel(
+    SignInManager<ApplicationUser> signInManager,
+    IIdentityServerInteractionService interaction,
+    IEventService events) : PageModel
 {
-    private readonly IEventService _events;
-    private readonly IIdentityServerInteractionService _interaction;
-    private readonly SignInManager<ApplicationUser> _signInManager;
-
-    public LogoutModel(
-        SignInManager<ApplicationUser> signInManager,
-        IIdentityServerInteractionService interaction,
-        IEventService events)
-    {
-        _signInManager = signInManager;
-        _interaction = interaction;
-        _events = events;
-    }
+    private readonly IEventService _events = events;
+    private readonly IIdentityServerInteractionService _interaction = interaction;
+    private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
 
     [BindProperty] public string? LogoutId { get; set; }
 

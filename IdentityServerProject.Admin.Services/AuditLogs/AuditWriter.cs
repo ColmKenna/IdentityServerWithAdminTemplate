@@ -6,24 +6,16 @@ using Microsoft.Extensions.Logging;
 
 namespace IdentityServerProject.Services.AuditLogs;
 
-public class AuditWriter : IAuditWriter
+public class AuditWriter(
+    IServiceScopeFactory scopeFactory,
+    ILogger<AuditWriter> logger,
+    IHttpContextAccessor httpContextAccessor,
+    TimeProvider timeProvider) : IAuditWriter
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ILogger<AuditWriter> _logger;
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly TimeProvider _timeProvider;
-
-    public AuditWriter(
-        IServiceScopeFactory scopeFactory,
-        ILogger<AuditWriter> logger,
-        IHttpContextAccessor httpContextAccessor,
-        TimeProvider timeProvider)
-    {
-        _scopeFactory = scopeFactory;
-        _logger = logger;
-        _httpContextAccessor = httpContextAccessor;
-        _timeProvider = timeProvider;
-    }
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+    private readonly ILogger<AuditWriter> _logger = logger;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly TimeProvider _timeProvider = timeProvider;
 
     public async Task WriteAsync(AdminAuditEvent auditEvent, CancellationToken cancellationToken = default)
     {

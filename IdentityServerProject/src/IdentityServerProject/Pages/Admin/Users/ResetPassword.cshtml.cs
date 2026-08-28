@@ -18,14 +18,9 @@ public class ResetPasswordInputModel
     public string ConfirmPassword { get; set; } = string.Empty;
 }
 
-public class ResetPasswordModel : PageModel
+public class ResetPasswordModel(IUserDetailsService userDetailsService) : PageModel
 {
-    private readonly IUserDetailsService _userDetailsService;
-
-    public ResetPasswordModel(IUserDetailsService userDetailsService)
-    {
-        _userDetailsService = userDetailsService;
-    }
+    private readonly IUserDetailsService _userDetailsService = userDetailsService;
 
     [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 

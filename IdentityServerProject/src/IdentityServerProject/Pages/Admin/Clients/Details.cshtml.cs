@@ -4,14 +4,9 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Admin.Clients;
 
-public class DetailsModel : PageModel
+public class DetailsModel(IClientDetailsService clientDetailsService) : PageModel
 {
-    private readonly IClientDetailsService _clientDetailsService;
-
-    public DetailsModel(IClientDetailsService clientDetailsService)
-    {
-        _clientDetailsService = clientDetailsService;
-    }
+    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
 
     public ClientDetailsModel Client { get; private set; } = default!;
 

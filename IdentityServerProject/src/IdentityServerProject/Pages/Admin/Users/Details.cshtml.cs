@@ -5,14 +5,9 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Admin.Users;
 
-public class DetailsModel : PageModel
+public class DetailsModel(IUserDetailsService userDetailsService) : PageModel
 {
-    private readonly IUserDetailsService _userDetailsService;
-
-    public DetailsModel(IUserDetailsService userDetailsService)
-    {
-        _userDetailsService = userDetailsService;
-    }
+    private readonly IUserDetailsService _userDetailsService = userDetailsService;
 
     [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 

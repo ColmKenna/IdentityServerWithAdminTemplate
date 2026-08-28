@@ -25,14 +25,9 @@ public class EditInputModel
     public bool ShowInDiscoveryDocument { get; set; } = true;
 }
 
-public class EditModel : PageModel
+public class EditModel(IApiScopeEditorService apiScopeEditorService) : PageModel
 {
-    private readonly IApiScopeEditorService _apiScopeEditorService;
-
-    public EditModel(IApiScopeEditorService apiScopeEditorService)
-    {
-        _apiScopeEditorService = apiScopeEditorService;
-    }
+    private readonly IApiScopeEditorService _apiScopeEditorService = apiScopeEditorService;
 
     // Bound from the query string only (never form body) so a tampered hidden/posted
     // field can never redirect a save/claim edit onto a different scope's row.

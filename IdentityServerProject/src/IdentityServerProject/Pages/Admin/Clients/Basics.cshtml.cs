@@ -18,14 +18,9 @@ public class BasicsInputModel
     public string? Description { get; set; }
 }
 
-public class BasicsModel : PageModel
+public class BasicsModel(IClientDetailsService clientDetailsService) : PageModel
 {
-    private readonly IClientDetailsService _clientDetailsService;
-
-    public BasicsModel(IClientDetailsService clientDetailsService)
-    {
-        _clientDetailsService = clientDetailsService;
-    }
+    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
 
     [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
@@ -83,7 +78,7 @@ public class BasicsModel : PageModel
     private void MapErrors(AdminMutationResult result)
     {
         foreach ((string key, string[] messages) in result.Errors)
-        foreach (string message in messages)
-            ModelState.AddModelError(key, message);
+            foreach (string message in messages)
+                ModelState.AddModelError(key, message);
     }
 }

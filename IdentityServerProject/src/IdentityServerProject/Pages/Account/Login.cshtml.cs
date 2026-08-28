@@ -9,21 +9,14 @@ using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace IdentityServerProject.Pages.Account;
 
-public class LoginModel : PageModel
+public class LoginModel(
+    SignInManager<ApplicationUser> signInManager,
+    IIdentityServerInteractionService interaction,
+    IEventService events) : PageModel
 {
-    private readonly IEventService _events;
-    private readonly IIdentityServerInteractionService _interaction;
-    private readonly SignInManager<ApplicationUser> _signInManager;
-
-    public LoginModel(
-        SignInManager<ApplicationUser> signInManager,
-        IIdentityServerInteractionService interaction,
-        IEventService events)
-    {
-        _signInManager = signInManager;
-        _interaction = interaction;
-        _events = events;
-    }
+    private readonly IEventService _events = events;
+    private readonly IIdentityServerInteractionService _interaction = interaction;
+    private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
 
     [BindProperty] public InputModel Input { get; set; } = new();
 

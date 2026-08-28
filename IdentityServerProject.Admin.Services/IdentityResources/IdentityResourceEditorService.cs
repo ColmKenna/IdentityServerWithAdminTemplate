@@ -7,17 +7,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IdentityServerProject.Services.IdentityResources;
 
-public class IdentityResourceEditorService : IIdentityResourceEditorService
+public class IdentityResourceEditorService(
+    ConfigurationDbContext configurationDbContext,
+    IAuditWriter auditWriter) : IIdentityResourceEditorService
 {
     private const string OpenIdClaimType = "openid";
-    private readonly IAuditWriter _auditWriter;
-    private readonly ConfigurationDbContext _configurationDbContext;
-
-    public IdentityResourceEditorService(ConfigurationDbContext configurationDbContext, IAuditWriter auditWriter)
-    {
-        _configurationDbContext = configurationDbContext;
-        _auditWriter = auditWriter;
-    }
+    private readonly IAuditWriter _auditWriter = auditWriter;
+    private readonly ConfigurationDbContext _configurationDbContext = configurationDbContext;
 
     public Task<AdminMutationResult> CreateAsync(CreateIdentityResourceCommand command,
         CancellationToken cancellationToken = default) =>

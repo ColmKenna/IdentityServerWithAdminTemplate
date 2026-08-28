@@ -6,14 +6,9 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Admin.Roles;
 
-public class CreateModel : PageModel
+public class CreateModel(IRoleService roleService) : PageModel
 {
-    private readonly IRoleService _roleService;
-
-    public CreateModel(IRoleService roleService)
-    {
-        _roleService = roleService;
-    }
+    private readonly IRoleService _roleService = roleService;
 
     [BindProperty] public InputModel Input { get; set; } = new();
 

@@ -3,20 +3,14 @@ using IdentityServerProject.Services.Validation;
 
 namespace IdentityServerProject.Services.Roles;
 
-public class RoleService : IRoleService
+public class RoleService(
+    IRoleAdministrationStore store,
+    IAuditWriter auditWriter) : IRoleService
 {
     // We pass SysAdminRole as the protected role that cannot be deleted.
     private const string ProtectedRoleName = "SysAdmin";
-    private readonly IAuditWriter _auditWriter;
-    private readonly IRoleAdministrationStore _store;
-
-    public RoleService(
-        IRoleAdministrationStore store,
-        IAuditWriter auditWriter)
-    {
-        _store = store;
-        _auditWriter = auditWriter;
-    }
+    private readonly IAuditWriter _auditWriter = auditWriter;
+    private readonly IRoleAdministrationStore _store = store;
 
     public Task<ListResult<RoleListItem>> GetRolesAsync(
         ListQuery query,

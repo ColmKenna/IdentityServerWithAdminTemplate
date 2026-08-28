@@ -25,14 +25,9 @@ public class EditInputModel
     public bool ShowInDiscoveryDocument { get; set; }
 }
 
-public class EditModel : PageModel
+public class EditModel(IIdentityResourceEditorService editorService) : PageModel
 {
-    private readonly IIdentityResourceEditorService _editorService;
-
-    public EditModel(IIdentityResourceEditorService editorService)
-    {
-        _editorService = editorService;
-    }
+    private readonly IIdentityResourceEditorService _editorService = editorService;
 
     [FromQuery] public string Name { get; set; } = string.Empty;
 

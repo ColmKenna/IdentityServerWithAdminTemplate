@@ -2,16 +2,12 @@ using IdentityServerProject.Services.AuditLogs;
 
 namespace IdentityServerProject.Services.Users;
 
-public class UserListService : IUserListService
+public class UserListService(
+    IIdentityUserAdministrationStore store,
+    IAuditWriter auditWriter) : IUserListService
 {
-    private readonly IAuditWriter _auditWriter;
-    private readonly IIdentityUserAdministrationStore _store;
-
-    public UserListService(IIdentityUserAdministrationStore store, IAuditWriter auditWriter)
-    {
-        _store = store;
-        _auditWriter = auditWriter;
-    }
+    private readonly IAuditWriter _auditWriter = auditWriter;
+    private readonly IIdentityUserAdministrationStore _store = store;
 
     public Task<ListResult<UserListItem>> GetUsersAsync(
         ListQuery query,

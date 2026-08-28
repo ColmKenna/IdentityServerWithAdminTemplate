@@ -34,14 +34,9 @@ public class AuthenticationInputModel
     public bool BackChannelLogoutSessionRequired { get; set; }
 }
 
-public class AuthenticationModel : PageModel
+public class AuthenticationModel(IClientDetailsService clientDetailsService) : PageModel
 {
-    private readonly IClientDetailsService _clientDetailsService;
-
-    public AuthenticationModel(IClientDetailsService clientDetailsService)
-    {
-        _clientDetailsService = clientDetailsService;
-    }
+    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
 
     [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
@@ -200,7 +195,7 @@ public class AuthenticationModel : PageModel
     private void AddErrorsToModelState(IReadOnlyDictionary<string, string[]> errors)
     {
         foreach ((string key, string[] messages) in errors)
-        foreach (string message in messages)
-            ModelState.AddModelError(key, message);
+            foreach (string message in messages)
+                ModelState.AddModelError(key, message);
     }
 }

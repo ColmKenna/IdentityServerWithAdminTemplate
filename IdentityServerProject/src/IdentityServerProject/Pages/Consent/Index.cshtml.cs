@@ -7,16 +7,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Consent;
 
-public class IndexModel : PageModel
+public class IndexModel(
+    IIdentityServerInteractionService interaction,
+    IEventService events) : PageModel
 {
-    private readonly IEventService _events;
-    private readonly IIdentityServerInteractionService _interaction;
-
-    public IndexModel(IIdentityServerInteractionService interaction, IEventService events)
-    {
-        _interaction = interaction;
-        _events = events;
-    }
+    private readonly IEventService _events = events;
+    private readonly IIdentityServerInteractionService _interaction = interaction;
 
     public string? ReturnUrl { get; set; }
     public string? ClientName { get; set; }

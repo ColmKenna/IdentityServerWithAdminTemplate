@@ -2,16 +2,12 @@ using IdentityServerProject.Services.AuditLogs;
 
 namespace IdentityServerProject.Services.Users;
 
-public class UserCreateService : IUserCreateService
+public class UserCreateService(
+    IIdentityUserAdministrationStore store,
+    IAuditWriter auditWriter) : IUserCreateService
 {
-    private readonly IAuditWriter _auditWriter;
-    private readonly IIdentityUserAdministrationStore _store;
-
-    public UserCreateService(IIdentityUserAdministrationStore store, IAuditWriter auditWriter)
-    {
-        _store = store;
-        _auditWriter = auditWriter;
-    }
+    private readonly IAuditWriter _auditWriter = auditWriter;
+    private readonly IIdentityUserAdministrationStore _store = store;
 
     public async Task<UserCreateResult> CreateUserAsync(UserCreateInputModel input,
         CancellationToken cancellationToken = default)

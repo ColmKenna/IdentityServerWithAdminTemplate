@@ -6,18 +6,12 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace IdentityServerProject.Data.Adapters;
 
-public sealed class EfRoleAdministrationStore : IRoleAdministrationStore
+public sealed class EfRoleAdministrationStore(
+    ApplicationDbContext dbContext,
+    RoleManager<IdentityRole> roleManager) : IRoleAdministrationStore
 {
-    private readonly ApplicationDbContext _dbContext;
-    private readonly RoleManager<IdentityRole> _roleManager;
-
-    public EfRoleAdministrationStore(
-        ApplicationDbContext dbContext,
-        RoleManager<IdentityRole> roleManager)
-    {
-        _dbContext = dbContext;
-        _roleManager = roleManager;
-    }
+    private readonly ApplicationDbContext _dbContext = dbContext;
+    private readonly RoleManager<IdentityRole> _roleManager = roleManager;
 
     public async Task<ListResult<RoleListItem>> GetRolesAsync(
         ListQuery query,

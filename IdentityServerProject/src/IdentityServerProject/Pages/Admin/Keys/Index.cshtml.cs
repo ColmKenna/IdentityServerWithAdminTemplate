@@ -4,14 +4,9 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Admin.Keys;
 
-public class IndexModel : PageModel
+public class IndexModel(IKeyMaterialService keyMaterialService) : PageModel
 {
-    private readonly IKeyMaterialService _keyMaterialService;
-
-    public IndexModel(IKeyMaterialService keyMaterialService)
-    {
-        _keyMaterialService = keyMaterialService;
-    }
+    private readonly IKeyMaterialService _keyMaterialService = keyMaterialService;
 
     public List<SecurityKeyInfo> Keys { get; private set; } = new();
 

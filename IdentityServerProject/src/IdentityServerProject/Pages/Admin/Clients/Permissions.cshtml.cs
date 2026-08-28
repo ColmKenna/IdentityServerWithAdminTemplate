@@ -11,14 +11,9 @@ public class PermissionsInputModel
     public List<string> AllowedScopes { get; set; } = new();
 }
 
-public class PermissionsModel : PageModel
+public class PermissionsModel(IClientDetailsService clientDetailsService) : PageModel
 {
-    private readonly IClientDetailsService _clientDetailsService;
-
-    public PermissionsModel(IClientDetailsService clientDetailsService)
-    {
-        _clientDetailsService = clientDetailsService;
-    }
+    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
 
     [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
@@ -57,8 +52,8 @@ public class PermissionsModel : PageModel
         if (!result.Succeeded)
         {
             foreach ((string key, string[] messages) in result.Errors)
-            foreach (string message in messages)
-                ModelState.AddModelError(key, message);
+                foreach (string message in messages)
+                    ModelState.AddModelError(key, message);
 
             ClientPermissionsModel? permissions =
                 await _clientDetailsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);

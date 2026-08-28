@@ -7,14 +7,9 @@ namespace IdentityServerProject.Data.Adapters;
 /// <summary>
 ///     EF-backed <see cref="IIdentityDiagnosticsStore" /> adapter against <see cref="ApplicationDbContext" />.
 /// </summary>
-public sealed class EfIdentityDiagnosticsStore : IIdentityDiagnosticsStore
+public sealed class EfIdentityDiagnosticsStore(ApplicationDbContext dbContext) : IIdentityDiagnosticsStore
 {
-    private readonly ApplicationDbContext _dbContext;
-
-    public EfIdentityDiagnosticsStore(ApplicationDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
+    private readonly ApplicationDbContext _dbContext = dbContext;
 
     public Task<bool> CanConnectAsync(CancellationToken cancellationToken = default) =>
         _dbContext.Database.CanConnectAsync(cancellationToken);

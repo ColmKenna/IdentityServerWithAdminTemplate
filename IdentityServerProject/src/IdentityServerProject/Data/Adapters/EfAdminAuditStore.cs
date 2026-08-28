@@ -9,14 +9,9 @@ namespace IdentityServerProject.Data.Adapters;
 ///     EF-backed <see cref="IAdminAuditStore" /> adapter: durable writes and filtered, paged reads
 ///     against <see cref="ApplicationDbContext" />.
 /// </summary>
-public sealed class EfAdminAuditStore : IAdminAuditStore
+public sealed class EfAdminAuditStore(ApplicationDbContext dbContext) : IAdminAuditStore
 {
-    private readonly ApplicationDbContext _dbContext;
-
-    public EfAdminAuditStore(ApplicationDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
+    private readonly ApplicationDbContext _dbContext = dbContext;
 
     public async Task WriteAsync(AuditLogRecord record, CancellationToken cancellationToken = default)
     {

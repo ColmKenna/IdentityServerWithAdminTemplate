@@ -7,16 +7,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IdentityServerProject.Services.ApiScopes;
 
-public class ApiScopeEditorService : IApiScopeEditorService
+public class ApiScopeEditorService(
+    ConfigurationDbContext configurationDbContext,
+    IAuditWriter auditWriter) : IApiScopeEditorService
 {
-    private readonly IAuditWriter _auditWriter;
-    private readonly ConfigurationDbContext _configurationDbContext;
-
-    public ApiScopeEditorService(ConfigurationDbContext configurationDbContext, IAuditWriter auditWriter)
-    {
-        _configurationDbContext = configurationDbContext;
-        _auditWriter = auditWriter;
-    }
+    private readonly IAuditWriter _auditWriter = auditWriter;
+    private readonly ConfigurationDbContext _configurationDbContext = configurationDbContext;
 
     public Task<AdminMutationResult> CreateAsync(CreateApiScopeCommand command,
         CancellationToken cancellationToken = default) =>

@@ -6,7 +6,11 @@ using Client = Duende.IdentityServer.EntityFramework.Entities.Client;
 
 namespace IdentityServerProject.Services.Clients;
 
-public partial class ClientDetailsService : IClientDetailsService
+public partial class ClientDetailsService(
+    ConfigurationDbContext configurationDbContext,
+    IAuditWriter auditWriter,
+    IClientConfigurationValidator clientConfigurationValidator,
+    TimeProvider timeProvider) : IClientDetailsService
 {
     private const string GrantTypeAuthorizationCode = "authorization_code";
     private const string GrantTypeClientCredentials = "client_credentials";
@@ -16,23 +20,11 @@ public partial class ClientDetailsService : IClientDetailsService
 
     public const string DisabledAtPropertyKey = "admin:disabledAt";
     public const int MinimumDisabledDaysBeforeDelete = 90;
-    private readonly IAuditWriter _auditWriter;
-    private readonly IClientConfigurationValidator _clientConfigurationValidator;
+    private readonly IAuditWriter _auditWriter = auditWriter;
+    private readonly IClientConfigurationValidator _clientConfigurationValidator = clientConfigurationValidator;
 
-    private readonly ConfigurationDbContext _configurationDbContext;
-    private readonly TimeProvider _timeProvider;
-
-    public ClientDetailsService(
-        ConfigurationDbContext configurationDbContext,
-        IAuditWriter auditWriter,
-        IClientConfigurationValidator clientConfigurationValidator,
-        TimeProvider timeProvider)
-    {
-        _configurationDbContext = configurationDbContext;
-        _auditWriter = auditWriter;
-        _clientConfigurationValidator = clientConfigurationValidator;
-        _timeProvider = timeProvider;
-    }
+    private readonly ConfigurationDbContext _configurationDbContext = configurationDbContext;
+    private readonly TimeProvider _timeProvider = timeProvider;
 
     private async Task<Client?> LoadCompleteClientAsync(
         string clientId,

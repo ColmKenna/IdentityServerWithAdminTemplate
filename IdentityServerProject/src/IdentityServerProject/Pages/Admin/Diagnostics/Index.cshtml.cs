@@ -3,14 +3,9 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Admin.Diagnostics;
 
-public class IndexModel : PageModel
+public class IndexModel(IDiagnosticsService diagnosticsService) : PageModel
 {
-    private readonly IDiagnosticsService _diagnosticsService;
-
-    public IndexModel(IDiagnosticsService diagnosticsService)
-    {
-        _diagnosticsService = diagnosticsService;
-    }
+    private readonly IDiagnosticsService _diagnosticsService = diagnosticsService;
 
     public DiagnosticsModel Diagnostics { get; private set; } = new();
 

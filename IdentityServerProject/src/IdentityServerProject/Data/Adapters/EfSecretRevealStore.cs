@@ -11,14 +11,9 @@ namespace IdentityServerProject.Data.Adapters;
 ///     Owns every SQL-Server-specific concern moved out of the (now host-agnostic) library service:
 ///     digest-collision detection on insert, and locked, serializable-isolation match-and-consume.
 /// </summary>
-public sealed class EfSecretRevealStore : ISecretRevealStore
+public sealed class EfSecretRevealStore(ApplicationDbContext dbContext) : ISecretRevealStore
 {
-    private readonly ApplicationDbContext _dbContext;
-
-    public EfSecretRevealStore(ApplicationDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
+    private readonly ApplicationDbContext _dbContext = dbContext;
 
     public async Task<SecretRevealInsertStatus> TryInsertAsync(
         byte[] handleDigest,

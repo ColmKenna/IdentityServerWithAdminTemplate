@@ -32,14 +32,9 @@ public class CreateInputModel
     public List<string> UserClaims { get; set; } = new();
 }
 
-public class CreateModel : PageModel
+public class CreateModel(IIdentityResourceEditorService identityResourceEditorService) : PageModel
 {
-    private readonly IIdentityResourceEditorService _identityResourceEditorService;
-
-    public CreateModel(IIdentityResourceEditorService identityResourceEditorService)
-    {
-        _identityResourceEditorService = identityResourceEditorService;
-    }
+    private readonly IIdentityResourceEditorService _identityResourceEditorService = identityResourceEditorService;
 
     [BindProperty] public CreateInputModel Input { get; set; } = new();
 

@@ -3,14 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IdentityServerProject.Services.Scopes;
 
-public class ScopeUsageService : IScopeUsageService
+public class ScopeUsageService(ConfigurationDbContext configurationDbContext) : IScopeUsageService
 {
-    private readonly ConfigurationDbContext _configurationDbContext;
-
-    public ScopeUsageService(ConfigurationDbContext configurationDbContext)
-    {
-        _configurationDbContext = configurationDbContext;
-    }
+    private readonly ConfigurationDbContext _configurationDbContext = configurationDbContext;
 
     public async Task<ScopeUsageCounts> GetClientReferenceCountsAsync(ScopeSet scopeNames,
         CancellationToken cancellationToken = default)

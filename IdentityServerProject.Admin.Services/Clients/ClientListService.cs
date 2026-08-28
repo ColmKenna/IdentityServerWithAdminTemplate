@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IdentityServerProject.Services.Clients;
 
-public class ClientListService : IClientListService
+public class ClientListService(ConfigurationDbContext configurationDbContext) : IClientListService
 {
     private const string GrantTypeAuthorizationCode = "authorization_code";
     private const string GrantTypeClientCredentials = "client_credentials";
@@ -13,12 +13,7 @@ public class ClientListService : IClientListService
     private const string GrantTypeImplicit = "implicit";
     private const string GrantTypeDeviceCode = "urn:ietf:params:oauth:grant-type:device_code";
 
-    private readonly ConfigurationDbContext _configurationDbContext;
-
-    public ClientListService(ConfigurationDbContext configurationDbContext)
-    {
-        _configurationDbContext = configurationDbContext;
-    }
+    private readonly ConfigurationDbContext _configurationDbContext = configurationDbContext;
 
     public async Task<ListResult<ClientListItem>> GetClientsAsync(
         ListQuery query,
