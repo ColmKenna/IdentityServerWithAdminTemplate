@@ -19,7 +19,7 @@ public static class UriValidationHelper
 
     public static IEnumerable<string> GetInvalidHttpUris(IEnumerable<string>? uris, int maxLength)
     {
-        if (uris == null)
+        if (uris is null)
             return Enumerable.Empty<string>();
 
         return uris

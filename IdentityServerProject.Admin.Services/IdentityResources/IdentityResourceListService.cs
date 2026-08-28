@@ -86,7 +86,7 @@ public class IdentityResourceListService : IIdentityResourceListService
                 .Include(r => r.UserClaims)
                 .FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
 
-            if (resource == null)
+            if (resource is null)
                 return await DenyResourceNotFoundAsync(transaction, name, cancellationToken);
 
             if (resource.NonEditable)

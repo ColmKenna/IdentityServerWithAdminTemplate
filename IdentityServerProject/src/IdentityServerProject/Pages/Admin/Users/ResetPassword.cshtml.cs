@@ -67,7 +67,7 @@ public class ResetPasswordModel : PageModel
         UserDetailsModel? account =
             await _userDetailsService.GetUserDetailsAsync(new UserActionContext(UserId.Create(Id), null),
                 cancellationToken);
-        if (account == null)
+        if (account is null)
             return NotFound();
 
         UserNameDisplay = string.IsNullOrWhiteSpace(account.FullName) ? account.UserName : account.FullName;

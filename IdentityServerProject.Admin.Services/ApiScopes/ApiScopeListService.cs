@@ -75,7 +75,7 @@ public class ApiScopeListService : IApiScopeListService
             ApiScope? scope = await _configurationDbContext.ApiScopes
                 .FirstOrDefaultAsync(s => s.Name == name, cancellationToken);
 
-            if (scope == null)
+            if (scope is null)
                 return await HandleScopeNotFoundResultAsync(transaction, name, cancellationToken);
 
             ScopeUsageCounts referenceCounts = await _scopeUsageService.GetClientReferenceCountsAsync(

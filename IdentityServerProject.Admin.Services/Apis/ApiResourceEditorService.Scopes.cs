@@ -31,7 +31,7 @@ public partial class ApiResourceEditorService
             return await DenyScopeAttachmentValidationFailureAsync(name, errors, cancellationToken);
 
         ApiResource? entity = await LoadResourceAsync(name, false, cancellationToken);
-        if (entity == null)
+        if (entity is null)
             return await DenyResourceNotFoundAsync(AuditAction.AttachScope, name, cancellationToken);
 
         bool scopeExists = await _configurationDbContext.ApiScopes
@@ -106,7 +106,7 @@ public partial class ApiResourceEditorService
             errors.AddError("CreateScope.ScopeName",
                 $"Scope name cannot exceed {ValidationConstants.MaxScopeNameLength} characters.");
 
-        if (scopeDisplayName != null && scopeDisplayName.Length > ValidationConstants.MaxDisplayNameLength)
+        if (scopeDisplayName is not null && scopeDisplayName.Length > ValidationConstants.MaxDisplayNameLength)
             errors.AddError("CreateScope.DisplayName",
                 $"Display name cannot exceed {ValidationConstants.MaxDisplayNameLength} characters.");
 
@@ -114,7 +114,7 @@ public partial class ApiResourceEditorService
             return await DenyScopeCreationValidationFailureAsync(name, errors, cancellationToken);
 
         ApiResource? entity = await LoadResourceAsync(name, false, cancellationToken);
-        if (entity == null)
+        if (entity is null)
             return await DenyResourceNotFoundAsync(AuditAction.CreateScope, name, cancellationToken);
 
         bool scopeCollision = await _configurationDbContext.ApiScopes.AsNoTracking()
@@ -202,7 +202,7 @@ public partial class ApiResourceEditorService
 
         ApiResource? entity = await LoadResourceAsync(name, false, cancellationToken);
         ApiResourceScope? scope = entity?.Scopes.FirstOrDefault(s => s.Scope == scopeNameStr);
-        if (entity == null || scope == null)
+        if (entity is null || scope is null)
             return await DenyDetachScopeNotFoundAsync(name, scopeNameStr, cancellationToken);
 
         try

@@ -31,11 +31,11 @@ public sealed class ApiResourceBasicsValidationErrors
         else if (name.Length > ValidationConstants.MaxNameLength)
             errors.AddNameError($"Name cannot exceed {ValidationConstants.MaxNameLength} characters.");
 
-        if (displayName != null && displayName.Length > ValidationConstants.MaxDisplayNameLength)
+        if (displayName is not null && displayName.Length > ValidationConstants.MaxDisplayNameLength)
             errors.AddDisplayNameError(
                 $"Display Name cannot exceed {ValidationConstants.MaxDisplayNameLength} characters.");
 
-        if (description != null && description.Length > ValidationConstants.MaxDescriptionLength)
+        if (description is not null && description.Length > ValidationConstants.MaxDescriptionLength)
             errors.AddDescriptionError(
                 $"Description cannot exceed {ValidationConstants.MaxDescriptionLength} characters.");
 

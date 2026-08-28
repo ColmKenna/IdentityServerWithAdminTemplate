@@ -72,7 +72,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     {
         string userIdStr = userId.Value ?? string.Empty;
         ApplicationUser? user = await _userManager.FindByIdAsync(userIdStr);
-        if (user == null) return new UserUnlockOutcome(UserUnlockResult.NotFound, userIdStr);
+        if (user is null) return new UserUnlockOutcome(UserUnlockResult.NotFound, userIdStr);
 
         string targetName = user.UserName ?? user.Id;
 
@@ -116,7 +116,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
     {
         string userIdStr = userId.Value ?? string.Empty;
         ApplicationUser? user = await _userManager.FindByIdAsync(userIdStr);
-        if (user == null) return null;
+        if (user is null) return null;
 
         var assignedRoles = (await _userManager.GetRolesAsync(user)).OrderBy(r => r).ToList();
         List<string> allRoles =
@@ -150,7 +150,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             outcome = new RoleAdditionOutcome(RoleAdditionStatus.UserNotFound, userIdStr, null);
 
             ApplicationUser? user = await _userManager.FindByIdAsync(userIdStr);
-            if (user == null) return;
+            if (user is null) return;
 
             string targetName = user.UserName ?? user.Id;
 
@@ -209,7 +209,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
                 IsolationLevel.Serializable, cancellationToken);
 
             ApplicationUser? user = await _userManager.FindByIdAsync(userIdStr);
-            if (user == null)
+            if (user is null)
             {
                 await transaction.RollbackAsync(cancellationToken);
                 return;
@@ -217,7 +217,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
 
             string targetName = user.UserName ?? user.Id;
             IdentityRole? roleEntity = await _roleManager.FindByNameAsync(role);
-            if (roleEntity == null)
+            if (roleEntity is null)
             {
                 outcome = new RoleRemovalOutcome(RoleRemovalStatus.RoleNotFound, targetName, false, null);
                 await transaction.RollbackAsync(cancellationToken);
@@ -288,7 +288,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             outcome = new ClaimMutationOutcome(ClaimMutationStatus.UserNotFound, userIdStr, null);
 
             ApplicationUser? user = await _userManager.FindByIdAsync(userIdStr);
-            if (user == null) return;
+            if (user is null) return;
 
             string targetName = user.UserName ?? user.Id;
 
@@ -341,7 +341,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             outcome = new ClaimMutationOutcome(ClaimMutationStatus.UserNotFound, userIdStr, null);
 
             ApplicationUser? user = await _userManager.FindByIdAsync(userIdStr);
-            if (user == null) return;
+            if (user is null) return;
 
             string targetName = user.UserName ?? user.Id;
 
@@ -383,7 +383,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             await using IDbContextTransaction transaction =
                 await _dbContext.Database.BeginTransactionAsync(cancellationToken);
             ApplicationUser? user = await _userManager.FindByIdAsync(userIdStr);
-            if (user == null)
+            if (user is null)
             {
                 await transaction.RollbackAsync(cancellationToken);
                 return;
@@ -422,7 +422,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             outcome = new PasswordResetOutcome(PasswordResetStatus.UserNotFound, userIdStr, null);
 
             ApplicationUser? user = await _userManager.FindByIdAsync(userIdStr);
-            if (user == null) return;
+            if (user is null) return;
 
             string targetName = user.UserName ?? user.Id;
 
@@ -464,7 +464,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             outcome = new UserSuspendOutcome(UserSuspendStatus.UserNotFound, userIdStr);
 
             ApplicationUser? user = await _userManager.FindByIdAsync(userIdStr);
-            if (user == null) return;
+            if (user is null) return;
 
             string targetName = user.UserName ?? user.Id;
 
@@ -510,7 +510,7 @@ public sealed class EfIdentityUserAdministrationStore : IIdentityUserAdministrat
             outcome = new UserDeleteOutcome(UserDeleteStatus.UserNotFound, userIdStr);
 
             ApplicationUser? user = await _userManager.FindByIdAsync(userIdStr);
-            if (user == null) return;
+            if (user is null) return;
 
             string targetName = user.UserName ?? user.Id;
 

@@ -29,7 +29,7 @@ public partial class ClientDetailsService
             .Include(c => c.Properties)
             .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
-        if (client == null)
+        if (client is null)
             return null;
 
         var grantTypesList = client.AllowedGrantTypes.Select(g => g.GrantType).ToList();
@@ -90,7 +90,7 @@ public partial class ClientDetailsService
                 Client? client = await _configurationDbContext.Clients
                     .Include(c => c.Properties)
                     .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
-                if (client == null)
+                if (client is null)
                 {
                     await transaction.RollbackAsync(cancellationToken);
                     return;
@@ -105,9 +105,9 @@ public partial class ClientDetailsService
                     client.Properties.FirstOrDefault(p => p.Key == DisabledAtPropertyKey);
                 if (client.Enabled)
                 {
-                    if (disabledAtProperty != null) client.Properties.Remove(disabledAtProperty);
+                    if (disabledAtProperty is not null) client.Properties.Remove(disabledAtProperty);
                 }
-                else if (disabledAtProperty == null)
+                else if (disabledAtProperty is null)
                     client.Properties.Add(new ClientProperty
                     {
                         Key = DisabledAtPropertyKey,
@@ -174,7 +174,7 @@ public partial class ClientDetailsService
                 Client? client = await _configurationDbContext.Clients
                     .Include(c => c.Properties)
                     .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
-                if (client == null)
+                if (client is null)
                 {
                     outcome = ClientDeleteResult.Failed(
                         "Client not found.", AuditReasonCode.NotFound, AdminMutationStatus.NotFound);
@@ -257,7 +257,7 @@ public partial class ClientDetailsService
         else if (trimmedName.Length > ValidationConstants.MaxNameLength)
             errors.AddError("Input.ClientName",
                 $"Client Name cannot exceed {ValidationConstants.MaxNameLength} characters.");
-        if (trimmedDescription != null && trimmedDescription.Length > ValidationConstants.MaxDescriptionLength)
+        if (trimmedDescription is not null && trimmedDescription.Length > ValidationConstants.MaxDescriptionLength)
             errors.AddError("Input.Description",
                 $"Description cannot exceed {ValidationConstants.MaxDescriptionLength} characters.");
         if (errors.HasErrors)
@@ -265,7 +265,7 @@ public partial class ClientDetailsService
 
         Client? client = await LoadCompleteClientAsync(clientId, true, cancellationToken);
 
-        if (client == null)
+        if (client is null)
             return await DenyBasicsClientNotFoundAsync(clientId, trimmedName, cancellationToken);
 
         try
@@ -274,7 +274,7 @@ public partial class ClientDetailsService
             proposed.ClientName = trimmedName;
             proposed.Description = trimmedDescription;
             string? validationError = await ValidateClientAsync(proposed, cancellationToken);
-            if (validationError != null)
+            if (validationError is not null)
                 return await DenyBasicsInvalidConfigurationAsync(clientId, trimmedName, validationError, cancellationToken);
 
             Client trackedClient = await _configurationDbContext.Clients

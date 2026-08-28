@@ -19,7 +19,7 @@ public partial class ClientDetailsService
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
-        if (client == null)
+        if (client is null)
             return null;
 
         return new ClientTokenSettingsModel
@@ -55,7 +55,7 @@ public partial class ClientDetailsService
         clientId = clientId?.Trim() ?? string.Empty;
         var errors = new ValidationErrorDictionary();
         if (clientId.Length == 0) errors.AddError("Id", "Client ID is required.");
-        if (input == null)
+        if (input is null)
             errors.AddError("Input", "Token settings are required.");
         else
         {
@@ -88,7 +88,7 @@ public partial class ClientDetailsService
 
         Client? client = await LoadCompleteClientAsync(clientId, true, cancellationToken);
 
-        if (client == null)
+        if (client is null)
             return await DenyTokenSettingsClientNotFoundAsync(clientId, cancellationToken);
 
         try
@@ -108,7 +108,7 @@ public partial class ClientDetailsService
             }
 
             string? validationError = await ValidateClientAsync(proposed, cancellationToken);
-            if (validationError != null)
+            if (validationError is not null)
                 return await DenyTokenSettingsInvalidConfigurationAsync(clientId, client, validationError, cancellationToken);
 
             Client trackedClient = await _configurationDbContext.Clients

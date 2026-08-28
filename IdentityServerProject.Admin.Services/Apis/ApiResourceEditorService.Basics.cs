@@ -14,14 +14,14 @@ public partial class ApiResourceEditorService
             return null;
 
         ApiResource? entity = await LoadResourceAsync(name.Value.Trim(), true, cancellationToken);
-        return entity == null ? null : MapToEditorModel(entity);
+        return entity is null ? null : MapToEditorModel(entity);
     }
 
     public Task<SaveApiResourceBasicsResult> SaveBasicsAsync(
         SaveApiResourceBasicsCommand command,
         CancellationToken cancellationToken = default) =>
         ExecuteAuditedAsync(
-            command?.OriginalName == null ? AuditAction.Create : AuditAction.UpdateBasics,
+            command?.OriginalName is null ? AuditAction.Create : AuditAction.UpdateBasics,
             (command?.Name ?? command?.OriginalName)?.Value ?? string.Empty,
             command?.DisplayName ?? (command?.Name ?? command?.OriginalName)?.Value ?? string.Empty,
             () => SaveBasicsCoreAsync(command!, cancellationToken),
@@ -35,7 +35,7 @@ public partial class ApiResourceEditorService
         string name = command.Name.Value?.Trim() ?? string.Empty;
         string? displayName = NormalizeNullableString(command.DisplayName);
         string? description = NormalizeNullableString(command.Description);
-        AuditAction action = originalName == null ? AuditAction.Create : AuditAction.UpdateBasics;
+        AuditAction action = originalName is null ? AuditAction.Create : AuditAction.UpdateBasics;
 
         if (await ValidateBasicsAsync(
                 action,
@@ -127,13 +127,13 @@ public partial class ApiResourceEditorService
         string? description,
         CancellationToken cancellationToken)
     {
-        if (originalName == null)
+        if (originalName is null)
             return HandleResourceCreation(name, displayName, description);
 
         ApiResource? entity = await _configurationDbContext.ApiResources
             .FirstOrDefaultAsync(r => r.Name == originalName, cancellationToken);
 
-        if (entity == null)
+        if (entity is null)
             return await DenyNotFoundAsync(action, originalName, cancellationToken);
 
         entity.Name = name;
@@ -187,7 +187,7 @@ public partial class ApiResourceEditorService
                 action,
                 name,
                 displayName ?? name,
-                originalName == null
+                originalName is null
                     ? $"Created API Resource '{name}'"
                     : $"Updated basic settings for API Resource '{name}'",
                 cancellationToken);

@@ -66,7 +66,7 @@ public class EditorModel : PageModel
 
         ApiResourceEditorModel? editor =
             await _apiResourceEditorService.GetForEditAsync(ResourceScopeName, cancellationToken);
-        if (editor == null)
+        if (editor is null)
             return NotFound();
 
         Editor = editor;
@@ -97,7 +97,7 @@ public class EditorModel : PageModel
     public async Task<IActionResult> OnPostSaveBasicsAsync(CancellationToken cancellationToken = default)
     {
         var command = new SaveApiResourceBasicsCommand(
-            Name != null ? ScopeName.Create(Name) : null,
+            Name is not null ? ScopeName.Create(Name) : null,
             ScopeName.Create(Basics.Name),
             Basics.DisplayName,
             Basics.Description);
@@ -261,7 +261,7 @@ public class EditorModel : PageModel
 
     private void AddErrorsToModelState(SaveApiResourceBasicsResult result)
     {
-        if (result.ValidationErrors != null)
+        if (result.ValidationErrors is not null)
             result.ValidationErrors.AddToModelState(ModelState);
         else
             AddErrorsToModelState(result.Errors);

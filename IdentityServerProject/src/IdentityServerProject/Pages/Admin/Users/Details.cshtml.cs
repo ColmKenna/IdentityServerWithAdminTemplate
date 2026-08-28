@@ -47,7 +47,7 @@ public class DetailsModel : PageModel
             return NotFound();
 
         UserDetailsModel? user = await _userDetailsService.GetUserDetailsAsync(Context, cancellationToken);
-        if (user == null)
+        if (user is null)
             return NotFound();
 
         Account = user;

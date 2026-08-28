@@ -36,7 +36,7 @@ public class PermissionsModel : PageModel
 
         ClientPermissionsModel? permissions =
             await _clientDetailsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
-        if (permissions == null)
+        if (permissions is null)
             return NotFound();
 
         LoadFromModel(permissions);
@@ -62,7 +62,7 @@ public class PermissionsModel : PageModel
 
             ClientPermissionsModel? permissions =
                 await _clientDetailsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
-            if (permissions == null)
+            if (permissions is null)
                 return NotFound();
 
             ClientNameDisplay = permissions.ClientName;

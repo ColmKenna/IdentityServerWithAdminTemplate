@@ -78,7 +78,7 @@ public partial class ClientCreateService : IClientCreateService
     private async Task<ClientCreateResult> CloneClientCoreAsync(string sourceClientId, ClientCreateInputModel input,
         CancellationToken cancellationToken = default)
     {
-        if (input == null)
+        if (input is null)
             throw new ArgumentNullException(nameof(input));
 
         Client? sourceClient = await _configurationDbContext.Clients
@@ -91,7 +91,7 @@ public partial class ClientCreateService : IClientCreateService
             .Include(c => c.Properties)
             .FirstOrDefaultAsync(c => c.ClientId == sourceClientId, cancellationToken);
 
-        if (sourceClient == null)
+        if (sourceClient is null)
             return await DenySourceClientNotFoundAsync(sourceClientId, input.ClientId, input.ClientName, cancellationToken);
 
         string? clientId = input.ClientId?.Trim();
@@ -211,7 +211,7 @@ public partial class ClientCreateService : IClientCreateService
     private async Task<ClientCreateResult> CreateClientCoreAsync(ClientCreateInputModel input,
         CancellationToken cancellationToken = default)
     {
-        if (input == null)
+        if (input is null)
             throw new ArgumentNullException(nameof(input));
 
         var errors = new ValidationErrorDictionary();
@@ -229,7 +229,7 @@ public partial class ClientCreateService : IClientCreateService
             errors.AddError("ClientName", $"Client Name cannot exceed {ValidationConstants.MaxNameLength} characters.");
 
         string? description = input.Description?.Trim();
-        if (description != null && description.Length > ValidationConstants.MaxDescriptionLength)
+        if (description is not null && description.Length > ValidationConstants.MaxDescriptionLength)
             errors.AddError("Description",
                 $"Description cannot exceed {ValidationConstants.MaxDescriptionLength} characters.");
 
@@ -306,7 +306,7 @@ public partial class ClientCreateService : IClientCreateService
         else
         {
             string? unknownScope = scopes.FirstOrDefault(scope => !validSystemScopes.Contains(scope));
-            if (unknownScope != null)
+            if (unknownScope is not null)
                 errors.AddError("AllowedScopes",
                     $"Scope '{unknownScope}' is not a valid API scope or identity resource.");
         }

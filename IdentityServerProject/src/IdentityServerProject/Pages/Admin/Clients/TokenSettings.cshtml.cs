@@ -60,7 +60,7 @@ public class TokenSettingsModel : PageModel
 
         ClientTokenSettingsModel? settings =
             await _clientDetailsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
-        if (settings == null)
+        if (settings is null)
             return NotFound();
 
         LoadFromModel(settings);
@@ -136,7 +136,7 @@ public class TokenSettingsModel : PageModel
     {
         ClientTokenSettingsModel? settings =
             await _clientDetailsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
-        if (settings == null)
+        if (settings is null)
             return NotFound();
 
         ClientNameDisplay = settings.ClientName;

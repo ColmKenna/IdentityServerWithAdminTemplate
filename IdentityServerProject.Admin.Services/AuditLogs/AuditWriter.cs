@@ -90,7 +90,7 @@ public class AuditWriter : IAuditWriter
 
     private static string? SerializeAuditValue(object? value)
     {
-        if (value == null)
+        if (value is null)
             return null;
 
         return value is IAuditValue

@@ -33,7 +33,7 @@ public partial class ApiResourceEditorService
             return await DenyClaimValidationFailureAsync(name, errors, cancellationToken);
 
         ApiResource? entity = await LoadResourceAsync(name, false, cancellationToken);
-        if (entity == null)
+        if (entity is null)
             return await DenyResourceNotFoundAsync(AuditAction.AddClaim, name, cancellationToken);
 
         if (entity.UserClaims.All(c => c.Type != claimType))
@@ -81,7 +81,7 @@ public partial class ApiResourceEditorService
 
         ApiResource? entity = await LoadResourceAsync(name, false, cancellationToken);
         ApiResourceClaim? claim = entity?.UserClaims.FirstOrDefault(c => c.Type == claimType);
-        if (entity == null || claim == null)
+        if (entity is null || claim is null)
             return await DenyRemoveClaimNotFoundAsync(name, claimType, cancellationToken);
 
         try

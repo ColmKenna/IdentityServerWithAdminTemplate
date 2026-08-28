@@ -23,7 +23,7 @@ public partial class ApiResourceEditorService
         name = name?.Trim() ?? string.Empty;
         ApiResource? entity =
             await _configurationDbContext.ApiResources.FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
-        if (entity == null)
+        if (entity is null)
             return await DenyResourceNotFoundAsync(AuditAction.SetEnabled, name, cancellationToken);
 
         try
@@ -58,7 +58,7 @@ public partial class ApiResourceEditorService
         name = name?.Trim() ?? string.Empty;
         ApiResource? entity =
             await _configurationDbContext.ApiResources.FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
-        if (entity == null)
+        if (entity is null)
             return await DenyResourceNotFoundAsync(AuditAction.Delete, name, cancellationToken);
 
         try

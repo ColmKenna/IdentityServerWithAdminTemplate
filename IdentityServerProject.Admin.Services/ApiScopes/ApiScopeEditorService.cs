@@ -32,7 +32,7 @@ public class ApiScopeEditorService : IApiScopeEditorService
         CancellationToken cancellationToken = default)
     {
         ApiScope? entity = await LoadScopeAsync(name.Value, true, cancellationToken);
-        return entity == null ? null : MapToEditorModel(entity);
+        return entity is null ? null : MapToEditorModel(entity);
     }
 
     public Task<AdminMutationResult> CreateAsync(
@@ -152,7 +152,7 @@ public class ApiScopeEditorService : IApiScopeEditorService
     {
         ApiScope? entity = await _configurationDbContext.ApiScopes
             .FirstOrDefaultAsync(s => s.Name == name, cancellationToken);
-        if (entity == null)
+        if (entity is null)
             return await HandleScopeNotFoundAsync(AuditAction.Update, name, cancellationToken);
 
         try
@@ -196,7 +196,7 @@ public class ApiScopeEditorService : IApiScopeEditorService
             return await DenyInvalidClaimTypeAsync(name, cancellationToken);
 
         ApiScope? entity = await LoadScopeAsync(name, false, cancellationToken);
-        if (entity == null)
+        if (entity is null)
             return await HandleScopeNotFoundAsync(AuditAction.AddClaim, name, cancellationToken);
 
         if (entity.UserClaims.All(c => c.Type != claimType.Value))
@@ -240,7 +240,7 @@ public class ApiScopeEditorService : IApiScopeEditorService
     {
         ApiScope? entity = await LoadScopeAsync(name, false, cancellationToken);
         ApiScopeClaim? claim = entity?.UserClaims.FirstOrDefault(c => c.Type == claimType.Value);
-        if (entity == null || claim == null)
+        if (entity is null || claim is null)
             return await DenyClaimNotFoundAsync(name, claimType, cancellationToken);
 
         try

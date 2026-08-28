@@ -79,7 +79,7 @@ public class GrantListService : IGrantListService
         {
             Key = GrantKey.Create(g.Key),
             Type = g.Type,
-            SubjectId = g.SubjectId != null ? UserId.Create(g.SubjectId) : null,
+            SubjectId = g.SubjectId is not null ? UserId.Create(g.SubjectId) : null,
             SessionId = g.SessionId,
             ClientId = ClientId.Create(g.ClientId),
             ClientName = clientNames.TryGetValue(g.ClientId, out string? name) && !string.IsNullOrWhiteSpace(name)
@@ -142,7 +142,7 @@ public class GrantListService : IGrantListService
         PersistedGrant? grant = await _persistedGrantDbContext.PersistedGrants
             .FirstOrDefaultAsync(g => g.Key == keyStr, cancellationToken);
 
-        if (grant == null)
+        if (grant is null)
         {
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.Grant, AuditAction.Revoke, AuditOutcome.Denied, AuditReasonCode.NotFound,

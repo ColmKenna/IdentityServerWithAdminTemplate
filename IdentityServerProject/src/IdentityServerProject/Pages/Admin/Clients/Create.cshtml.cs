@@ -100,7 +100,7 @@ public class CreateModel : PageModel
         Input.SelectedPreset = presetId;
         ClientPreset? preset = _clientPresetService.GetPreset(presetId) ?? _clientPresetService.GetPreset("web");
 
-        if (preset != null)
+        if (preset is not null)
         {
             Input.RequirePkce = preset.RequirePkce;
             Input.RequireClientSecret = preset.RequireClientSecret;

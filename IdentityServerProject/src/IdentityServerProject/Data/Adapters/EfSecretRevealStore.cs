@@ -73,7 +73,7 @@ public sealed class EfSecretRevealStore : ISecretRevealStore
             await using IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable, cancellationToken);
             SecretRevealRecord? record = await LoadForConsumeAsync(handleDigest, cancellationToken);
-            if (record == null)
+            if (record is null)
             {
                 await transaction.CommitAsync(cancellationToken);
                 return;

@@ -58,7 +58,7 @@ public sealed class EfRoleAdministrationStore : IRoleAdministrationStore
         IdentityRole? role = await _dbContext.Roles.AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == roleIdStr, cancellationToken);
 
-        if (role == null) return null;
+        if (role is null) return null;
 
         return new RoleDetailsModel
         {
@@ -80,7 +80,7 @@ public sealed class EfRoleAdministrationStore : IRoleAdministrationStore
             _dbContext.ChangeTracker.Clear();
 
             IdentityRole? existingRole = await _roleManager.FindByNameAsync(input.Name);
-            if (existingRole != null)
+            if (existingRole is not null)
             {
                 outcome = (RoleCreateOutcome.NameCollision, null, null);
                 return;
@@ -123,7 +123,7 @@ public sealed class EfRoleAdministrationStore : IRoleAdministrationStore
             outcome = (RoleDeleteOutcome.RoleNotFound, roleIdStr);
 
             IdentityRole? role = await _roleManager.FindByIdAsync(roleIdStr);
-            if (role == null) return;
+            if (role is null) return;
 
             string targetName = role.Name ?? role.Id;
 

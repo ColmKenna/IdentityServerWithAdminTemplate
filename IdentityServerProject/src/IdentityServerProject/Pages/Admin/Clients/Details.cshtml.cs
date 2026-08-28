@@ -26,7 +26,7 @@ public class DetailsModel : PageModel
 
         ClientDetailsModel? client =
             await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(id), cancellationToken);
-        if (client == null)
+        if (client is null)
             return NotFound();
 
         Client = client;

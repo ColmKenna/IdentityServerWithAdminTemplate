@@ -21,6 +21,6 @@ public class ErrorModel : PageModel
 
         IStatusCodeReExecuteFeature? statusCodeReExecuteFeature =
             HttpContext.Features.Get<IStatusCodeReExecuteFeature>();
-        if (statusCodeReExecuteFeature != null) ErrorStatusCode = HttpContext.Response.StatusCode;
+        if (statusCodeReExecuteFeature is not null) ErrorStatusCode = HttpContext.Response.StatusCode;
     }
 }

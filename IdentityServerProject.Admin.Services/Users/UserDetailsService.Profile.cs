@@ -13,7 +13,7 @@ public partial class UserDetailsService
             return null;
 
         UserAccountDetails? account = await _store.FindUserDetailsAsync(userId, cancellationToken);
-        if (account == null)
+        if (account is null)
             return null;
 
         var claims = account.Claims

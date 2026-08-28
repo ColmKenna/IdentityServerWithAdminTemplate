@@ -7,7 +7,7 @@ internal static class UniqueConstraintViolationDetector
 {
     public static bool IsUniqueConstraintViolation(DbUpdateException exception)
     {
-        for (Exception? current = exception; current != null; current = current.InnerException)
+        for (Exception? current = exception; current is not null; current = current.InnerException)
             if (current is SqlException sqlException && sqlException.Number is 2601 or 2627)
                 return true;
 

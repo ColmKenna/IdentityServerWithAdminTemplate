@@ -57,7 +57,7 @@ public class SecretsModel : PageModel
 
         ClientSecretsModel? secrets =
             await _clientDetailsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
-        if (secrets == null)
+        if (secrets is null)
             return NotFound();
 
         Client = secrets;
@@ -121,7 +121,7 @@ public class SecretsModel : PageModel
     {
         ClientSecretsModel? secrets =
             await _clientDetailsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
-        if (secrets == null)
+        if (secrets is null)
             return NotFound();
 
         Client = secrets;

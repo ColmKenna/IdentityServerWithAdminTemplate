@@ -40,7 +40,7 @@ public class BasicsModel : PageModel
 
         ClientDetailsModel? client =
             await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
-        if (client == null)
+        if (client is null)
             return NotFound();
 
         ClientIdDisplay = client.ClientId;
@@ -59,7 +59,7 @@ public class BasicsModel : PageModel
         {
             ClientDetailsModel? client =
                 await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
-            if (client == null)
+            if (client is null)
                 return NotFound();
             ClientIdDisplay = client.ClientId;
             return Page();

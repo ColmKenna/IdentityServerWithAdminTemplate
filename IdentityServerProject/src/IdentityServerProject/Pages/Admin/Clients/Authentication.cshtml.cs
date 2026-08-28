@@ -59,7 +59,7 @@ public class AuthenticationModel : PageModel
 
         ClientAuthenticationModel? authentication =
             await _clientDetailsService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
-        if (authentication == null)
+        if (authentication is null)
             return NotFound();
 
         LoadFromModel(authentication);
@@ -188,7 +188,7 @@ public class AuthenticationModel : PageModel
     {
         ClientAuthenticationModel? authentication =
             await _clientDetailsService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
-        if (authentication == null)
+        if (authentication is null)
             return NotFound();
 
         ClientNameDisplay = authentication.ClientName;

@@ -24,7 +24,7 @@ public partial class ClientDetailsService
             .Include(c => c.AllowedScopes)
             .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
-        if (client == null)
+        if (client is null)
             return null;
 
         bool isInteractive = IsInteractiveClient(client);
@@ -84,7 +84,7 @@ public partial class ClientDetailsService
                     await _configurationDbContext.Database.BeginTransactionAsync(
                         IsolationLevel.Serializable, cancellationToken);
                 Client? client = await LoadCompleteClientAsync(clientId, false, cancellationToken);
-                if (client == null)
+                if (client is null)
                 {
                     outcome = AdminMutationResult.NotFoundResult();
                     await transaction.RollbackAsync(cancellationToken);
@@ -128,7 +128,7 @@ public partial class ClientDetailsService
                 Duende.IdentityServer.Models.Client proposed = client.ToModel();
                 proposed.AllowedScopes = finalScopes;
                 string? validationError = await ValidateClientAsync(proposed, cancellationToken);
-                if (validationError != null)
+                if (validationError is not null)
                 {
                     outcome = AdminMutationResult.ValidationFailure("Input.AllowedScopes", validationError);
                     await transaction.RollbackAsync(cancellationToken);

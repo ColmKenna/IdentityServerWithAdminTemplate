@@ -27,7 +27,7 @@ public partial class ClientDetailsService
             .Include(c => c.Properties)
             .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
-        if (client == null)
+        if (client is null)
             return null;
 
         var grantTypes = client.AllowedGrantTypes.Select(g => g.GrantType).OrderBy(g => g, StringComparer.Ordinal)
@@ -70,7 +70,7 @@ public partial class ClientDetailsService
         var errors = new ValidationErrorDictionary();
         if (clientId.Length == 0) errors.AddError("Id", "Client ID is required.");
 
-        if (input == null)
+        if (input is null)
         {
             errors.AddError("Input", "Authentication settings are required.");
             input = new ClientAuthenticationInputModel();
@@ -156,7 +156,7 @@ public partial class ClientDetailsService
                     await _configurationDbContext.Database.BeginTransactionAsync(
                         IsolationLevel.Serializable, cancellationToken);
                 Client? client = await LoadCompleteClientAsync(clientId, false, cancellationToken);
-                if (client == null)
+                if (client is null)
                 {
                     outcome = AdminMutationResult.NotFoundResult();
                     await transaction.RollbackAsync(cancellationToken);
@@ -176,7 +176,7 @@ public partial class ClientDetailsService
                 proposed.BackChannelLogoutUri = input.BackChannelLogoutUri;
                 proposed.BackChannelLogoutSessionRequired = input.BackChannelLogoutSessionRequired;
                 string? validationError = await ValidateClientAsync(proposed, cancellationToken);
-                if (validationError != null)
+                if (validationError is not null)
                 {
                     outcome = AdminMutationResult.ValidationFailure("Input.GrantTypes", validationError);
                     await transaction.RollbackAsync(cancellationToken);

@@ -24,7 +24,7 @@ public partial class ClientDetailsService
             .Include(c => c.ClientSecrets)
             .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);
 
-        if (client == null)
+        if (client is null)
             return null;
 
         return new ClientSecretsModel
@@ -61,7 +61,7 @@ public partial class ClientDetailsService
             return await DenySecretClientNotFoundAsync(clientId, cancellationToken);
 
         string? trimmedDescription = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
-        if (trimmedDescription != null &&
+        if (trimmedDescription is not null &&
             trimmedDescription.Length > ValidationConstants.MaxClientSecretDescriptionLength)
             return await DenySecretDescriptionTooLongAsync(clientId, cancellationToken);
 
@@ -77,7 +77,7 @@ public partial class ClientDetailsService
                 .Include(c => c.ClientSecrets)
                 .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
 
-            if (client == null)
+            if (client is null)
                 return await DenySecretGenerationClientNotFoundAsync(transaction, clientId, cancellationToken);
 
             string plaintextSecret = CryptoRandom.CreateUniqueId();
@@ -174,7 +174,7 @@ public partial class ClientDetailsService
                     .Include(c => c.ClientSecrets)
                     .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
 
-                if (client == null)
+                if (client is null)
                 {
                     outcome = ClientSecretRevokeResult.Failed(
                         "Client not found.", AuditReasonCode.NotFound, AdminMutationStatus.NotFound);
@@ -184,7 +184,7 @@ public partial class ClientDetailsService
 
                 targetName = client.ClientName ?? clientId;
                 ClientSecret? secret = client.ClientSecrets.FirstOrDefault(s => s.Id == secretId);
-                if (secret == null)
+                if (secret is null)
                 {
                     outcome = ClientSecretRevokeResult.Failed(
                         "Secret not found.", AuditReasonCode.NotFound, AdminMutationStatus.NotFound);

@@ -33,7 +33,7 @@ public class CloneModel : PageModel
             return RedirectToPage("./Index");
 
         ClientDetailsModel? sourceClient = await LoadSourceClientAsync(cancellationToken);
-        if (sourceClient == null)
+        if (sourceClient is null)
             return NotFound();
 
         Input.ClientId = $"{SourceClientId}-clone";
@@ -49,7 +49,7 @@ public class CloneModel : PageModel
             return RedirectToPage("./Index");
 
         ClientDetailsModel? sourceClient = await LoadSourceClientAsync(cancellationToken);
-        if (sourceClient == null)
+        if (sourceClient is null)
             return NotFound();
 
         ModelState.Remove("Input.SelectedPreset");
@@ -84,7 +84,7 @@ public class CloneModel : PageModel
     {
         ClientDetailsModel? sourceClient =
             await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(SourceClientId), cancellationToken);
-        if (sourceClient != null)
+        if (sourceClient is not null)
             SourceClientName = sourceClient.ClientName ?? SourceClientId;
 
         return sourceClient;

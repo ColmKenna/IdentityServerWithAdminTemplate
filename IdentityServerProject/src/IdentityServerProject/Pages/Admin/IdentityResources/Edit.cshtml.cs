@@ -57,7 +57,7 @@ public class EditModel : PageModel
 
         IdentityResourceEditorModel? editor =
             await _editorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
-        if (editor == null)
+        if (editor is null)
             return NotFound();
 
         Editor = editor;
@@ -75,7 +75,7 @@ public class EditModel : PageModel
         {
             IdentityResourceEditorModel? editor =
                 await _editorService.GetForEditAsync(ScopeName.Create(Name), cancellationToken);
-            if (editor == null)
+            if (editor is null)
                 return NotFound();
             Editor = editor;
             return Page();
@@ -127,7 +127,7 @@ public class EditModel : PageModel
             case IdentityResourceEditOutcome.Protected:
                 IdentityResourceEditorModel? editor =
                     await _editorService.GetForEditAsync(ScopeName.Create(name), cancellationToken);
-                if (editor == null)
+                if (editor is null)
                     return NotFound();
 
                 Editor = editor;

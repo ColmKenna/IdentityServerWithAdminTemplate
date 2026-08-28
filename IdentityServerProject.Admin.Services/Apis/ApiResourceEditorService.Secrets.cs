@@ -39,7 +39,7 @@ public partial class ApiResourceEditorService
 
         AddIdentifierError(errors, "Name", "API Resource", name);
 
-        if (description != null && description.Length > ValidationConstants.MaxSecretDescriptionLength)
+        if (description is not null && description.Length > ValidationConstants.MaxSecretDescriptionLength)
             errors.AddError("Secret.Description",
                 $"Description cannot exceed {ValidationConstants.MaxSecretDescriptionLength} characters.");
 
@@ -54,7 +54,7 @@ public partial class ApiResourceEditorService
         }
 
         ApiResource? entity = await LoadResourceAsync(name, false, cancellationToken);
-        if (entity == null)
+        if (entity is null)
         {
             await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.NotFound, name, name,
                 $"API Resource '{name}' was not found.", cancellationToken);
@@ -106,7 +106,7 @@ public partial class ApiResourceEditorService
         name = name?.Trim() ?? string.Empty;
         ApiResource? entity = await LoadResourceAsync(name, false, cancellationToken);
         ApiResourceSecret? secret = entity?.Secrets.FirstOrDefault(s => s.Id == secretId);
-        if (entity == null || secret == null)
+        if (entity is null || secret is null)
             return await DenyRevokeSecretNotFoundAsync(name, secretId, cancellationToken);
 
         try

@@ -34,7 +34,7 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
         CancellationToken cancellationToken = default)
     {
         IdentityResource? entity = await LoadIdentityResourceAsync(name.Value, true, cancellationToken);
-        return entity == null ? null : MapToEditorModel(entity);
+        return entity is null ? null : MapToEditorModel(entity);
     }
 
     public Task<AdminMutationResult> CreateAsync(
@@ -184,7 +184,7 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
         IdentityResource? entity = await _configurationDbContext.IdentityResources
             .FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
 
-        if (entity == null)
+        if (entity is null)
             return await DenyUpdateBasicsNotFoundAsync(name, cancellationToken);
 
         if (BuiltInIdentityResourcePolicy.IsProtected(entity))
@@ -250,7 +250,7 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
             return await DenyAddClaimOpenIdProtectedAsync(name, cancellationToken);
 
         IdentityResource? entity = await LoadIdentityResourceAsync(name, false, cancellationToken);
-        if (entity == null)
+        if (entity is null)
             return await DenyAddClaimNotFoundAsync(name, cancellationToken);
 
         // Previously absent here while both sibling methods checked it. Without this, claims could
@@ -320,7 +320,7 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
             return await DenyRemoveClaimOpenIdProtectedAsync(name, cancellationToken);
 
         IdentityResource? entity = await LoadIdentityResourceAsync(name, false, cancellationToken);
-        if (entity == null)
+        if (entity is null)
             return await DenyRemoveClaimNotFoundAsync(name, cancellationToken);
 
         // Checked ahead of the resource-level guard so the operator gets the specific reason
@@ -333,7 +333,7 @@ public class IdentityResourceEditorService : IIdentityResourceEditorService
             return await DenyRemoveClaimProtectedAsync(name, entity, cancellationToken);
 
         IdentityResourceClaim? claim = entity.UserClaims.FirstOrDefault(c => c.Type == claimType);
-        if (claim == null)
+        if (claim is null)
             return await DenyClaimNotFoundAsync(name, claimType, cancellationToken);
 
         try
