@@ -37,14 +37,13 @@ public class UserDetailsModel
 
 public class RoleChangeResult
 {
-    public bool Success { get; set; }
+    public bool Success => Status == AdminMutationStatus.Succeeded;
     public AdminMutationStatus Status { get; set; }
     public string? ReasonCode { get; set; }
     public string? ErrorMessage { get; set; }
 
     public static RoleChangeResult Succeeded() => new()
     {
-        Success = true,
         Status = AdminMutationStatus.Succeeded,
         ReasonCode = AuditReasonCode.Succeeded
     };
@@ -55,7 +54,6 @@ public class RoleChangeResult
         AdminMutationStatus status = AdminMutationStatus.Denied) =>
         new()
         {
-            Success = false,
             Status = status,
             ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed,
             ErrorMessage = errorMessage

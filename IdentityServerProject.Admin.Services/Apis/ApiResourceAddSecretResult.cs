@@ -10,28 +10,25 @@ namespace IdentityServerProject.Services.Apis;
 public sealed class ApiResourceAddSecretResult
 {
     public required AdminMutationStatus Status { get; init; }
-    public required bool Success { get; init; }
+    public bool Success => Status == AdminMutationStatus.Succeeded;
     public required string? PlaintextSecret { get; init; }
     public IReadOnlyDictionary<string, string[]> Errors { get; init; } = ValidationErrorDictionary.Empty;
 
     public static ApiResourceAddSecretResult NotFound { get; } = new()
     {
         Status = AdminMutationStatus.NotFound,
-        Success = false,
         PlaintextSecret = null
     };
 
     public static ApiResourceAddSecretResult Succeeded(string plaintextSecret) => new()
     {
         Status = AdminMutationStatus.Succeeded,
-        Success = true,
         PlaintextSecret = plaintextSecret
     };
 
     public static ApiResourceAddSecretResult ValidationFailure(IReadOnlyDictionary<string, string[]> errors) => new()
     {
         Status = AdminMutationStatus.ValidationFailed,
-        Success = false,
         PlaintextSecret = null,
         Errors = errors
     };
@@ -39,7 +36,6 @@ public sealed class ApiResourceAddSecretResult
     public static ApiResourceAddSecretResult ValidationFailure(string field, string message) => new()
     {
         Status = AdminMutationStatus.ValidationFailed,
-        Success = false,
         PlaintextSecret = null,
         Errors = new ValidationErrorDictionary().AddError(field, message)
     };

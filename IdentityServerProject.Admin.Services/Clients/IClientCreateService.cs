@@ -29,7 +29,7 @@ public class ClientCreateInputModel
 public class ClientCreateResult
 {
     public required AdminMutationStatus Status { get; init; }
-    public required bool Success { get; init; }
+    public bool Success => Status == AdminMutationStatus.Succeeded;
     public string? ErrorMessage { get; init; }
     public string? PlaintextSecret { get; init; }
     public string? ClientId { get; init; }
@@ -40,7 +40,6 @@ public class ClientCreateResult
         new()
         {
             Status = status,
-            Success = false,
             ErrorMessage = errorMessage,
             Errors = new ValidationErrorDictionary().AddError(string.Empty, errorMessage)
         };
@@ -50,20 +49,18 @@ public class ClientCreateResult
         new()
         {
             Status = status,
-            Success = false,
             ErrorMessage = errorMessage,
             Errors = new ValidationErrorDictionary().AddError(field, errorMessage)
         };
 
     public static ClientCreateResult Failed(IReadOnlyDictionary<string, string[]> errors,
         AdminMutationStatus status = AdminMutationStatus.ValidationFailed) =>
-        new() { Status = status, Success = false, ErrorMessage = "Validation failed.", Errors = errors };
+        new() { Status = status, ErrorMessage = "Validation failed.", Errors = errors };
 
     public static ClientCreateResult Succeeded(string clientId, string? plaintextSecret = null) =>
         new()
         {
             Status = AdminMutationStatus.Succeeded,
-            Success = true,
             ClientId = clientId,
             PlaintextSecret = plaintextSecret
         };

@@ -27,14 +27,13 @@ public class ClientDetailsModel
 
 public class ClientDeleteResult
 {
-    public bool Success { get; set; }
+    public bool Success => Status == AdminMutationStatus.Succeeded;
     public AdminMutationStatus Status { get; set; }
     public string? ReasonCode { get; set; }
     public string? ErrorMessage { get; set; }
 
     public static ClientDeleteResult Succeeded() => new()
     {
-        Success = true,
         Status = AdminMutationStatus.Succeeded,
         ReasonCode = AuditReasonCode.Succeeded
     };
@@ -45,7 +44,6 @@ public class ClientDeleteResult
         AdminMutationStatus status = AdminMutationStatus.Denied) =>
         new()
         {
-            Success = false,
             Status = status,
             ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed,
             ErrorMessage = errorMessage
@@ -223,19 +221,18 @@ public class ClientSecretsModel
 
 public class ClientSecretGenerateResult
 {
-    public bool Success { get; set; }
+    public bool Success => Status == AdminMutationStatus.Succeeded;
     public AdminMutationStatus Status { get; set; }
     public IReadOnlyDictionary<string, string[]> Errors { get; set; } = ValidationErrorDictionary.Empty;
     public string? ErrorMessage { get; set; }
     public string? PlaintextSecret { get; set; }
 
     public static ClientSecretGenerateResult Succeeded(string plaintextSecret) =>
-        new() { Success = true, Status = AdminMutationStatus.Succeeded, PlaintextSecret = plaintextSecret };
+        new() { Status = AdminMutationStatus.Succeeded, PlaintextSecret = plaintextSecret };
 
     public static ClientSecretGenerateResult ValidationFailure(string field, string errorMessage) =>
         new()
         {
-            Success = false,
             Status = AdminMutationStatus.ValidationFailed,
             Errors = new ValidationErrorDictionary().AddError(field, errorMessage),
             ErrorMessage = errorMessage
@@ -246,7 +243,6 @@ public class ClientSecretGenerateResult
         AdminMutationStatus status = AdminMutationStatus.NotFound) =>
         new()
         {
-            Success = false,
             Status = status,
             Errors = new ValidationErrorDictionary().AddError(string.Empty, errorMessage),
             ErrorMessage = errorMessage
@@ -255,14 +251,13 @@ public class ClientSecretGenerateResult
 
 public class ClientSecretRevokeResult
 {
-    public bool Success { get; set; }
+    public bool Success => Status == AdminMutationStatus.Succeeded;
     public AdminMutationStatus Status { get; set; }
     public string? ReasonCode { get; set; }
     public string? ErrorMessage { get; set; }
 
     public static ClientSecretRevokeResult Succeeded() => new()
     {
-        Success = true,
         Status = AdminMutationStatus.Succeeded,
         ReasonCode = AuditReasonCode.Succeeded
     };
@@ -273,7 +268,6 @@ public class ClientSecretRevokeResult
         AdminMutationStatus status = AdminMutationStatus.Denied) =>
         new()
         {
-            Success = false,
             Status = status,
             ReasonCode = reasonCode ?? AuditReasonCode.ValidationFailed,
             ErrorMessage = errorMessage
