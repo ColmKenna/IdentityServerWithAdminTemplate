@@ -102,6 +102,12 @@ public partial class ClientDetailsService(
     private async Task AuditFailedAsync(AuditAction action, string targetId, string targetName, Exception ex,
         CancellationToken cancellationToken)
     {
+        // Precedence: the innermost catch that knows the client's name wins. This marker lets it
+        // claim the audit event so the outer ExecuteAuditedAsync wrapper - which only has the ID -
+        // does not overwrite a named entry with an unnamed one. The wrapper remains the fallback
+        // for exceptions thrown before the client is loaded. The per-operation catch blocks are
+        // therefore not redundant with the wrapper; removing them downgrades TargetName on every
+        // failure path.
         const string marker = "IdentityServerProject.Audit.Client.Failed";
         if (ex.Data.Contains(marker))
             return;
