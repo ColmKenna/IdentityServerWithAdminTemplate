@@ -11,9 +11,9 @@ public class PermissionsInputModel
     public List<string> AllowedScopes { get; set; } = new();
 }
 
-public class PermissionsModel(IClientDetailsService clientDetailsService) : PageModel
+public class PermissionsModel(IClientPermissionsService clientPermissionsService) : PageModel
 {
-    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
+    private readonly IClientPermissionsService _clientPermissionsService = clientPermissionsService;
 
     [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
@@ -30,7 +30,7 @@ public class PermissionsModel(IClientDetailsService clientDetailsService) : Page
             return NotFound();
 
         ClientPermissionsModel? permissions =
-            await _clientDetailsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
+            await _clientPermissionsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
         if (permissions is null)
             return NotFound();
 
@@ -44,7 +44,7 @@ public class PermissionsModel(IClientDetailsService clientDetailsService) : Page
         if (string.IsNullOrWhiteSpace(Id))
             return NotFound();
 
-        AdminMutationResult result = await _clientDetailsService.UpdateClientPermissionsAsync(
+        AdminMutationResult result = await _clientPermissionsService.UpdateClientPermissionsAsync(
             ClientId.Create(Id), ScopeSet.FromStrings(Input.AllowedScopes), cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
             return NotFound();
@@ -56,7 +56,7 @@ public class PermissionsModel(IClientDetailsService clientDetailsService) : Page
                     ModelState.AddModelError(key, message);
 
             ClientPermissionsModel? permissions =
-                await _clientDetailsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
+                await _clientPermissionsService.GetClientPermissionsAsync(ClientId.Create(Id), cancellationToken);
             if (permissions is null)
                 return NotFound();
 

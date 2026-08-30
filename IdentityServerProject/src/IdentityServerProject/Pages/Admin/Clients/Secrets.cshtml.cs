@@ -8,10 +8,10 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace IdentityServerProject.Pages.Admin.Clients;
 
 public class SecretsModel(
-    IClientDetailsService clientDetailsService,
+    IClientSecretsService clientSecretsService,
     ISecretRevealService secretRevealService) : PageModel
 {
-    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
+    private readonly IClientSecretsService _clientSecretsService = clientSecretsService;
     private readonly ISecretRevealService _secretRevealService = secretRevealService;
 
     [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
@@ -50,7 +50,7 @@ public class SecretsModel(
         }
 
         ClientSecretsModel? secrets =
-            await _clientDetailsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
+            await _clientSecretsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
         if (secrets is null)
             return NotFound();
 
@@ -67,7 +67,7 @@ public class SecretsModel(
             return await LoadPageAsync(cancellationToken);
 
         ClientSecretGenerateResult result =
-            await _clientDetailsService.GenerateClientSecretAsync(ClientId.Create(Id), Description, Expiration,
+            await _clientSecretsService.GenerateClientSecretAsync(ClientId.Create(Id), Description, Expiration,
                 cancellationToken);
         if (!result.Success)
         {
@@ -99,7 +99,7 @@ public class SecretsModel(
             return NotFound();
 
         ClientSecretRevokeResult result =
-            await _clientDetailsService.RevokeClientSecretAsync(ClientId.Create(Id), secretId, cancellationToken);
+            await _clientSecretsService.RevokeClientSecretAsync(ClientId.Create(Id), secretId, cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage is "Client not found." or "Secret not found.")
@@ -114,7 +114,7 @@ public class SecretsModel(
     private async Task<IActionResult> LoadPageAsync(CancellationToken cancellationToken)
     {
         ClientSecretsModel? secrets =
-            await _clientDetailsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
+            await _clientSecretsService.GetClientSecretsAsync(ClientId.Create(Id), cancellationToken);
         if (secrets is null)
             return NotFound();
 

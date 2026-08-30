@@ -18,9 +18,9 @@ public class BasicsInputModel
     public string? Description { get; set; }
 }
 
-public class BasicsModel(IClientDetailsService clientDetailsService) : PageModel
+public class BasicsModel(IClientOverviewService clientOverviewService) : PageModel
 {
-    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
+    private readonly IClientOverviewService _clientOverviewService = clientOverviewService;
 
     [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
@@ -34,7 +34,7 @@ public class BasicsModel(IClientDetailsService clientDetailsService) : PageModel
             return NotFound();
 
         ClientDetailsModel? client =
-            await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
+            await _clientOverviewService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
         if (client is null)
             return NotFound();
 
@@ -53,14 +53,14 @@ public class BasicsModel(IClientDetailsService clientDetailsService) : PageModel
         if (!ModelState.IsValid)
         {
             ClientDetailsModel? client =
-                await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
+                await _clientOverviewService.GetClientDetailsAsync(ClientId.Create(Id), cancellationToken);
             if (client is null)
                 return NotFound();
             ClientIdDisplay = client.ClientId;
             return Page();
         }
 
-        AdminMutationResult result = await _clientDetailsService.UpdateClientBasicsAsync(ClientId.Create(Id),
+        AdminMutationResult result = await _clientOverviewService.UpdateClientBasicsAsync(ClientId.Create(Id),
             Input.ClientName, Input.Description, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
             return NotFound();

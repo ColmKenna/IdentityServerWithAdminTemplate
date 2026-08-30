@@ -7,11 +7,11 @@ namespace IdentityServerProject.Pages.Admin.Clients;
 
 public class CloneModel(
     IClientCreateService clientCreateService,
-    IClientDetailsService clientDetailsService,
+    IClientOverviewService clientOverviewService,
     ISecretRevealService secretRevealService) : PageModel
 {
     private readonly IClientCreateService _clientCreateService = clientCreateService;
-    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
+    private readonly IClientOverviewService _clientOverviewService = clientOverviewService;
     private readonly ISecretRevealService _secretRevealService = secretRevealService;
 
     [BindProperty(SupportsGet = true)] public string SourceClientId { get; set; } = string.Empty;
@@ -76,7 +76,7 @@ public class CloneModel(
     private async Task<ClientDetailsModel?> LoadSourceClientAsync(CancellationToken cancellationToken)
     {
         ClientDetailsModel? sourceClient =
-            await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(SourceClientId), cancellationToken);
+            await _clientOverviewService.GetClientDetailsAsync(ClientId.Create(SourceClientId), cancellationToken);
         if (sourceClient is not null)
             SourceClientName = sourceClient.ClientName ?? SourceClientId;
 

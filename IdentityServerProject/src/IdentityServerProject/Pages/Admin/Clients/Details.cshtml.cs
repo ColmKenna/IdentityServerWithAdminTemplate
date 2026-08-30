@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Admin.Clients;
 
-public class DetailsModel(IClientDetailsService clientDetailsService) : PageModel
+public class DetailsModel(IClientOverviewService clientOverviewService) : PageModel
 {
-    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
+    private readonly IClientOverviewService _clientOverviewService = clientOverviewService;
 
     public ClientDetailsModel Client { get; private set; } = default!;
 
@@ -20,7 +20,7 @@ public class DetailsModel(IClientDetailsService clientDetailsService) : PageMode
             return NotFound();
 
         ClientDetailsModel? client =
-            await _clientDetailsService.GetClientDetailsAsync(ClientId.Create(id), cancellationToken);
+            await _clientOverviewService.GetClientDetailsAsync(ClientId.Create(id), cancellationToken);
         if (client is null)
             return NotFound();
 
@@ -33,7 +33,7 @@ public class DetailsModel(IClientDetailsService clientDetailsService) : PageMode
         if (string.IsNullOrWhiteSpace(id))
             return NotFound();
 
-        bool success = await _clientDetailsService.ToggleClientStatusAsync(ClientId.Create(id), cancellationToken);
+        bool success = await _clientOverviewService.ToggleClientStatusAsync(ClientId.Create(id), cancellationToken);
         if (!success)
             return NotFound();
 
@@ -52,7 +52,7 @@ public class DetailsModel(IClientDetailsService clientDetailsService) : PageMode
         }
 
         ClientDeleteResult result =
-            await _clientDetailsService.DeleteClientAsync(ClientId.Create(id), cancellationToken);
+            await _clientOverviewService.DeleteClientAsync(ClientId.Create(id), cancellationToken);
         if (!result.Success)
         {
             if (result.ErrorMessage == "Client not found.")

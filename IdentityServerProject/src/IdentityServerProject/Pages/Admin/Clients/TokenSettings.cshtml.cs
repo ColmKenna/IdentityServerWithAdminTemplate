@@ -37,9 +37,9 @@ public class TokenSettingsInputModel
     public int SlidingRefreshTokenLifetime { get; set; }
 }
 
-public class TokenSettingsModel(IClientDetailsService clientDetailsService) : PageModel
+public class TokenSettingsModel(IClientTokenSettingsService clientTokenSettingsService) : PageModel
 {
-    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
+    private readonly IClientTokenSettingsService _clientTokenSettingsService = clientTokenSettingsService;
 
     [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
@@ -54,7 +54,7 @@ public class TokenSettingsModel(IClientDetailsService clientDetailsService) : Pa
             return NotFound();
 
         ClientTokenSettingsModel? settings =
-            await _clientDetailsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
+            await _clientTokenSettingsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
         if (settings is null)
             return NotFound();
 
@@ -95,7 +95,7 @@ public class TokenSettingsModel(IClientDetailsService clientDetailsService) : Pa
         };
 
         AdminMutationResult result =
-            await _clientDetailsService.UpdateClientTokenSettingsAsync(ClientId.Create(Id), input, cancellationToken);
+            await _clientTokenSettingsService.UpdateClientTokenSettingsAsync(ClientId.Create(Id), input, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
             return NotFound();
 
@@ -130,7 +130,7 @@ public class TokenSettingsModel(IClientDetailsService clientDetailsService) : Pa
     private async Task<IActionResult> ReloadPageAsync(CancellationToken cancellationToken)
     {
         ClientTokenSettingsModel? settings =
-            await _clientDetailsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
+            await _clientTokenSettingsService.GetClientTokenSettingsAsync(ClientId.Create(Id), cancellationToken);
         if (settings is null)
             return NotFound();
 

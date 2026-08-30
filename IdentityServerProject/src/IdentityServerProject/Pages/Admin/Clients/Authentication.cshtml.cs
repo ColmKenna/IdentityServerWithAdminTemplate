@@ -34,9 +34,9 @@ public class AuthenticationInputModel
     public bool BackChannelLogoutSessionRequired { get; set; }
 }
 
-public class AuthenticationModel(IClientDetailsService clientDetailsService) : PageModel
+public class AuthenticationModel(IClientAuthenticationService clientAuthenticationService) : PageModel
 {
-    private readonly IClientDetailsService _clientDetailsService = clientDetailsService;
+    private readonly IClientAuthenticationService _clientAuthenticationService = clientAuthenticationService;
 
     [BindProperty(SupportsGet = true)] public string Id { get; set; } = string.Empty;
 
@@ -53,7 +53,7 @@ public class AuthenticationModel(IClientDetailsService clientDetailsService) : P
             return NotFound();
 
         ClientAuthenticationModel? authentication =
-            await _clientDetailsService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
+            await _clientAuthenticationService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
         if (authentication is null)
             return NotFound();
 
@@ -99,7 +99,7 @@ public class AuthenticationModel(IClientDetailsService clientDetailsService) : P
         };
 
         AdminMutationResult result =
-            await _clientDetailsService.UpdateClientAuthenticationAsync(ClientId.Create(Id), input, cancellationToken);
+            await _clientAuthenticationService.UpdateClientAuthenticationAsync(ClientId.Create(Id), input, cancellationToken);
         if (result.Status == AdminMutationStatus.NotFound)
             return NotFound();
 
@@ -182,7 +182,7 @@ public class AuthenticationModel(IClientDetailsService clientDetailsService) : P
     private async Task<IActionResult> ReloadPageAsync(CancellationToken cancellationToken)
     {
         ClientAuthenticationModel? authentication =
-            await _clientDetailsService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
+            await _clientAuthenticationService.GetClientAuthenticationAsync(ClientId.Create(Id), cancellationToken);
         if (authentication is null)
             return NotFound();
 
