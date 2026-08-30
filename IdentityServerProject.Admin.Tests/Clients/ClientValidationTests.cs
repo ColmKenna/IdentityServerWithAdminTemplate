@@ -193,7 +193,7 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService detailsService = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService detailsService = sp.GetRequiredService<ClientDetailsService>();
 
             var input = new ClientAuthenticationInputModel
             {
@@ -231,7 +231,7 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = sp.GetRequiredService<ClientDetailsService>();
             AdminMutationResult result = await service.UpdateClientAuthenticationAsync(ClientId.Create(clientId),
                 new ClientAuthenticationInputModel
                 {
@@ -277,7 +277,7 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = sp.GetRequiredService<ClientDetailsService>();
             var input = new ClientAuthenticationInputModel
             {
                 GrantTypes = new List<string> { new('g', ValidationConstants.MaxGrantTypeLength + 1) },
@@ -343,7 +343,7 @@ public class ClientValidationTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService detailsService = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService detailsService = sp.GetRequiredService<ClientDetailsService>();
 
             var input = new ClientTokenSettingsInputModel
             {

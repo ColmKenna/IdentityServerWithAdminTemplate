@@ -22,7 +22,7 @@ public class ClientsPermissionsIntegrationTests : IDisposable
         foreach (IDisposable disposable in _disposables) disposable.Dispose();
     }
 
-    private HttpClient CreateClient(IClientDetailsService clientDetailsService, bool allowAutoRedirect = true)
+    private HttpClient CreateClient(IClientPermissionsService clientDetailsService, bool allowAutoRedirect = true)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
@@ -59,9 +59,9 @@ public class ClientsPermissionsIntegrationTests : IDisposable
         AvailableApiScopes = new List<string> { "coop.market.api", "coop.market.admin" }
     };
 
-    private static IClientDetailsService MockService(ClientPermissionsModel? details = null, bool updateSuccess = true)
+    private static IClientPermissionsService MockService(ClientPermissionsModel? details = null, bool updateSuccess = true)
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientPermissionsService>();
         mock.Setup(s => s.GetClientPermissionsAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ClientId id, CancellationToken _) =>
                 id.Value == "non-existent" ? null : details ?? SampleInteractivePermissions(id.Value));
@@ -163,7 +163,7 @@ public class ClientsPermissionsIntegrationTests : IDisposable
     [Fact]
     public async Task Post_AddingAndRemovingApiScopes_RedirectsToDetailsAndPersists()
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientPermissionsService>();
         mock.Setup(s => s.GetClientPermissionsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleInteractivePermissions());
         mock.Setup(s =>

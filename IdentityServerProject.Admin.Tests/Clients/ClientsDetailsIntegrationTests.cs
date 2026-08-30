@@ -20,7 +20,7 @@ public class ClientsDetailsIntegrationTests : IDisposable
         foreach (IDisposable disposable in _disposables) disposable.Dispose();
     }
 
-    private HttpClient CreateClient(IClientDetailsService clientDetailsService, bool allowAutoRedirect = true)
+    private HttpClient CreateClient(IClientOverviewService clientDetailsService, bool allowAutoRedirect = true)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
@@ -59,12 +59,12 @@ public class ClientsDetailsIntegrationTests : IDisposable
         DeleteBlockReason = "Client must be disabled before it can be deleted."
     };
 
-    private static IClientDetailsService MockService(
+    private static IClientOverviewService MockService(
         ClientDetailsModel? details = null,
         bool toggleSuccess = true,
         ClientDeleteResult? deleteResult = null)
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientOverviewService>();
         mock.Setup(s => s.GetClientDetailsAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ClientId id, CancellationToken _) =>
                 id.Value == "non-existent" ? null : details ?? SampleClientDetails(id.Value));

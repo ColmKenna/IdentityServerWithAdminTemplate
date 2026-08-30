@@ -65,7 +65,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientOverviewService service = sp.GetRequiredService<IClientOverviewService>();
             ClientDetailsModel? result =
                 await service.GetClientDetailsAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.Null(result);
@@ -80,7 +80,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientOverviewService service = sp.GetRequiredService<IClientOverviewService>();
 
             ClientDetailsModel? details = await service.GetClientDetailsAsync(ClientId.Create(clientId));
 
@@ -111,7 +111,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientOverviewService service = sp.GetRequiredService<IClientOverviewService>();
 
             bool firstToggle = await service.ToggleClientStatusAsync(ClientId.Create(clientId));
             Assert.True(firstToggle);
@@ -134,7 +134,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientOverviewService service = sp.GetRequiredService<IClientOverviewService>();
             bool result = await service.ToggleClientStatusAsync(ClientId.Create("non-existent-client-id-abc"));
             Assert.False(result);
         });
@@ -148,7 +148,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientOverviewService service = sp.GetRequiredService<IClientOverviewService>();
 
             AdminMutationResult result =
                 await service.UpdateClientBasicsAsync(ClientId.Create(clientId), "New Name", "New Description");
@@ -166,7 +166,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientOverviewService service = sp.GetRequiredService<IClientOverviewService>();
             AdminMutationResult result =
                 await service.UpdateClientBasicsAsync(ClientId.Create("non-existent-client-id-abc"), "New Name",
                     "New Description");
@@ -182,7 +182,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientOverviewService service = sp.GetRequiredService<IClientOverviewService>();
 
             ClientDeleteResult result = await service.DeleteClientAsync(ClientId.Create(clientId));
 
@@ -202,7 +202,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientOverviewService service = sp.GetRequiredService<IClientOverviewService>();
 
             // Disable via the service so admin:disabledAt is stamped with "now".
             await service.ToggleClientStatusAsync(ClientId.Create(clientId));
@@ -244,7 +244,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientOverviewService service = sp.GetRequiredService<IClientOverviewService>();
 
             ClientDetailsModel? details = await service.GetClientDetailsAsync(ClientId.Create(clientId));
             Assert.NotNull(details);
@@ -263,7 +263,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientOverviewService service = sp.GetRequiredService<IClientOverviewService>();
             ClientDeleteResult result = await service.DeleteClientAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.False(result.Success);
         });
@@ -277,7 +277,7 @@ public class ClientDetailsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientOverviewService service = sp.GetRequiredService<IClientOverviewService>();
             ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
 
             await service.ToggleClientStatusAsync(ClientId.Create(clientId));

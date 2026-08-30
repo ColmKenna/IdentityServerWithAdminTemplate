@@ -35,7 +35,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientTokenSettingsService service = sp.GetRequiredService<IClientTokenSettingsService>();
             ClientTokenSettingsModel? result =
                 await service.GetClientTokenSettingsAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.Null(result);
@@ -58,7 +58,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientTokenSettingsService service = sp.GetRequiredService<IClientTokenSettingsService>();
             ClientTokenSettingsModel? result = await service.GetClientTokenSettingsAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
@@ -93,7 +93,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientTokenSettingsService service = sp.GetRequiredService<IClientTokenSettingsService>();
 
             var input = new ClientTokenSettingsInputModel
             {
@@ -157,7 +157,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientTokenSettingsService service = sp.GetRequiredService<IClientTokenSettingsService>();
             AdminMutationResult result = await service.UpdateClientTokenSettingsAsync(ClientId.Create(clientId),
                 new ClientTokenSettingsInputModel
                 {
@@ -189,7 +189,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientTokenSettingsService service = sp.GetRequiredService<IClientTokenSettingsService>();
             AdminMutationResult result = await service.UpdateClientTokenSettingsAsync(
                 ClientId.Create("non-existent-client-id-abc"), new ClientTokenSettingsInputModel
                 {
@@ -223,7 +223,7 @@ public class ClientTokenSettingsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientTokenSettingsService service = sp.GetRequiredService<IClientTokenSettingsService>();
             AdminMutationResult result = await service.UpdateClientTokenSettingsAsync(ClientId.Create(clientId),
                 new ClientTokenSettingsInputModel
                 {

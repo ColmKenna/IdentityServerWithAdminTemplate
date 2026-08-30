@@ -52,7 +52,15 @@ public class ClientEditorTabsIntegrationTests : IDisposable
 
         WebApplicationFactory<Program> factory = baseFactory.WithWebHostBuilder(builder =>
         {
-            builder.ConfigureTestServices(services => { services.AddSingleton(MockService()); });
+            builder.ConfigureTestServices(services =>
+            {
+                Mock<IClientOverviewService> mock = MockService();
+                services.AddSingleton(mock.Object);
+                services.AddSingleton(mock.As<IClientAuthenticationService>().Object);
+                services.AddSingleton(mock.As<IClientPermissionsService>().Object);
+                services.AddSingleton(mock.As<IClientSecretsService>().Object);
+                services.AddSingleton(mock.As<IClientTokenSettingsService>().Object);
+            });
         });
         _disposables.Add(factory);
 
@@ -60,11 +68,12 @@ public class ClientEditorTabsIntegrationTests : IDisposable
     }
 
     /// <summary>
-    ///     One mock serving every editor page, so a single client can walk all five URLs.
+    ///     One mock instance surfaced through all five editor interfaces, so a single client can
+    ///     walk all five URLs. Moq's As&lt;T&gt;() keeps it one object, not five.
     /// </summary>
-    private static IClientDetailsService MockService()
+    private static Mock<IClientOverviewService> MockService()
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientOverviewService>();
 
         mock.Setup(s =>
                 s.GetClientDetailsAsync(Services.Clients.ClientId.Create(ClientId), It.IsAny<CancellationToken>()))
@@ -78,7 +87,7 @@ public class ClientEditorTabsIntegrationTests : IDisposable
                 Enabled = true
             });
 
-        mock.Setup(s =>
+        mock.As<IClientAuthenticationService>().Setup(s =>
                 s.GetClientAuthenticationAsync(Services.Clients.ClientId.Create(ClientId),
                     It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ClientAuthenticationModel
@@ -90,7 +99,7 @@ public class ClientEditorTabsIntegrationTests : IDisposable
                 GrantTypes = new List<string> { "authorization_code" }
             });
 
-        mock.Setup(s =>
+        mock.As<IClientPermissionsService>().Setup(s =>
                 s.GetClientPermissionsAsync(Services.Clients.ClientId.Create(ClientId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ClientPermissionsModel
             {
@@ -102,7 +111,7 @@ public class ClientEditorTabsIntegrationTests : IDisposable
                 AvailableApiScopes = new List<string> { "coop.market.api" }
             });
 
-        mock.Setup(s =>
+        mock.As<IClientSecretsService>().Setup(s =>
                 s.GetClientSecretsAsync(Services.Clients.ClientId.Create(ClientId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ClientSecretsModel
             {
@@ -112,7 +121,7 @@ public class ClientEditorTabsIntegrationTests : IDisposable
                 Secrets = new List<ClientSecretSummary>()
             });
 
-        mock.Setup(s =>
+        mock.As<IClientTokenSettingsService>().Setup(s =>
                 s.GetClientTokenSettingsAsync(Services.Clients.ClientId.Create(ClientId),
                     It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ClientTokenSettingsModel
@@ -124,7 +133,7 @@ public class ClientEditorTabsIntegrationTests : IDisposable
                 )
             });
 
-        return mock.Object;
+        return mock;
     }
 
     private static async Task<IDocument> GetDocumentAsync(HttpResponseMessage response)

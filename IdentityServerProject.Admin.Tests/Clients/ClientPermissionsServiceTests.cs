@@ -80,7 +80,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientPermissionsService service = sp.GetRequiredService<IClientPermissionsService>();
             ClientPermissionsModel? result =
                 await service.GetClientPermissionsAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.Null(result);
@@ -104,7 +104,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientPermissionsService service = sp.GetRequiredService<IClientPermissionsService>();
             ClientPermissionsModel? result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
@@ -133,7 +133,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientPermissionsService service = sp.GetRequiredService<IClientPermissionsService>();
             ClientPermissionsModel? result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
@@ -159,7 +159,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientPermissionsService service = sp.GetRequiredService<IClientPermissionsService>();
 
             AdminMutationResult updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId),
                 ScopeSet.FromStrings(new[] { $"{tag}.read" }));
@@ -188,7 +188,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientPermissionsService service = sp.GetRequiredService<IClientPermissionsService>();
 
             AdminMutationResult updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId),
                 ScopeSet.FromStrings(new[] { "openid", "profile", $"{tag}.write" }));
@@ -219,7 +219,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientPermissionsService service = sp.GetRequiredService<IClientPermissionsService>();
 
             AdminMutationResult updateResult = await service.UpdateClientPermissionsAsync(ClientId.Create(clientId),
                 ScopeSet.FromStrings(new[] { "openid", $"{tag}.write" }));
@@ -237,7 +237,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientPermissionsService service = sp.GetRequiredService<IClientPermissionsService>();
             AdminMutationResult result = await service.UpdateClientPermissionsAsync(
                 ClientId.Create("non-existent-client-id-xyz"), ScopeSet.FromStrings(new[] { "openid" }));
             Assert.Equal(AdminMutationStatus.NotFound, result.Status);
@@ -260,7 +260,7 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientPermissionsService service = sp.GetRequiredService<IClientPermissionsService>();
             AdminMutationResult result = await service.UpdateClientPermissionsAsync(
                 ClientId.Create(clientId),
                 ScopeSet.FromStrings(new[] { "openid", "scope.that.is.not.configured" }));

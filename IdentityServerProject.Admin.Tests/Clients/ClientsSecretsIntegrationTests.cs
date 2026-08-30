@@ -21,7 +21,7 @@ public class ClientsSecretsIntegrationTests : IDisposable
         foreach (IDisposable disposable in _disposables) disposable.Dispose();
     }
 
-    private HttpClient CreateClient(IClientDetailsService clientDetailsService, bool allowAutoRedirect = true)
+    private HttpClient CreateClient(IClientSecretsService clientDetailsService, bool allowAutoRedirect = true)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
@@ -50,12 +50,12 @@ public class ClientsSecretsIntegrationTests : IDisposable
             .ToList()
     };
 
-    private static IClientDetailsService MockService(
+    private static IClientSecretsService MockService(
         ClientSecretsModel? details = null,
         ClientSecretGenerateResult? generateResult = null,
         ClientSecretRevokeResult? revokeResult = null)
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientSecretsService>();
         mock.Setup(s => s.GetClientSecretsAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ClientId id, CancellationToken _) =>
                 id.Value == "non-existent" ? null : details ?? SampleSecrets(id.Value));
@@ -164,7 +164,7 @@ public class ClientsSecretsIntegrationTests : IDisposable
     [Fact]
     public async Task PostGenerate_ThenGet_ShowsRevealBannerOnce()
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientSecretsService>();
         mock.Setup(s => s.GetClientSecretsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleSecrets());
         mock.Setup(s => s.GenerateClientSecretAsync(ClientId.Create("test-client"), It.IsAny<string>(),
@@ -234,7 +234,7 @@ public class ClientsSecretsIntegrationTests : IDisposable
     [Fact]
     public async Task PostGenerate_OverlongDescription_ReturnsSamePageWithFieldErrorAndDoesNotGenerate()
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientSecretsService>();
         mock.Setup(s => s.GetClientSecretsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleSecrets());
 
@@ -270,7 +270,7 @@ public class ClientsSecretsIntegrationTests : IDisposable
     [Fact]
     public async Task PostRevoke_Allowed_RedirectsAndRemovesSecret()
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientSecretsService>();
         mock.Setup(s => s.GetClientSecretsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleSecrets());
         mock.Setup(s => s.RevokeClientSecretAsync(ClientId.Create("test-client"), 1, It.IsAny<CancellationToken>()))
@@ -302,7 +302,7 @@ public class ClientsSecretsIntegrationTests : IDisposable
     {
         string blockReason =
             "This is the last secret on a confidential client and cannot be revoked. Generate a replacement secret first, or disable the client's secret requirement.";
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientSecretsService>();
         mock.Setup(s => s.GetClientSecretsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleSecrets(secretCount: 1));
         mock.Setup(s => s.RevokeClientSecretAsync(ClientId.Create("test-client"), 1, It.IsAny<CancellationToken>()))

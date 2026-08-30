@@ -292,14 +292,14 @@ public sealed class Task02SqlServerIntegrationTests
         var enable = Task.Run(async () =>
         {
             await using AsyncServiceScope scope = _factory.Services.CreateAsyncScope();
-            IClientDetailsService service = scope.ServiceProvider.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = scope.ServiceProvider.GetRequiredService<ClientDetailsService>();
             start.SignalAndWait();
             return await service.ToggleClientStatusAsync(ClientId.Create(clientId));
         });
         var delete = Task.Run(async () =>
         {
             await using AsyncServiceScope scope = _factory.Services.CreateAsyncScope();
-            IClientDetailsService service = scope.ServiceProvider.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = scope.ServiceProvider.GetRequiredService<ClientDetailsService>();
             start.SignalAndWait();
             return await service.DeleteClientAsync(ClientId.Create(clientId));
         });
@@ -349,7 +349,7 @@ public sealed class Task02SqlServerIntegrationTests
 
         await _factory.RunInScopeAsync(async services =>
         {
-            IClientDetailsService service = services.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = services.GetRequiredService<ClientDetailsService>();
             ClientSecretRevokeResult validResult =
                 await service.RevokeClientSecretAsync(ClientId.Create(clientId), validId);
             Assert.False(validResult.Success);
@@ -384,7 +384,7 @@ public sealed class Task02SqlServerIntegrationTests
         Task<ClientSecretRevokeResult>[] attempts = secretIds.Select(secretId => Task.Run(async () =>
         {
             await using AsyncServiceScope scope = _factory.Services.CreateAsyncScope();
-            IClientDetailsService service = scope.ServiceProvider.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = scope.ServiceProvider.GetRequiredService<ClientDetailsService>();
             start.SignalAndWait();
             return await service.RevokeClientSecretAsync(ClientId.Create(clientId), secretId);
         })).ToArray();

@@ -30,7 +30,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
         foreach (IDisposable disposable in _disposables) disposable.Dispose();
     }
 
-    private HttpClient CreateClient(IClientDetailsService clientDetailsService, bool allowAutoRedirect = true)
+    private HttpClient CreateClient(IClientOverviewService clientDetailsService, bool allowAutoRedirect = true)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
@@ -91,7 +91,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
     [Fact]
     public async Task Should_ToggleEnabledState_When_OnPostToggleStatusExecuted()
     {
-        var mockService = new Mock<IClientDetailsService>();
+        var mockService = new Mock<IClientOverviewService>();
         mockService.Setup(s =>
                 s.GetClientDetailsAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleClientDetails());
@@ -125,7 +125,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
     [Fact]
     public async Task Should_Return404_When_ToggleStatusExecutedForNonExistentClient()
     {
-        var mockService = new Mock<IClientDetailsService>();
+        var mockService = new Mock<IClientOverviewService>();
         mockService.Setup(s => s.GetClientDetailsAsync(ClientId.Create("existing-id"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleClientDetails("existing-id"));
         mockService.Setup(s =>
@@ -211,7 +211,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = sp.GetRequiredService<ClientDetailsService>();
             ClientSecretsModel? secrets = await service.GetClientSecretsAsync(ClientId.Create(clientId));
             Assert.NotNull(secrets);
             Assert.Single(secrets!.Secrets);
@@ -231,7 +231,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = sp.GetRequiredService<ClientDetailsService>();
             ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
             configDb.Clients.Add(new Client
             {
@@ -268,7 +268,7 @@ public class DestructiveHandlerCharacterisationTests : IDisposable
 
         await baseFactory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = sp.GetRequiredService<ClientDetailsService>();
             ClientDetailsModel? stillExists = await service.GetClientDetailsAsync(ClientId.Create(clientId));
             Assert.NotNull(stillExists);
         });

@@ -12,7 +12,7 @@ public class ClientEditorPageModelCharacterisationTests
     [Fact]
     public async Task AuthenticationPost_ServiceValidationFailure_ReloadsClientDisplayAndAddsServiceErrors()
     {
-        var service = new Mock<IClientDetailsService>();
+        var service = new Mock<IClientAuthenticationService>();
         service.Setup(s => s.UpdateClientAuthenticationAsync(ClientId.Create("client-1"),
                 It.IsAny<ClientAuthenticationInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.ValidationFailure("Input.RedirectUris",
@@ -45,7 +45,7 @@ public class ClientEditorPageModelCharacterisationTests
     [Fact]
     public async Task TokenSettingsPost_ServiceValidationFailure_ReloadsClientDisplayAndSelectsConsentTab()
     {
-        var service = new Mock<IClientDetailsService>();
+        var service = new Mock<IClientTokenSettingsService>();
         service.Setup(s => s.UpdateClientTokenSettingsAsync(ClientId.Create("client-1"),
                 It.IsAny<ClientTokenSettingsInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AdminMutationResult.ValidationFailure("Input.AllowOfflineAccess",

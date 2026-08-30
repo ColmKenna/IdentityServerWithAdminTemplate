@@ -21,7 +21,7 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         foreach (IDisposable disposable in _disposables) disposable.Dispose();
     }
 
-    private HttpClient CreateClient(IClientDetailsService clientDetailsService, bool allowAutoRedirect = true)
+    private HttpClient CreateClient(IClientTokenSettingsService clientDetailsService, bool allowAutoRedirect = true)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
@@ -48,10 +48,10 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
         AllowOfflineAccess = true
     };
 
-    private static IClientDetailsService MockService(ClientTokenSettingsModel? details = null,
+    private static IClientTokenSettingsService MockService(ClientTokenSettingsModel? details = null,
         bool updateSuccess = true)
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientTokenSettingsService>();
         mock.Setup(s => s.GetClientTokenSettingsAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ClientId id, CancellationToken _) =>
                 id.Value == "non-existent" ? null : details ?? SampleSettings(id.Value));
@@ -135,7 +135,7 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
     [Fact]
     public async Task Post_ValidInput_RedirectsToDetails()
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientTokenSettingsService>();
         mock.Setup(s => s.GetClientTokenSettingsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleSettings());
         mock.Setup(s => s.UpdateClientTokenSettingsAsync(ClientId.Create("test-client"),
@@ -187,7 +187,7 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
     [Fact]
     public async Task Post_AccessTokenLifetimeOutOfRange_ReturnsValidationErrorAndDoesNotPersist()
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientTokenSettingsService>();
         mock.Setup(s => s.GetClientTokenSettingsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleSettings());
 
@@ -223,7 +223,7 @@ public class ClientsTokenSettingsIntegrationTests : IDisposable
     [Fact]
     public async Task Post_IdentityTokenLifetimeOutOfRange_ReturnsValidationErrorAndDoesNotPersist()
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientTokenSettingsService>();
         mock.Setup(s => s.GetClientTokenSettingsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleSettings());
 

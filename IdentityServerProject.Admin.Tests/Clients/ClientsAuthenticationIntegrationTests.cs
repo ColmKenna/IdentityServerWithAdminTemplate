@@ -21,7 +21,7 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
         foreach (IDisposable disposable in _disposables) disposable.Dispose();
     }
 
-    private HttpClient CreateClient(IClientDetailsService clientDetailsService, bool allowAutoRedirect = true)
+    private HttpClient CreateClient(IClientAuthenticationService clientDetailsService, bool allowAutoRedirect = true)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
@@ -51,10 +51,10 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
         DriftDetails = null
     };
 
-    private static IClientDetailsService MockService(ClientAuthenticationModel? details = null,
+    private static IClientAuthenticationService MockService(ClientAuthenticationModel? details = null,
         bool updateSuccess = true)
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientAuthenticationService>();
         mock.Setup(s => s.GetClientAuthenticationAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ClientId id, CancellationToken _) =>
                 id.Value == "non-existent" ? null : details ?? SampleAuthentication(id.Value));
@@ -161,7 +161,7 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
     [Fact]
     public async Task Post_AddingRedirectUri_RedirectsToDetailsAndPersists()
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientAuthenticationService>();
         mock.Setup(s => s.GetClientAuthenticationAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleAuthentication());
         mock.Setup(s => s.UpdateClientAuthenticationAsync(ClientId.Create("test-client"),
@@ -202,7 +202,7 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
     [Fact]
     public async Task Post_RemovingRedirectUri_PersistsRemoval()
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientAuthenticationService>();
         mock.Setup(s => s.GetClientAuthenticationAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleAuthentication());
         mock.Setup(s => s.UpdateClientAuthenticationAsync(ClientId.Create("test-client"),
@@ -238,7 +238,7 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
     [Fact]
     public async Task Post_ChangingGrantTypes_PersistsNewSelection()
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientAuthenticationService>();
         mock.Setup(s => s.GetClientAuthenticationAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleAuthentication());
         mock.Setup(s => s.UpdateClientAuthenticationAsync(ClientId.Create("test-client"),
@@ -328,7 +328,7 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
     [Fact]
     public async Task Post_OverlongAuthenticationValues_ReturnsFieldErrorsAndDoesNotCallMutationService()
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientAuthenticationService>();
         mock.Setup(s => s.GetClientAuthenticationAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleAuthentication());
 

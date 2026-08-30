@@ -35,7 +35,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientAuthenticationService service = sp.GetRequiredService<IClientAuthenticationService>();
             ClientAuthenticationModel? result =
                 await service.GetClientAuthenticationAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.Null(result);
@@ -59,7 +59,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientAuthenticationService service = sp.GetRequiredService<IClientAuthenticationService>();
             ClientAuthenticationModel? result = await service.GetClientAuthenticationAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
@@ -88,7 +88,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientAuthenticationService service = sp.GetRequiredService<IClientAuthenticationService>();
 
             var input = new ClientAuthenticationInputModel
             {
@@ -125,7 +125,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientAuthenticationService service = sp.GetRequiredService<IClientAuthenticationService>();
 
             var input = new ClientAuthenticationInputModel
             {
@@ -151,7 +151,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientAuthenticationService service = sp.GetRequiredService<IClientAuthenticationService>();
             AdminMutationResult result = await service.UpdateClientAuthenticationAsync(
                 ClientId.Create("unknown-client"), new ClientAuthenticationInputModel
                 {
@@ -178,7 +178,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientAuthenticationService service = sp.GetRequiredService<IClientAuthenticationService>();
             ClientAuthenticationModel? result = await service.GetClientAuthenticationAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
@@ -213,7 +213,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientAuthenticationService service = sp.GetRequiredService<IClientAuthenticationService>();
             ClientAuthenticationModel? result = await service.GetClientAuthenticationAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
@@ -249,7 +249,7 @@ public class ClientAuthenticationServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientAuthenticationService service = sp.GetRequiredService<IClientAuthenticationService>();
             ClientAuthenticationModel? result = await service.GetClientAuthenticationAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);

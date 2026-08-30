@@ -140,7 +140,7 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = sp.GetRequiredService<ClientDetailsService>();
             ClientDeleteResult result = await service.DeleteClientAsync(ClientId.Create(clientId));
             Assert.False(result.Success);
         });
@@ -157,7 +157,7 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = sp.GetRequiredService<ClientDetailsService>();
             ClientDeleteResult result = await service.DeleteClientAsync(ClientId.Create(clientId));
             Assert.False(result.Success);
         });
@@ -174,7 +174,7 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = sp.GetRequiredService<ClientDetailsService>();
             bool result = await service.ToggleClientStatusAsync(ClientId.Create(clientId));
             Assert.False(result);
         });
@@ -192,7 +192,7 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = sp.GetRequiredService<ClientDetailsService>();
             bool result = await service.ToggleClientStatusAsync(ClientId.Create(clientId));
             Assert.True(result);
         });
@@ -219,7 +219,7 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = sp.GetRequiredService<ClientDetailsService>();
             ClientSecretRevokeResult
                 result = await service.RevokeClientSecretAsync(ClientId.Create(clientId), secretId);
             Assert.False(result.Success);
@@ -237,7 +237,7 @@ public class ClientAuditCoverageTests : IClassFixture<AdminWebFactory>
 
         await Assert.ThrowsAnyAsync<Exception>(() => _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            ClientDetailsService service = sp.GetRequiredService<ClientDetailsService>();
             await sp.GetRequiredService<ConfigurationDbContext>().DisposeAsync();
             await service.ToggleClientStatusAsync(ClientId.Create(clientId));
         }));

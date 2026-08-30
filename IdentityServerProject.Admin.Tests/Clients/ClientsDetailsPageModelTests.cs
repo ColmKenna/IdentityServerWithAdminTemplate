@@ -31,7 +31,7 @@ public class ClientsDetailsPageModelTests
     [Fact]
     public async Task OnGetAsync_ExistingClient_ReturnsPageResultAndSetsClientProperty()
     {
-        var mockService = new Mock<IClientDetailsService>();
+        var mockService = new Mock<IClientOverviewService>();
         mockService
             .Setup(s => s.GetClientDetailsAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleClientDetails());
@@ -49,7 +49,7 @@ public class ClientsDetailsPageModelTests
     [Fact]
     public async Task OnGetAsync_NonExistentClient_ReturnsNotFoundResult()
     {
-        var mockService = new Mock<IClientDetailsService>();
+        var mockService = new Mock<IClientOverviewService>();
         mockService
             .Setup(s => s.GetClientDetailsAsync(ClientId.Create("non-existent"), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ClientDetailsModel?)null);
@@ -64,7 +64,7 @@ public class ClientsDetailsPageModelTests
     [Fact]
     public async Task OnPostToggleStatusAsync_ExistingClient_CallsServiceAndRedirectsToDetails()
     {
-        var mockService = new Mock<IClientDetailsService>();
+        var mockService = new Mock<IClientOverviewService>();
         mockService
             .Setup(s => s.ToggleClientStatusAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -85,7 +85,7 @@ public class ClientsDetailsPageModelTests
     [Fact]
     public async Task OnPostToggleStatusAsync_NonExistentClient_ReturnsNotFoundResult()
     {
-        var mockService = new Mock<IClientDetailsService>();
+        var mockService = new Mock<IClientOverviewService>();
         mockService
             .Setup(s => s.ToggleClientStatusAsync(ClientId.Create("non-existent"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
@@ -102,7 +102,7 @@ public class ClientsDetailsPageModelTests
     [Fact]
     public async Task OnPostDeleteAsync_MissingId_ReturnsNotFoundWithoutCallingService()
     {
-        var mockService = new Mock<IClientDetailsService>();
+        var mockService = new Mock<IClientOverviewService>();
 
         var pageModel = new DetailsModel(mockService.Object);
 
@@ -117,7 +117,7 @@ public class ClientsDetailsPageModelTests
     [Fact]
     public async Task OnPostDeleteAsync_ClientNotFound_ReturnsNotFound()
     {
-        var mockService = new Mock<IClientDetailsService>();
+        var mockService = new Mock<IClientOverviewService>();
         mockService
             .Setup(s => s.DeleteClientAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ClientDeleteResult.Failed("Client not found."));
@@ -135,7 +135,7 @@ public class ClientsDetailsPageModelTests
     {
         const string blockReason =
             "Client has been disabled for 3 day(s). It can be deleted in 87 more day(s) (90-day retention rule).";
-        var mockService = new Mock<IClientDetailsService>();
+        var mockService = new Mock<IClientOverviewService>();
         mockService
             .Setup(s => s.DeleteClientAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ClientDeleteResult.Failed(blockReason));
@@ -153,7 +153,7 @@ public class ClientsDetailsPageModelTests
     [Fact]
     public async Task OnPostDeleteAsync_Success_RedirectsToIndex()
     {
-        var mockService = new Mock<IClientDetailsService>();
+        var mockService = new Mock<IClientOverviewService>();
         mockService
             .Setup(s => s.DeleteClientAsync(ClientId.Create("coop.market.razor"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ClientDeleteResult.Succeeded());
@@ -176,7 +176,7 @@ public class ClientsDetailsPageModelTests
     [InlineData("DELETE client")]
     public async Task OnPostDeleteAsync_InvalidTypedConfirmation_DoesNotCallService(string? confirmation)
     {
-        var mockService = new Mock<IClientDetailsService>();
+        var mockService = new Mock<IClientOverviewService>();
         var pageModel = new DetailsModel(mockService.Object) { DeleteConfirmation = confirmation };
 
         IActionResult result = await pageModel.OnPostDeleteAsync("coop.market.razor", CancellationToken.None);

@@ -10,7 +10,12 @@ public partial class ClientDetailsService(
     ConfigurationDbContext configurationDbContext,
     IAuditWriter auditWriter,
     IClientConfigurationValidator clientConfigurationValidator,
-    TimeProvider timeProvider) : IClientDetailsService
+    TimeProvider timeProvider)
+    : IClientOverviewService,
+        IClientAuthenticationService,
+        IClientPermissionsService,
+        IClientSecretsService,
+        IClientTokenSettingsService
 {
     private const string GrantTypeAuthorizationCode = "authorization_code";
     private const string GrantTypeClientCredentials = "client_credentials";

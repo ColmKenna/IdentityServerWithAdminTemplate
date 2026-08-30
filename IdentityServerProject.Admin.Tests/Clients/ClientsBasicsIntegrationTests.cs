@@ -21,7 +21,7 @@ public class ClientsBasicsIntegrationTests : IDisposable
         foreach (IDisposable disposable in _disposables) disposable.Dispose();
     }
 
-    private HttpClient CreateClient(IClientDetailsService clientDetailsService, bool allowAutoRedirect = true)
+    private HttpClient CreateClient(IClientOverviewService clientDetailsService, bool allowAutoRedirect = true)
     {
         var baseFactory = new AdminWebFactory();
         _disposables.Add(baseFactory);
@@ -58,9 +58,9 @@ public class ClientsBasicsIntegrationTests : IDisposable
         AllowedScopes = new List<string> { "openid", "profile", "coop.market.api" }
     };
 
-    private static IClientDetailsService MockService(ClientDetailsModel? details = null, bool updateSuccess = true)
+    private static IClientOverviewService MockService(ClientDetailsModel? details = null, bool updateSuccess = true)
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientOverviewService>();
         mock.Setup(s => s.GetClientDetailsAsync(It.IsAny<ClientId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ClientId id, CancellationToken _) =>
                 id.Value == "non-existent" ? null : details ?? SampleClientDetails(id.Value));
@@ -101,7 +101,7 @@ public class ClientsBasicsIntegrationTests : IDisposable
     public async Task Get_ExistingClient_Returns200OK_WithFormAndDisabledClientId()
     {
         ClientDetailsModel details = SampleClientDetails("test-client");
-        IClientDetailsService service = MockService(details);
+        IClientOverviewService service = MockService(details);
         HttpClient httpClient = CreateClient(service);
 
         HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/Basics/test-client");
@@ -125,7 +125,7 @@ public class ClientsBasicsIntegrationTests : IDisposable
     [Fact]
     public async Task Get_NonExistentClient_ReturnsNotFound()
     {
-        IClientDetailsService service = MockService();
+        IClientOverviewService service = MockService();
         HttpClient httpClient = CreateClient(service);
 
         HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/Basics/non-existent");
@@ -135,7 +135,7 @@ public class ClientsBasicsIntegrationTests : IDisposable
     [Fact]
     public async Task Post_ValidUpdates_RedirectsToDetails()
     {
-        var mock = new Mock<IClientDetailsService>();
+        var mock = new Mock<IClientOverviewService>();
         mock.Setup(s => s.GetClientDetailsAsync(ClientId.Create("test-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SampleClientDetails("test-client"));
         mock.Setup(s => s.UpdateClientBasicsAsync(ClientId.Create("test-client"), "Updated Name", "Updated Desc",
@@ -172,7 +172,7 @@ public class ClientsBasicsIntegrationTests : IDisposable
     public async Task Post_InvalidData_ReturnsFormWithValidationError()
     {
         ClientDetailsModel details = SampleClientDetails("test-client");
-        IClientDetailsService service = MockService(details);
+        IClientOverviewService service = MockService(details);
         HttpClient httpClient = CreateClient(service, false);
         (string token, string cookie) =
             await ExtractAntiForgeryTokenAndCookieAsync(httpClient, "/Admin/Clients/Basics/test-client");

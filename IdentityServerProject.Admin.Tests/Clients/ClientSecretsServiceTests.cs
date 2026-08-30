@@ -34,7 +34,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientSecretsService service = sp.GetRequiredService<IClientSecretsService>();
             ClientSecretsModel? result =
                 await service.GetClientSecretsAsync(ClientId.Create("non-existent-client-id-xyz"));
             Assert.Null(result);
@@ -58,7 +58,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientSecretsService service = sp.GetRequiredService<IClientSecretsService>();
             ClientSecretsModel? result = await service.GetClientSecretsAsync(ClientId.Create(clientId));
 
             Assert.NotNull(result);
@@ -81,7 +81,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientSecretsService service = sp.GetRequiredService<IClientSecretsService>();
             ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
 
             ClientSecretGenerateResult result =
@@ -104,7 +104,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientSecretsService service = sp.GetRequiredService<IClientSecretsService>();
             ClientSecretGenerateResult result =
                 await service.GenerateClientSecretAsync(ClientId.Create("non-existent-client-id-abc"), null);
             Assert.False(result.Success);
@@ -124,7 +124,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientSecretsService service = sp.GetRequiredService<IClientSecretsService>();
             ConfigurationDbContext configDb = sp.GetRequiredService<ConfigurationDbContext>();
 
             ClientSecretGenerateResult result = await service.GenerateClientSecretAsync(
@@ -161,7 +161,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientSecretsService service = sp.GetRequiredService<IClientSecretsService>();
             ClientSecretsModel? secrets = await service.GetClientSecretsAsync(ClientId.Create(clientId));
             int targetId = secrets!.Secrets.First().Id;
 
@@ -192,7 +192,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientSecretsService service = sp.GetRequiredService<IClientSecretsService>();
             ClientSecretsModel? secrets = await service.GetClientSecretsAsync(ClientId.Create(clientId));
             int targetId = secrets!.Secrets.Single().Id;
 
@@ -226,7 +226,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientSecretsService service = sp.GetRequiredService<IClientSecretsService>();
             ClientSecretsModel? secrets = await service.GetClientSecretsAsync(ClientId.Create(clientId));
             int targetId = secrets!.Secrets.Single().Id;
 
@@ -253,7 +253,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
 
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientSecretsService service = sp.GetRequiredService<IClientSecretsService>();
             ClientSecretRevokeResult result = await service.RevokeClientSecretAsync(ClientId.Create(clientId), -1);
             Assert.False(result.Success);
         });
@@ -264,7 +264,7 @@ public class ClientSecretsServiceTests : IClassFixture<AdminWebFactory>
     {
         await _factory.RunInScopeAsync(async sp =>
         {
-            IClientDetailsService service = sp.GetRequiredService<IClientDetailsService>();
+            IClientSecretsService service = sp.GetRequiredService<IClientSecretsService>();
             ClientSecretRevokeResult result =
                 await service.RevokeClientSecretAsync(ClientId.Create("non-existent-client-id-abc"), 1);
             Assert.False(result.Success);

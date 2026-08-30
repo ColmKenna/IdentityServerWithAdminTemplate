@@ -32,15 +32,15 @@ public static class IdentityServerAdminServicesCollectionExtensions
         services.AddScoped<IApiScopeEditorService, ApiScopeEditorService>();
         services.AddScoped<IClientListService, ClientListService>();
         services.AddSingleton<IClientPresetService, ClientPresetService>();
-        // The five per-concern interfaces resolve *through* IClientDetailsService, not through the
-        // concrete type. That keeps one instance (and one EF ChangeTracker) per request, and it means
-        // a test that substitutes IClientDetailsService still intercepts every page model.
-        services.AddScoped<IClientDetailsService, ClientDetailsService>();
-        services.AddScoped<IClientOverviewService>(sp => sp.GetRequiredService<IClientDetailsService>());
-        services.AddScoped<IClientAuthenticationService>(sp => sp.GetRequiredService<IClientDetailsService>());
-        services.AddScoped<IClientPermissionsService>(sp => sp.GetRequiredService<IClientDetailsService>());
-        services.AddScoped<IClientSecretsService>(sp => sp.GetRequiredService<IClientDetailsService>());
-        services.AddScoped<IClientTokenSettingsService>(sp => sp.GetRequiredService<IClientDetailsService>());
+        // One ClientDetailsService per request, surfaced through five per-concern interfaces. The
+        // concrete registration is what makes them share an instance - and therefore one EF
+        // ChangeTracker. Registering each interface independently would give every one its own.
+        services.AddScoped<ClientDetailsService>();
+        services.AddScoped<IClientOverviewService>(sp => sp.GetRequiredService<ClientDetailsService>());
+        services.AddScoped<IClientAuthenticationService>(sp => sp.GetRequiredService<ClientDetailsService>());
+        services.AddScoped<IClientPermissionsService>(sp => sp.GetRequiredService<ClientDetailsService>());
+        services.AddScoped<IClientSecretsService>(sp => sp.GetRequiredService<ClientDetailsService>());
+        services.AddScoped<IClientTokenSettingsService>(sp => sp.GetRequiredService<ClientDetailsService>());
         services.AddScoped<IClientCreateService, ClientCreateService>();
         services.AddScoped<IGrantListService, GrantListService>();
         services.AddScoped<IIdentityResourceListService, IdentityResourceListService>();

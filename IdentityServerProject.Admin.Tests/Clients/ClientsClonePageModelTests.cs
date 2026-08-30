@@ -24,7 +24,7 @@ public class ClientsClonePageModelTests
 
     private static CloneModel CreateModel(
         Mock<IClientCreateService> createService,
-        Mock<IClientDetailsService> detailsService,
+        Mock<IClientOverviewService> detailsService,
         Mock<ISecretRevealService>? revealService = null)
     {
         var httpContext = new DefaultHttpContext();
@@ -47,7 +47,7 @@ public class ClientsClonePageModelTests
     public async Task OnGetAsync_ExistingSource_PopulatesCloneDefaults()
     {
         var createService = new Mock<IClientCreateService>();
-        var detailsService = new Mock<IClientDetailsService>();
+        var detailsService = new Mock<IClientOverviewService>();
         detailsService.Setup(s =>
                 s.GetClientDetailsAsync(ClientId.Create("source-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SourceClient());
@@ -67,7 +67,7 @@ public class ClientsClonePageModelTests
     public async Task OnPostAsync_SourceNotFound_ReturnsNotFoundWithoutCloning()
     {
         var createService = new Mock<IClientCreateService>();
-        var detailsService = new Mock<IClientDetailsService>();
+        var detailsService = new Mock<IClientOverviewService>();
         detailsService.Setup(s => s.GetClientDetailsAsync(ClientId.Create("missing"), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ClientDetailsModel?)null);
         CloneModel model = CreateModel(createService, detailsService);
@@ -88,7 +88,7 @@ public class ClientsClonePageModelTests
         createService.Setup(s =>
                 s.CloneClientAsync("source-client", It.IsAny<ClientCreateInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ClientCreateResult.Failed("ClientId", "A client with this ID already exists."));
-        var detailsService = new Mock<IClientDetailsService>();
+        var detailsService = new Mock<IClientOverviewService>();
         detailsService.Setup(s =>
                 s.GetClientDetailsAsync(ClientId.Create("source-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SourceClient());
@@ -111,7 +111,7 @@ public class ClientsClonePageModelTests
         createService.Setup(s =>
                 s.CloneClientAsync("source-client", It.IsAny<ClientCreateInputModel>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ClientCreateResult.Succeeded("target-client", "plaintext-secret"));
-        var detailsService = new Mock<IClientDetailsService>();
+        var detailsService = new Mock<IClientOverviewService>();
         detailsService.Setup(s =>
                 s.GetClientDetailsAsync(ClientId.Create("source-client"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SourceClient());
