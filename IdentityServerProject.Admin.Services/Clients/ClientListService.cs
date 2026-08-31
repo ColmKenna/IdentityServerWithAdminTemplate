@@ -33,15 +33,19 @@ public class ClientListService : IClientListService
 
         var totalCount = await dbQuery.CountAsync(cancellationToken);
 
-        var pageEntities = await dbQuery
+        var rows = await dbQuery
             .OrderBy(c => c.ClientName)
             .ThenBy(c => c.ClientId)
             .Skip(pagination.Skip)
             .Take(pagination.PageSize)
-            .Include(c => c.AllowedGrantTypes)
+            .Select(c => new ClientListRow(
+                c.ClientId,
+                c.ClientName,
+                c.Enabled,
+                c.AllowedGrantTypes.Select(g => g.GrantType).FirstOrDefault()))
             .ToListAsync(cancellationToken);
 
-        var items = pageEntities.Select(MapToListItem).ToList();
+        var items = rows.Select(MapToListItem).ToList();
 
         return new ListResult<ClientListItem>
         {
@@ -51,6 +55,12 @@ public class ClientListService : IClientListService
             PageSize = pagination.PageSize,
         };
     }
+
+    private sealed record ClientListRow(
+        string ClientId,
+        string? ClientName,
+        bool Enabled,
+        string? PrimaryGrantType);
 
     private static IQueryable<Client> ApplyFilter(IQueryable<Client> query, string? filter)
     {
@@ -67,21 +77,19 @@ public class ClientListService : IClientListService
             EF.Functions.Like(c.ClientId, pattern));
     }
 
-    private static ClientListItem MapToListItem(Client entity)
+    private static ClientListItem MapToListItem(ClientListRow row)
     {
         return new ClientListItem
         {
-            ClientId = entity.ClientId,
-            ClientName = string.IsNullOrWhiteSpace(entity.ClientName) ? entity.ClientId : entity.ClientName,
-            ClientType = DeriveClientType(entity),
-            Enabled = entity.Enabled,
+            ClientId = row.ClientId,
+            ClientName = string.IsNullOrWhiteSpace(row.ClientName) ? row.ClientId : row.ClientName,
+            ClientType = DeriveClientType(row.PrimaryGrantType),
+            Enabled = row.Enabled,
         };
     }
 
-    private static string DeriveClientType(Client entity)
+    private static string DeriveClientType(string? grantType)
     {
-        var grantType = entity.AllowedGrantTypes.Select(g => g.GrantType).FirstOrDefault();
-
         return grantType switch
         {
             null => "Unknown",
