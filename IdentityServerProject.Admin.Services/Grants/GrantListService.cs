@@ -65,6 +65,15 @@ public class GrantListService : IGrantListService
             .OrderByDescending(g => g.CreationTime)
             .Skip(pagination.Skip)
             .Take(pagination.PageSize)
+            .Select(g => new GrantListRow(
+                g.Key,
+                g.Type,
+                g.SubjectId,
+                g.SessionId,
+                g.ClientId,
+                g.Description,
+                g.CreationTime,
+                g.Expiration))
             .ToListAsync(cancellationToken);
 
         var clientIdsOnPage = grantsOnPage
@@ -111,6 +120,16 @@ public class GrantListService : IGrantListService
     }
 
     #endregion
+
+    private sealed record GrantListRow(
+        string Key,
+        string Type,
+        string? SubjectId,
+        string? SessionId,
+        string ClientId,
+        string? Description,
+        DateTime CreationTime,
+        DateTime? Expiration);
 
     #region Revocation
 
