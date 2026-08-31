@@ -202,7 +202,7 @@
 
 @section Scripts {
 <script>
-window.availablePresets = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AvailablePresets, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+window.availablePresets = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AvailablePresets, IdentityServerProject.Pages.Admin.Clients.CreateModel.PresetJsonOptions));
 </script>
 <script src="~/js/client-uri-rows.js" asp-append-version="true"></script>
 <script src="~/js/client-presets.js" asp-append-version="true"></script>

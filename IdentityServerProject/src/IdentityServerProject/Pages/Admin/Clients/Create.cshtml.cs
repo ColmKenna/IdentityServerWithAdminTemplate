@@ -16,6 +16,11 @@ public class CreateModel : PageModel
     private readonly IClientPresetService _clientPresetService;
     private readonly ISecretRevealService _secretRevealService;
 
+    public static readonly System.Text.Json.JsonSerializerOptions PresetJsonOptions = new()
+    {
+        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+    };
+
     public CreateModel(
         IClientCreateService clientCreateService,
         IClientPresetService clientPresetService,
