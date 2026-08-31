@@ -193,16 +193,9 @@ public class GrantListService : IGrantListService
 
         try
         {
-            var grants = await _persistedGrantDbContext.PersistedGrants
+            var revokedCount = await _persistedGrantDbContext.PersistedGrants
                 .Where(g => g.SubjectId == subjectIdStr)
-                .ToListAsync(cancellationToken);
-
-            var revokedCount = 0;
-            if (grants.Count > 0)
-            {
-                _persistedGrantDbContext.PersistedGrants.RemoveRange(grants);
-                revokedCount = await _persistedGrantDbContext.SaveChangesAsync(cancellationToken);
-            }
+                .ExecuteDeleteAsync(cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.Grant, AuditAction.BulkRevoke, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,

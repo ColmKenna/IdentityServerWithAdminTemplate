@@ -371,19 +371,17 @@ public partial class UserDetailsService : IUserDetailsService
             {
                 _persistedGrantDbContext.ChangeTracker.Clear();
                 await using var transaction = await _persistedGrantDbContext.Database.BeginTransactionAsync(cancellationToken);
-                var grants = await _persistedGrantDbContext.PersistedGrants
-                    .Where(g => g.SubjectId == userId)
+
+                clientIds = await _persistedGrantDbContext.PersistedGrants
+                    .Where(g => g.SubjectId == userId && g.ClientId != null && g.ClientId != "")
+                    .Select(g => g.ClientId!)
+                    .Distinct()
                     .ToListAsync(cancellationToken);
 
-                revokedCount = grants.Count;
-                clientIds = grants
-                    .Where(g => !string.IsNullOrWhiteSpace(g.ClientId))
-                    .Select(g => g.ClientId!)
-                    .Distinct(StringComparer.Ordinal)
-                    .ToList();
+                revokedCount = await _persistedGrantDbContext.PersistedGrants
+                    .Where(g => g.SubjectId == userId)
+                    .ExecuteDeleteAsync(cancellationToken);
 
-                _persistedGrantDbContext.PersistedGrants.RemoveRange(grants);
-                await _persistedGrantDbContext.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
             });
 
