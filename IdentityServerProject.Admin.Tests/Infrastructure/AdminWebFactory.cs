@@ -26,6 +26,7 @@ public class AdminWebFactory : WebApplicationFactory<Program>
 {
     private SqliteConnection _connection = default!;
     public ConfigurationDbCommandCounter ConfigurationCommands { get; } = new();
+    public ConfigurationDbCommandCounter PersistedGrantCommands { get; } = new();
 
     static AdminWebFactory()
     {
@@ -70,7 +71,9 @@ public class AdminWebFactory : WebApplicationFactory<Program>
             ServiceDescriptor? opStoreOptions =
                 services.FirstOrDefault(d => d.ServiceType == typeof(OperationalStoreOptions));
             if (opStoreOptions?.ImplementationInstance is OperationalStoreOptions opOptions)
-                opOptions.ConfigureDbContext = b => b.UseSqlite(_connection);
+                opOptions.ConfigureDbContext = b => b
+                    .UseSqlite(_connection)
+                    .AddInterceptors(PersistedGrantCommands);
 
             // Remove ApplicationDbContext to re-register it
             RemoveDbContext<ApplicationDbContext>(services);
@@ -164,11 +167,32 @@ public class AdminWebFactory : WebApplicationFactory<Program>
 
 public sealed class ConfigurationDbCommandCounter : DbCommandInterceptor
 {
+    private readonly object _gate = new();
+    private readonly List<string> _commands = new();
     private int _readCount;
+
+    public IReadOnlyList<string> Commands
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _commands.ToArray();
+            }
+        }
+    }
 
     public int ReadCount => Volatile.Read(ref _readCount);
 
-    public void Reset() => Interlocked.Exchange(ref _readCount, 0);
+    public void Reset()
+    {
+        lock (_gate)
+        {
+            _commands.Clear();
+        }
+
+        Interlocked.Exchange(ref _readCount, 0);
+    }
 
     public override InterceptionResult<DbDataReader> ReaderExecuting(
         DbCommand command,
@@ -189,11 +213,39 @@ public sealed class ConfigurationDbCommandCounter : DbCommandInterceptor
         return ValueTask.FromResult(result);
     }
 
+    public override InterceptionResult<int> NonQueryExecuting(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<int> result)
+    {
+        Record(command);
+        return result;
+    }
+
+    public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
+    {
+        Record(command);
+        return ValueTask.FromResult(result);
+    }
+
     private void CountRead(DbCommand command)
     {
+        Record(command);
         if (command.CommandText.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
         {
             Interlocked.Increment(ref _readCount);
+        }
+    }
+
+    private void Record(DbCommand command)
+    {
+        lock (_gate)
+        {
+            _commands.Add(command.CommandText);
         }
     }
 }
