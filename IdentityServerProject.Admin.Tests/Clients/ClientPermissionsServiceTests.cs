@@ -119,6 +119,36 @@ public class ClientPermissionsServiceTests : IClassFixture<AdminWebFactory>
     }
 
     [Fact]
+    public async Task GetClientPermissionsAsync_UsesAdditiveSplitQueries_When_ClientHasMultipleCollections()
+    {
+        var tag = Guid.NewGuid().ToString("N");
+        await SeedScopesAsync(tag);
+
+        var clientId = $"{tag}-split-permissions";
+        await SeedClientAsync(new ClientModel
+        {
+            ClientId = clientId,
+            ClientName = "Split Permissions Client",
+            AllowedGrantTypes = new List<string> { "authorization_code", "client_credentials" },
+            AllowedScopes = new List<string> { "openid", $"{tag}.read" }
+        });
+
+        _factory.ConfigurationCommands.Reset();
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IClientDetailsService>();
+            var result = await service.GetClientPermissionsAsync(ClientId.Create(clientId));
+
+            Assert.NotNull(result);
+            Assert.True(result.IsInteractive);
+            Assert.Equal(new[] { "openid", $"{tag}.read" }, result.AllowedScopes);
+        });
+
+        Assert.Equal(5, _factory.ConfigurationCommands.ReadCount);
+    }
+
+    [Fact]
     public async Task GetClientPermissionsAsync_M2MClient_SetsIsInteractiveToFalse()
     {
         var tag = Guid.NewGuid().ToString("N");

@@ -172,6 +172,28 @@ public class ClientListServiceTests : IClassFixture<AdminWebFactory>
     }
 
     [Fact]
+    public async Task Should_SelectFirstInsertedGrantType_When_ClientHasMultipleGrantTypes()
+    {
+        var tag = Guid.NewGuid().ToString("N");
+        var client = MakeClient(tag, "multiple-grants");
+        client.AllowedGrantTypes.Add(new ClientGrantType { GrantType = "client_credentials" });
+        await SeedAsync(client);
+
+        _factory.ConfigurationCommands.Reset();
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IClientListService>();
+
+            var result = await service.GetClientsAsync(new ListQuery(tag, Pagination.From(1, 10)));
+
+            Assert.Equal("Authorization Code", Assert.Single(result.Items).ClientType);
+        });
+
+        Assert.Equal(2, _factory.ConfigurationCommands.ReadCount);
+    }
+
+    [Fact]
     public async Task GetClientsAsync_NoMatchingClients_ReturnsEmptyResultWithZeroTotalCount()
     {
         var tag = Guid.NewGuid().ToString("N");

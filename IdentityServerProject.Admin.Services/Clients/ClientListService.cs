@@ -42,7 +42,7 @@ public class ClientListService : IClientListService
                 c.ClientId,
                 c.ClientName,
                 c.Enabled,
-                c.AllowedGrantTypes.Select(g => g.GrantType).FirstOrDefault()))
+                c.AllowedGrantTypes.OrderBy(g => g.Id).Select(g => g.GrantType).FirstOrDefault()))
             .ToListAsync(cancellationToken);
 
         var items = rows.Select(MapToListItem).ToList();

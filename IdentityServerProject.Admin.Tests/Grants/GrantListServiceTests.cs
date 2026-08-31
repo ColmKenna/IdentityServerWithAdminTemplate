@@ -235,6 +235,8 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
 
         await SeedAsync(new[] { g1, g2 });
 
+        _factory.PersistedGrantCommands.Reset();
+
         await _factory.RunInScopeAsync(async sp =>
         {
             var service = sp.GetRequiredService<IGrantListService>();
@@ -242,6 +244,12 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
 
             Assert.Equal(2, count);
         });
+
+        var persistedGrantDeletes = _factory.PersistedGrantCommands.Commands
+            .Where(command => command.Contains("DELETE FROM \"PersistedGrants\"", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        Assert.Single(persistedGrantDeletes);
+        Assert.Contains("WHERE", persistedGrantDeletes[0], StringComparison.OrdinalIgnoreCase);
 
         await _factory.RunInScopeAsync(async sp =>
         {
