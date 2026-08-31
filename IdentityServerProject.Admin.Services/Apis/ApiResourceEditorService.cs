@@ -34,6 +34,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
         CancellationToken cancellationToken)
     {
         IQueryable<ApiResource> query = _configurationDbContext.ApiResources
+            .AsSplitQuery()
             .Include(r => r.Secrets)
             .Include(r => r.Scopes)
             .Include(r => r.UserClaims)
