@@ -94,6 +94,7 @@ public partial class ClientCreateService : IClientCreateService
 
         var sourceClient = await _configurationDbContext.Clients
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(c => c.AllowedGrantTypes)
             .Include(c => c.RedirectUris)
             .Include(c => c.PostLogoutRedirectUris)

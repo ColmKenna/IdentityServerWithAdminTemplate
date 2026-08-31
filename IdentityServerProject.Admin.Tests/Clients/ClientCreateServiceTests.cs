@@ -225,11 +225,27 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
                 RequireClientSecret = true,
                 AccessTokenLifetime = 1234,
                 AllowedGrantTypes = new List<string> { "authorization_code" },
-                RedirectUris = new List<string> { "https://source.example/signin" },
-                PostLogoutRedirectUris = new List<string> { "https://source.example/signout" },
-                AllowedCorsOrigins = new List<string> { "https://source.example" },
+                RedirectUris = new List<string>
+                {
+                    "https://source.example/signin",
+                    "https://source.example/signin-secondary"
+                },
+                PostLogoutRedirectUris = new List<string>
+                {
+                    "https://source.example/signout",
+                    "https://source.example/signout-secondary"
+                },
+                AllowedCorsOrigins = new List<string>
+                {
+                    "https://source.example",
+                    "https://source-secondary.example"
+                },
                 AllowedScopes = new List<string> { "openid", "profile" },
-                Properties = new Dictionary<string, string> { ["source-property"] = "source-value" }
+                Properties = new Dictionary<string, string>
+                {
+                    ["source-property"] = "source-value",
+                    ["source-property-secondary"] = "source-value-secondary"
+                }
             }.ToEntity());
             await db.SaveChangesAsync();
         });
@@ -271,13 +287,71 @@ public class ClientCreateServiceTests : IClassFixture<AdminWebFactory>
             Assert.True(clone.RequireClientSecret);
             Assert.Equal(1234, clone.AccessTokenLifetime);
             Assert.Equal("authorization_code", Assert.Single(clone.AllowedGrantTypes).GrantType);
-            Assert.Equal("https://source.example/signin", Assert.Single(clone.RedirectUris).RedirectUri);
-            Assert.Equal("https://source.example/signout", Assert.Single(clone.PostLogoutRedirectUris).PostLogoutRedirectUri);
-            Assert.Equal("https://source.example", Assert.Single(clone.AllowedCorsOrigins).Origin);
+            Assert.Equal(
+                new[] { "https://source.example/signin", "https://source.example/signin-secondary" },
+                clone.RedirectUris.Select(uri => uri.RedirectUri).OrderBy(uri => uri));
+            Assert.Equal(
+                new[] { "https://source.example/signout", "https://source.example/signout-secondary" },
+                clone.PostLogoutRedirectUris.Select(uri => uri.PostLogoutRedirectUri).OrderBy(uri => uri));
+            Assert.Equal(
+                new[] { "https://source-secondary.example", "https://source.example" },
+                clone.AllowedCorsOrigins.Select(origin => origin.Origin).OrderBy(origin => origin));
             Assert.Equal(new[] { "openid", "profile" }, clone.AllowedScopes.Select(scope => scope.Scope).OrderBy(scope => scope));
-            Assert.Equal("source-value", clone.Properties.Single(property => property.Key == "source-property").Value);
+            Assert.Equal(
+                new[]
+                {
+                    new KeyValuePair<string, string>("source-property", "source-value"),
+                    new KeyValuePair<string, string>("source-property-secondary", "source-value-secondary")
+                },
+                clone.Properties
+                    .OrderBy(property => property.Key)
+                    .Select(property => new KeyValuePair<string, string>(property.Key, property.Value)));
             Assert.NotEqual(result.PlaintextSecret, Assert.Single(clone.ClientSecrets).Value);
         });
+    }
+
+    [Fact]
+    public async Task CloneClientAsync_UsesAdditiveSplitQueries_When_SourceHasMultipleCollections()
+    {
+        await SeedIdentityScopesAsync();
+        var tag = Guid.NewGuid().ToString("N");
+        var sourceClientId = $"clone-query-source-{tag}";
+        var clonedClientId = $"clone-query-target-{tag}";
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var db = sp.GetRequiredService<ConfigurationDbContext>();
+            db.Clients.Add(new Client
+            {
+                ClientId = sourceClientId,
+                ClientName = "Query source",
+                RequirePkce = true,
+                RequireClientSecret = false,
+                AllowedGrantTypes = new List<string> { "authorization_code" },
+                RedirectUris = new List<string> { "https://query.example/signin" },
+                PostLogoutRedirectUris = new List<string> { "https://query.example/signout" },
+                AllowedCorsOrigins = new List<string> { "https://query.example" },
+                AllowedScopes = new List<string> { "openid", "profile" },
+                Properties = new Dictionary<string, string> { ["query-property"] = "query-value" }
+            }.ToEntity());
+            await db.SaveChangesAsync();
+        });
+
+        _factory.ConfigurationCommands.Reset();
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IClientCreateService>();
+            var result = await service.CloneClientAsync(sourceClientId, new ClientCreateInputModel
+            {
+                ClientId = clonedClientId,
+                ClientName = "Query clone"
+            });
+
+            Assert.True(result.Success, result.ErrorMessage);
+        });
+
+        Assert.Equal(8, _factory.ConfigurationCommands.ReadCount);
     }
 
     [Fact]

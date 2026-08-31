@@ -1,9 +1,11 @@
 using System;
 using Microsoft.AspNetCore.DataProtection;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using System.Threading;
 using System.Threading.Tasks;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using IdentityServerProject.Data;
@@ -13,6 +15,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -24,6 +27,7 @@ namespace IdentityServerProject.Admin.Tests.Infrastructure;
 public class AdminWebFactory : WebApplicationFactory<Program>
 {
     private SqliteConnection _connection = default!;
+    public ConfigurationDbCommandCounter ConfigurationCommands { get; } = new();
 
     static AdminWebFactory()
     {
@@ -66,7 +70,9 @@ public class AdminWebFactory : WebApplicationFactory<Program>
             var configStoreOptions = services.FirstOrDefault(d => d.ServiceType == typeof(Duende.IdentityServer.EntityFramework.Options.ConfigurationStoreOptions));
             if (configStoreOptions?.ImplementationInstance is Duende.IdentityServer.EntityFramework.Options.ConfigurationStoreOptions configOptions)
             {
-                configOptions.ConfigureDbContext = b => b.UseSqlite(_connection);
+                configOptions.ConfigureDbContext = b => b
+                    .UseSqlite(_connection)
+                    .AddInterceptors(ConfigurationCommands);
             }
 
             var opStoreOptions = services.FirstOrDefault(d => d.ServiceType == typeof(Duende.IdentityServer.EntityFramework.Options.OperationalStoreOptions));
@@ -168,6 +174,42 @@ public class AdminWebFactory : WebApplicationFactory<Program>
         using var scope = Services.CreateScope();
         
         await action(scope.ServiceProvider);
+    }
+}
+
+public sealed class ConfigurationDbCommandCounter : DbCommandInterceptor
+{
+    private int _readCount;
+
+    public int ReadCount => Volatile.Read(ref _readCount);
+
+    public void Reset() => Interlocked.Exchange(ref _readCount, 0);
+
+    public override InterceptionResult<DbDataReader> ReaderExecuting(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result)
+    {
+        CountRead(command);
+        return result;
+    }
+
+    public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result,
+        CancellationToken cancellationToken = default)
+    {
+        CountRead(command);
+        return ValueTask.FromResult(result);
+    }
+
+    private void CountRead(DbCommand command)
+    {
+        if (command.CommandText.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
+        {
+            Interlocked.Increment(ref _readCount);
+        }
     }
 }
 
