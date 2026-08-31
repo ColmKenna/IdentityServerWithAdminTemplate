@@ -768,6 +768,7 @@ public partial class ApiResourceEditorService : IApiResourceEditorService
     private async Task<ApiResource?> LoadResourceAsync(string name, bool asNoTracking, CancellationToken cancellationToken)
     {
         var query = _configurationDbContext.ApiResources
+            .AsSplitQuery()
             .Include(r => r.Secrets)
             .Include(r => r.Scopes)
             .Include(r => r.UserClaims)

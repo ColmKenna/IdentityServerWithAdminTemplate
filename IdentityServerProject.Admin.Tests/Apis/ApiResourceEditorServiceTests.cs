@@ -458,4 +458,36 @@ public class ApiResourceEditorServiceTests : IClassFixture<AdminWebFactory>
             Assert.Empty((await service.GetForEditAsync(ScopeName.Create(name)))!.Secrets);
         });
     }
+
+    [Fact]
+    public async Task Should_IssueFourReadCommands_When_LoadingResourceWithCollections()
+    {
+        var name = $"{Guid.NewGuid():N}-split-api";
+        var resource = new ApiResource
+        {
+            Name = name,
+            DisplayName = "Split Display",
+            Enabled = true,
+            Secrets = new List<ApiResourceSecret> { new() { Value = "s1" } },
+            Scopes = new List<ApiResourceScope> { new() { Scope = "scope1" } },
+            UserClaims = new List<ApiResourceClaim> { new() { Type = "claim1" } }
+        };
+
+        await SeedApiResourceAsync(resource);
+
+        _factory.ConfigurationCommands.Reset();
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IApiResourceEditorService>();
+            var model = await service.GetForEditAsync(ScopeName.Create(name));
+
+            Assert.NotNull(model);
+            Assert.Single(model!.Secrets);
+            Assert.Single(model.Scopes);
+            Assert.Single(model.Claims);
+        });
+
+        Assert.Equal(4, _factory.ConfigurationCommands.ReadCount);
+    }
 }
