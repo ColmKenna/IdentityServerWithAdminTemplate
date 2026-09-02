@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Duende.IdentityServer.EntityFramework.DbContexts;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +25,8 @@ namespace IdentityServerProject.Admin.Tests.Infrastructure;
 public class AdminWebFactory : WebApplicationFactory<Program>
 {
     private SqliteConnection _connection = default!;
+    public ConfigurationDbCommandCounter ConfigurationCommands { get; } = new();
+    public ConfigurationDbCommandCounter PersistedGrantCommands { get; } = new();
 
     static AdminWebFactory()
     {
@@ -60,12 +64,16 @@ public class AdminWebFactory : WebApplicationFactory<Program>
             ServiceDescriptor? configStoreOptions =
                 services.FirstOrDefault(d => d.ServiceType == typeof(ConfigurationStoreOptions));
             if (configStoreOptions?.ImplementationInstance is ConfigurationStoreOptions configOptions)
-                configOptions.ConfigureDbContext = b => b.UseSqlite(_connection);
+                configOptions.ConfigureDbContext = b => b
+                    .UseSqlite(_connection)
+                    .AddInterceptors(ConfigurationCommands);
 
             ServiceDescriptor? opStoreOptions =
                 services.FirstOrDefault(d => d.ServiceType == typeof(OperationalStoreOptions));
             if (opStoreOptions?.ImplementationInstance is OperationalStoreOptions opOptions)
-                opOptions.ConfigureDbContext = b => b.UseSqlite(_connection);
+                opOptions.ConfigureDbContext = b => b
+                    .UseSqlite(_connection)
+                    .AddInterceptors(PersistedGrantCommands);
 
             // Remove ApplicationDbContext to re-register it
             RemoveDbContext<ApplicationDbContext>(services);
@@ -154,6 +162,91 @@ public class AdminWebFactory : WebApplicationFactory<Program>
         using IServiceScope scope = Services.CreateScope();
 
         await action(scope.ServiceProvider);
+    }
+}
+
+public sealed class ConfigurationDbCommandCounter : DbCommandInterceptor
+{
+    private readonly object _gate = new();
+    private readonly List<string> _commands = new();
+    private int _readCount;
+
+    public IReadOnlyList<string> Commands
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _commands.ToArray();
+            }
+        }
+    }
+
+    public int ReadCount => Volatile.Read(ref _readCount);
+
+    public void Reset()
+    {
+        lock (_gate)
+        {
+            _commands.Clear();
+        }
+
+        Interlocked.Exchange(ref _readCount, 0);
+    }
+
+    public override InterceptionResult<DbDataReader> ReaderExecuting(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result)
+    {
+        CountRead(command);
+        return result;
+    }
+
+    public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result,
+        CancellationToken cancellationToken = default)
+    {
+        CountRead(command);
+        return ValueTask.FromResult(result);
+    }
+
+    public override InterceptionResult<int> NonQueryExecuting(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<int> result)
+    {
+        Record(command);
+        return result;
+    }
+
+    public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
+    {
+        Record(command);
+        return ValueTask.FromResult(result);
+    }
+
+    private void CountRead(DbCommand command)
+    {
+        Record(command);
+        if (command.CommandText.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
+        {
+            Interlocked.Increment(ref _readCount);
+        }
+    }
+
+    private void Record(DbCommand command)
+    {
+        lock (_gate)
+        {
+            _commands.Add(command.CommandText);
+        }
     }
 }
 

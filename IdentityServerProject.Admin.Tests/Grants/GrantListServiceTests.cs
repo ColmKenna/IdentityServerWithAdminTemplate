@@ -104,6 +104,76 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
         });
     }
 
+    [Fact]
+    public async Task Should_ReturnSameGrantListProjection_When_StoredDataIsLarge()
+    {
+        var tag = $"grant-projection-{Guid.NewGuid():N}";
+        var subjectId = $"{tag}-subject";
+        var firstClientId = $"{tag}-client-1";
+        var secondClientId = $"{tag}-client-2";
+        var now = DateTime.UtcNow;
+        var firstExpiration = now.AddDays(2);
+        var secondExpiration = now.AddDays(3);
+
+        var first = MakeGrant($"{tag}-key-1", firstClientId, subjectId, "refresh_token", firstExpiration);
+        first.CreationTime = now.AddHours(-2);
+        first.SessionId = $"{tag}-session-1";
+        first.Description = "Older grant";
+        first.Data = new string('x', 65_536);
+
+        var second = MakeGrant($"{tag}-key-2", secondClientId, subjectId, "authorization_code", secondExpiration);
+        second.CreationTime = now.AddHours(-1);
+        second.SessionId = $"{tag}-session-2";
+        second.Description = "Newer grant";
+        second.Data = new string('y', 65_536);
+
+        await SeedAsync(
+            new[] { first, second },
+            new[]
+            {
+                new Client { ClientId = firstClientId, ClientName = "First client" },
+                new Client { ClientId = secondClientId, ClientName = "Second client" }
+            });
+
+        await _factory.RunInScopeAsync(async sp =>
+        {
+            var service = sp.GetRequiredService<IGrantListService>();
+            var result = await service.GetGrantsAsync(
+                new GrantFilter(SubjectId: UserId.Create(subjectId)),
+                pagination: Pagination.From(1, 10));
+
+            Assert.Equal(2, result.TotalCount);
+            Assert.Equal(1, result.PageNumber);
+            Assert.Equal(10, result.PageSize);
+
+            var newer = result.Items[0];
+            Assert.Equal(second.Key, newer.Key.Value);
+            Assert.Equal(second.Type, newer.Type);
+            Assert.Equal(second.SubjectId, newer.SubjectId?.Value);
+            Assert.Equal(second.SessionId, newer.SessionId);
+            Assert.Equal(second.ClientId, newer.ClientId.Value);
+            Assert.Equal("Second client", newer.ClientName);
+            Assert.Equal(second.Description, newer.Description);
+            Assert.Equal(second.CreationTime, newer.CreationTime);
+            Assert.Equal(second.Expiration, newer.Expiration);
+            Assert.False(newer.IsExpired);
+            Assert.False(string.IsNullOrWhiteSpace(newer.ExpirationFormatted));
+
+            var older = result.Items[1];
+            Assert.Equal(first.Key, older.Key.Value);
+            Assert.Equal(first.Type, older.Type);
+            Assert.Equal(first.SubjectId, older.SubjectId?.Value);
+            Assert.Equal(first.SessionId, older.SessionId);
+            Assert.Equal(first.ClientId, older.ClientId.Value);
+            Assert.Equal("First client", older.ClientName);
+            Assert.Equal(first.Description, older.Description);
+            Assert.Equal(first.CreationTime, older.CreationTime);
+            Assert.Equal(first.Expiration, older.Expiration);
+            Assert.False(older.IsExpired);
+            Assert.False(string.IsNullOrWhiteSpace(older.ExpirationFormatted));
+        });
+    }
+
     [Theory]
     [InlineData(null, "Never")]
     [InlineData(-5, "Expired")]
@@ -154,6 +224,8 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
 
         await SeedAsync(new[] { g1, g2 });
 
+        _factory.PersistedGrantCommands.Reset();
+
         await _factory.RunInScopeAsync(async sp =>
         {
             IGrantListService service = sp.GetRequiredService<IGrantListService>();
@@ -161,6 +233,12 @@ public class GrantListServiceTests : IClassFixture<AdminWebFactory>
 
             Assert.Equal(2, count);
         });
+
+        var persistedGrantDeletes = _factory.PersistedGrantCommands.Commands
+            .Where(command => command.Contains("DELETE FROM \"PersistedGrants\"", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        Assert.Single(persistedGrantDeletes);
+        Assert.Contains("WHERE", persistedGrantDeletes[0], StringComparison.OrdinalIgnoreCase);
 
         await _factory.RunInScopeAsync(async sp =>
         {

@@ -20,6 +20,7 @@ public partial class ClientDetailsService
 
         Client? client = await _configurationDbContext.Clients
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(c => c.AllowedGrantTypes)
             .Include(c => c.AllowedScopes)
             .FirstOrDefaultAsync(c => c.ClientId == clientId.Value, cancellationToken);

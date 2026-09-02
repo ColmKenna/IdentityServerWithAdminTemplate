@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "generatedUtc": "2026-08-31T12:29:25Z",
+  "solution": "Sales.slnx",
+  "machineId": "Colms-Mac-mini",
+  "entries": [
+    {
+      "id": "CS-001",
+      "axis": "core-csharp",
+      "location": "IdentityServerProject.Admin.Services/LikeExtensions.cs:18",
+      "instrument": "benchmarkdotnet",
+      "metric": "allocated-bytes-85char",
+      "value": 744,
+      "params": { "inputLength": 85 },
+      "deterministic": true,
+      "harnessHash": null,
+      "conditions": { "tfm": "net10.0", "config": "Release" },
+      "measuredUtc": "2026-08-31T11:31:00Z"
+    },
+    {
+      "id": "ASP-001",
+      "axis": "aspnet-core",
+      "location": "IdentityServerProject/src/IdentityServerProject/Pages/Admin/Clients/Create.cshtml:205",
+      "instrument": "benchmarkdotnet",
+      "metric": "allocated-bytes-render",
+      "value": 928,
+      "params": { "presetCount": 3 },
+      "deterministic": true,
+      "harnessHash": null,
+      "conditions": { "tfm": "net10.0", "config": "Release" },
+      "measuredUtc": "2026-08-31T11:31:39Z"
+    },
+    {
+      "id": "EF-001",
+      "axis": "ef-core",
+      "location": "IdentityServerProject.Admin.Services/Clients/ClientCreateService.cs:95",
+      "instrument": "query-count",
+      "metric": "clone-operation-read-commands",
+      "value": 8,
+      "params": { "collections": 6, "includesTargetIdCheck": true },
+      "deterministic": true,
+      "harnessHash": null,
+      "conditions": { "tfm": "net10.0", "config": "Debug", "provider": "SQLite test host" },
+      "measuredUtc": "2026-08-31T11:04:38Z"
+    },
+    {
+      "id": "EF-002",
+      "axis": "ef-core",
+      "location": "IdentityServerProject.Admin.Services/Apis/ApiResourceEditorService.cs:770",
+      "instrument": "query-count",
+      "metric": "resource-load-read-commands",
+      "value": 4,
+      "params": { "collections": 3 },
+      "deterministic": true,
+      "harnessHash": null,
+      "conditions": { "tfm": "net10.0", "config": "Debug", "provider": "SQLite test host" },
+      "measuredUtc": "2026-08-31T12:29:25Z"
+    },
+    {
+      "id": "EF-003",
+      "axis": "ef-core",
+      "location": "IdentityServerProject.Admin.Services/Clients/ClientDetailsService.cs:579",
+      "instrument": "query-count",
+      "metric": "permissions-operation-read-commands",
+      "value": 5,
+      "params": { "splitCollections": 2, "includesScopeCatalogReads": 2 },
+      "deterministic": true,
+      "harnessHash": null,
+      "conditions": { "tfm": "net10.0", "config": "Debug", "provider": "SQLite test host" },
+      "measuredUtc": "2026-08-31T12:29:25Z"
+    },
+    {
+      "id": "EF-004",
+      "axis": "ef-core",
+      "location": "IdentityServerProject.Admin.Services/Grants/GrantListService.cs:64",
+      "instrument": "sql-capture",
+      "metric": "selected-data-characters",
+      "value": 0,
+      "params": { "pageSize": 50, "seededDataCharactersPerRow": 65536 },
+      "deterministic": true,
+      "harnessHash": null,
+      "conditions": { "tfm": "net10.0", "config": "Release", "provider": "SQLite", "selectedFields": 8 },
+      "measuredUtc": "2026-08-31T10:48:49Z"
+    },
+    {
+      "id": "EF-005",
+      "axis": "ef-core",
+      "location": "IdentityServerProject.Admin.Services/Clients/ClientListService.cs:36",
+      "instrument": "query-count",
+      "metric": "list-operation-read-commands",
+      "value": 2,
+      "params": { "clients": 1, "grantTypes": 2, "grantTypeOrder": "Id" },
+      "deterministic": true,
+      "harnessHash": null,
+      "conditions": { "tfm": "net10.0", "config": "Debug", "provider": "SQLite test host" },
+      "measuredUtc": "2026-08-31T12:29:25Z"
+    },
+    {
+      "id": "EF-006",
+      "axis": "ef-core",
+      "location": "IdentityServerProject.Admin.Services/Grants/GrantListService.cs:197",
+      "instrument": "sql-command-capture",
+      "metric": "subject-revoke-delete-commands",
+      "value": 1,
+      "params": { "matchingGrants": 2, "requiresPredicate": true },
+      "deterministic": true,
+      "harnessHash": null,
+      "conditions": { "tfm": "net10.0", "config": "Debug", "provider": "SQLite test host" },
+      "measuredUtc": "2026-08-31T12:29:25Z"
+    }
+  ]
+}

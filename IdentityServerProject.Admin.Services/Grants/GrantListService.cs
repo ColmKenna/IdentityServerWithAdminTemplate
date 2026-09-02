@@ -47,10 +47,19 @@ public class GrantListService(
 
         int totalCount = await query.CountAsync(cancellationToken);
 
-        List<PersistedGrant> grantsOnPage = await query
+        List<GrantListRow> grantsOnPage = await query
             .OrderByDescending(g => g.CreationTime)
             .Skip(pagination.Skip)
             .Take(pagination.PageSize)
+            .Select(g => new GrantListRow(
+                g.Key,
+                g.Type,
+                g.SubjectId,
+                g.SessionId,
+                g.ClientId,
+                g.Description,
+                g.CreationTime,
+                g.Expiration))
             .ToListAsync(cancellationToken);
 
         var clientIdsOnPage = grantsOnPage
@@ -180,16 +189,9 @@ public class GrantListService(
 
         try
         {
-            List<PersistedGrant> grants = await _persistedGrantDbContext.PersistedGrants
+            int revokedCount = await _persistedGrantDbContext.PersistedGrants
                 .Where(g => g.SubjectId == subjectIdStr)
-                .ToListAsync(cancellationToken);
-
-            int revokedCount = 0;
-            if (grants.Count > 0)
-            {
-                _persistedGrantDbContext.PersistedGrants.RemoveRange(grants);
-                revokedCount = await _persistedGrantDbContext.SaveChangesAsync(cancellationToken);
-            }
+                .ExecuteDeleteAsync(cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.Grant, AuditAction.BulkRevoke, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
@@ -239,4 +241,14 @@ public class GrantListService(
             AuditCategory.Grant, action, AuditOutcome.Failed, AuditReasonCode.PersistenceFailure,
             targetId, targetName, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
     }
+
+    private sealed record GrantListRow(
+        string Key,
+        string Type,
+        string? SubjectId,
+        string? SessionId,
+        string ClientId,
+        string? Description,
+        DateTime CreationTime,
+        DateTime? Expiration);
 }

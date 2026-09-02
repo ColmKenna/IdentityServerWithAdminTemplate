@@ -1,3 +1,4 @@
+using System.Text.Json;
 using IdentityServerProject.Services.Clients;
 using IdentityServerProject.Services.SecretReveals;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,11 @@ public class CreateModel(
     private readonly IClientCreateService _clientCreateService = clientCreateService;
     private readonly IClientPresetService _clientPresetService = clientPresetService;
     private readonly ISecretRevealService _secretRevealService = secretRevealService;
+
+    public static readonly JsonSerializerOptions PresetJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
 
     [BindProperty] public ClientCreateInputModel Input { get; set; } = new();
 

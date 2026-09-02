@@ -17,14 +17,26 @@ public static class LikeExtensions
 
         var escaped = new StringBuilder(input.Length);
         foreach (char character in input)
-            escaped.Append(character switch
+        {
+            switch (character)
             {
-                '[' => "[[]",
-                ']' => "[]]",
-                '%' => "[%]",
-                '_' => "[_]",
-                _ => character.ToString()
-            });
+                case '[':
+                    escaped.Append("[[]");
+                    break;
+                case ']':
+                    escaped.Append("[]]");
+                    break;
+                case '%':
+                    escaped.Append("[%]");
+                    break;
+                case '_':
+                    escaped.Append("[_]");
+                    break;
+                default:
+                    escaped.Append(character);
+                    break;
+            }
+        }
 
         return escaped.ToString();
     }
