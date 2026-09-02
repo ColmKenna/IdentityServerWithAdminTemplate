@@ -68,13 +68,13 @@
                         @switch (entry.Outcome)
                         {
                             case AuditOutcome.Succeeded:
-                                <span class="status-badge success" title="Succeeded">✓</span>
+                                <span class="status-badge success"><span aria-hidden="true">✓</span><span class="visually-hidden">Succeeded</span></span>
                                 break;
                             case AuditOutcome.Denied:
-                                <span class="status-badge warning" title="Denied">⚠</span>
+                                <span class="status-badge warning"><span aria-hidden="true">⚠</span><span class="visually-hidden">Denied</span></span>
                                 break;
                             default:
-                                <span class="status-badge failure" title="Failed">✗</span>
+                                <span class="status-badge failure"><span aria-hidden="true">✗</span><span class="visually-hidden">Failed</span></span>
                                 break;
                         }
                         @entry.Category / @entry.Action
@@ -100,12 +100,12 @@
                             </dl>
                             @if (!string.IsNullOrWhiteSpace(entry.OldValuesJson))
                             {
-                                <h3>Before</h3>
+                                <strong>Before</strong>
                                 <pre>@entry.OldValuesJson</pre>
                             }
                             @if (!string.IsNullOrWhiteSpace(entry.NewValuesJson))
                             {
-                                <h3>After</h3>
+                                <strong>After</strong>
                                 <pre>@entry.NewValuesJson</pre>
                             }
                         </details>
