@@ -16,9 +16,8 @@
         <h1 class="page-title">Configure Client Permissions</h1>
         <p class="page-sub">Select which identity resources and API scopes this client may request.</p>
     </div>
+    <a asp-page="./Details" asp-route-id="@Model.Id" class="btn-secondary">&larr; Back to Client</a>
 </div>
-
-<partial name="_ClientEditorTabs" model="new ClientEditorTabsModel(Model.Id, ClientEditorTab.Permissions)"/>
 
 <form method="post" id="edit-client-permissions-form">
     <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger"

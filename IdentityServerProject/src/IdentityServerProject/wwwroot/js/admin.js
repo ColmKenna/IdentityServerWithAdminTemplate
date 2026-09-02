@@ -14,9 +14,11 @@ function initializeAdminPage() {
 
 function initializeSidebar() {
     const storageKey = 'admin_sidebar_collapsed';
+    document.documentElement.classList.remove('sidebar-collapsed-preload');
 
     function setCollapsed(collapsed) {
         document.body.classList.toggle('collapsed', collapsed);
+        document.documentElement.classList.remove('sidebar-collapsed-preload');
 
         try {
             localStorage.setItem(storageKey, String(collapsed));

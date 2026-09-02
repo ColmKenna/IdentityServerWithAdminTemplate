@@ -16,9 +16,8 @@
         <h1 class="page-title">Edit Client Basics</h1>
         <p class="page-sub">Configure the basic identity and description details for this client application.</p>
     </div>
+    <a asp-page="./Details" asp-route-id="@Model.Id" class="btn-secondary">&larr; Back to Client</a>
 </div>
-
-<partial name="_ClientEditorTabs" model="new ClientEditorTabsModel(Model.Id, ClientEditorTab.Basics)"/>
 
 <form method="post" id="edit-client-basics-form">
     <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger"

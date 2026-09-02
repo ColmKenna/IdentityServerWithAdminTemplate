@@ -143,16 +143,9 @@ public class ClientEditorTabsIntegrationTests : IDisposable
         return await context.OpenAsync(req => req.Content(content));
     }
 
-    private static IElement GetNavStrip(IDocument document)
-    {
-        IElement? nav = document.QuerySelector("ck-tabs[data-client-editor-nav]");
-        Assert.NotNull(nav);
-        return nav!;
-    }
-
     [Theory]
     [MemberData(nameof(EditorPages))]
-    public async Task EditorPage_RendersAllFiveTabs_InOrder(string url, string _)
+    public async Task EditorPage_DoesNotRenderTabStrip(string url, string _)
     {
         HttpClient httpClient = CreateClient();
 
@@ -160,87 +153,25 @@ public class ClientEditorTabsIntegrationTests : IDisposable
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         IDocument document = await GetDocumentAsync(response);
-        IHtmlCollection<IElement> tabs = GetNavStrip(document).QuerySelectorAll("ck-tab");
-
-        Assert.Equal(
-            ExpectedTabs.Select(t => t.Label),
-            tabs.Select(t => t.GetAttribute("label")));
+        IElement? nav = document.QuerySelector("ck-tabs[data-client-editor-nav]");
+        Assert.Null(nav);
     }
 
     [Theory]
     [MemberData(nameof(EditorPages))]
-    public async Task EditorPage_MarksOnlyItsOwnTabActive(string url, string expectedActiveLabel)
+    public async Task EditorPage_RendersStandaloneBackLink_ToClientDetails(string url, string _)
     {
         HttpClient httpClient = CreateClient();
 
         HttpResponseMessage response = await httpClient.GetAsync(url);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
         IDocument document = await GetDocumentAsync(response);
-        IHtmlCollection<IElement> tabs = GetNavStrip(document).QuerySelectorAll("ck-tab");
-
-        var activeTabs = tabs.Where(t => t.HasAttribute("active")).ToList();
-        IElement activeTab = Assert.Single(activeTabs);
-        Assert.Equal(expectedActiveLabel, activeTab.GetAttribute("label"));
-
-        // The script reads data-current to avoid re-navigating to the page already open,
-        // so it has to agree with the component's own active state.
-        var currentTabs = tabs.Where(t => t.GetAttribute("data-current") == "true").ToList();
-        Assert.Same(activeTab, Assert.Single(currentTabs));
-
-        IElement? activeLink = activeTab.QuerySelector("a");
-        Assert.NotNull(activeLink);
-        Assert.Equal("page", activeLink!.GetAttribute("aria-current"));
-    }
-
-    [Theory]
-    [MemberData(nameof(EditorPages))]
-    public async Task EditorPage_TabsLinkToSiblingEditorPagesForTheSameClient(string url, string _)
-    {
-        HttpClient httpClient = CreateClient();
-
-        HttpResponseMessage response = await httpClient.GetAsync(url);
-        IDocument document = await GetDocumentAsync(response);
-        IHtmlCollection<IElement> tabs = GetNavStrip(document).QuerySelectorAll("ck-tab");
-
-        var links = tabs
-            .Select(t => t.QuerySelector("a")?.GetAttribute("href"))
-            .ToList();
-
-        Assert.Equal(ExpectedTabs.Select(t => t.Url), links);
-    }
-
-    [Theory]
-    [MemberData(nameof(EditorPages))]
-    public async Task EditorPage_NoLongerRendersStandaloneBackLink(string url, string _)
-    {
-        HttpClient httpClient = CreateClient();
-
-        HttpResponseMessage response = await httpClient.GetAsync(url);
-        IDocument document = await GetDocumentAsync(response);
-
         var backLinks = document
             .QuerySelectorAll(".page-header a")
-            .Where(a => a.TextContent.Contains("Back to Client Hub", StringComparison.OrdinalIgnoreCase))
+            .Where(a => a.GetAttribute("href")?.Contains($"/Admin/Clients/Details/{ClientId}", StringComparison.OrdinalIgnoreCase) == true)
             .ToList();
 
-        Assert.Empty(backLinks);
-    }
-
-    [Theory]
-    [MemberData(nameof(EditorPages))]
-    public async Task EditorPage_LoadsTabComponentAndNavigationScript(string url, string _)
-    {
-        HttpClient httpClient = CreateClient();
-
-        HttpResponseMessage response = await httpClient.GetAsync(url);
-        IDocument document = await GetDocumentAsync(response);
-
-        var sources = document
-            .QuerySelectorAll("script[src]")
-            .Select(s => s.GetAttribute("src") ?? string.Empty)
-            .ToList();
-
-        Assert.Contains(sources,
-            src => src.Contains("/lib/ck-tabs-webcomponent/index.esm.js", StringComparison.Ordinal));
-        Assert.Contains(sources, src => src.Contains("/js/client-editor-tabs.js", StringComparison.Ordinal));
+        Assert.NotEmpty(backLinks);
     }
 }

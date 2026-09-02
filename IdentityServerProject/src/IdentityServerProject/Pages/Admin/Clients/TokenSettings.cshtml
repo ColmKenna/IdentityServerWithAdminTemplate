@@ -16,9 +16,8 @@
         <h1 class="page-title">Configure Client Token Settings</h1>
         <p class="page-sub">Set token lifetimes and consent/offline-access behavior for this client.</p>
     </div>
+    <a asp-page="./Details" asp-route-id="@Model.Id" class="btn-secondary">&larr; Back to Client</a>
 </div>
-
-<partial name="_ClientEditorTabs" model="new ClientEditorTabsModel(Model.Id, ClientEditorTab.TokenSettings)"/>
 
 <form method="post" id="edit-client-token-settings-form">
     <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger" role="alert"

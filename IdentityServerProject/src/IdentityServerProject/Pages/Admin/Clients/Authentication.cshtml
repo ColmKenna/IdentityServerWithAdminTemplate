@@ -16,9 +16,8 @@
         <h1 class="page-title">Configure Client Authentication</h1>
         <p class="page-sub">Manage grant types, PKCE, client secret requirement, and redirect/CORS URIs.</p>
     </div>
+    <a asp-page="./Details" asp-route-id="@Model.Id" class="btn-secondary">&larr; Back to Client</a>
 </div>
-
-<partial name="_ClientEditorTabs" model="new ClientEditorTabsModel(Model.Id, ClientEditorTab.Authentication)"/>
 
 @if (Model.HasDrifted)
 {
