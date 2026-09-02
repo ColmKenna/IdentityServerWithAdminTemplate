@@ -190,7 +190,8 @@
                         <form method="post" asp-page-handler="DetachScope" asp-route-name="@Model.Editor.Name"
                               asp-route-scopeName="@scope" class="scope-chip-form">
                             <code class="scope-chip">@scope</code>
-                            <button type="submit" class="action-link action-link-danger" title="Detach @scope">&times;
+                            <button type="submit" class="action-link action-link-danger" title="Detach @scope"
+                                    aria-label="Detach @scope">&times;
                             </button>
                         </form>
                     }
@@ -249,7 +250,8 @@
                         <form method="post" asp-page-handler="RemoveClaim" asp-route-name="@Model.Editor.Name"
                               asp-route-claimType="@claim" class="scope-chip-form">
                             <code class="scope-chip">@claim</code>
-                            <button type="submit" class="action-link action-link-danger" title="Remove @claim">&times;
+                            <button type="submit" class="action-link action-link-danger" title="Remove @claim"
+                                    aria-label="Remove @claim">&times;
                             </button>
                         </form>
                     }
@@ -281,10 +283,11 @@
     <dialog id="disable-modal" class="modal">
         <form method="post" asp-page-handler="Disable" asp-route-name="@Model.Editor.Name">
             <h2 class="modal-title">Disable API resource</h2>
-            <p class="modal-body">Type <strong>DISABLE</strong> to confirm. Existing tokens already issued for this
+            <p class="modal-body" id="disable-modal-desc">Type <strong>DISABLE</strong> to confirm. Existing tokens already issued for this
                 resource remain valid until they expire.</p>
-            <input type="text" name="confirmation" class="form-control confirm-input" data-confirm-word="DISABLE"
-                   autocomplete="off"/>
+            <label for="disable-confirm-input" class="visually-hidden">Type DISABLE to confirm</label>
+            <input type="text" id="disable-confirm-input" name="confirmation" class="form-control confirm-input" data-confirm-word="DISABLE"
+                   aria-describedby="disable-modal-desc" autocomplete="off"/>
             <div class="modal-actions">
                 <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
                 <button type="submit" class="btn-danger" data-confirm-submit disabled>Disable</button>
@@ -295,10 +298,11 @@
     <dialog id="delete-modal" class="modal">
         <form method="post" asp-page-handler="Delete" asp-route-name="@Model.Editor.Name">
             <h2 class="modal-title">Delete API resource</h2>
-            <p class="modal-body">Type <strong>DELETE</strong> to permanently remove <strong>@Model.Editor.Name</strong>,
+            <p class="modal-body" id="delete-modal-desc">Type <strong>DELETE</strong> to permanently remove <strong>@Model.Editor.Name</strong>,
                 its secrets, scopes, and claims. This cannot be undone.</p>
-            <input type="text" name="confirmation" class="form-control confirm-input" data-confirm-word="DELETE"
-                   autocomplete="off"/>
+            <label for="delete-confirm-input" class="visually-hidden">Type DELETE to confirm</label>
+            <input type="text" id="delete-confirm-input" name="confirmation" class="form-control confirm-input" data-confirm-word="DELETE"
+                   aria-describedby="delete-modal-desc" autocomplete="off"/>
             <div class="modal-actions">
                 <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
                 <button type="submit" class="btn-danger" data-confirm-submit disabled>Delete</button>
@@ -310,10 +314,11 @@
         <form method="post" asp-page-handler="RevokeSecret" asp-route-name="@Model.Editor.Name">
             <input type="hidden" name="secretId" id="revoke-secret-id-input" value=""/>
             <h2 class="modal-title">Revoke secret</h2>
-            <p class="modal-body">Type <strong>REVOKE</strong> to confirm. Any client using this secret will immediately
+            <p class="modal-body" id="revoke-modal-desc">Type <strong>REVOKE</strong> to confirm. Any client using this secret will immediately
                 fail to authenticate.</p>
-            <input type="text" name="confirmation" class="form-control confirm-input" data-confirm-word="REVOKE"
-                   autocomplete="off"/>
+            <label for="revoke-confirm-input" class="visually-hidden">Type REVOKE to confirm</label>
+            <input type="text" id="revoke-confirm-input" name="confirmation" class="form-control confirm-input" data-confirm-word="REVOKE"
+                   aria-describedby="revoke-modal-desc" autocomplete="off"/>
             <div class="modal-actions">
                 <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
                 <button type="submit" class="btn-danger" data-confirm-submit disabled>Revoke</button>

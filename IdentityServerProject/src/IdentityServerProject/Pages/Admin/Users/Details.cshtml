@@ -98,7 +98,7 @@
             <h3 style="font-size: 0.95rem; margin-bottom: 12px; margin-top: 24px; font-weight: 600;">Assign Role</h3>
             <form method="post" asp-page-handler="AddRole" asp-route-id="@Model.Id"
                   style="display: flex; gap: 10px; max-width: 400px;">
-                <select name="role" class="form-control" style="flex: 1;">
+                <select name="role" class="form-control" style="flex: 1;" aria-label="Select a role to assign">
                     <option value="">-- Select a role --</option>
                     @foreach (var role in Model.Account.AllRoles.Where(r => !Model.Account.AssignedRoles.Contains(r)))
                     {
@@ -144,9 +144,9 @@
 
             <form method="post" asp-page-handler="AddClaim" asp-route-id="@Model.Id"
                   style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <input type="text" name="claimType" class="form-control" placeholder="Claim type"
+                <input type="text" name="claimType" class="form-control" placeholder="Claim type" aria-label="Claim type"
                        style="max-width: 200px;" maxlength="@ValidationConstants.MaxClaimTypeLength" required/>
-                <input type="text" name="claimValue" class="form-control" placeholder="Claim value"
+                <input type="text" name="claimValue" class="form-control" placeholder="Claim value" aria-label="Claim value"
                        style="max-width: 200px;" maxlength="@ValidationConstants.MaxClaimValueLength" required/>
                 <button type="submit" class="btn-primary btn-sm">Add Claim</button>
             </form>
@@ -196,13 +196,14 @@
 
             <div>
                 <h3 style="font-size: 1rem; margin-bottom: 8px;">Delete User</h3>
-                <p class="text-muted" style="margin-bottom: 16px; font-size: 0.9rem;">Once you delete a user, there is
+                <p class="text-muted" id="delete-user-desc" style="margin-bottom: 16px; font-size: 0.9rem;">Once you delete a user, there is
                     no going back. Please be certain.</p>
                 <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Id"
                       onsubmit="return confirmDelete(this);">
                     <div style="display: flex; gap: 10px; align-items: center; max-width: 400px; margin-bottom: 12px;">
+                        <label for="deleteConfirmInput" class="visually-hidden">Type DELETE to confirm user deletion</label>
                         <input type="text" id="deleteConfirmInput" asp-for="DeleteConfirmation" class="form-control"
-                               placeholder="Type DELETE to confirm" required style="flex: 1;"/>
+                               placeholder="Type DELETE to confirm" aria-describedby="delete-user-desc" required style="flex: 1;"/>
                     </div>
                     <button type="submit" class="btn-danger" disabled="@Model.Account.IsCurrentUser"
                             title="@(Model.Account.IsCurrentUser ? "You cannot delete your own account." : null)">

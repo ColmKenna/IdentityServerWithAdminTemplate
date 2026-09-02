@@ -6,9 +6,12 @@ function addUriRow(containerId, inputName, placeholder) {
     div.style.gap = '8px';
     div.style.marginBottom = '8px';
 
+    const label = inputName.includes('PostLogout') ? 'Post-logout redirect URI' :
+                  inputName.includes('Cors') ? 'Allowed CORS origin' : 'Redirect URI';
+
     div.innerHTML = `
-        <input type="url" name="${inputName}" class="form-control" placeholder="${placeholder}" />
-        <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;</button>
+        <input type="url" name="${inputName}" class="form-control" placeholder="${placeholder}" aria-label="${label}" />
+        <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)" aria-label="Remove URI">&times;</button>
     `;
     container.appendChild(div);
 }

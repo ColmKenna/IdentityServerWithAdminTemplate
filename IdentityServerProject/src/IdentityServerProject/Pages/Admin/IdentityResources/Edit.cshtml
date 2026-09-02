@@ -110,7 +110,8 @@
                     {
                         <form method="post" asp-page-handler="RemoveClaim" asp-route-name="@Model.Editor.Name"
                               asp-route-claimType="@claim" class="scope-chip-form">
-                            <button type="submit" class="action-link action-link-danger" title="Remove @claim">&times;
+                            <button type="submit" class="action-link action-link-danger" title="Remove @claim"
+                                    aria-label="Remove @claim">&times;
                             </button>
                         </form>
                     }

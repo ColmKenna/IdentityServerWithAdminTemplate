@@ -49,12 +49,12 @@
              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
             @foreach (var preset in Model.AvailablePresets)
             {
-                <div class="preset-card @(Model.Input.SelectedPreset == preset.Id ? "active" : "")"
-                     data-preset="@preset.Id" onclick="selectPreset('@preset.Id')">
+                <button type="button" class="preset-card @(Model.Input.SelectedPreset == preset.Id ? "active" : "")"
+                        data-preset="@preset.Id" onclick="selectPreset('@preset.Id')">
                     <div class="preset-icon">@preset.Icon</div>
                     <div class="preset-title">@preset.Name</div>
                     <div class="preset-desc">@preset.Description</div>
-                </div>
+                </button>
             }
         </div>
     </div>
@@ -125,8 +125,9 @@
                 {
                     <div class="uri-input-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
                         <input type="url" name="Input.RedirectUris" class="form-control"
-                               placeholder="https://localhost:5001/signin-oidc"/>
-                        <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;</button>
+                               placeholder="https://localhost:5001/signin-oidc"
+                               aria-label="Redirect URI"/>
+                        <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)" aria-label="Remove redirect URI">&times;</button>
                     </div>
                 }
                 else
@@ -135,8 +136,9 @@
                     {
                         <div class="uri-input-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
                             <input type="url" name="Input.RedirectUris" class="form-control" value="@uri"
-                                   placeholder="https://localhost:5001/signin-oidc"/>
-                            <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;
+                                   placeholder="https://localhost:5001/signin-oidc"
+                                   aria-label="Redirect URI"/>
+                            <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)" aria-label="Remove redirect URI">&times;
                             </button>
                         </div>
                     }
@@ -156,8 +158,9 @@
                 {
                     <div class="uri-input-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
                         <input type="url" name="Input.PostLogoutRedirectUris" class="form-control"
-                               placeholder="https://localhost:5001/signout-callback-oidc"/>
-                        <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;</button>
+                               placeholder="https://localhost:5001/signout-callback-oidc"
+                               aria-label="Post-logout redirect URI"/>
+                        <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)" aria-label="Remove post-logout redirect URI">&times;</button>
                     </div>
                 }
                 else
@@ -166,8 +169,9 @@
                     {
                         <div class="uri-input-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
                             <input type="url" name="Input.PostLogoutRedirectUris" class="form-control" value="@uri"
-                                   placeholder="https://localhost:5001/signout-callback-oidc"/>
-                            <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;
+                                   placeholder="https://localhost:5001/signout-callback-oidc"
+                                   aria-label="Post-logout redirect URI"/>
+                            <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)" aria-label="Remove post-logout redirect URI">&times;
                             </button>
                         </div>
                     }
@@ -187,8 +191,9 @@
                 {
                     <div class="uri-input-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
                         <input type="url" name="Input.CorsOrigins" class="form-control"
-                               placeholder="https://localhost:5001"/>
-                        <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;</button>
+                               placeholder="https://localhost:5001"
+                               aria-label="Allowed CORS origin"/>
+                        <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)" aria-label="Remove CORS origin">&times;</button>
                     </div>
                 }
                 else
@@ -197,8 +202,9 @@
                     {
                         <div class="uri-input-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
                             <input type="url" name="Input.CorsOrigins" class="form-control" value="@origin"
-                                   placeholder="https://localhost:5001"/>
-                            <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)">&times;
+                                   placeholder="https://localhost:5001"
+                                   aria-label="Allowed CORS origin"/>
+                            <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)" aria-label="Remove CORS origin">&times;
                             </button>
                         </div>
                     }

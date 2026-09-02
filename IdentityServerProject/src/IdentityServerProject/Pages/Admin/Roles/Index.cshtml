@@ -26,8 +26,9 @@
 <div class="panel">
     <div class="panel-toolbar"
          style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px;">
-        <form method="get" style="display: flex; gap: 10px;">
-            <input type="text" asp-for="Filter" class="form-control" placeholder="Search roles..."
+        <form method="get" class="list-filter" role="search" style="display: flex; gap: 10px;">
+            <label class="visually-hidden" for="role-filter">Filter roles</label>
+            <input type="text" asp-for="Filter" id="role-filter" class="form-control" placeholder="Search roles..."
                    style="width: 250px;"/>
             <button type="submit" class="btn-secondary">Search</button>
             @if (!string.IsNullOrWhiteSpace(Model.Filter))
