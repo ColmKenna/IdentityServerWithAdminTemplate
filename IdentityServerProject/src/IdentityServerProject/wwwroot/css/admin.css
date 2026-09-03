@@ -976,6 +976,7 @@ ck-responsive-col.actions-cell {
 .scope-chips-row {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 8px;
     margin-top: 8px;
 }
@@ -1444,13 +1445,17 @@ ck-responsive-table {
 }
 
 .badge-reserved {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 4px;
     background: var(--danger-soft);
     color: var(--danger);
-    border: 1px solid var(--danger);
-    border-radius: 999px;
-    padding: 1px 8px;
-    font-size: 0.75rem;
-    font-weight: 700;
+    border: 1px solid rgba(200, 67, 59, 0.25);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .badge-success {
@@ -1484,12 +1489,15 @@ ck-responsive-table {
 }
 
 .drift-badge {
-    background: #b8860b;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
     padding: 3px 8px;
-    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
     text-transform: uppercase;
     letter-spacing: 0.03em;
     white-space: nowrap;
@@ -1534,21 +1542,15 @@ ck-responsive-table {
     overflow-wrap: anywhere;
 }
 
-.scope-chips-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-}
-
 .editor-scope-list {
     margin-bottom: 24px;
 }
 
 .scope-chip-container {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     background: #f5f6f8;
     border-radius: 999px;
     padding: 4px 6px 4px 12px;
@@ -1560,24 +1562,12 @@ ck-responsive-table {
     padding: 0;
 }
 
-.scope-chip-container .scope-chip-form {
-    background: transparent;
-    padding: 0;
-}
-
+/* The form is a flex child of the pill, not the pill itself — the container carries
+   the background, radius and padding. */
 .scope-chip-form {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #f5f6f8;
-    border-radius: 999px;
-    padding: 4px 6px 4px 12px;
-}
-
-.scope-chip-form .scope-chip {
-    background: transparent;
-    border: 0;
-    padding: 0;
 }
 
 .scope-chip-form .action-link-danger,
@@ -1648,13 +1638,6 @@ ck-responsive-table {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-}
-
-.scope-chip-container {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
 }
 
 .list-filter {
@@ -2120,34 +2103,8 @@ ck-responsive-table {
     cursor: pointer;
 }
 
-.drift-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 8px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 6px;
-    background: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fcd34d;
-}
-
 .mono {
     font-family: var(--font-mono);
-}
-
-.badge-reserved {
-    display: inline-flex;
-    align-items: center;
-    padding: 2px 8px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    border-radius: 4px;
-    background: var(--danger-soft);
-    color: var(--danger);
-    border: 1px solid rgba(200, 67, 59, 0.25);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
 }
 
 .claim-list, .role-list {
