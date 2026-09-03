@@ -23,7 +23,7 @@
 
     <input type="hidden" asp-for="Input.SelectedPreset" id="selected-preset-input"/>
 
-    <div class="panel" style="margin-bottom: 24px; padding: 28px;">
+    <div class="panel panel-padded">
         <h2 class="panel-title" style="font-size: 16px; margin-bottom: 14px;">1. Select Client Preset</h2>
 
         <div class="preset-grid"
@@ -40,7 +40,7 @@
         </div>
     </div>
 
-    <div class="panel" style="margin-bottom: 24px; padding: 28px;">
+    <div class="panel panel-padded">
         <h2 class="panel-title" style="font-size: 16px; margin-bottom: 14px;">2. Client Information</h2>
 
         <div class="form-group">
@@ -62,7 +62,7 @@
         </div>
     </div>
 
-    <div class="panel" style="margin-bottom: 24px; padding: 28px;">
+    <div class="panel panel-padded">
         <h2 class="panel-title" style="font-size: 16px; margin-bottom: 14px;">3. Authentication & Grant Types</h2>
 
         <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 16px;">
@@ -95,7 +95,7 @@
         </fieldset>
     </div>
 
-    <div id="uri-configuration-section" class="panel" style="margin-bottom: 24px; padding: 28px;">
+    <div id="uri-configuration-section" class="panel panel-padded">
         <h2 class="panel-title" style="font-size: 16px; margin-bottom: 14px;">4. Redirect & CORS URIs</h2>
 
         <!-- Redirect URIs -->
@@ -108,7 +108,7 @@
         <partial name="_UriInputSection" model='new UriInputSectionModel("Allowed CORS Origins", "Input.CorsOrigins", "cors-origins-container", "https://localhost:5001", "Allowed CORS origin", "+ Add CORS Origin", Model.Input.CorsOrigins)' />
     </div>
 
-    <div class="panel" style="margin-bottom: 24px; padding: 28px;">
+    <div class="panel panel-padded">
         <h2 class="panel-title" style="font-size: 16px; margin-bottom: 14px;">5. Allowed Scopes</h2>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">

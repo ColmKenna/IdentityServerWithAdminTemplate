@@ -574,6 +574,10 @@ body.collapsed .main {
     background: #fff;
 }
 
+.panel-padded {
+    padding: 28px;
+}
+
 /* Shared styling for every admin table. The ck-responsive-table web component
    replaces itself with a real <table class="… responsive-table …">, so keying
    off .responsive-table (plus the pre-hydration ck-responsive-* custom elements)
