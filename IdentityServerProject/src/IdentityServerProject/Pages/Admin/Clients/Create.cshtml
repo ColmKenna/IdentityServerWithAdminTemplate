@@ -19,8 +19,7 @@
 }
 
 <form method="post" id="create-client-form">
-    <div asp-validation-summary="All" role="alert" class="validation-summary alert-panel alert-danger"
-         style="display: @(ViewData.ModelState.IsValid ? "none" : "block"); margin-bottom: 20px;"></div>
+    <div asp-validation-summary="All" role="alert" class="validation-summary alert-panel alert-danger"></div>
 
     <input type="hidden" asp-for="Input.SelectedPreset" id="selected-preset-input"/>
 

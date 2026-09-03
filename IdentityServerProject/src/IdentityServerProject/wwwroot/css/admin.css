@@ -1959,6 +1959,11 @@ ck-responsive-table {
     padding: 14px 18px;
     border-radius: 8px;
     font-size: 0.92rem;
+    margin-bottom: 20px;
+}
+
+.validation-summary-valid {
+    display: none;
 }
 
 .validation-summary ul {

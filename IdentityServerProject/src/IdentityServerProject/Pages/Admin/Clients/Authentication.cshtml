@@ -28,8 +28,7 @@
 }
 
 <form method="post" id="edit-client-authentication-form">
-    <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger" role="alert"
-         style="display: @(ViewData.ModelState.IsValid ? "none" : "block"); margin-bottom: 20px;"></div>
+    <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger" role="alert"></div>
 
     <ck-tabs id="client-authentication-tabs" class="client-editor-tabs">
         <ck-tab label="Authentication &amp; Grant Types" active="@(Model.ActiveTabIndex == 0 ? "active" : null)">
