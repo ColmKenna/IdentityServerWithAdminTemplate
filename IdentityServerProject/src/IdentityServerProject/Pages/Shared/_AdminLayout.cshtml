@@ -51,78 +51,39 @@
             <div class="section-label"><span class="label">Configure</span></div>
 
             <a asp-page="/Admin/Clients/Index" class="@GetNavItemClass("/Admin/Clients")" data-tip="Clients">
-                <svg class="item-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="2" y="4" width="20" height="13" rx="2"/>
-                    <line x1="8" y1="21" x2="16" y2="21"/>
-                    <line x1="12" y1="17" x2="12" y2="21"/>
-                </svg>
+                <partial name="_AdminIcon" model='("clients", "item-icon")' />
                 <span class="label">Clients</span></a>
             <a asp-page="/Admin/Apis/Index" class="@GetNavItemClass("/Admin/Apis")" data-tip="API Resources">
-                <svg class="item-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M21 16V8l-9-5-9 5v8l9 5 9-5z"/>
-                    <polyline points="3.3 7.5 12 12.5 20.7 7.5"/>
-                    <line x1="12" y1="21" x2="12" y2="12.5"/>
-                </svg>
+                <partial name="_AdminIcon" model='("apis", "item-icon")' />
                 <span class="label">API Resources</span></a>
             <a asp-page="/Admin/ApiScopes/Index" class="@GetNavItemClass("/Admin/ApiScopes")" data-tip="API Scopes">
-                <svg class="item-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9"/>
-                    <circle cx="12" cy="12" r="5"/>
-                    <circle cx="12" cy="12" r="1.2"/>
-                </svg>
+                <partial name="_AdminIcon" model='("apiscopes", "item-icon")' />
                 <span class="label">API Scopes</span></a>
             <a asp-page="/Admin/IdentityResources/Index" class="@GetNavItemClass("/Admin/IdentityResources")"
                data-tip="Identity Resources">
-                <svg class="item-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="2" y="5" width="20" height="14" rx="2"/>
-                    <circle cx="8" cy="11" r="2.2"/>
-                    <path d="M4.5 17c.4-2 1.9-3 3.5-3s3.1 1 3.5 3"/>
-                    <line x1="14" y1="9.5" x2="19.5" y2="9.5"/>
-                    <line x1="14" y1="13" x2="19.5" y2="13"/>
-                </svg>
+                <partial name="_AdminIcon" model='("identityresources", "item-icon")' />
                 <span class="label">Identity Resources</span></a>
             <a asp-page="/Admin/Keys/Index" class="@GetNavItemClass("/Admin/Keys")" data-tip="Signing Keys">
-                <svg class="item-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                        d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-                </svg>
+                <partial name="_AdminIcon" model='("keys", "item-icon")' />
                 <span class="label">Signing Keys</span></a>
 
             <div class="section-label"><span class="label">Administer</span></div>
 
             <a asp-page="/Admin/Users/Index" class="@GetNavItemClass("/Admin/Users")" data-tip="Users">
-                <svg class="item-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="9" cy="8" r="3.5"/>
-                    <path d="M2.5 20c0-3.3 2.9-5 6.5-5s6.5 1.7 6.5 5"/>
-                    <circle cx="17.5" cy="9" r="2.5"/>
-                    <path d="M16 15.3c3 .2 5.5 1.7 5.5 4.7"/>
-                </svg>
+                <partial name="_AdminIcon" model='("users", "item-icon")' />
                 <span class="label">Users</span></a>
             <a asp-page="/Admin/Roles/Index" class="@GetNavItemClass("/Admin/Roles")" data-tip="Roles">
-                <svg class="item-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
+                <partial name="_AdminIcon" model='("roles", "item-icon")' />
                 <span class="label">Roles</span></a>
             <a asp-page="/Admin/Grants/Index" class="@GetNavItemClass("/Admin/Grants")" data-tip="Persisted Grants">
-                <svg class="item-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <ellipse cx="12" cy="5.5" rx="8" ry="3"/>
-                    <path d="M4 5.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>
-                    <path d="M4 11.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>
-                </svg>
+                <partial name="_AdminIcon" model='("grants", "item-icon")' />
                 <span class="label">Persisted Grants</span></a>
             <a asp-page="/Admin/AuditLogs/Index" class="@GetNavItemClass("/Admin/AuditLogs")" data-tip="Audit Log">
-                <svg class="item-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 3 14 8 19 8"/>
-                    <line x1="9" y1="13" x2="15" y2="13"/>
-                    <line x1="9" y1="17" x2="13" y2="17"/>
-                </svg>
+                <partial name="_AdminIcon" model='("auditlogs", "item-icon")' />
                 <span class="label">Audit Log</span></a>
             <a asp-page="/Admin/Diagnostics/Index" class="@GetNavItemClass("/Admin/Diagnostics")"
                data-tip="Diagnostics">
-                <svg class="item-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <polyline points="2 12 7 12 10 5 14 19 17 12 22 12"/>
-                </svg>
+                <partial name="_AdminIcon" model='("diagnostics", "item-icon")' />
                 <span class="label">Diagnostics</span></a>
         </nav>
 

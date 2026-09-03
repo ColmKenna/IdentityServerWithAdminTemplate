@@ -1,0 +1,31 @@
+@model object?
+
+@{
+    var backLink = Model as IdentityServerProject.Pages.Shared.BackLinkModel;
+    var targetPage = backLink?.Page ?? "./Index";
+    var text = backLink?.Text ?? "Back to list";
+    var routeValues = backLink?.RouteValues;
+}
+
+@if (routeValues != null && routeValues.Count > 0)
+{
+    <a asp-page="@targetPage" asp-all-route-data="@routeValues" class="back-link">
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        @text
+    </a>
+}
+else
+{
+    <a asp-page="@targetPage" class="back-link">
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        @text
+    </a>
+}

@@ -11,14 +11,7 @@
         <h1 class="hero-title">@Model.Editor.Name</h1>
         <p class="page-sub">Manage display name, description, flags, and user claims for this identity resource.</p>
     </div>
-    <a asp-page="./Index" class="back-link">
-        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-        Back to list
-    </a>
+    <partial name="_BackLink" />
 </div>
 
 <div class="panel editor-panel">
@@ -86,42 +79,21 @@
 
     <h2 class="section-title">User Claims</h2>
 
-    @if (Model.Editor.UserClaims.Count > 0)
-    {
-        <div class="scope-chips-row editor-scope-list">
-            @foreach (var claim in Model.Editor.UserClaims)
-            {
-                var isOpenId = string.Equals(claim, "openid", StringComparison.OrdinalIgnoreCase);
-                var isInvariant = BuiltInIdentityResourcePolicy.IsInvariantClaim(Model.Editor.Name, claim);
-                var isLocked = isProtected || isOpenId || isInvariant;
-                var lockReason = isInvariant
-                    ? $"The '{claim}' claim is required by the '{Model.Editor.Name}' identity resource"
-                    : isOpenId
-                        ? "The 'openid' claim is required and protected"
-                        : "This resource is protected and its claims are read-only";
-                <div class="scope-chip-container" data-claim-locked="@(isLocked ? "true" : "false")">
-                    <code class="scope-chip" style="@(isLocked ? "opacity: 0.6;" : "")">@claim</code>
-                    @if (!isLocked)
-                    {
-                        <form method="post" asp-page-handler="RemoveClaim" asp-route-name="@Model.Editor.Name"
-                              asp-route-claimType="@claim" class="scope-chip-form">
-                            <button type="submit" class="action-link action-link-danger" title="Remove @claim"
-                                    aria-label="Remove @claim">&times;
-                            </button>
-                        </form>
-                    }
-                    else
-                    {
-                        <span class="action-link" title="@lockReason">🔒</span>
-                    }
-                </div>
-            }
-        </div>
+    @{
+        var claimChipItems = Model.Editor.UserClaims.Select(claim =>
+        {
+            var isOpenId = string.Equals(claim, "openid", StringComparison.OrdinalIgnoreCase);
+            var isInvariant = BuiltInIdentityResourcePolicy.IsInvariantClaim(Model.Editor.Name, claim);
+            var isLocked = isProtected || isOpenId || isInvariant;
+            var lockReason = isInvariant
+                ? $"The '{claim}' claim is required by the '{Model.Editor.Name}' identity resource"
+                : isOpenId
+                    ? "The 'openid' claim is required and protected"
+                    : "This resource is protected and its claims are read-only";
+            return new ScopeChipItem(claim, isLocked, lockReason);
+        }).ToList();
     }
-    else
-    {
-        <div class="empty-state">No claims configured.</div>
-    }
+    <partial name="_ScopeChipsRow" model='new ScopeChipsRowModel(claimChipItems, "No claims configured.", "RemoveClaim", Model.Editor.Name, "claimType")' />
 
     <form method="post" asp-page-handler="AddClaim" asp-route-name="@Model.Editor.Name"
           class="editor-form editor-subform">

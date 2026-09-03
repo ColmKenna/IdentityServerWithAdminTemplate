@@ -17,7 +17,7 @@
         <p class="page-sub">Create a new client based on <strong>@Model.SourceClientName</strong>. The new client will
             inherit all settings and scopes, except for the client secrets.</p>
     </div>
-    <a asp-page="./Details" asp-route-id="@Model.SourceClientId" class="btn-secondary">&larr; Back to Client</a>
+    <partial name="_BackLink" model='new BackLinkModel("./Details", "Back to Client", new Dictionary<string, string> { { "id", Model.SourceClientId } })' />
 </div>
 
 <form method="post" id="clone-client-form">

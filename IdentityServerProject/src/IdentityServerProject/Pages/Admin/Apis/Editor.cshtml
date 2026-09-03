@@ -23,14 +23,7 @@
         </div>
         <p class="page-sub">@(Model.Editor.IsNew ? "Register a new secured web API." : "Manage basics, secrets, scopes, and claims for this API resource.")</p>
     </div>
-    <a asp-page="./Index" class="back-link">
-        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-        Back to list
-    </a>
+    <partial name="_BackLink" />
 </div>
 
 @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
@@ -182,25 +175,7 @@
         </ck-tab>
 
         <ck-tab label="Scopes" data-tab="scopes" active="@(tab == "scopes" ? "active" : null)">
-            @if (Model.Editor.Scopes.Count > 0)
-            {
-                <div class="scope-chips-row editor-scope-list">
-                    @foreach (var scope in Model.Editor.Scopes)
-                    {
-                        <form method="post" asp-page-handler="DetachScope" asp-route-name="@Model.Editor.Name"
-                              asp-route-scopeName="@scope" class="scope-chip-form">
-                            <code class="scope-chip">@scope</code>
-                            <button type="submit" class="action-link action-link-danger" title="Detach @scope"
-                                    aria-label="Detach @scope">&times;
-                            </button>
-                        </form>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="empty-state">No scopes attached.</div>
-            }
+            <partial name="_ScopeChipsRow" model='ScopeChipsRowModel.ForSimpleList(Model.Editor.Scopes, "No scopes attached.", "DetachScope", Model.Editor.Name, "scopeName")' />
 
             @if (Model.AttachableScopeNames.Count > 0)
             {
@@ -242,25 +217,7 @@
         </ck-tab>
 
         <ck-tab label="Claims" data-tab="claims" active="@(tab == "claims" ? "active" : null)">
-            @if (Model.Editor.Claims.Count > 0)
-            {
-                <div class="scope-chips-row editor-scope-list">
-                    @foreach (var claim in Model.Editor.Claims)
-                    {
-                        <form method="post" asp-page-handler="RemoveClaim" asp-route-name="@Model.Editor.Name"
-                              asp-route-claimType="@claim" class="scope-chip-form">
-                            <code class="scope-chip">@claim</code>
-                            <button type="submit" class="action-link action-link-danger" title="Remove @claim"
-                                    aria-label="Remove @claim">&times;
-                            </button>
-                        </form>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="empty-state">No claims configured.</div>
-            }
+            <partial name="_ScopeChipsRow" model='ScopeChipsRowModel.ForSimpleList(Model.Editor.Claims, "No claims configured.", "RemoveClaim", Model.Editor.Name, "claimType")' />
 
             <form method="post" asp-page-handler="AddClaim" asp-route-name="@Model.Editor.Name"
                   class="editor-form editor-subform">

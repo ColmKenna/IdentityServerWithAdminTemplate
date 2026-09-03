@@ -9,7 +9,7 @@
         <h1 class="page-title">New User</h1>
         <p class="page-sub">Provision a new user account with validated credentials.</p>
     </div>
-    <a asp-page="./Index" class="btn-secondary">&larr; Back to Users</a>
+    <partial name="_BackLink" model='new BackLinkModel("./Index", "Back to Users")' />
 </div>
 
 <form method="post" id="create-user-form">

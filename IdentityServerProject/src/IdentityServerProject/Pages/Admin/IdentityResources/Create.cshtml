@@ -9,14 +9,7 @@
         <h1 class="hero-title">Create Identity Resource</h1>
         <p class="page-sub">Add a new OpenID Connect identity resource with optional template quick-fill.</p>
     </div>
-    <a asp-page="./Index" class="back-link">
-        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-        Back to list
-    </a>
+    <partial name="_BackLink" />
 </div>
 
 <form method="post" id="create-resource-form">

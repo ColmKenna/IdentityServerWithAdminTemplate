@@ -10,7 +10,7 @@
         <h1 class="page-title">Register New Client</h1>
         <p class="page-sub">Create a new OAuth 2.0 / OIDC client application using a guided preset</p>
     </div>
-    <a asp-page="./Index" class="btn-secondary">&larr; Back to Clients</a>
+    <partial name="_BackLink" model='new BackLinkModel("./Index", "Back to Clients")' />
 </div>
 
 @if (!string.IsNullOrEmpty(Model.CreatedSecret))

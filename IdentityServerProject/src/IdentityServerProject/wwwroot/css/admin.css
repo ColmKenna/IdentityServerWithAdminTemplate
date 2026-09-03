@@ -1542,8 +1542,35 @@ ck-responsive-table {
     font-size: .85rem;
 }
 
+.scope-chips-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
 .editor-scope-list {
     margin-bottom: 24px;
+}
+
+.scope-chip-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f5f6f8;
+    border-radius: 999px;
+    padding: 4px 6px 4px 12px;
+}
+
+.scope-chip-container .scope-chip {
+    background: transparent;
+    border: 0;
+    padding: 0;
+}
+
+.scope-chip-container .scope-chip-form {
+    background: transparent;
+    padding: 0;
 }
 
 .scope-chip-form {
@@ -1561,10 +1588,14 @@ ck-responsive-table {
     padding: 0;
 }
 
-.scope-chip-form .action-link-danger {
+.scope-chip-form .action-link-danger,
+.scope-chip-container .action-link-danger {
     font-size: 1.1rem;
     line-height: 1;
     padding: 2px 6px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
 }
 
 .danger-zone {

@@ -18,7 +18,7 @@
         <h1 class="page-title">@(string.IsNullOrWhiteSpace(Model.Account.FullName) ? Model.Account.UserName : Model.Account.FullName)</h1>
         <p class="page-sub"><code>@Model.Account.UserName</code> &middot; @(Model.Account.Email ?? "No email")</p>
     </div>
-    <a asp-page="./Index" class="btn-secondary">&larr; Back to Users</a>
+    <partial name="_BackLink" model='new BackLinkModel("./Index", "Back to Users")' />
 </div>
 
 @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
