@@ -86,30 +86,7 @@
         </ck-responsive-table>
     }
 
-    <div class="pagination-footer">
-        <span class="pagination-summary">Showing @Model.Roles.Items.Count of @Model.Roles.TotalCount roles</span>
-        <div class="pagination-controls">
-            @if (!Model.Roles.HasPreviousPage)
-            {
-                <span data-pagination="previous" class="pagination-btn disabled" aria-disabled="true">&lsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
-                   asp-route-PageNumber="@(Model.Roles.PageNumber - 1)">&lsaquo;</a>
-            }
-            <span class="pagination-page">Page @Model.Roles.PageNumber of @Model.Roles.TotalPages</span>
-            @if (!Model.Roles.HasNextPage)
-            {
-                <span data-pagination="next" class="pagination-btn disabled" aria-disabled="true">&rsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
-                   asp-route-PageNumber="@(Model.Roles.PageNumber + 1)">&rsaquo;</a>
-            }
-        </div>
-    </div>
+    <partial name="_PaginationFooter" model='Model.Roles.ToPagination("roles", Model.Filter)' />
 </div>
 
 <style>

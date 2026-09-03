@@ -44,6 +44,13 @@ public class IndexModel : PageModel
             cancellationToken);
     }
 
+    public Dictionary<string, string?> GetRouteValues() => new()
+    {
+        [nameof(SubjectId)] = SubjectId,
+        [nameof(ClientId)] = ClientId,
+        [nameof(TypeFilter)] = TypeFilter
+    };
+
     public async Task<IActionResult> OnPostRevokeAsync(GrantKey key, CancellationToken cancellationToken)
     {
         if (key.IsEmpty)

@@ -31,4 +31,14 @@ public class IndexModel : PageModel
 
         AuditLogEntries = await _auditLogListService.GetAuditLogEntriesAsync(Filter, pagination, cancellationToken);
     }
+
+    public Dictionary<string, string?> GetRouteValues() => new()
+    {
+        ["Filter.ActorSubjectId"] = Filter.ActorSubjectId,
+        ["Filter.TargetId"] = Filter.TargetId,
+        ["Filter.Category"] = Filter.Category?.Value,
+        ["Filter.Action"] = Filter.Action?.Value,
+        ["Filter.Outcome"] = Filter.Outcome?.ToString(),
+        ["Filter.CorrelationId"] = Filter.CorrelationId
+    };
 }

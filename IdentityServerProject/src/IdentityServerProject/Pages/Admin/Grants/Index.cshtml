@@ -98,33 +98,7 @@
         <div class="empty-state">No persisted grants found.</div>
     }
 
-    <div class="pagination-footer">
-        <span
-            class="pagination-summary">Showing @Model.Grants.Items.Count of @Model.Grants.TotalCount persisted grants</span>
-        <div class="pagination-controls">
-            @if (!Model.Grants.HasPreviousPage)
-            {
-                <span data-pagination="previous" class="pagination-btn disabled" aria-disabled="true">&lsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="previous" class="pagination-btn" asp-page="./Index"
-                   asp-route-PageNumber="@(Model.Grants.PageNumber - 1)" asp-route-SubjectId="@Model.SubjectId"
-                   asp-route-ClientId="@Model.ClientId" asp-route-TypeFilter="@Model.TypeFilter">&lsaquo;</a>
-            }
-            <span class="pagination-page">Page @Model.Grants.PageNumber of @Model.Grants.TotalPages</span>
-            @if (!Model.Grants.HasNextPage)
-            {
-                <span data-pagination="next" class="pagination-btn disabled" aria-disabled="true">&rsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="next" class="pagination-btn" asp-page="./Index"
-                   asp-route-PageNumber="@(Model.Grants.PageNumber + 1)" asp-route-SubjectId="@Model.SubjectId"
-                   asp-route-ClientId="@Model.ClientId" asp-route-TypeFilter="@Model.TypeFilter">&rsaquo;</a>
-            }
-        </div>
-    </div>
+    <partial name="_PaginationFooter" model='Model.Grants.ToPagination("persisted grants", Model.GetRouteValues())' />
 </div>
 
 <dialog id="revoke-grant-modal" class="modal">

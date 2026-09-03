@@ -81,32 +81,7 @@
         <div class="empty-state">No identity resources found.</div>
     }
 
-    <div class="pagination-footer">
-        <span
-            class="pagination-summary">Showing @Model.IdentityResources.Items.Count of @Model.IdentityResources.TotalCount identity resources</span>
-        <div class="pagination-controls">
-            @if (!Model.IdentityResources.HasPreviousPage)
-            {
-                <span data-pagination="previous" class="pagination-btn disabled" aria-disabled="true">&lsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
-                   asp-route-PageNumber="@(Model.IdentityResources.PageNumber - 1)">&lsaquo;</a>
-            }
-            <span
-                class="pagination-page">Page @Model.IdentityResources.PageNumber of @Model.IdentityResources.TotalPages</span>
-            @if (!Model.IdentityResources.HasNextPage)
-            {
-                <span data-pagination="next" class="pagination-btn disabled" aria-disabled="true">&rsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
-                   asp-route-PageNumber="@(Model.IdentityResources.PageNumber + 1)">&rsaquo;</a>
-            }
-        </div>
-    </div>
+    <partial name="_PaginationFooter" model='Model.IdentityResources.ToPagination("identity resources", Model.Filter)' />
 </div>
 
 <dialog id="delete-resource-modal" class="modal">
