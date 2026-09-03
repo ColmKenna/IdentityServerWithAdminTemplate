@@ -85,19 +85,8 @@
         </div>
     }
 
-    <div class="form-actions" style="display: flex; gap: 12px; margin-top: 20px;">
+    <div class="form-actions">
         <button type="submit" class="btn-primary">Save Changes</button>
         <a asp-page="./Details" asp-route-id="@Model.Id" class="btn-secondary">Cancel</a>
     </div>
 </form>
-
-<style>
-    .form-text {
-        font-size: 0.825rem;
-        color: var(--text-dim, #8b9096);
-    }
-
-    .required {
-        color: #c8433b;
-    }
-</style>

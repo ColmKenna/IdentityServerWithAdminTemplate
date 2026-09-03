@@ -52,44 +52,8 @@
         </div>
     </div>
 
-    <div class="form-actions" style="display: flex; gap: 12px; margin-top: 20px;">
+    <div class="form-actions">
         <button type="submit" class="btn-primary">Create User</button>
         <a asp-page="./Index" class="btn-secondary">Cancel</a>
     </div>
 </form>
-
-<style>
-    .form-field {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        margin-bottom: 20px;
-    }
-
-    .form-control {
-        width: 100%;
-        max-width: 450px;
-        border: 1px solid var(--border, #e6e8eb);
-        border-radius: 8px;
-        padding: 10px 14px;
-        font-size: 0.95rem;
-        background-color: #fff;
-        color: var(--ink, #17191c);
-    }
-
-    .form-label {
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: var(--ink, #17191c);
-    }
-
-    .required {
-        color: #c8433b;
-    }
-
-    .field-validation-error {
-        font-size: 0.85rem;
-        color: #c8433b;
-        margin-top: 2px;
-    }
-</style>

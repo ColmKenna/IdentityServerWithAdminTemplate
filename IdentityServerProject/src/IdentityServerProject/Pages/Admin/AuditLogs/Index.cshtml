@@ -123,39 +123,3 @@
 
     <partial name="_PaginationFooter" model='Model.AuditLogEntries.ToPagination("entries", Model.GetRouteValues())' />
 </div>
-
-<style>
-    .audit-metadata {
-        margin-top: 0.4rem;
-    }
-
-    .audit-metadata summary {
-        cursor: pointer;
-    }
-
-    .audit-metadata dl {
-        display: grid;
-        grid-template-columns: max-content minmax(0, 1fr);
-        gap: 0.25rem 0.75rem;
-        margin: 0.5rem 0;
-    }
-
-    .audit-metadata dt {
-        font-weight: 600;
-    }
-
-    .audit-metadata dd {
-        margin: 0;
-        overflow-wrap: anywhere;
-    }
-
-    .audit-metadata h3 {
-        font-size: 0.9rem;
-        margin: 0.75rem 0 0.25rem;
-    }
-
-    .audit-metadata pre {
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-    }
-</style>

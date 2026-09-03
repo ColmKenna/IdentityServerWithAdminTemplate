@@ -44,19 +44,19 @@
     <div class="panel" style="margin-bottom: 24px; padding: 28px;">
         <h2 class="panel-title" style="font-size: 16px; margin-bottom: 14px;">2. Client Information</h2>
 
-        <div class="form-group" style="margin-bottom: 16px;">
+        <div class="form-group">
             <label asp-for="Input.ClientId" class="form-label">Client ID <span class="required">*</span></label>
             <input asp-for="Input.ClientId" class="form-control" placeholder="e.g. my-web-app" required/>
             <small class="form-text">Unique alphanumeric identifier used in OAuth requests.</small>
         </div>
 
-        <div class="form-group" style="margin-bottom: 16px;">
+        <div class="form-group">
             <label asp-for="Input.ClientName" class="form-label">Client Display Name <span
                     class="required">*</span></label>
             <input asp-for="Input.ClientName" class="form-control" placeholder="e.g. Customer Portal Web" required/>
         </div>
 
-        <div class="form-group" style="margin-bottom: 16px;">
+        <div class="form-group">
             <label asp-for="Input.Description" class="form-label">Description</label>
             <textarea asp-for="Input.Description" class="form-control" rows="2"
                       placeholder="Optional notes about this client application"></textarea>

@@ -21,11 +21,9 @@
 
 @if (Model.HasDrifted)
 {
-    <div class="panel alert-panel alert-warning"
-         style="border-left: 5px solid #b8860b; background: #fdf6e3; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 10px;">
-        <span class="drift-badge"
-              style="background:#b8860b; color:#fff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:0.03em; white-space:nowrap;">Drifted from preset</span>
-        <span style="font-size: 13px; color: #6b5106;">@Model.DriftDetails</span>
+    <div class="panel alert-panel alert-warning alert-warning-drift">
+        <span class="drift-badge">Drifted from preset</span>
+        <span class="drift-details">@Model.DriftDetails</span>
     </div>
 }
 
@@ -36,12 +34,12 @@
     <ck-tabs id="client-authentication-tabs" class="client-editor-tabs">
         <ck-tab label="Authentication &amp; Grant Types" active="@(Model.ActiveTabIndex == 0 ? "active" : null)">
             <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 18px;">
-                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-label">
                     <input type="checkbox" asp-for="Input.RequirePkce"/>
                     <span>Require PKCE (Proof Key for Code Exchange)</span>
                 </label>
 
-                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-label">
                     <input type="checkbox" asp-for="Input.RequireClientSecret"/>
                     <span>Require Client Secret</span>
                 </label>
@@ -118,32 +116,11 @@
         </ck-tab>
     </ck-tabs>
 
-    <div class="form-actions" style="display: flex; gap: 12px; margin-top: 20px;">
+    <div class="form-actions">
         <button type="submit" class="btn-primary">Save Changes</button>
         <a asp-page="./Details" asp-route-id="@Model.Id" class="btn-secondary">Cancel</a>
     </div>
 </form>
-
-<style>
-    .form-label {
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: var(--ink, #17191c);
-    }
-
-    .form-control {
-        width: 100%;
-        max-width: 450px;
-        border: 1px solid var(--border, #e6e8eb);
-        border-radius: 8px;
-        padding: 8px 12px;
-        font-size: 0.9rem;
-    }
-
-    .required {
-        color: #c8433b;
-    }
-</style>
 
 @section Scripts {
     <script src="~/js/client-uri-rows.js" asp-append-version="true"></script>
