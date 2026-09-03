@@ -943,14 +943,26 @@ ck-responsive-col.actions-cell {
     color: #334155;
 }
 
+/* One class, two roles: the Client Details card rows and the Diagnostics / Users
+   definition rows. Both sets of declarations already applied to every .field-group —
+   CSS merges same-selector rules — so this states what they computed together.
+   Note the earlier rule's intent for .field-label (700 weight, #1e293b) has been dead
+   since the second copy arrived: font-weight and color are the two properties both
+   declared, so the later values won. Restoring them is a design decision, not a
+   reconciliation, and is deliberately not made here. */
 .field-group {
     line-height: 1.5;
+    display: flex;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line-soft);
 }
 
 .field-label {
-    font-weight: 700;
-    color: #1e293b;
+    font-weight: 600;
+    color: var(--text-dim);
     margin-right: 6px;
+    min-width: 120px;
 }
 
 .field-value {
@@ -1459,19 +1471,6 @@ ck-responsive-table {
     padding: 2px 8px;
     font-size: 0.75rem;
     font-weight: 700;
-}
-
-.field-group {
-    display: flex;
-    gap: 8px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--line-soft);
-}
-
-.field-label {
-    font-weight: 600;
-    min-width: 120px;
-    color: var(--text-dim);
 }
 
 .alert-warning-drift {
