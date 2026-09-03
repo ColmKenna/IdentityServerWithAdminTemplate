@@ -78,7 +78,7 @@
                 <ul class="role-list" style="list-style: none; padding: 0; margin-bottom: 20px;">
                     @foreach (var role in Model.Account.AssignedRoles)
                     {
-                        <li style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line-soft, #eef1f3);">
+                        <li style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line-soft);">
                             <span style="font-weight: 500;">@role</span>
                             <form method="post" asp-page-handler="RemoveRole" asp-route-id="@Model.Id"
                                   asp-route-role="@role">
@@ -123,7 +123,7 @@
                     @foreach (var claim in Model.Account.Claims)
                     {
                         <li class="claim-row" data-reserved="@(claim.IsReserved ? "true" : "false")"
-                            style="display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft, #eef1f3);">
+                            style="display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft);">
                             <code>@claim.Type</code> = <code>@claim.Value</code>
                             @if (claim.IsReserved)
                             {
@@ -175,12 +175,12 @@
         </div>
     </ck-tab>
     <ck-tab label="Danger Zone" data-tab="danger" active="@(Model.Tab == "danger" ? "active" : null)">
-        <div class="panel" id="tab-panel-danger" style="padding: 28px; border-top: 3px solid var(--danger, #b3261e);">
+        <div class="panel" id="tab-panel-danger" style="padding: 28px; border-top: 3px solid var(--danger);">
             <h2 class="panel-title"
-                style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700; color: var(--danger, #b3261e);">Danger
+                style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700; color: var(--danger);">Danger
                 Zone</h2>
 
-            <div style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--line-soft, #eef1f3);">
+            <div style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--line-soft);">
                 <h3 style="font-size: 1rem; margin-bottom: 8px;">Suspend User</h3>
                 <p class="text-muted" style="margin-bottom: 16px; font-size: 0.9rem;">Suspending a user indefinitely
                     prevents them from authenticating. Active sessions are not immediately killed unless you also revoke

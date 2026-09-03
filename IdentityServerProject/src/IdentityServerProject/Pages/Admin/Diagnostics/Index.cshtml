@@ -19,7 +19,7 @@
         @foreach (var store in Model.Diagnostics.StoreHealth)
         {
             <div class="panel" id="store-health-@store.Name.Replace(" ", "-").ToLowerInvariant()"
-                 style="padding: 16px; border: 1px solid var(--line-soft, #dde3e8);">
+                 style="padding: 16px; border: 1px solid var(--line-soft);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <strong>@store.Name</strong>
                     <span
@@ -48,7 +48,7 @@
         <ul style="list-style: none; padding: 0;" id="reserved-claim-holders">
             @foreach (var holder in Model.Diagnostics.ReservedClaimHolders)
             {
-                <li style="display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line-soft, #eef1f3);">
+                <li style="display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line-soft);">
                     <a asp-page="/Admin/Users/Details" asp-route-id="@holder.UserId"
                        asp-route-tab="claims">@holder.UserName</a>
                     <code>@holder.ClaimType</code> = <code>@holder.ClaimValue</code>
@@ -62,13 +62,13 @@
     <h2 class="panel-title" style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700;">Signing Credentials</h2>
 
     <div class="field-group"
-         style="display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line-soft, #eef1f3);">
-        <span class="field-label" style="font-weight: 600; min-width: 140px; color: var(--text-dim, #8b9096);">Active Key ID:</span>
+         style="display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line-soft);">
+        <span class="field-label" style="font-weight: 600; min-width: 140px; color: var(--text-dim);">Active Key ID:</span>
         <code id="active-signing-key-id">@(Model.Diagnostics.SigningKeyId ?? "—")</code>
     </div>
     <div class="field-group"
-         style="display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line-soft, #eef1f3);">
-        <span class="field-label" style="font-weight: 600; min-width: 140px; color: var(--text-dim, #8b9096);">Algorithm:</span>
+         style="display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line-soft);">
+        <span class="field-label" style="font-weight: 600; min-width: 140px; color: var(--text-dim);">Algorithm:</span>
         <code>@(Model.Diagnostics.SigningAlgorithm ?? "—")</code>
     </div>
 
@@ -82,7 +82,7 @@
         <ul style="list-style: none; padding: 0;" id="active-validation-keys">
             @foreach (var key in Model.Diagnostics.ActiveValidationKeys)
             {
-                <li style="display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft, #eef1f3);">
+                <li style="display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft);">
                     <code>@key.KeyId</code>
                     <span class="text-muted">@key.Algorithm</span>
                     @if (key.IsX509Certificate)

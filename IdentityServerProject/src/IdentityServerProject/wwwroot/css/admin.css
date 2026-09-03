@@ -526,7 +526,11 @@ body.collapsed .main {
 }
 
 /* ============ Clients list ============ */
-.page-header {
+/* One wrapper treatment for both page shapes. The visible difference between a list
+   page and an editor page comes from the heading class inside (.page-title vs
+   .hero-title), not from the wrapper. */
+.page-header,
+.editor-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -595,7 +599,7 @@ ck-responsive-col-head {
     font-size: .85rem;
     letter-spacing: .05em;
     font-weight: 600;
-    color: var(--text-dim, #6b7280);
+    color: var(--text-dim);
     background: #fafbfc;
     border-bottom: 1px solid var(--border);
 }
@@ -1075,8 +1079,8 @@ ck-responsive-table {
     .responsive-table tr {
         padding: 12px;
         border-radius: 8px;
-        background: var(--bg-surface, #fff);
-        border: 1px solid var(--border, #e5e7eb) !important;
+        background: var(--bg-surface);
+        border: 1px solid var(--border) !important;
         margin-bottom: 12px;
     }
 }
@@ -1200,15 +1204,9 @@ ck-responsive-table {
 }
 
 /* ============ API resource editor ============ */
-.editor-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
-    flex-wrap: wrap;
-}
+/* .editor-header is declared with .page-header in the Clients list section above. */
 
-/* .title-with-badge defined at line 923 */
+/* .title-with-badge is defined in the Client Details section above. */
 
 .alert-success {
     background: #eafaf1;
@@ -1352,19 +1350,19 @@ ck-responsive-table {
 .form-control:disabled {
     background-color: #f1f3f5;
     border-color: var(--border);
-    color: var(--text-dim, #8b9096);
+    color: var(--text-dim);
     cursor: not-allowed;
 }
 
 .form-text {
     display: block;
     font-size: 0.825rem;
-    color: var(--text-dim, #8b9096);
+    color: var(--text-dim);
     margin-top: 2px;
 }
 
 .required {
-    color: var(--danger, #c8433b);
+    color: var(--danger);
     font-weight: 700;
 }
 
@@ -1429,13 +1427,13 @@ ck-responsive-table {
 }
 
 .text-danger {
-    color: var(--danger, #c8433b);
+    color: var(--danger);
 }
 
 .badge-reserved {
-    background: var(--danger-soft, #fdecec);
-    color: var(--danger, #b3261e);
-    border: 1px solid var(--danger, #b3261e);
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1px solid var(--danger);
     border-radius: 999px;
     padding: 1px 8px;
     font-size: 0.75rem;
@@ -1466,13 +1464,13 @@ ck-responsive-table {
     display: flex;
     gap: 8px;
     padding: 8px 0;
-    border-bottom: 1px solid var(--line-soft, #eef1f3);
+    border-bottom: 1px solid var(--line-soft);
 }
 
 .field-label {
     font-weight: 600;
     min-width: 120px;
-    color: var(--text-dim, #8b9096);
+    color: var(--text-dim);
 }
 
 .alert-warning-drift {
@@ -1663,7 +1661,7 @@ ck-responsive-table {
     display: flex;
     gap: 12px;
     padding: 16px 20px;
-    background: var(--bg-surface, #fff);
+    background: var(--bg-surface);
     border-bottom: 1px solid var(--border);
     align-items: center;
 }
@@ -1716,7 +1714,7 @@ ck-responsive-table {
 
 /* Preset Cards */
 .preset-card {
-    border: 2px solid var(--line-soft, #dde3e8);
+    border: 2px solid var(--line-soft);
     border-radius: 6px;
     padding: 14px;
     cursor: pointer;
@@ -1728,12 +1726,12 @@ ck-responsive-table {
 }
 
 .preset-card:hover {
-    border-color: var(--navy, #16324f);
+    border-color: var(--navy);
     background: #f8fafc;
 }
 
 .preset-card.active {
-    border-color: var(--navy, #16324f);
+    border-color: var(--navy);
     background: #eef2f5;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
@@ -1747,12 +1745,12 @@ ck-responsive-table {
     font-weight: 600;
     font-size: 14px;
     margin-bottom: 4px;
-    color: var(--navy, #16324f);
+    color: var(--navy);
 }
 
 .preset-desc {
     font-size: 12px;
-    color: var(--muted, #5a6a78);
+    color: var(--muted);
     line-height: 1.4;
 }
 
@@ -1970,10 +1968,6 @@ ck-responsive-table {
 }
 
 /* ============ Utility Classes & Missing Shared Definitions (I-004) ============ */
-.text-danger {
-    color: var(--danger, #c8433b);
-}
-
 .form-group {
     margin-bottom: 20px;
 }
@@ -1997,8 +1991,8 @@ ck-responsive-table {
 }
 
 .alert-danger {
-    background: var(--danger-soft, #fdf2f2);
-    color: var(--danger, #c8433b);
+    background: var(--danger-soft);
+    color: var(--danger);
     border: 1px solid rgba(200, 67, 59, 0.25);
 }
 
@@ -2080,7 +2074,7 @@ ck-responsive-table {
 }
 
 .required {
-    color: var(--danger, #c8433b);
+    color: var(--danger);
     margin-left: 2px;
 }
 
@@ -2182,8 +2176,8 @@ ck-responsive-table {
     font-size: 0.72rem;
     font-weight: 700;
     border-radius: 4px;
-    background: var(--danger-soft, #fdf2f2);
-    color: var(--danger, #c8433b);
+    background: var(--danger-soft);
+    color: var(--danger);
     border: 1px solid rgba(200, 67, 59, 0.25);
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -2193,7 +2187,7 @@ ck-responsive-table {
     display: block;
     margin-top: 4px;
     font-size: 0.82rem;
-    color: var(--danger, #c8433b);
+    color: var(--danger);
 }
 
 .claim-list, .role-list {
@@ -2207,7 +2201,7 @@ ck-responsive-table {
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
-    border-bottom: 1px solid var(--line-soft, #dde3e8);
+    border-bottom: 1px solid var(--line-soft);
 }
 
 .editor-fieldset {
@@ -2362,15 +2356,3 @@ body.public-page .public-container {
 }
 
 /* Accessible screen-reader-only utility */
-.visually-hidden {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: -1px !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
-}
-

@@ -30,7 +30,7 @@
                 @foreach (var scope in Model.AvailableApiScopes)
                 {
                     <label
-                        style="display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line-soft, #dde3e8); border-radius: 4px; cursor: pointer;">
+                        style="display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line-soft); border-radius: 4px; cursor: pointer;">
                         <input type="checkbox" name="Input.AllowedScopes" value="@scope" class="scope-checkbox"
                                @(Model.Input.AllowedScopes.Contains(scope) ? "checked" : "")/>
                         <code>@scope</code>
@@ -52,7 +52,7 @@
                     {
                         var isOpenId = scope == "openid";
                         <label
-                            style="display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line-soft, #dde3e8); border-radius: 4px; cursor: @(isOpenId ? "not-allowed" : "pointer");">
+                            style="display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line-soft); border-radius: 4px; cursor: @(isOpenId ? "not-allowed" : "pointer");">
                             @if (isOpenId)
                             {
                                 <input type="checkbox" checked disabled/>
