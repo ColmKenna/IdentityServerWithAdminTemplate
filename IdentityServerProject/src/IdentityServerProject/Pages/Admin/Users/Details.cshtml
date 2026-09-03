@@ -37,7 +37,7 @@
 <ck-tabs id="user-details-tabs" class="user-details-tabs" aria-label="User detail workspace tabs">
     <ck-tab label="Overview" data-tab="overview" active="@(Model.Tab == "overview" ? "active" : null)">
         <div class="panel panel-padded" id="tab-panel-overview">
-            <h2 class="panel-title" style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700;">Account
+            <h2 class="panel-title">Account
                 Overview</h2>
             <div class="field-group"><span class="field-label">Username:</span> <span
                     class="field-value">@Model.Account.UserName</span></div>
@@ -66,7 +66,7 @@
     </ck-tab>
     <ck-tab label="Roles" data-tab="roles" active="@(Model.Tab == "roles" ? "active" : null)">
         <div class="panel panel-padded" id="tab-panel-roles">
-            <h2 class="panel-title" style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700;">Assigned
+            <h2 class="panel-title">Assigned
                 Roles</h2>
 
             @if (Model.Account.AssignedRoles.Count == 0)
@@ -111,7 +111,7 @@
     </ck-tab>
     <ck-tab label="Claims" data-tab="claims" active="@(Model.Tab == "claims" ? "active" : null)">
         <div class="panel panel-padded" id="tab-panel-claims">
-            <h2 class="panel-title" style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700;">Claims</h2>
+            <h2 class="panel-title">Claims</h2>
 
             @if (Model.Account.Claims.Count == 0)
             {
@@ -159,7 +159,7 @@
     </ck-tab>
     <ck-tab label="Access & grants" data-tab="access" active="@(Model.Tab == "access" ? "active" : null)">
         <div class="panel panel-padded" id="tab-panel-access">
-            <h2 class="panel-title" style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700;">Access & Active
+            <h2 class="panel-title">Access & Active
                 Sessions</h2>
             <p class="text-muted" style="margin-bottom: 16px; font-size: 0.9rem;">
                 This user has <strong>@Model.Account.PersistedGrantCount</strong> persisted grant(s) (refresh tokens,
@@ -176,8 +176,7 @@
     </ck-tab>
     <ck-tab label="Danger Zone" data-tab="danger" active="@(Model.Tab == "danger" ? "active" : null)">
         <div class="panel panel-padded" id="tab-panel-danger" style="border-top: 3px solid var(--danger);">
-            <h2 class="panel-title"
-                style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700; color: var(--danger);">Danger
+            <h2 class="panel-title panel-title-danger">Danger
                 Zone</h2>
 
             <div style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--line-soft);">

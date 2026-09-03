@@ -2080,10 +2080,14 @@ ck-responsive-table {
 }
 
 .panel-title {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--ink);
     margin-bottom: 14px;
+}
+
+.panel-title-danger {
+    color: var(--danger);
 }
 
 .section-title {

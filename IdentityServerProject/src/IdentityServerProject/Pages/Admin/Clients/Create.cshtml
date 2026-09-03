@@ -24,7 +24,7 @@
     <input type="hidden" asp-for="Input.SelectedPreset" id="selected-preset-input"/>
 
     <div class="panel panel-padded">
-        <h2 class="panel-title" style="font-size: 16px; margin-bottom: 14px;">1. Select Client Preset</h2>
+        <h2 class="panel-title">1. Select Client Preset</h2>
 
         <div class="preset-grid"
              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
@@ -41,7 +41,7 @@
     </div>
 
     <div class="panel panel-padded">
-        <h2 class="panel-title" style="font-size: 16px; margin-bottom: 14px;">2. Client Information</h2>
+        <h2 class="panel-title">2. Client Information</h2>
 
         <div class="form-group">
             <label asp-for="Input.ClientId" class="form-label">Client ID <span class="required">*</span></label>
@@ -63,7 +63,7 @@
     </div>
 
     <div class="panel panel-padded">
-        <h2 class="panel-title" style="font-size: 16px; margin-bottom: 14px;">3. Authentication & Grant Types</h2>
+        <h2 class="panel-title">3. Authentication & Grant Types</h2>
 
         <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 16px;">
             <label class="checkbox-label">
@@ -96,7 +96,7 @@
     </div>
 
     <div id="uri-configuration-section" class="panel panel-padded">
-        <h2 class="panel-title" style="font-size: 16px; margin-bottom: 14px;">4. Redirect & CORS URIs</h2>
+        <h2 class="panel-title">4. Redirect & CORS URIs</h2>
 
         <!-- Redirect URIs -->
         <partial name="_UriInputSection" model='new UriInputSectionModel("Redirect URIs", "Input.RedirectUris", "redirect-uris-container", "https://localhost:5001/signin-oidc", "Redirect URI", "+ Add Redirect URI", Model.Input.RedirectUris)' />
@@ -109,7 +109,7 @@
     </div>
 
     <div class="panel panel-padded">
-        <h2 class="panel-title" style="font-size: 16px; margin-bottom: 14px;">5. Allowed Scopes</h2>
+        <h2 class="panel-title">5. Allowed Scopes</h2>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
             @foreach (var scope in Model.AvailableScopes)
