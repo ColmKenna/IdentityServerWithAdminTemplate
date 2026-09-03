@@ -239,7 +239,7 @@
 @if (!Model.Editor.IsNew)
 {
     <partial name="_ConfirmationModal" model='new ConfirmationModalModel("disable-modal", "Disable API resource", "Disable", "Type <strong>DISABLE</strong> to confirm. Existing tokens already issued for this resource remain valid until they expire.", confirmWord: "DISABLE", submitText: "Disable", routeName: Model.Editor.Name, bodyId: "disable-modal-desc")' />
-    <partial name="_ConfirmationModal" model='new ConfirmationModalModel("delete-modal", "Delete API resource", "Delete", $"Type <strong>DELETE</strong> to permanently remove <strong>{Model.Editor.Name}</strong>, its secrets, scopes, and claims. This cannot be undone.", confirmWord: "DELETE", submitText: "Delete", routeName: Model.Editor.Name, bodyId: "delete-modal-desc")' />
+    <partial name="_ConfirmationModal" model='new ConfirmationModalModel("delete-modal", "Delete API resource", "Delete", "Type <strong>DELETE</strong> to permanently remove <strong>{0}</strong>, its secrets, scopes, and claims. This cannot be undone.", confirmWord: "DELETE", submitText: "Delete", routeName: Model.Editor.Name, bodyId: "delete-modal-desc", bodyArgs: new[] { Model.Editor.Name })' />
     <partial name="_ConfirmationModal" model='new ConfirmationModalModel("revoke-secret-modal", "Revoke secret", "RevokeSecret", "Type <strong>REVOKE</strong> to confirm. Any client using this secret will immediately fail to authenticate.", confirmWord: "REVOKE", submitText: "Revoke", routeName: Model.Editor.Name, hiddenInputName: "secretId", hiddenInputId: "revoke-secret-id-input", bodyId: "revoke-modal-desc")' />
 }
 

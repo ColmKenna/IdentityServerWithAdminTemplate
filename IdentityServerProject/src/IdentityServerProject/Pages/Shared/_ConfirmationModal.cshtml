@@ -7,7 +7,7 @@
             <input type="hidden" name="@Model.HiddenInputName" id="@Model.HiddenInputId" value="@Model.HiddenInputValue"/>
         }
         <h2 class="modal-title" id="@(Model.DialogId)-title">@Model.Title</h2>
-        <p class="modal-body" id="@(Model.BodyId ?? $"{Model.DialogId}-desc")">@Html.Raw(Model.BodyHtml)</p>
+        <p class="modal-body" id="@(Model.BodyId ?? $"{Model.DialogId}-desc")">@SafeMarkupBody.Render(Model.BodyHtml, Model.BodyArgs, HtmlEncoder)</p>
 
         @if (!string.IsNullOrEmpty(Model.ConfirmWord))
         {
