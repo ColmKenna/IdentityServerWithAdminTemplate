@@ -32,7 +32,7 @@
 
     <ck-tabs id="client-authentication-tabs" class="client-editor-tabs">
         <ck-tab label="Authentication &amp; Grant Types" active="@(Model.ActiveTabIndex == 0 ? "active" : null)">
-            <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 18px;">
+            <div class="form-option-row form-option-row-spaced">
                 <label class="checkbox-label">
                     <input type="checkbox" asp-for="Input.RequirePkce"/>
                     <span>Require PKCE (Proof Key for Code Exchange)</span>
@@ -46,28 +46,28 @@
 
             <fieldset class="fieldset-plain">
                 <legend class="form-label">Allowed Grant Types <span class="required">*</span></legend>
-                <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px;">
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <div class="checkbox-options">
+                    <label class="checkbox-label checkbox-label-compact">
                         <input type="checkbox" name="Input.GrantTypes" value="authorization_code"
                                @(Model.Input.GrantTypes.Contains("authorization_code") ? "checked" : "")/>
                         <code>authorization_code</code>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <label class="checkbox-label checkbox-label-compact">
                         <input type="checkbox" name="Input.GrantTypes" value="client_credentials"
                                @(Model.Input.GrantTypes.Contains("client_credentials") ? "checked" : "")/>
                         <code>client_credentials</code>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <label class="checkbox-label checkbox-label-compact">
                         <input type="checkbox" name="Input.GrantTypes" value="hybrid"
                                @(Model.Input.GrantTypes.Contains("hybrid") ? "checked" : "")/>
                         <code>hybrid</code>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <label class="checkbox-label checkbox-label-compact">
                         <input type="checkbox" name="Input.GrantTypes" value="implicit"
                                @(Model.Input.GrantTypes.Contains("implicit") ? "checked" : "")/>
                         <code>implicit</code>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <label class="checkbox-label checkbox-label-compact">
                         <input type="checkbox" name="Input.GrantTypes"
                                value="urn:ietf:params:oauth:grant-type:device_code"
                                @(Model.Input.GrantTypes.Contains("urn:ietf:params:oauth:grant-type:device_code") ? "checked" : "")/>
@@ -81,16 +81,16 @@
             <partial name="_UriInputSection" model='new UriInputSectionModel("Post-Logout Redirect URIs", "Input.PostLogoutRedirectUris", "post-logout-uris-container", "https://localhost:5001/signout-callback-oidc", "Post-logout redirect URI", "+ Add Post-Logout URI", Model.Input.PostLogoutRedirectUris)' />
             <partial name="_UriInputSection" model='new UriInputSectionModel("Allowed CORS Origins", "Input.CorsOrigins", "cors-origins-container", "https://localhost:5001", "Allowed CORS origin", "+ Add CORS Origin", Model.Input.CorsOrigins)' />
 
-            <hr style="border: 0; border-top: 1px solid var(--border); margin: 24px 0;"/>
-            <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 16px;">Logout Channels</h3>
+            <hr class="section-divider"/>
+            <h3 class="subsection-heading">Logout Channels</h3>
 
-            <div class="form-group" style="margin-bottom: 20px;">
+            <div class="form-group">
                 <label asp-for="Input.FrontChannelLogoutUri" class="form-label">Front-channel Logout URI</label>
                 <input asp-for="Input.FrontChannelLogoutUri" type="url" class="form-control"
                        placeholder="https://localhost:5001/signout-frontchannel"/>
                 <span asp-validation-for="Input.FrontChannelLogoutUri"
                       class="text-danger field-validation-error"></span>
-                <div style="margin-top: 8px;">
+                <div class="form-indent">
                     <label class="checkbox-label">
                         <input type="checkbox" asp-for="Input.FrontChannelLogoutSessionRequired"/>
                         <span>Front-channel Logout Session Required</span>
@@ -98,12 +98,12 @@
                 </div>
             </div>
 
-            <div class="form-group" style="margin-bottom: 20px;">
+            <div class="form-group">
                 <label asp-for="Input.BackChannelLogoutUri" class="form-label">Back-channel Logout URI</label>
                 <input asp-for="Input.BackChannelLogoutUri" type="url" class="form-control"
                        placeholder="https://localhost:5001/signout-backchannel"/>
                 <span asp-validation-for="Input.BackChannelLogoutUri" class="text-danger field-validation-error"></span>
-                <div style="margin-top: 8px;">
+                <div class="form-indent">
                     <label class="checkbox-label">
                         <input type="checkbox" asp-for="Input.BackChannelLogoutSessionRequired"/>
                         <span>Back-channel Logout Session Required</span>

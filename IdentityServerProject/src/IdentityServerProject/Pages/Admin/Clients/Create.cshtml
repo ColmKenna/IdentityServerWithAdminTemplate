@@ -26,8 +26,7 @@
     <div class="panel panel-padded">
         <h2 class="panel-title">1. Select Client Preset</h2>
 
-        <div class="preset-grid"
-             style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+        <div class="preset-grid preset-grid-wide">
             @foreach (var preset in Model.AvailablePresets)
             {
                 <button type="button" class="preset-card @(Model.Input.SelectedPreset == preset.Id ? "active" : "")"
@@ -65,7 +64,7 @@
     <div class="panel panel-padded">
         <h2 class="panel-title">3. Authentication & Grant Types</h2>
 
-        <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 16px;">
+        <div class="form-option-row form-option-row-spaced">
             <label class="checkbox-label">
                 <input type="checkbox" asp-for="Input.RequirePkce" id="input-require-pkce"/>
                 <span>Require PKCE (Proof Key for Code Exchange)</span>
@@ -77,16 +76,16 @@
             </label>
         </div>
 
-        <fieldset class="fieldset-plain" style="margin-bottom: 16px;">
+        <fieldset class="fieldset-plain fieldset-spaced">
             <legend class="form-label">Allowed Grant Types</legend>
-            <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 6px;">
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <div class="checkbox-options">
+                <label class="checkbox-label checkbox-label-compact">
                     <input type="checkbox" name="Input.GrantTypes" value="authorization_code" id="grant-auth-code"
                            @(Model.Input.GrantTypes.Contains("authorization_code") ? "checked" : "")/>
                     <code>authorization_code</code>
                 </label>
 
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <label class="checkbox-label checkbox-label-compact">
                     <input type="checkbox" name="Input.GrantTypes" value="client_credentials" id="grant-client-creds"
                            @(Model.Input.GrantTypes.Contains("client_credentials") ? "checked" : "")/>
                     <code>client_credentials</code>
@@ -111,11 +110,10 @@
     <div class="panel panel-padded">
         <h2 class="panel-title">5. Allowed Scopes</h2>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
+        <div class="scope-checkbox-grid">
             @foreach (var scope in Model.AvailableScopes)
             {
-                <label
-                    style="display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line-soft); border-radius: 4px; cursor: pointer;">
+                <label class="scope-checkbox">
                     <input type="checkbox" name="Input.AllowedScopes" value="@scope" class="scope-checkbox"
                            @(Model.Input.AllowedScopes.Contains(scope) ? "checked" : "")/>
                     <code>@scope</code>
@@ -124,7 +122,7 @@
         </div>
     </div>
 
-    <div style="display: flex; gap: 12px; margin-top: 24px;">
+    <div class="form-actions form-actions-spaced form-actions-wide">
         <button type="submit" class="btn-primary">Register Client</button>
         <a asp-page="./Index" class="btn-secondary">Cancel</a>
     </div>

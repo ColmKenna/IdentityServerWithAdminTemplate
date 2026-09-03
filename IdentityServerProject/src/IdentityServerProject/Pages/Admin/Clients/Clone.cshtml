@@ -26,29 +26,29 @@
     <input type="hidden" asp-for="SourceClientId"/>
 
     <div class="panel panel-padded">
-        <div class="form-group" style="margin-bottom: 16px;">
+        <div class="form-group">
             <label asp-for="Input.ClientId" class="form-label">New Client ID <span class="required">*</span></label>
             <input asp-for="Input.ClientId" class="form-control" placeholder="e.g. my-web-app-clone" required/>
             <span asp-validation-for="Input.ClientId" class="text-danger field-validation-error"></span>
-            <small class="form-text text-muted" style="display: block; margin-top: 4px; font-size: 0.85rem;">Unique
+            <small class="form-text text-muted">Unique
                 alphanumeric identifier used in OAuth requests.</small>
         </div>
 
-        <div class="form-group" style="margin-bottom: 16px;">
+        <div class="form-group">
             <label asp-for="Input.ClientName" class="form-label">New Client Display Name <span class="required">*</span></label>
             <input asp-for="Input.ClientName" class="form-control" placeholder="e.g. Customer Portal Web Clone"
                    required/>
             <span asp-validation-for="Input.ClientName" class="text-danger field-validation-error"></span>
         </div>
 
-        <div class="form-group" style="margin-bottom: 16px;">
+        <div class="form-group">
             <label asp-for="Input.Description" class="form-label">Description</label>
             <textarea asp-for="Input.Description" class="form-control" rows="2"
                       placeholder="Optional notes about this client application"></textarea>
             <span asp-validation-for="Input.Description" class="text-danger field-validation-error"></span>
         </div>
 
-        <div class="form-actions" style="margin-top: 24px;">
+        <div class="form-actions form-actions-spaced">
             <button type="submit" class="btn-primary">Clone Client</button>
             <a asp-page="./Details" asp-route-id="@Model.SourceClientId" class="btn-secondary">Cancel</a>
         </div>

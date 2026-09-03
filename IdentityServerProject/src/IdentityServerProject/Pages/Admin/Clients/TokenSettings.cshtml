@@ -41,7 +41,7 @@
             </div>
         </ck-tab>
         <ck-tab label="Consent &amp; Offline Access" active="@(Model.ActiveTabIndex == 1 ? "active" : null)">
-            <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+            <div class="form-option-row">
                 <label class="checkbox-label">
                     <input type="checkbox" asp-for="Input.RequireConsent"/>
                     <span>Require Consent</span>
@@ -53,9 +53,8 @@
                 </label>
             </div>
 
-            <div id="refresh-token-settings"
-                 style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 24px; display: none;">
-                <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 16px;">Refresh Token Policies</h3>
+            <div id="refresh-token-settings" class="refresh-token-settings">
+                <h3 class="subsection-heading">Refresh Token Policies</h3>
 
                 <div class="form-field">
                     <label asp-for="Input.RefreshTokenUsage" class="form-label">Refresh Token Usage</label>

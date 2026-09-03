@@ -15,17 +15,16 @@
 <div class="panel panel-padded">
     <h2 class="panel-title">Store Health</h2>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+    <div class="diagnostics-grid">
         @foreach (var store in Model.Diagnostics.StoreHealth)
         {
-            <div class="panel" id="store-health-@store.Name.Replace(" ", "-").ToLowerInvariant()"
-                 style="padding: 16px; border: 1px solid var(--line-soft);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div class="panel diagnostic-card" id="store-health-@store.Name.Replace(" ", "-").ToLowerInvariant()">
+                <div class="diagnostic-card-header">
                     <strong>@store.Name</strong>
                     <span
                         class="status-badge @(store.IsHealthy ? "enabled" : "disabled")">@(store.IsHealthy ? "Healthy" : "Degraded")</span>
                 </div>
-                <div class="text-muted" style="font-size: 0.85rem;">@store.Detail</div>
+                <div class="text-muted text-caption">@store.Detail</div>
             </div>
         }
     </div>
@@ -33,7 +32,7 @@
 
 <div class="panel panel-padded">
     <h2 class="panel-title">Reserved User Claims</h2>
-    <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 16px;">
+    <p class="text-muted diagnostics-intro">
         User claims whose type the framework owns. These are copied onto the sign-in principal verbatim,
         so a role-typed one grants privilege that the Roles tab and the last-administrator check cannot see.
         Remove them from the user's Claims tab.
@@ -45,10 +44,10 @@
     }
     else
     {
-        <ul style="list-style: none; padding: 0;" id="reserved-claim-holders">
+        <ul class="plain-list" id="reserved-claim-holders">
             @foreach (var holder in Model.Diagnostics.ReservedClaimHolders)
             {
-                <li style="display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line-soft);">
+                <li class="diagnostic-list-row">
                     <a asp-page="/Admin/Users/Details" asp-route-id="@holder.UserId"
                        asp-route-tab="claims">@holder.UserName</a>
                     <code>@holder.ClaimType</code> = <code>@holder.ClaimValue</code>
@@ -61,28 +60,26 @@
 <div class="panel panel-padded">
     <h2 class="panel-title">Signing Credentials</h2>
 
-    <div class="field-group"
-         style="display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line-soft);">
-        <span class="field-label" style="font-weight: 600; min-width: 140px; color: var(--text-dim);">Active Key ID:</span>
+    <div class="field-group">
+        <span class="field-label field-label-wide">Active Key ID:</span>
         <code id="active-signing-key-id">@(Model.Diagnostics.SigningKeyId ?? "—")</code>
     </div>
-    <div class="field-group"
-         style="display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line-soft);">
-        <span class="field-label" style="font-weight: 600; min-width: 140px; color: var(--text-dim);">Algorithm:</span>
+    <div class="field-group">
+        <span class="field-label field-label-wide">Algorithm:</span>
         <code>@(Model.Diagnostics.SigningAlgorithm ?? "—")</code>
     </div>
 
-    <h3 style="font-size: 0.95rem; margin: 20px 0 10px; font-weight: 700;">Active Validation Keys</h3>
+    <h3 class="diagnostics-subheading">Active Validation Keys</h3>
     @if (Model.Diagnostics.ActiveValidationKeys.Count == 0)
     {
         <div class="empty-state">No active validation keys found.</div>
     }
     else
     {
-        <ul style="list-style: none; padding: 0;" id="active-validation-keys">
+        <ul class="plain-list" id="active-validation-keys">
             @foreach (var key in Model.Diagnostics.ActiveValidationKeys)
             {
-                <li style="display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft);">
+                <li class="diagnostic-list-row">
                     <code>@key.KeyId</code>
                     <span class="text-muted">@key.Algorithm</span>
                     @if (key.IsX509Certificate)

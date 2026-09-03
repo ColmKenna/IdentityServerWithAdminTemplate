@@ -27,7 +27,7 @@
     <form method="post" asp-page-handler="Save" asp-route-name="@Model.Editor.Name" class="editor-form">
         <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
 
-        <fieldset class="editor-fieldset" style="border:0; padding:0; margin:0; min-width:0;" disabled="@isProtected">
+        <fieldset class="fieldset-plain" disabled="@isProtected">
 
             <div class="form-field">
                 <label class="form-label" for="resource-name">Name</label>
@@ -97,7 +97,7 @@
 
     <form method="post" asp-page-handler="AddClaim" asp-route-name="@Model.Editor.Name"
           class="editor-form editor-subform">
-        <fieldset class="editor-fieldset" style="border:0; padding:0; margin:0; min-width:0;" disabled="@isProtected">
+        <fieldset class="fieldset-plain" disabled="@isProtected">
             <h3 class="section-title">Add a claim type</h3>
             <div class="form-field">
                 <label class="form-label" for="new-claim-type">Claim type</label>

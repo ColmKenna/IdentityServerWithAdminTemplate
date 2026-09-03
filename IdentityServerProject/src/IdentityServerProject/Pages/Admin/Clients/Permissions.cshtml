@@ -25,11 +25,10 @@
     @{
         void RenderApiScopesContent()
         {
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
+            <div class="scope-checkbox-grid">
                 @foreach (var scope in Model.AvailableApiScopes)
                 {
-                    <label
-                        style="display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line-soft); border-radius: 4px; cursor: pointer;">
+                    <label class="scope-checkbox">
                         <input type="checkbox" name="Input.AllowedScopes" value="@scope" class="scope-checkbox"
                                @(Model.Input.AllowedScopes.Contains(scope) ? "checked" : "")/>
                         <code>@scope</code>
@@ -46,12 +45,11 @@
                 <p class="form-text" style="margin-bottom: 14px;">These claims are returned in the ID token. <code>openid</code>
                     is required for interactive sign-in and cannot be removed.</p>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
+                <div class="scope-checkbox-grid">
                     @foreach (var scope in Model.AvailableIdentityScopes)
                     {
                         var isOpenId = scope == "openid";
-                        <label
-                            style="display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line-soft); border-radius: 4px; cursor: @(isOpenId ? "not-allowed" : "pointer");">
+                        <label class="scope-checkbox @(isOpenId ? "scope-checkbox-disabled" : null)">
                             @if (isOpenId)
                             {
                                 <input type="checkbox" checked disabled/>
