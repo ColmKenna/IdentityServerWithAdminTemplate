@@ -1,0 +1,30 @@
+@model IdentityServerProject.Pages.Shared.ConfirmationModalModel
+
+<dialog id="@Model.DialogId" class="modal">
+    <form method="post" asp-page-handler="@Model.Handler" asp-route-name="@Model.RouteName">
+        @if (!string.IsNullOrEmpty(Model.HiddenInputName))
+        {
+            <input type="hidden" name="@Model.HiddenInputName" id="@Model.HiddenInputId" value="@Model.HiddenInputValue"/>
+        }
+        <h2 class="modal-title">@Model.Title</h2>
+        <p class="modal-body" id="@(Model.BodyId ?? $"{Model.DialogId}-desc")">@Html.Raw(Model.BodyHtml)</p>
+
+        @if (!string.IsNullOrEmpty(Model.ConfirmWord))
+        {
+            <label for="@($"{Model.DialogId}-confirm-input")" class="visually-hidden">Type @Model.ConfirmWord to confirm</label>
+            <input type="text" id="@($"{Model.DialogId}-confirm-input")" name="confirmation" class="form-control confirm-input" data-confirm-word="@Model.ConfirmWord"
+                   aria-describedby="@(Model.BodyId ?? $"{Model.DialogId}-desc")" autocomplete="off"/>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
+                <button type="submit" class="@Model.SubmitClass" data-confirm-submit disabled>@Model.SubmitText</button>
+            </div>
+        }
+        else
+        {
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
+                <button type="submit" id="@Model.SubmitId" class="@Model.SubmitClass">@Model.SubmitText</button>
+            </div>
+        }
+    </form>
+</dialog>

@@ -9,6 +9,7 @@ function initializeAdminPage() {
     initializeTableFiltering();
     initializeScopeDeletionDialog();
     initializeDialogCloseButtons();
+    initializeCopyButtons();
     initializeEditorTabs();
 }
 
@@ -173,6 +174,40 @@ function initializeScopeDeletionDialog() {
 function initializeDialogCloseButtons() {
     document.querySelectorAll('[data-action="close-modal"]').forEach(button => {
         button.addEventListener('click', () => button.closest('dialog').close());
+    });
+}
+
+function initializeCopyButtons() {
+    document.querySelectorAll('[data-copy-target]').forEach(button => {
+        button.addEventListener('click', () => {
+            const target = document.getElementById(button.dataset.copyTarget);
+            if (!target) return;
+            const textToCopy = target.value !== undefined ? target.value : (target.textContent || '');
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const origText = button.textContent;
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = origText;
+                }, 2000);
+            });
+        });
+    });
+}
+
+function copySecretToClipboard() {
+    const input = document.getElementById('generated-secret-input');
+    if (!input) return;
+
+    input.select();
+    navigator.clipboard.writeText(input.value).then(() => {
+        const btn = document.getElementById('copy-secret-btn');
+        if (btn) {
+            const origText = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => {
+                btn.textContent = origText;
+            }, 2000);
+        }
     });
 }
 

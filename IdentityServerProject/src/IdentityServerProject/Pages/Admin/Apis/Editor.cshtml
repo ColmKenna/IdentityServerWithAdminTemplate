@@ -280,51 +280,9 @@
 
 @if (!Model.Editor.IsNew)
 {
-    <dialog id="disable-modal" class="modal">
-        <form method="post" asp-page-handler="Disable" asp-route-name="@Model.Editor.Name">
-            <h2 class="modal-title">Disable API resource</h2>
-            <p class="modal-body" id="disable-modal-desc">Type <strong>DISABLE</strong> to confirm. Existing tokens already issued for this
-                resource remain valid until they expire.</p>
-            <label for="disable-confirm-input" class="visually-hidden">Type DISABLE to confirm</label>
-            <input type="text" id="disable-confirm-input" name="confirmation" class="form-control confirm-input" data-confirm-word="DISABLE"
-                   aria-describedby="disable-modal-desc" autocomplete="off"/>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
-                <button type="submit" class="btn-danger" data-confirm-submit disabled>Disable</button>
-            </div>
-        </form>
-    </dialog>
-
-    <dialog id="delete-modal" class="modal">
-        <form method="post" asp-page-handler="Delete" asp-route-name="@Model.Editor.Name">
-            <h2 class="modal-title">Delete API resource</h2>
-            <p class="modal-body" id="delete-modal-desc">Type <strong>DELETE</strong> to permanently remove <strong>@Model.Editor.Name</strong>,
-                its secrets, scopes, and claims. This cannot be undone.</p>
-            <label for="delete-confirm-input" class="visually-hidden">Type DELETE to confirm</label>
-            <input type="text" id="delete-confirm-input" name="confirmation" class="form-control confirm-input" data-confirm-word="DELETE"
-                   aria-describedby="delete-modal-desc" autocomplete="off"/>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
-                <button type="submit" class="btn-danger" data-confirm-submit disabled>Delete</button>
-            </div>
-        </form>
-    </dialog>
-
-    <dialog id="revoke-secret-modal" class="modal">
-        <form method="post" asp-page-handler="RevokeSecret" asp-route-name="@Model.Editor.Name">
-            <input type="hidden" name="secretId" id="revoke-secret-id-input" value=""/>
-            <h2 class="modal-title">Revoke secret</h2>
-            <p class="modal-body" id="revoke-modal-desc">Type <strong>REVOKE</strong> to confirm. Any client using this secret will immediately
-                fail to authenticate.</p>
-            <label for="revoke-confirm-input" class="visually-hidden">Type REVOKE to confirm</label>
-            <input type="text" id="revoke-confirm-input" name="confirmation" class="form-control confirm-input" data-confirm-word="REVOKE"
-                   aria-describedby="revoke-modal-desc" autocomplete="off"/>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
-                <button type="submit" class="btn-danger" data-confirm-submit disabled>Revoke</button>
-            </div>
-        </form>
-    </dialog>
+    <partial name="_ConfirmationModal" model='new ConfirmationModalModel("disable-modal", "Disable API resource", "Disable", "Type <strong>DISABLE</strong> to confirm. Existing tokens already issued for this resource remain valid until they expire.", confirmWord: "DISABLE", submitText: "Disable", routeName: Model.Editor.Name, bodyId: "disable-modal-desc")' />
+    <partial name="_ConfirmationModal" model='new ConfirmationModalModel("delete-modal", "Delete API resource", "Delete", $"Type <strong>DELETE</strong> to permanently remove <strong>{Model.Editor.Name}</strong>, its secrets, scopes, and claims. This cannot be undone.", confirmWord: "DELETE", submitText: "Delete", routeName: Model.Editor.Name, bodyId: "delete-modal-desc")' />
+    <partial name="_ConfirmationModal" model='new ConfirmationModalModel("revoke-secret-modal", "Revoke secret", "RevokeSecret", "Type <strong>REVOKE</strong> to confirm. Any client using this secret will immediately fail to authenticate.", confirmWord: "REVOKE", submitText: "Revoke", routeName: Model.Editor.Name, hiddenInputName: "secretId", hiddenInputId: "revoke-secret-id-input", bodyId: "revoke-modal-desc")' />
 }
 
 @section Scripts {
