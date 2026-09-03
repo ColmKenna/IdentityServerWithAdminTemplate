@@ -11,23 +11,13 @@ using Moq;
 namespace IdentityServerProject.Admin.Tests.Clients;
 
 /// <summary>
-///     Covers the sub-navigation tab strip shared by the five Client editor pages (WI-07):
-///     every editor page renders the same five tabs, the current page's tab is the active one,
-///     each tab carries the link to its sibling page, and the old per-page back links are gone.
+///     Locks in the removal of the sub-navigation tab strip that the five Client editor pages
+///     once shared (WI-07): no editor page renders the strip, and each one carries a standalone
+///     back link to the client's Details page instead.
 /// </summary>
 public class ClientEditorTabsIntegrationTests : IDisposable
 {
     private const string ClientId = "coop.market.razor";
-
-    /// <summary>The tab strip as the partial declares it: heading label and target URL, in order.</summary>
-    private static readonly (string Label, string Url)[] ExpectedTabs =
-    {
-        ("Basics", $"/Admin/Clients/Basics/{ClientId}"),
-        ("Authentication", $"/Admin/Clients/Authentication/{ClientId}"),
-        ("Permissions", $"/Admin/Clients/Permissions/{ClientId}"),
-        ("Secrets", $"/Admin/Clients/Secrets/{ClientId}"),
-        ("Token Settings", $"/Admin/Clients/TokenSettings/{ClientId}")
-    };
 
     private readonly List<IDisposable> _disposables = new();
 

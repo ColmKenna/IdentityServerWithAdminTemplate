@@ -1364,53 +1364,6 @@ ck-responsive-table {
     margin: 0 !important;
 }
 
-/* ck-tabs used as the sub-navigation strip shared by the five Client editor pages (WI-07),
-   rendered by Pages/Admin/Clients/_ClientEditorTabs.cshtml. Each tab links to a sibling page,
-   so wwwroot/js/client-editor-tabs.js hides the component's panels and only the headings show.
-   The --tab-* overrides below are scoped to this element so the sub-nav reads as an underline
-   strip and stays visually distinct from the in-page .client-editor-tabs on the same pages. */
-.client-editor-nav {
-    margin-bottom: 28px;
-
-    --tab-bg: transparent;
-    --tab-text: var(--text-dim);
-    --tab-hover-bg: #f5f6f8;
-    --tab-border: var(--border);
-    --primary-hover: transparent; /* active heading background */
-    --text-light: var(--ink); /* active heading text */
-    --primary-color: var(--accent); /* active heading underline */
-}
-
-.client-editor-nav:defined {
-    display: block;
-    width: 100%;
-    border: none;
-    border-radius: 0;
-    background: transparent;
-    overflow: visible;
-}
-
-/* Before the component upgrades - and permanently, if scripting is unavailable - each <ck-tab>
-   still holds the plain link the partial emits. Lay those out as a readable link row. */
-.client-editor-nav:not(:defined) {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-}
-
-.client-editor-nav:not(:defined) a {
-    color: var(--text-dim);
-    font-weight: 600;
-    font-size: .95rem;
-    text-decoration: none;
-}
-
-.client-editor-nav:not(:defined) ck-tab[data-current] a {
-    color: var(--ink);
-}
-
 .editor-form {
     max-width: 520px;
     display: flex;
