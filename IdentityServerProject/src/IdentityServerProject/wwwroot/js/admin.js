@@ -49,7 +49,7 @@ function initializeSidebarGroups(setCollapsed) {
         button.addEventListener('click', () => {
             const group = button.parentElement;
 
-            if (document.body.classList.contains('collapsed') && window.innerWidth > 760) {
+            if (document.body.classList.contains('collapsed') && window.innerWidth > 768) {
                 setCollapsed(false);
                 group.classList.add('open');
                 return;
@@ -96,22 +96,22 @@ function initializeTooltips(burger) {
     let tooltipTarget;
 
     function hideTooltip() {
-        tooltip.style.display = 'none';
+        tooltip.classList.remove('show');
         tooltipTarget = null;
     }
 
     function showTooltip(target) {
-        if (!document.body.classList.contains('collapsed') || window.innerWidth <= 760 || !target.dataset.tip) {
+        if (!document.body.classList.contains('collapsed') || window.innerWidth <= 768 || !target.dataset.tip) {
             return;
         }
 
         tooltipTarget = target;
         tooltip.textContent = target.dataset.tip;
-        tooltip.style.display = 'block';
 
         const targetBounds = target.getBoundingClientRect();
         tooltip.style.top = `${targetBounds.top + targetBounds.height / 2 - tooltip.offsetHeight / 2}px`;
         tooltip.style.left = `${targetBounds.right + 8}px`;
+        tooltip.classList.add('show');
     }
 
     document.querySelectorAll('[data-tip]').forEach(element => {

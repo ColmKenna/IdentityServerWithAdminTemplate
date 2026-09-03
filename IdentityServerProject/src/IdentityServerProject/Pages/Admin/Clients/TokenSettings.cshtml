@@ -142,23 +142,5 @@
 </style>
 
 @section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const checkbox = document.getElementById('allow-offline-access');
-            const panel = document.getElementById('refresh-token-settings');
-
-            function togglePanel() {
-                if (checkbox.checked) {
-                    panel.style.display = 'block';
-                } else {
-                    panel.style.display = 'none';
-                }
-            }
-
-            if (checkbox && panel) {
-                checkbox.addEventListener('change', togglePanel);
-                togglePanel();
-            }
-        });
-    </script>
+    <script src="~/js/client-token-settings.js" asp-append-version="true"></script>
 }

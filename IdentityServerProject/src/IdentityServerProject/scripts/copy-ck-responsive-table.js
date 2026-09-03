@@ -1,6 +1,6 @@
 // Copies the built ck-responsive-table-webcomponent bundle from node_modules
 // into wwwroot so it can be served as a static asset and referenced from
-// Pages/Admin/Clients/Index.cshtml via <script type="module">.
+// Pages/Shared/_AdminLayout.cshtml via <script type="module">.
 const fs = require("fs");
 const path = require("path");
 
@@ -20,6 +20,12 @@ if (!fs.existsSync(distDir)) {
 
 fs.rmSync(destDir, {recursive: true, force: true});
 fs.mkdirSync(destDir, {recursive: true});
-fs.cpSync(distDir, destDir, {recursive: true});
 
-console.log(`[copy-ck-responsive-table] Copied dist assets to ${destDir}`);
+const esmFile = path.join(distDir, "index.esm.js");
+if (fs.existsSync(esmFile)) {
+    fs.copyFileSync(esmFile, path.join(destDir, "index.esm.js"));
+    console.log(`[copy-ck-responsive-table] Copied index.esm.js to ${destDir}`);
+} else {
+    fs.cpSync(distDir, destDir, {recursive: true});
+    console.log(`[copy-ck-responsive-table] Copied dist assets to ${destDir}`);
+}
