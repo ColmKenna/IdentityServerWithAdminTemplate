@@ -5,7 +5,7 @@
     ViewData["Title"] = Model.Account.UserName;
     ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
     {
-        ("Admin", "/Admin/Users"),
+        ("Admin", "/Admin/Index"),
         ("Users", "/Admin/Users"),
         (Model.Account.UserName, null)
     };
@@ -100,7 +100,7 @@
                   style="display: flex; gap: 10px; max-width: 400px;">
                 <select name="role" class="form-control" style="flex: 1;" aria-label="Select a role to assign">
                     <option value="">-- Select a role --</option>
-                    @foreach (var role in Model.Account.AllRoles.Where(r => !Model.Account.AssignedRoles.Contains(r)))
+                    @foreach (var role in unassignedRoles)
                     {
                         <option value="@role">@role</option>
                     }

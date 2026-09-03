@@ -26,6 +26,14 @@
             @Model.StatusMessage
         </div>
     }
+
+    <form method="get" class="list-filter" role="search">
+        <label class="visually-hidden" for="user-filter">Filter users</label>
+        <input asp-for="Filter" id="user-filter" class="form-control" type="search"
+               placeholder="Filter by name, username, or email"/>
+        <button type="submit" class="btn-secondary">Filter</button>
+    </form>
+
     <ck-responsive-table class="users-table" mobile-breakpoint="768px">
         <ck-responsive-thead>
             <ck-responsive-col-head>User</ck-responsive-col-head>

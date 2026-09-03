@@ -57,28 +57,23 @@
 
             <div class="form-group checkbox-grid">
                 <div class="form-check">
-                    <input class="form-control" type="checkbox" id="resource-enabled" asp-for="Input.Enabled"/>
-                    <label class="form-check-label"
-                           for="resource-enabled">@Html.DisplayNameFor(m => m.Input.Enabled)</label>
+                    <input class="form-check-input" type="checkbox" asp-for="Input.Enabled"/>
+                    <label class="form-check-label" asp-for="Input.Enabled"></label>
                 </div>
 
                 <div class="form-check">
-                    <input class="form-control" type="checkbox" id="resource-required" asp-for="Input.Required"/>
-                    <label class="form-check-label"
-                           for="resource-required">@Html.DisplayNameFor(m => m.Input.Required)</label>
+                    <input class="form-check-input" type="checkbox" asp-for="Input.Required"/>
+                    <label class="form-check-label" asp-for="Input.Required"></label>
                 </div>
 
                 <div class="form-check">
-                    <input class="form-control" type="checkbox" id="resource-emphasize" asp-for="Input.Emphasize"/>
-                    <label class="form-check-label"
-                           for="resource-emphasize">@Html.DisplayNameFor(m => m.Input.Emphasize)</label>
+                    <input class="form-check-input" type="checkbox" asp-for="Input.Emphasize"/>
+                    <label class="form-check-label" asp-for="Input.Emphasize"></label>
                 </div>
 
                 <div class="form-check">
-                    <input class="form-control" type="checkbox" id="resource-show-discovery"
-                           asp-for="Input.ShowInDiscoveryDocument"/>
-                    <label class="form-check-label"
-                           for="resource-show-discovery">@Html.DisplayNameFor(m => m.Input.ShowInDiscoveryDocument)</label>
+                    <input class="form-check-input" type="checkbox" asp-for="Input.ShowInDiscoveryDocument"/>
+                    <label class="form-check-label" asp-for="Input.ShowInDiscoveryDocument"></label>
                 </div>
             </div>
 

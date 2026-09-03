@@ -4,7 +4,7 @@
     ViewData["Title"] = "Configure Client Token Settings";
     ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
     {
-        ("Admin", "/Admin/Clients/Index"),
+        ("Admin", "/Admin/Index"),
         ("Clients", "/Admin/Clients/Index"),
         (Model.ClientNameDisplay, $"/Admin/Clients/Details/{Model.Id}"),
         ("Token Settings", null)
@@ -64,8 +64,8 @@
                         <option value="0">ReUse (0)</option>
                         <option value="1">OneTime (1)</option>
                     </select>
-                    <small class="form-text">ReUse: the refresh token handle will stay the same when refreshing
-                        tokens.<br/>OneTime: the refresh token handle will be updated when refreshing tokens.</small>
+                    <small class="form-text">ReUse: the refresh token handle will stay the same when refreshing tokens.</small>
+                    <small class="form-text">OneTime: the refresh token handle will be updated when refreshing tokens.</small>
                 </div>
 
                 <div class="form-field">
@@ -74,8 +74,8 @@
                         <option value="0">Sliding (0)</option>
                         <option value="1">Absolute (1)</option>
                     </select>
-                    <small class="form-text">Absolute: the refresh token will expire on a fixed point in time.<br/>Sliding:
-                        when refreshing the token, the lifetime of the refresh token will be renewed.</small>
+                    <small class="form-text">Absolute: the refresh token will expire on a fixed point in time.</small>
+                    <small class="form-text">Sliding: when refreshing the token, the lifetime of the refresh token will be renewed.</small>
                 </div>
 
                 <div class="form-field">

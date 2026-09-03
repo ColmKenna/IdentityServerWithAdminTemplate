@@ -4,16 +4,32 @@
     ViewData["Title"] = Model.ShowLogoutPrompt ? "Logout" : "Logged out";
 }
 
+<div class="auth-card-header">
+    <div class="auth-brand">
+        <div class="brand-icon">id</div>
+        <div class="auth-brand-text">
+            <span class="auth-brand-name">IdentityServer</span>
+            <span class="auth-brand-sub">AUTHENTICATION</span>
+        </div>
+    </div>
+    <h1 class="auth-title">@(Model.ShowLogoutPrompt ? "Sign out" : "You have been signed out")</h1>
+    <p class="auth-subtitle">@(Model.ShowLogoutPrompt ? "Would you like to log out of your account?" : "You have successfully signed out of your account.")</p>
+</div>
+
 @if (Model.ShowLogoutPrompt)
 {
-    <h1>Logout</h1>
-    <p>Would you like to log out of your account?</p>
-    <form method="post">
+    <form method="post" class="auth-form">
         <input type="hidden" asp-for="LogoutId"/>
-        <button type="submit" class="btn btn-primary">Yes, Logout</button>
+        <button type="submit" class="btn-primary auth-submit-btn">Yes, Sign out</button>
     </form>
 }
 else
 {
-    <h1>You have been logged out</h1>
+    <div style="margin-top: 24px; text-align: center;">
+        <a asp-page="/Account/Login" class="btn-primary auth-submit-btn" style="text-decoration: none;">Sign in again</a>
+    </div>
 }
+
+<div class="auth-card-footer">
+    <span class="auth-footer-text">Protected by IdentityServer authentication</span>
+</div>

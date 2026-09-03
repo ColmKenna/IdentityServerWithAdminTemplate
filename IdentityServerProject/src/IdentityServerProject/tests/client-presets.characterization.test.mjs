@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
+import {JSDOM} from 'jsdom';
 
 async function loadClientUriRowsScript() {
     const containers = new Map();
@@ -61,3 +62,31 @@ test('removeUriRow removes the closest URI row when one exists', async () => {
 
     assert.equal(row.removed, true);
 });
+
+test('selectPreset reads available presets from application/json script element', async () => {
+    const script = await readFile(new URL('../wwwroot/js/client-presets.js', import.meta.url), 'utf8');
+    const dom = new JSDOM(`<!doctype html><html><body>
+        <script id="available-presets-data" type="application/json">
+            [{"id":"m2m","requirePkce":false,"requireClientSecret":true,"grantTypes":["client_credentials"]}]
+        </script>
+        <input id="selected-preset-input" value="web" />
+        <button class="preset-card" data-preset="m2m"></button>
+        <input id="input-require-pkce" type="checkbox" checked />
+        <input id="input-require-secret" type="checkbox" />
+        <input id="grant-auth-code" type="checkbox" checked />
+        <input id="grant-client-creds" type="checkbox" />
+        <div id="uri-configuration-section"></div>
+    </body></html>`, {runScripts: 'outside-only'});
+
+    dom.window.eval(script);
+    dom.window.selectPreset('m2m');
+
+    assert.equal(dom.window.document.getElementById('selected-preset-input').value, 'm2m');
+    assert.equal(dom.window.document.getElementById('input-require-pkce').checked, false);
+    assert.equal(dom.window.document.getElementById('input-require-secret').checked, true);
+    assert.equal(dom.window.document.getElementById('grant-auth-code').checked, false);
+    assert.equal(dom.window.document.getElementById('grant-client-creds').checked, true);
+    assert.equal(dom.window.document.getElementById('uri-configuration-section').style.display, 'none');
+    assert.equal(dom.window.document.querySelector('.preset-card').classList.contains('active'), true);
+});
+

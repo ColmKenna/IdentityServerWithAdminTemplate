@@ -241,9 +241,7 @@
 
 
 @section Scripts {
-    <script>
-        window.availablePresets = @Html.Raw(JsonSerializer.Serialize(Model.AvailablePresets, CreateModel.PresetJsonOptions));
-    </script>
+    <script id="available-presets-data" type="application/json">@Json.Serialize(Model.AvailablePresets)</script>
     <script src="~/js/client-uri-rows.js" asp-append-version="true"></script>
     <script src="~/js/client-presets.js" asp-append-version="true"></script>
 }

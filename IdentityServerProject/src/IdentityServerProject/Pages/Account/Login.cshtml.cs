@@ -40,7 +40,10 @@ public class LoginModel(
             await _events.RaiseAsync(new UserLoginSuccessEvent(Input.Username, user!.Id, Input.Username),
                 HttpContext.RequestAborted);
 
-            if (returnUrl is not null && _interaction.IsValidReturnUrl(returnUrl)) return Redirect(returnUrl);
+            if (returnUrl is not null && (_interaction.IsValidReturnUrl(returnUrl) || Url.IsLocalUrl(returnUrl)))
+            {
+                return Redirect(returnUrl);
+            }
 
             return Redirect("~/");
         }
