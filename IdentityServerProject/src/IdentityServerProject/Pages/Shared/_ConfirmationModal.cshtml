@@ -1,12 +1,12 @@
 @model IdentityServerProject.Pages.Shared.ConfirmationModalModel
 
-<dialog id="@Model.DialogId" class="modal">
+<dialog id="@Model.DialogId" class="modal" aria-labelledby="@(Model.DialogId)-title">
     <form method="post" asp-page-handler="@Model.Handler" asp-route-name="@Model.RouteName">
         @if (!string.IsNullOrEmpty(Model.HiddenInputName))
         {
             <input type="hidden" name="@Model.HiddenInputName" id="@Model.HiddenInputId" value="@Model.HiddenInputValue"/>
         }
-        <h2 class="modal-title">@Model.Title</h2>
+        <h2 class="modal-title" id="@(Model.DialogId)-title">@Model.Title</h2>
         <p class="modal-body" id="@(Model.BodyId ?? $"{Model.DialogId}-desc")">@Html.Raw(Model.BodyHtml)</p>
 
         @if (!string.IsNullOrEmpty(Model.ConfirmWord))

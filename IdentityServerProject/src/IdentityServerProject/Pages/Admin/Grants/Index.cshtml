@@ -101,7 +101,7 @@
     <partial name="_PaginationFooter" model='Model.Grants.ToPagination("persisted grants", Model.GetRouteValues())' />
 </div>
 
-<dialog id="revoke-grant-modal" class="modal">
+<dialog id="revoke-grant-modal" class="modal" aria-labelledby="revoke-grant-modal-title">
     <form method="post" asp-page-handler="Revoke">
         <input type="hidden" name="key" id="revoke-grant-modal-key-input" value=""/>
         <input type="hidden" name="PageNumber" value="@Model.Grants.PageNumber"/>
@@ -109,7 +109,7 @@
         <input type="hidden" name="ClientId" value="@Model.ClientId"/>
         <input type="hidden" name="TypeFilter" value="@Model.TypeFilter"/>
 
-        <h2 class="modal-title">Revoke persisted grant</h2>
+        <h2 class="modal-title" id="revoke-grant-modal-title">Revoke persisted grant</h2>
 
         <p class="modal-body" id="revoke-grant-modal-message">
             Are you sure you want to revoke grant <strong id="revoke-grant-modal-key-text"></strong> for client

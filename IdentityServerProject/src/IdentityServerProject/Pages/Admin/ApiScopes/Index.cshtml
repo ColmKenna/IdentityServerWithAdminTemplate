@@ -10,7 +10,7 @@
         <p class="page-sub">Access-control scopes clients can request from IdentityServer</p>
     </div>
     <a asp-page="./Create" class="btn-primary">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        <svg aria-hidden="true" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
              stroke-linecap="round">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
@@ -79,13 +79,13 @@
     <partial name="_PaginationFooter" model='Model.ApiScopes.ToPagination("scopes", Model.Filter)' />
 </div>
 
-<dialog id="delete-scope-modal" class="modal">
+<dialog id="delete-scope-modal" class="modal" aria-labelledby="delete-scope-modal-title">
     <form method="post" asp-page-handler="Delete">
         <input type="hidden" name="name" id="delete-scope-modal-name-input" value=""/>
         <input type="hidden" name="PageNumber" value="@Model.ApiScopes.PageNumber"/>
         <input type="hidden" name="Filter" value="@Model.Filter"/>
 
-        <h2 class="modal-title">Delete API scope</h2>
+        <h2 class="modal-title" id="delete-scope-modal-title">Delete API scope</h2>
 
         <p class="modal-body" id="delete-scope-modal-message" data-state="confirm">
             Are you sure you want to delete <strong id="delete-scope-modal-name-text"></strong>? This cannot be undone.

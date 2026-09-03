@@ -48,7 +48,7 @@
     <ck-tab label="Basics" data-tab="basics" active="@(tab == "basics" ? "active" : null)">
         <form method="post" asp-page-handler="SaveBasics" class="editor-form">
             <input type="hidden" name="Name" value="@Model.Editor.Name"/>
-            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+            <div asp-validation-summary="ModelOnly" role="alert" class="validation-summary"></div>
 
             <div class="form-field">
                 <label class="form-label" for="basics-name">Name</label>
@@ -183,7 +183,8 @@
                       class="editor-form editor-subform">
                     <h3 class="section-title">Attach an existing scope</h3>
                     <div class="form-field">
-                        <select class="form-control" asp-for="AttachScope.ScopeName">
+                        <label class="form-label" for="attach-scope-name">Scope</label>
+                        <select class="form-control" id="attach-scope-name" asp-for="AttachScope.ScopeName">
                             @foreach (var scope in Model.AttachableScopeNames)
                             {
                                 <option value="@scope">@scope</option>

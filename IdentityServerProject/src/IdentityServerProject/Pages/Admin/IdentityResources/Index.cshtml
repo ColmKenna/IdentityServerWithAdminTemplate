@@ -10,7 +10,7 @@
         <p class="page-sub">Standard OpenID Connect and custom user claim definitions</p>
     </div>
     <a asp-page="./Create" class="btn-primary">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        <svg aria-hidden="true" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
              stroke-linecap="round">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
@@ -84,13 +84,13 @@
     <partial name="_PaginationFooter" model='Model.IdentityResources.ToPagination("identity resources", Model.Filter)' />
 </div>
 
-<dialog id="delete-resource-modal" class="modal">
+<dialog id="delete-resource-modal" class="modal" aria-labelledby="delete-resource-modal-title">
     <form method="post" asp-page-handler="Delete">
         <input type="hidden" name="name" id="delete-resource-modal-name-input" value=""/>
         <input type="hidden" name="PageNumber" value="@Model.IdentityResources.PageNumber"/>
         <input type="hidden" name="Filter" value="@Model.Filter"/>
 
-        <h2 class="modal-title">Delete identity resource</h2>
+        <h2 class="modal-title" id="delete-resource-modal-title">Delete identity resource</h2>
 
         <p class="modal-body" id="delete-resource-modal-message" data-state="confirm">
             Are you sure you want to delete <strong id="delete-resource-modal-name-text"></strong>? This cannot be
