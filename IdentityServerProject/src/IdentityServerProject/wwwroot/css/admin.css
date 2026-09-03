@@ -320,23 +320,6 @@ body.collapsed .header {
     flex: 1;
 }
 
-/* header right icons */
-.icon-btn {
-    background: none;
-    border: 0;
-    cursor: pointer;
-    padding: 9px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    color: #33383e;
-}
-
-.icon-btn:hover,
-.icon-btn:focus-visible {
-    background: #f1f3f5;
-}
-
 /* user menu */
 .user-menu {
     position: relative;
