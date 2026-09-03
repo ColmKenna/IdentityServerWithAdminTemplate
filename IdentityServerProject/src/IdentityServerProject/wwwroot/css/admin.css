@@ -1312,6 +1312,10 @@ ck-responsive-table {
     max-width: 250px;
 }
 
+.form-control-xs {
+    max-width: 200px;
+}
+
 .form-control-md {
     max-width: 450px;
 }

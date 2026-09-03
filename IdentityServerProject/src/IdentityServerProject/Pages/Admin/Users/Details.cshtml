@@ -144,10 +144,10 @@
 
             <form method="post" asp-page-handler="AddClaim" asp-route-id="@Model.Id"
                   style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <input type="text" name="claimType" class="form-control" placeholder="Claim type" aria-label="Claim type"
-                       style="max-width: 200px;" maxlength="@ValidationConstants.MaxClaimTypeLength" required/>
-                <input type="text" name="claimValue" class="form-control" placeholder="Claim value" aria-label="Claim value"
-                       style="max-width: 200px;" maxlength="@ValidationConstants.MaxClaimValueLength" required/>
+                <input type="text" name="claimType" class="form-control form-control-xs" placeholder="Claim type" aria-label="Claim type"
+                       maxlength="@ValidationConstants.MaxClaimTypeLength" required/>
+                <input type="text" name="claimValue" class="form-control form-control-xs" placeholder="Claim value" aria-label="Claim value"
+                       maxlength="@ValidationConstants.MaxClaimValueLength" required/>
                 <button type="submit" class="btn-primary btn-sm">Add Claim</button>
             </form>
             <p class="text-muted" id="claim-type-help" style="font-size: 0.85rem; margin-top: 10px;">
