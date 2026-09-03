@@ -70,34 +70,74 @@ public class IdentityResourceListService(
         if (BuiltInIdentityResourcePolicy.IsProtectedName(name))
             return await DenyProtectedNameBlockedAsync(name, cancellationToken);
 
+        string targetName = name;
+        IdentityResourceDeleteResult outcome = IdentityResourceDeleteResult.NotFound;
+        AuditReasonCode deniedReason = AuditReasonCode.NotFound;
+        string? deniedDetails = null;
+
         try
         {
-            await using IDbContextTransaction transaction =
-                await _configurationDbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable,
-                    cancellationToken);
-            IdentityResource? resource = await _configurationDbContext.IdentityResources
-                .Include(r => r.UserClaims)
-                .FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
+            IExecutionStrategy strategy = _configurationDbContext.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                _configurationDbContext.ChangeTracker.Clear();
+                await using IDbContextTransaction transaction =
+                    await _configurationDbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable,
+                        cancellationToken);
+                IdentityResource? resource = await _configurationDbContext.IdentityResources
+                    .Include(r => r.UserClaims)
+                    .FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
 
-            if (resource is null)
-                return await DenyResourceNotFoundAsync(transaction, name, cancellationToken);
+                if (resource is null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    outcome = IdentityResourceDeleteResult.NotFound;
+                    deniedReason = AuditReasonCode.NotFound;
+                    deniedDetails = $"Identity Resource '{name}' was not found.";
+                    return;
+                }
 
-            if (resource.NonEditable)
-                return await DenyNonEditableAsync(transaction, name, resource, cancellationToken);
+                targetName = resource.DisplayName ?? name;
 
-            ScopeUsageCounts referenceCounts = await _scopeUsageService.GetClientReferenceCountsAsync(
-                ScopeSet.FromStrings(new[] { name }), cancellationToken);
-            if (referenceCounts[ScopeName.Create(name)] > 0)
-                return await DenyReferencedResourceAsync(transaction, name, resource, cancellationToken);
+                if (resource.NonEditable)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    outcome = IdentityResourceDeleteResult.Blocked;
+                    deniedReason = AuditReasonCode.ProtectedResource;
+                    deniedDetails = $"Identity Resource '{name}' is not editable.";
+                    return;
+                }
 
-            _configurationDbContext.IdentityResources.Remove(resource);
-            await _configurationDbContext.SaveChangesAsync(cancellationToken);
+                ScopeUsageCounts referenceCounts = await _scopeUsageService.GetClientReferenceCountsAsync(
+                    ScopeSet.FromStrings(new[] { name }), cancellationToken);
+                if (referenceCounts[ScopeName.Create(name)] > 0)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    outcome = IdentityResourceDeleteResult.Blocked;
+                    deniedReason = AuditReasonCode.ReferencedResource;
+                    deniedDetails = $"Identity Resource '{name}' is referenced by one or more clients.";
+                    return;
+                }
 
-            await transaction.CommitAsync(cancellationToken);
+                _configurationDbContext.IdentityResources.Remove(resource);
+                await _configurationDbContext.SaveChangesAsync(cancellationToken);
+
+                await transaction.CommitAsync(cancellationToken);
+                outcome = IdentityResourceDeleteResult.Deleted;
+            });
+
+            if (outcome != IdentityResourceDeleteResult.Deleted)
+            {
+                await _auditWriter.WriteAsync(new AdminAuditEvent(
+                    AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Denied,
+                    deniedReason,
+                    name, targetName, Details: deniedDetails), cancellationToken);
+                return outcome;
+            }
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
-                name, resource.DisplayName ?? name,
+                name, targetName,
                 Details: $"Deleted Identity Resource '{name}'"), cancellationToken);
             return IdentityResourceDeleteResult.Deleted;
         }
@@ -106,7 +146,7 @@ public class IdentityResourceListService(
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Failed,
                 AuditReasonCode.PersistenceFailure,
-                name, name, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
+                name, targetName, Details: $"Unexpected error ({ex.GetType().Name})"), cancellationToken);
             throw;
         }
     }
@@ -117,40 +157,6 @@ public class IdentityResourceListService(
             AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Denied,
             AuditReasonCode.ProtectedResource,
             name, name, Details: $"'{name}' is a protected identity resource name."), cancellationToken);
-        return IdentityResourceDeleteResult.Blocked;
-    }
-
-    private async Task<IdentityResourceDeleteResult> DenyResourceNotFoundAsync(
-        IDbContextTransaction transaction, string name, CancellationToken cancellationToken)
-    {
-        await transaction.RollbackAsync(cancellationToken);
-        await _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Denied, AuditReasonCode.NotFound,
-            name, name, Details: $"Identity Resource '{name}' was not found."), cancellationToken);
-        return IdentityResourceDeleteResult.NotFound;
-    }
-
-    private async Task<IdentityResourceDeleteResult> DenyNonEditableAsync(
-        IDbContextTransaction transaction, string name, IdentityResource resource, CancellationToken cancellationToken)
-    {
-        await transaction.RollbackAsync(cancellationToken);
-        await _auditWriter.WriteAsync(new AdminAuditEvent(
-                AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Denied,
-                AuditReasonCode.ProtectedResource,
-                name, resource.DisplayName ?? name, Details: $"Identity Resource '{name}' is not editable."),
-            cancellationToken);
-        return IdentityResourceDeleteResult.Blocked;
-    }
-
-    private async Task<IdentityResourceDeleteResult> DenyReferencedResourceAsync(
-        IDbContextTransaction transaction, string name, IdentityResource resource, CancellationToken cancellationToken)
-    {
-        await transaction.RollbackAsync(cancellationToken);
-        await _auditWriter.WriteAsync(new AdminAuditEvent(
-            AuditCategory.IdentityResource, AuditAction.Delete, AuditOutcome.Denied,
-            AuditReasonCode.ReferencedResource,
-            name, resource.DisplayName ?? name,
-            Details: $"Identity Resource '{name}' is referenced by one or more clients."), cancellationToken);
         return IdentityResourceDeleteResult.Blocked;
     }
 
