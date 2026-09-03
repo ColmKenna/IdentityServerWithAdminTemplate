@@ -1313,6 +1313,22 @@ ck-responsive-table {
     margin-bottom: 2px;
 }
 
+/* <fieldset> used only to group and name related controls. The UA border, padding
+   and margin would read as a second panel nested inside the form's own .panel, so
+   they are cleared; min-width:0 stops the fieldset refusing to shrink in a flex or
+   grid parent, which is a UA quirk specific to this element. Distinct from
+   .editor-fieldset, which is a deliberately bordered box. */
+.fieldset-plain {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+}
+
+.fieldset-plain > legend {
+    padding: 0;
+}
+
 .form-control {
     display: block;
     width: 100%;

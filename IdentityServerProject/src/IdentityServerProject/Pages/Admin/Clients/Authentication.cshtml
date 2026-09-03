@@ -45,8 +45,8 @@
                 </label>
             </div>
 
-            <div>
-                <label class="form-label">Allowed Grant Types <span class="required">*</span></label>
+            <fieldset class="fieldset-plain">
+                <legend class="form-label">Allowed Grant Types <span class="required">*</span></legend>
                 <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px;">
                     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
                         <input type="checkbox" name="Input.GrantTypes" value="authorization_code"
@@ -75,7 +75,7 @@
                         <code>device_code</code>
                     </label>
                 </div>
-            </div>
+            </fieldset>
         </ck-tab>
         <ck-tab label="Redirect &amp; CORS URIs" active="@(Model.ActiveTabIndex == 1 ? "active" : null)">
             <partial name="_UriInputSection" model='new UriInputSectionModel("Redirect URIs", "Input.RedirectUris", "redirect-uris-container", "https://localhost:5001/signin-oidc", "Redirect URI", "+ Add Redirect URI", Model.Input.RedirectUris)' />
