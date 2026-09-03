@@ -150,8 +150,7 @@ body.collapsed .sidebar {
 }
 
 /* nav items */
-.nav-item,
-.group-toggle {
+.nav-item {
     display: flex;
     align-items: center;
     gap: 16px;
@@ -171,9 +170,7 @@ body.collapsed .sidebar {
 }
 
 .nav-item:hover,
-.group-toggle:hover,
-.nav-item:focus-visible,
-.group-toggle:focus-visible {
+.nav-item:focus-visible {
     background: var(--panel-hover);
 }
 
@@ -196,8 +193,7 @@ body.collapsed .sidebar {
     transition: stroke .15s;
 }
 
-.nav-item:hover .item-icon,
-.group-toggle:hover .item-icon {
+.nav-item:hover .item-icon {
     stroke: #d7dbe0;
 }
 
@@ -215,68 +211,6 @@ body.collapsed .sidebar {
 body.collapsed .label {
     opacity: 0;
     max-width: 0;
-}
-
-/* collapsible groups */
-.group-toggle .caret {
-    margin-left: auto;
-    flex: 0 0 15px;
-    width: 15px;
-    height: 15px;
-    stroke: var(--text-dim);
-    transition: transform .22s, opacity .15s;
-}
-
-.group.open > .group-toggle .caret {
-    transform: rotate(90deg);
-}
-
-body.collapsed .caret {
-    opacity: 0;
-}
-
-.submenu {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height .25s ease;
-}
-
-.group.open > .submenu {
-    max-height: 400px;
-}
-
-body.collapsed .submenu {
-    max-height: 0;
-}
-
-.submenu a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 11px 20px 11px 58px;
-    color: var(--text-dim);
-    text-decoration: none;
-    font-size: .92rem;
-    white-space: nowrap;
-}
-
-.submenu a:hover,
-.submenu a:focus-visible {
-    color: #fff;
-    background: var(--panel-hover);
-}
-
-.submenu a::before {
-    content: "";
-    flex: 0 0 5px;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: #4a4f55;
-}
-
-.submenu a:hover::before {
-    background: var(--accent);
 }
 
 /* bottom user card */
@@ -599,14 +533,6 @@ body.collapsed .main {
         max-width: 190px;
     }
 
-    body.collapsed .caret {
-        opacity: 1;
-    }
-
-    body.collapsed .group.open > .submenu {
-        max-height: 400px;
-    }
-
     .page-title {
         font-size: 2rem;
     }
@@ -883,15 +809,12 @@ ck-responsive-col.actions-cell {
     .header,
     .main,
     .label,
-    .caret,
-    .submenu,
     .item-icon,
     .chev,
     .dropdown,
     .tip,
     .btn-primary,
-    .nav-item,
-    .group-toggle {
+    .nav-item {
         transition: none;
     }
 }

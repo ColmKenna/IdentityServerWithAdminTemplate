@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', initializeAdminPage);
 function initializeAdminPage() {
     const sidebar = initializeSidebar();
 
-    initializeSidebarGroups(sidebar.setCollapsed);
     initializeUserMenu();
     initializeTooltips(sidebar.burger);
     initializeTableFiltering();
@@ -41,23 +40,7 @@ function initializeSidebar() {
         });
     }
 
-    return {burger, setCollapsed};
-}
-
-function initializeSidebarGroups(setCollapsed) {
-    document.querySelectorAll('.group-toggle').forEach(button => {
-        button.addEventListener('click', () => {
-            const group = button.parentElement;
-
-            if (document.body.classList.contains('collapsed') && window.innerWidth > 768) {
-                setCollapsed(false);
-                group.classList.add('open');
-                return;
-            }
-
-            group.classList.toggle('open');
-        });
-    });
+    return {burger};
 }
 
 function initializeUserMenu() {
