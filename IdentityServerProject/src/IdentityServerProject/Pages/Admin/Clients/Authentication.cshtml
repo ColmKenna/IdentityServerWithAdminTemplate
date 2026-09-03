@@ -91,8 +91,7 @@
                 <span asp-validation-for="Input.FrontChannelLogoutUri"
                       class="text-danger field-validation-error"></span>
                 <div style="margin-top: 8px;">
-                    <label class="checkbox-label"
-                           style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <label class="checkbox-label">
                         <input type="checkbox" asp-for="Input.FrontChannelLogoutSessionRequired"/>
                         <span>Front-channel Logout Session Required</span>
                     </label>
@@ -105,8 +104,7 @@
                        placeholder="https://localhost:5001/signout-backchannel"/>
                 <span asp-validation-for="Input.BackChannelLogoutUri" class="text-danger field-validation-error"></span>
                 <div style="margin-top: 8px;">
-                    <label class="checkbox-label"
-                           style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <label class="checkbox-label">
                         <input type="checkbox" asp-for="Input.BackChannelLogoutSessionRequired"/>
                         <span>Back-channel Logout Session Required</span>
                     </label>

@@ -66,12 +66,12 @@
         <h2 class="panel-title" style="font-size: 16px; margin-bottom: 14px;">3. Authentication & Grant Types</h2>
 
         <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 16px;">
-            <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <label class="checkbox-label">
                 <input type="checkbox" asp-for="Input.RequirePkce" id="input-require-pkce"/>
                 <span>Require PKCE (Proof Key for Code Exchange)</span>
             </label>
 
-            <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <label class="checkbox-label">
                 <input type="checkbox" asp-for="Input.RequireClientSecret" id="input-require-secret"/>
                 <span>Require Client Secret</span>
             </label>

@@ -34,9 +34,8 @@
 }
 
 <div class="panel">
-    <div class="panel-toolbar"
-         style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px;">
-        <form method="get" class="list-filter" role="search" style="display: flex; gap: 10px;">
+    <div class="panel-toolbar">
+        <form method="get" class="list-filter" role="search">
             <label class="visually-hidden" for="role-filter">Filter roles</label>
             <input type="text" asp-for="Filter" id="role-filter" class="form-control form-control-sm" placeholder="Search roles..."/>
             <button type="submit" class="btn-secondary">Search</button>

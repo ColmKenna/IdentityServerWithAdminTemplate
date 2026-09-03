@@ -42,12 +42,12 @@
         </ck-tab>
         <ck-tab label="Consent &amp; Offline Access" active="@(Model.ActiveTabIndex == 1 ? "active" : null)">
             <div style="display: flex; gap: 24px; flex-wrap: wrap;">
-                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-label">
                     <input type="checkbox" asp-for="Input.RequireConsent"/>
                     <span>Require Consent</span>
                 </label>
 
-                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-label">
                     <input type="checkbox" asp-for="Input.AllowOfflineAccess" id="allow-offline-access"/>
                     <span>Allow Offline Access (Refresh Tokens)</span>
                 </label>
