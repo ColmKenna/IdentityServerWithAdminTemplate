@@ -31,8 +31,11 @@
     --line-soft: #dde3e8;
     --navy: #16324f;
     --muted: #6b7280;
-    --font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    /* Inter and JetBrains Mono were named here but never loaded — no @font-face, no font
+       link, no font package — so both always fell through to the next entry. The stacks now
+       say what actually renders. Adding a webfont is a product decision, not a cleanup. */
+    --font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 15px;
 
     /* ck-tabs web component theming (WI-07) — custom properties pierce the
@@ -487,6 +490,13 @@ body.collapsed .main {
 }
 
 /* mobile: sidebar overlays */
+/* 768px is the console's mobile breakpoint. Custom properties cannot be used in a media
+   condition and there is no build step, so it stays a literal — but it is a literal in
+   several places at once. Changing it means all of:
+     - the three @media (max-width: 768px) blocks in this file
+     - MOBILE_BREAKPOINT in wwwroot/js/admin.js
+     - mobile-breakpoint="768px" on eleven <ck-responsive-table> elements, which is not
+       droppable: the vendored component defaults to 600px, so each attribute is load-bearing. */
 @media (max-width: 768px) {
     .sidebar {
         transform: translateX(-100%);

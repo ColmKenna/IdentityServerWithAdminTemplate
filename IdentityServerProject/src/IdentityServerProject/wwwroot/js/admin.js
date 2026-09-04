@@ -1,3 +1,7 @@
+// Kept in step with the 768px media queries in admin.css and the mobile-breakpoint
+// attributes on every <ck-responsive-table>. See the note in admin.css for the full set.
+const MOBILE_BREAKPOINT = 768;
+
 document.addEventListener('DOMContentLoaded', initializeAdminPage);
 
 function initializeAdminPage() {
@@ -84,7 +88,7 @@ function initializeTooltips(burger) {
     }
 
     function showTooltip(target) {
-        if (!document.body.classList.contains('collapsed') || window.innerWidth <= 768 || !target.dataset.tip) {
+        if (!document.body.classList.contains('collapsed') || window.innerWidth <= MOBILE_BREAKPOINT || !target.dataset.tip) {
             return;
         }
 
