@@ -67,9 +67,12 @@
                                   style="display:inline;">
                                 <button type="submit" class="btn-sm btn-secondary text-danger"
                                         disabled="@item.IsProtected"
-                                        title="@(item.IsProtected ? "Cannot delete a protected role." : "Delete role")"
                                         onclick="return confirm('Are you sure you want to delete this role?');">Delete
                                 </button>
+                                @if (item.IsProtected)
+                                {
+                                    <span class="danger-row-desc">Protected — cannot be deleted</span>
+                                }
                             </form>
                         </ck-responsive-col>
                     </ck-responsive-row>

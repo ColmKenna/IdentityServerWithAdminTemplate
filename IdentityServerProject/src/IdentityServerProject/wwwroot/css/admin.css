@@ -1651,6 +1651,7 @@ ck-responsive-table {
 }
 
 .danger-row-desc {
+    display: block;
     color: #6b7280;
     font-size: .88rem;
     margin-top: 2px;

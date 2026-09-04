@@ -75,17 +75,20 @@
                 <ul class="role-list user-detail-list">
                     @foreach (var role in Model.Account.AssignedRoles)
                     {
+                        var lockedRole = Model.Account.IsCurrentUser && role == Config.SysAdminRole;
                         <li class="role-list-item">
                             <span class="role-name">@role</span>
                             <form method="post" asp-page-handler="RemoveRole" asp-route-id="@Model.Id"
                                   asp-route-role="@role">
                                 <input type="hidden" name="role" value="@role"/>
                                 <button type="submit" class="btn-sm btn-secondary" data-action="remove-role"
-                                        data-role="@role"
-                                        disabled="@(Model.Account.IsCurrentUser && role == Config.SysAdminRole)"
-                                        title="@(Model.Account.IsCurrentUser && role == Config.SysAdminRole ? "You cannot remove your own SysAdmin role." : null)">
+                                        data-role="@role" disabled="@lockedRole">
                                     Remove
                                 </button>
+                                @if (lockedRole)
+                                {
+                                    <span class="danger-row-desc">You cannot remove your own SysAdmin role</span>
+                                }
                             </form>
                         </li>
                     }
@@ -161,10 +164,13 @@
             </p>
 
             <form method="post" asp-page-handler="RevokeUserAccess" asp-route-id="@Model.Id">
-                <button type="submit" class="btn-danger" disabled="@Model.Account.IsCurrentUser"
-                        title="@(Model.Account.IsCurrentUser ? "You cannot revoke your own session." : null)">
+                <button type="submit" class="btn-danger" disabled="@Model.Account.IsCurrentUser">
                     Revoke All Access & End Sessions
                 </button>
+                @if (Model.Account.IsCurrentUser)
+                {
+                    <p class="danger-row-desc">You cannot revoke your own session.</p>
+                }
             </form>
         </div>
     </ck-tab>
@@ -180,10 +186,17 @@
                     access.</p>
                 <form method="post" asp-page-handler="Suspend" asp-route-id="@Model.Id">
                     <button type="submit" class="btn-danger-outline"
-                            disabled="@(Model.Account.IsCurrentUser || Model.Account.IsLockedOut)"
-                            title="@(Model.Account.IsCurrentUser ? "You cannot suspend your own account." : Model.Account.IsLockedOut ? "User is already suspended." : null)">
+                            disabled="@(Model.Account.IsCurrentUser || Model.Account.IsLockedOut)">
                         Suspend User
                     </button>
+                    @if (Model.Account.IsCurrentUser)
+                    {
+                        <p class="danger-row-desc">You cannot suspend your own account.</p>
+                    }
+                    else if (Model.Account.IsLockedOut)
+                    {
+                        <p class="danger-row-desc">This user is already suspended.</p>
+                    }
                 </form>
             </div>
 
@@ -198,10 +211,13 @@
                         <input type="text" id="deleteConfirmInput" asp-for="DeleteConfirmation" class="form-control form-control-grow"
                                placeholder="Type DELETE to confirm" aria-describedby="delete-user-desc" required/>
                     </div>
-                    <button type="submit" class="btn-danger" disabled="@Model.Account.IsCurrentUser"
-                            title="@(Model.Account.IsCurrentUser ? "You cannot delete your own account." : null)">
+                    <button type="submit" class="btn-danger" disabled="@Model.Account.IsCurrentUser">
                         Delete User
                     </button>
+                    @if (Model.Account.IsCurrentUser)
+                    {
+                        <p class="danger-row-desc">You cannot delete your own account.</p>
+                    }
                 </form>
             </div>
         </div>

@@ -216,10 +216,13 @@
                 <label for="delete-confirmation" class="field-label">Type <code>DELETE</code> to confirm</label>
                 <input id="delete-confirmation" asp-for="DeleteConfirmation" class="form-control" autocomplete="off"
                        disabled="@(!Model.Client.CanDelete)"/>
-                <button type="submit" class="btn-danger-outline" disabled="@(!Model.Client.CanDelete)"
-                        title="@(Model.Client.CanDelete ? null : Model.Client.DeleteBlockReason)">
+                <button type="submit" class="btn-danger-outline" disabled="@(!Model.Client.CanDelete)">
                     Delete client
                 </button>
+                @if (!Model.Client.CanDelete)
+                {
+                    <p class="danger-row-desc">@Model.Client.DeleteBlockReason</p>
+                }
             </form>
         </div>
     </div>
