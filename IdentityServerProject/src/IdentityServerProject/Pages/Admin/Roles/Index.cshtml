@@ -35,15 +35,7 @@
 
 <div class="panel">
     <div class="panel-toolbar">
-        <form method="get" class="list-filter" role="search">
-            <label class="visually-hidden" for="role-filter">Filter roles</label>
-            <input type="text" asp-for="Filter" id="role-filter" class="form-control form-control-sm" placeholder="Search roles..."/>
-            <button type="submit" class="btn-secondary">Search</button>
-            @if (!string.IsNullOrWhiteSpace(Model.Filter))
-            {
-                <a asp-page="./Index" class="btn-tertiary">Clear</a>
-            }
-        </form>
+        <partial name="_ListFilter" model='new ListFilterModel("role-filter", "Filter roles", "Search roles...", Model.Filter)' />
     </div>
 
     @if (Model.Roles.Items.Count == 0)

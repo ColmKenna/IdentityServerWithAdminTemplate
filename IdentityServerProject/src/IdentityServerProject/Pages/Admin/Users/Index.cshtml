@@ -27,12 +27,7 @@
         </div>
     }
 
-    <form method="get" class="list-filter" role="search">
-        <label class="visually-hidden" for="user-filter">Filter users</label>
-        <input asp-for="Filter" id="user-filter" class="form-control" type="search"
-               placeholder="Filter by name, username, or email"/>
-        <button type="submit" class="btn-secondary">Filter</button>
-    </form>
+    <partial name="_ListFilter" model='new ListFilterModel("user-filter", "Filter users", "Filter by name, username, or email", Model.Filter)' />
 
     <ck-responsive-table class="users-table" mobile-breakpoint="768px">
         <ck-responsive-thead>

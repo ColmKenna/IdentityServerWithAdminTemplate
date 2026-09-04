@@ -25,12 +25,7 @@
 }
 
 <div class="panel">
-    <form method="get" class="list-filter" role="search">
-        <label class="visually-hidden" for="api-scope-filter">Filter API scopes</label>
-        <input asp-for="Filter" id="api-scope-filter" class="form-control" type="search"
-               placeholder="Filter by name or display name"/>
-        <button type="submit" class="btn-secondary">Filter</button>
-    </form>
+    <partial name="_ListFilter" model='new ListFilterModel("api-scope-filter", "Filter API scopes", "Filter by name or display name", Model.Filter)' />
 
     <ck-responsive-table class="api-scopes-table" mobile-breakpoint="768px">
         <ck-responsive-thead>

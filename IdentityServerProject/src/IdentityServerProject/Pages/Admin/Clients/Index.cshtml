@@ -20,12 +20,7 @@
 </div>
 
 <div class="panel">
-    <form method="get" class="list-filter" role="search">
-        <label class="visually-hidden" for="client-filter">Filter clients</label>
-        <input asp-for="Filter" id="client-filter" class="form-control" type="search"
-               placeholder="Filter by name or client ID"/>
-        <button type="submit" class="btn-secondary">Filter</button>
-    </form>
+    <partial name="_ListFilter" model='new ListFilterModel("client-filter", "Filter clients", "Filter by name or client ID", Model.Filter)' />
 
     <ck-responsive-table class="clients-table" mobile-breakpoint="768px">
         <ck-responsive-thead>

@@ -25,12 +25,7 @@
 }
 
 <div class="panel">
-    <form method="get" class="list-filter" role="search">
-        <label class="visually-hidden" for="identity-resource-filter">Filter identity resources</label>
-        <input asp-for="Filter" id="identity-resource-filter" class="form-control" type="search"
-               placeholder="Filter by name or display name"/>
-        <button type="submit" class="btn-secondary">Filter</button>
-    </form>
+    <partial name="_ListFilter" model='new ListFilterModel("identity-resource-filter", "Filter identity resources", "Filter by name or display name", Model.Filter)' />
 
     <ck-responsive-table class="identity-resources-table" mobile-breakpoint="768px">
         <ck-responsive-thead>

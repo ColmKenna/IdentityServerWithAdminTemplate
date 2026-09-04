@@ -1,0 +1,20 @@
+@model IdentityServerProject.Pages.Shared.ListFilterModel
+
+@*
+    The single-input filter shared by the six simple list pages. The two multi-field
+    filters (Audit Logs, Persisted Grants) use .filter-grid directly and are a different
+    shape, not a variant of this one.
+
+    Bound by name rather than asp-for: every list PageModel names the property "Filter",
+    and asp-for inside a partial would resolve against this model instead of the page's.
+*@
+<form method="get" class="list-filter" role="search">
+    <label class="visually-hidden" for="@Model.InputId">@Model.LabelText</label>
+    <input type="search" id="@Model.InputId" name="@Model.InputName" class="form-control"
+           placeholder="@Model.Placeholder" value="@Model.Value"/>
+    <button type="submit" class="btn-secondary">Filter</button>
+    @if (!string.IsNullOrWhiteSpace(Model.Value))
+    {
+        <a asp-page="./Index" class="btn-tertiary">Clear</a>
+    }
+</form>
