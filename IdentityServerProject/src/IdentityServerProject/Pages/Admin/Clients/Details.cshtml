@@ -259,8 +259,7 @@
                     @:@Model.Client.DeleteBlockReason
                 }
             </p>
-            <form asp-page-handler="Delete" asp-route-id="@Model.Client.ClientId" method="post" class="deactivate-form"
-                  onsubmit="return confirm('Permanently delete this client? This cannot be undone.');">
+            <form asp-page-handler="Delete" asp-route-id="@Model.Client.ClientId" method="post" class="deactivate-form">
                 <label for="delete-confirmation" class="field-label">Type <code>DELETE</code> to confirm</label>
                 <input id="delete-confirmation" asp-for="DeleteConfirmation" class="form-control" autocomplete="off"
                        disabled="@(!Model.Client.CanDelete)"/>

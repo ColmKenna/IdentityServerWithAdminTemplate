@@ -22,22 +22,6 @@
 <form method="post" id="edit-client-permissions-form">
     <div asp-validation-summary="All" role="alert" class="validation-summary alert-panel alert-danger"></div>
 
-    @{
-        void RenderApiScopesContent()
-        {
-            <div class="scope-checkbox-grid">
-                @foreach (var scope in Model.AvailableApiScopes)
-                {
-                    <label class="scope-checkbox">
-                        <input type="checkbox" name="Input.AllowedScopes" value="@scope" class="scope-checkbox"
-                               @(Model.Input.AllowedScopes.Contains(scope) ? "checked" : "")/>
-                        <code>@scope</code>
-                    </label>
-                }
-            </div>
-        }
-    }
-
     @if (Model.IsInteractive)
     {
         <ck-tabs id="client-permissions-tabs" class="client-editor-tabs">
@@ -70,7 +54,7 @@
                 </div>
             </ck-tab>
             <ck-tab label="API Scopes">
-                @{ RenderApiScopesContent(); }
+                <partial name="_ScopeCheckboxGrid" model='new ScopeCheckboxGridModel(Model.AvailableApiScopes, Model.Input.AllowedScopes)' />
             </ck-tab>
         </ck-tabs>
     }
@@ -78,7 +62,7 @@
     {
         <div class="panel panel-padded">
             <h2 class="panel-title">API Scopes</h2>
-            @{ RenderApiScopesContent(); }
+            <partial name="_ScopeCheckboxGrid" model='new ScopeCheckboxGridModel(Model.AvailableApiScopes, Model.Input.AllowedScopes)' />
         </div>
     }
 

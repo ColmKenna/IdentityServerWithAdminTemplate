@@ -110,16 +110,7 @@
     <div class="panel panel-padded">
         <h2 class="panel-title">5. Allowed Scopes</h2>
 
-        <div class="scope-checkbox-grid">
-            @foreach (var scope in Model.AvailableScopes)
-            {
-                <label class="scope-checkbox">
-                    <input type="checkbox" name="Input.AllowedScopes" value="@scope" class="scope-checkbox"
-                           @(Model.Input.AllowedScopes.Contains(scope) ? "checked" : "")/>
-                    <code>@scope</code>
-                </label>
-            }
-        </div>
+        <partial name="_ScopeCheckboxGrid" model='new ScopeCheckboxGridModel(Model.AvailableScopes, Model.Input.AllowedScopes)' />
     </div>
 
     <div class="form-actions form-actions-spaced form-actions-wide">
