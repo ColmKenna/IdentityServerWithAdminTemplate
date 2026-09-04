@@ -23,6 +23,11 @@
     --sidebar-bg: var(--panel);
     --danger: #c8433b;
     --danger-soft: #fdf2f2;
+    /* Danger scale. These are the values the console already used, now named by role.
+       Whether it should collapse to one red is a design question, not a refactor. */
+    --danger-strong: #b91c1c;  /* destructive outline buttons, deactivate icons and headings */
+    --danger-solid: #c0392b;   /* filled danger buttons, destructive action links */
+    --danger-deep: #922b21;    /* danger text sitting on a tinted background */
     --line-soft: #dde3e8;
     --navy: #16324f;
     --muted: #6b7280;
@@ -410,7 +415,7 @@ body.collapsed .header {
 }
 
 .dropdown .logout {
-    color: #c8433b;
+    color: var(--danger);
 }
 
 .dropdown .logout:hover,
@@ -735,6 +740,8 @@ ck-responsive-col.actions-cell {
     background: #2ba84a;
 }
 
+/* Part of the status-badge palette (paired with its own tint, alongside .enabled and
+   .disabled), not the danger-action scale — which is why it stays a literal here. */
 .status-badge.failure {
     background: #fdeceb;
     color: #b3261e;
@@ -1049,7 +1056,7 @@ ck-responsive-col.actions-cell {
 .deactivate-icon {
     width: 22px;
     height: 22px;
-    stroke: #b91c1c;
+    stroke: var(--danger-strong);
     flex-shrink: 0;
     fill: none;
     stroke-width: 2;
@@ -1060,7 +1067,7 @@ ck-responsive-col.actions-cell {
 .deactivate-header h2 {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #b91c1c;
+    color: var(--danger-strong);
     margin: 0;
 }
 
@@ -1086,7 +1093,7 @@ ck-responsive-col.actions-cell {
 
 .btn-danger-outline {
     background: #fff;
-    color: #b91c1c;
+    color: var(--danger-strong);
     border: 1px solid #fca5a5;
     border-radius: 10px;
     padding: 10px 20px;
@@ -1132,7 +1139,7 @@ ck-responsive-table {
 
 .alert-error {
     background: #fdecea;
-    color: #922b21;
+    color: var(--danger-deep);
     border: 1px solid #f5b7b1;
 }
 
@@ -1141,7 +1148,7 @@ ck-responsive-table {
     background: none;
     border: 0;
     padding: 0;
-    color: #c0392b;
+    color: var(--danger-solid);
     text-decoration: none;
     font-weight: 600;
     font-size: 0.92rem;
@@ -1173,7 +1180,7 @@ ck-responsive-table {
 }
 
 .btn-danger {
-    background: #c0392b;
+    background: var(--danger-solid);
     color: #fff;
     border: 0;
     border-radius: 10px;
@@ -1226,7 +1233,7 @@ ck-responsive-table {
 }
 
 .modal-body-blocked {
-    color: #922b21;
+    color: var(--danger-deep);
 }
 
 .modal-actions {
