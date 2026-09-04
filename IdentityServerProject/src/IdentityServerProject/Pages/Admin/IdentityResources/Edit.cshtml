@@ -1,5 +1,4 @@
 @page
-@using IdentityServerProject.Services.IdentityResources
 @model EditModel
 @{
     ViewData["Title"] = Model.Editor.Name;
@@ -81,21 +80,7 @@
 
     <h2 class="section-title">User Claims</h2>
 
-    @{
-        var claimChipItems = Model.Editor.UserClaims.Select(claim =>
-        {
-            var isOpenId = string.Equals(claim, "openid", StringComparison.OrdinalIgnoreCase);
-            var isInvariant = BuiltInIdentityResourcePolicy.IsInvariantClaim(Model.Editor.Name, claim);
-            var isLocked = isProtected || isOpenId || isInvariant;
-            var lockReason = isInvariant
-                ? $"The '{claim}' claim is required by the '{Model.Editor.Name}' identity resource"
-                : isOpenId
-                    ? "The 'openid' claim is required and protected"
-                    : "This resource is protected and its claims are read-only";
-            return new ScopeChipItem(claim, isLocked, lockReason);
-        }).ToList();
-    }
-    <partial name="_ScopeChipsRow" model='new ScopeChipsRowModel(claimChipItems, "No claims configured.", "RemoveClaim", Model.Editor.Name, "claimType")' />
+    <partial name="_ScopeChipsRow" model='new ScopeChipsRowModel(Model.ClaimChips, "No claims configured.", "RemoveClaim", Model.Editor.Name, "claimType")' />
 
     <form method="post" asp-page-handler="AddClaim" asp-route-name="@Model.Editor.Name"
           class="editor-form editor-subform">
