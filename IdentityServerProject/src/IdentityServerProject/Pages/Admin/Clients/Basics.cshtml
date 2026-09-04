@@ -2,12 +2,12 @@
 @model BasicsModel
 @{
     ViewData["Title"] = "Edit Client Basics";
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Index"),
-        ("Clients", "/Admin/Clients/Index"),
-        (Model.Input.ClientName ?? Model.Id, $"/Admin/Clients/Details/{Model.Id}"),
-        ("Basics", null)
+        new("Admin", "/Admin/Index"),
+        new("Clients", "/Admin/Clients/Index"),
+        new(Model.Input.ClientName ?? Model.Id, "/Admin/Clients/Details", new Dictionary<string, string> { { "id", Model.Id } }),
+        new("Basics")
     };
 }
 

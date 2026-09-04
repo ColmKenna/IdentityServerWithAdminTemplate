@@ -2,9 +2,9 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Admin Dashboard";
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", null)
+        new("Admin")
     };
 
     @* Both groups use the same card shape so one loop can render them. Warning state and

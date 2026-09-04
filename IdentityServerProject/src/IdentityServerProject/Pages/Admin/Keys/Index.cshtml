@@ -3,10 +3,10 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Keys";
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Index"),
-        ("Keys", null)
+        new("Admin", "/Admin/Index"),
+        new("Keys")
     };
 }
 

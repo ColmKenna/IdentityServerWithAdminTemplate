@@ -2,12 +2,12 @@
 @model TokenSettingsModel
 @{
     ViewData["Title"] = "Configure Client Token Settings";
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Index"),
-        ("Clients", "/Admin/Clients/Index"),
-        (Model.ClientNameDisplay, $"/Admin/Clients/Details/{Model.Id}"),
-        ("Token Settings", null)
+        new("Admin", "/Admin/Index"),
+        new("Clients", "/Admin/Clients/Index"),
+        new(Model.ClientNameDisplay, "/Admin/Clients/Details", new Dictionary<string, string> { { "id", Model.Id } }),
+        new("Token Settings")
     };
 }
 

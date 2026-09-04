@@ -2,10 +2,10 @@
 @model IndexModel
 @{
     ViewData["Title"] = "API Resources";
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Index"),
-        ("API Resources", null)
+        new("Admin", "/Admin/Index"),
+        new("API Resources")
     };
 }
 

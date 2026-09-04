@@ -2,11 +2,11 @@
 @model EditorModel
 @{
     ViewData["Title"] = Model.Editor.IsNew ? "New API Resource" : Model.Editor.Name;
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Index"),
-        ("API Resources", "/Admin/Apis/Index"),
-        (Model.Editor.IsNew ? "New API Resource" : Model.Editor.Name, null)
+        new("Admin", "/Admin/Index"),
+        new("API Resources", "/Admin/Apis/Index"),
+        new(Model.Editor.IsNew ? "New API Resource" : Model.Editor.Name)
     };
     var tab = Model.Tab;
 }

@@ -2,11 +2,11 @@
 @model CreateModel
 @{
     ViewData["Title"] = "Create Identity Resource";
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Index"),
-        ("Identity Resources", "/Admin/IdentityResources/Index"),
-        ("Create Identity Resource", null)
+        new("Admin", "/Admin/Index"),
+        new("Identity Resources", "/Admin/IdentityResources/Index"),
+        new("Create Identity Resource")
     };
 }
 

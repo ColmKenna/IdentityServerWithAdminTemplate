@@ -3,11 +3,11 @@
 @model DetailsModel
 @{
     ViewData["Title"] = Model.Account.UserName;
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Index"),
-        ("Users", "/Admin/Users"),
-        (Model.Account.UserName, null)
+        new("Admin", "/Admin/Index"),
+        new("Users", "/Admin/Users/Index"),
+        new(Model.Account.UserName)
     };
 
     var unassignedRoles = Model.Account.AllRoles.Except(Model.Account.AssignedRoles).ToList();

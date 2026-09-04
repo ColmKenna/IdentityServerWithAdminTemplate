@@ -2,11 +2,11 @@
 @model CreateModel
 @{
     ViewData["Title"] = "Create API Scope";
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Index"),
-        ("API Scopes", "/Admin/ApiScopes/Index"),
-        ("Create API Scope", null)
+        new("Admin", "/Admin/Index"),
+        new("API Scopes", "/Admin/ApiScopes/Index"),
+        new("Create API Scope")
     };
 }
 

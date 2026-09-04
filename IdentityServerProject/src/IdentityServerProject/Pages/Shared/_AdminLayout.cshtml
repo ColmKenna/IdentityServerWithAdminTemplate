@@ -111,7 +111,7 @@
         {
             @await RenderSectionAsync("Breadcrumbs", false)
         }
-        else if (ViewData["Breadcrumbs"] is IEnumerable<(string Text, string? Url)> crumbsList)
+        else if (ViewData["Breadcrumbs"] is IEnumerable<Breadcrumb> crumbsList)
         {
             var crumbs = crumbsList.ToList();
             for (var i = 0; i < crumbs.Count; i++)
@@ -122,9 +122,18 @@
                     <span class="sep">/</span>
                 }
 
-                if (!string.IsNullOrEmpty(item.Url) && i < crumbs.Count - 1)
+                @* Generated through asp-page, not a literal href, so a crumb follows the
+                   target page's real route rather than the shape someone typed. *@
+                if (item.Page is not null && i < crumbs.Count - 1)
                 {
-                    <a href="@item.Url">@item.Text</a>
+                    if (item.RouteValues is not null)
+                    {
+                        <a asp-page="@item.Page" asp-all-route-data="@item.RouteValues">@item.Text</a>
+                    }
+                    else
+                    {
+                        <a asp-page="@item.Page">@item.Text</a>
+                    }
                 }
                 else
                 {

@@ -390,11 +390,15 @@ public class ApisEditorIntegrationTests : IDisposable
         Assert.Equal(2, crumbLinks.Length);
 
         // Both crumbs previously pointed at /Admin/Apis/Index, so "Admin" and "API Resources"
-        // led to the same page. Every other view in the console points its "Admin" crumb at
-        // the dashboard; this one was the outlier.
-        Assert.Equal("/Admin/Index", crumbLinks[0].GetAttribute("href"));
+        // led to the same page. Every other view points its "Admin" crumb at the dashboard.
+        //
+        // The hrefs are route-generated from the page names /Admin/Index and /Admin/Apis/Index,
+        // and link generation emits the canonical short form for an Index page — so "/Admin"
+        // and "/Admin/Apis", not the literal paths the views name. Both forms route to the
+        // same page; this asserts what a browser actually receives.
+        Assert.Equal("/Admin", crumbLinks[0].GetAttribute("href"));
         Assert.Equal("Admin", crumbLinks[0].TextContent.Trim());
-        Assert.Equal("/Admin/Apis/Index", crumbLinks[1].GetAttribute("href"));
+        Assert.Equal("/Admin/Apis", crumbLinks[1].GetAttribute("href"));
         Assert.Equal("API Resources", crumbLinks[1].TextContent.Trim());
 
         IElement? current = document.QuerySelector("nav.crumbs .current");

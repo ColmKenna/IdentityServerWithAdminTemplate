@@ -3,11 +3,11 @@
 @model CreateModel
 @{
     ViewData["Title"] = "Register New Client";
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Index"),
-        ("Clients", "/Admin/Clients/Index"),
-        ("Register New Client", null)
+        new("Admin", "/Admin/Index"),
+        new("Clients", "/Admin/Clients/Index"),
+        new("Register New Client")
     };
 }
 

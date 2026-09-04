@@ -3,11 +3,11 @@
 @model EditModel
 @{
     ViewData["Title"] = Model.Editor.Name;
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Index"),
-        ("Identity Resources", "/Admin/IdentityResources/Index"),
-        (Model.Editor.Name, null)
+        new("Admin", "/Admin/Index"),
+        new("Identity Resources", "/Admin/IdentityResources/Index"),
+        new(Model.Editor.Name)
     };
     var isProtected = Model.Editor.IsProtected;
 }

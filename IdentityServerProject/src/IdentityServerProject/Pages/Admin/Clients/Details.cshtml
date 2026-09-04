@@ -2,11 +2,11 @@
 @model DetailsModel
 @{
     ViewData["Title"] = Model.Client.ClientName;
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Index"),
-        ("Clients", "/Admin/Clients/Index"),
-        (Model.Client.ClientName, null)
+        new("Admin", "/Admin/Index"),
+        new("Clients", "/Admin/Clients/Index"),
+        new(Model.Client.ClientName)
     };
 }
 
