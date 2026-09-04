@@ -16,7 +16,7 @@
         <h1 class="page-title">Edit Client Basics</h1>
         <p class="page-sub">Configure the basic identity and description details for this client application.</p>
     </div>
-    <a asp-page="./Details" asp-route-id="@Model.Id" class="btn-secondary">&larr; Back to Client</a>
+    <partial name="_BackLink" model='new BackLinkModel("./Details", "Back to Client", new Dictionary<string, string> { { "id", Model.Id } })' />
 </div>
 
 <form method="post" id="edit-client-basics-form">

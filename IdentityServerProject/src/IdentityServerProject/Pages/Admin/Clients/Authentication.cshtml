@@ -16,7 +16,7 @@
         <h1 class="page-title">Configure Client Authentication</h1>
         <p class="page-sub">Manage grant types, PKCE, client secret requirement, and redirect/CORS URIs.</p>
     </div>
-    <a asp-page="./Details" asp-route-id="@Model.Id" class="btn-secondary">&larr; Back to Client</a>
+    <partial name="_BackLink" model='new BackLinkModel("./Details", "Back to Client", new Dictionary<string, string> { { "id", Model.Id } })' />
 </div>
 
 @if (Model.HasDrifted)

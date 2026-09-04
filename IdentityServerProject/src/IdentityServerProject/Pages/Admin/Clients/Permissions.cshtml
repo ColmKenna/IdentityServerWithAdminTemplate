@@ -16,7 +16,7 @@
         <h1 class="page-title">Configure Client Permissions</h1>
         <p class="page-sub">Select which identity resources and API scopes this client may request.</p>
     </div>
-    <a asp-page="./Details" asp-route-id="@Model.Id" class="btn-secondary">&larr; Back to Client</a>
+    <partial name="_BackLink" model='new BackLinkModel("./Details", "Back to Client", new Dictionary<string, string> { { "id", Model.Id } })' />
 </div>
 
 <form method="post" id="edit-client-permissions-form">
