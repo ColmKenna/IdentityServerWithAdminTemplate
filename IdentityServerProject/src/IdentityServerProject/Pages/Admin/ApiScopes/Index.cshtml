@@ -4,20 +4,12 @@
     ViewData["Title"] = "API Scopes";
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">API Scopes</h1>
-        <p class="page-sub">Access-control scopes clients can request from IdentityServer</p>
-    </div>
+<page-header title="API Scopes" sub="Access-control scopes clients can request from IdentityServer">
     <a asp-page="./Create" class="btn-primary">
-        <svg aria-hidden="true" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
+        <partial name="_AdminIcon" model='("plus", "btn-icon")' />
         New API scope
     </a>
-</div>
+</page-header>
 
 @if (!string.IsNullOrWhiteSpace(Model.DeleteErrorMessage))
 {

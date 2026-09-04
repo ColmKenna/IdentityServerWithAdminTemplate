@@ -4,13 +4,9 @@
     ViewData["Title"] = "Create Identity Resource";
 }
 
-<div class="editor-header">
-    <div>
-        <h1 class="hero-title">Create Identity Resource</h1>
-        <p class="page-sub">Add a new OpenID Connect identity resource with optional template quick-fill.</p>
-    </div>
+<page-header title="Create Identity Resource" sub="Add a new OpenID Connect identity resource with optional template quick-fill." variant="editor">
     <partial name="_BackLink" />
-</div>
+</page-header>
 
 <form method="post" id="create-resource-form">
     <div asp-validation-summary="All" role="alert" class="validation-summary"></div>

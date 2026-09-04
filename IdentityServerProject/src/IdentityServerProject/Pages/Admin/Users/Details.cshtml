@@ -13,13 +13,10 @@
     var unassignedRoles = Model.Account.AllRoles.Except(Model.Account.AssignedRoles).ToList();
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">@(string.IsNullOrWhiteSpace(Model.Account.FullName) ? Model.Account.UserName : Model.Account.FullName)</h1>
-        <p class="page-sub"><code>@Model.Account.UserName</code> &middot; @(Model.Account.Email ?? "No email")</p>
-    </div>
+<page-header title="@(string.IsNullOrWhiteSpace(Model.Account.FullName) ? Model.Account.UserName : Model.Account.FullName)">
+    <page-sub><code>@Model.Account.UserName</code> &middot; @(Model.Account.Email ?? "No email")</page-sub>
     <partial name="_BackLink" model='new BackLinkModel("./Index", "Back to Users")' />
-</div>
+</page-header>
 
 @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
 {

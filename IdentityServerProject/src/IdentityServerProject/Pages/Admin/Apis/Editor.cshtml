@@ -11,6 +11,12 @@
     var tab = Model.Tab;
 }
 
+@*
+    Deliberately not the <page-header> TagHelper. This is the one header whose title is a
+    group rather than a string — the resource name sits beside a live enabled/disabled
+    badge in .title-with-badge. Giving the component a title slot for a single call site
+    would cost more than the duplication does.
+*@
 <div class="editor-header">
     <div>
         <div class="title-with-badge">

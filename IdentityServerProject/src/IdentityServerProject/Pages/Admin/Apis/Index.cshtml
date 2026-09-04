@@ -9,20 +9,12 @@
     };
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">API Resources</h1>
-        <p class="page-sub">Secured web APIs registered with IdentityServer</p>
-    </div>
+<page-header title="API Resources" sub="Secured web APIs registered with IdentityServer">
     <a id="new-api-resource-link" class="btn-primary" asp-page="./Editor">
-        <svg aria-hidden="true" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
+        <partial name="_AdminIcon" model='("plus", "btn-icon")' />
         New API resource
     </a>
-</div>
+</page-header>
 
 <div class="panel">
     <partial name="_ListFilter" model='new ListFilterModel("apis-filter", "Filter API resources", "Filter by name or display name", Model.Filter)' />

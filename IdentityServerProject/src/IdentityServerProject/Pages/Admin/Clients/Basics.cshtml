@@ -11,13 +11,9 @@
     };
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Edit Client Basics</h1>
-        <p class="page-sub">Configure the basic identity and description details for this client application.</p>
-    </div>
+<page-header title="Edit Client Basics" sub="Configure the basic identity and description details for this client application.">
     <partial name="_BackLink" model='new BackLinkModel("./Details", "Back to Client", new Dictionary<string, string> { { "id", Model.Id } })' />
-</div>
+</page-header>
 
 <form method="post" id="edit-client-basics-form">
     <div asp-validation-summary="All" role="alert" class="validation-summary alert-panel alert-danger"></div>

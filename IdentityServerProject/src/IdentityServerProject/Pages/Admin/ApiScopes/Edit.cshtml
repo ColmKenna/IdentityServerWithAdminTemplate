@@ -4,13 +4,9 @@
     ViewData["Title"] = Model.Editor.Name;
 }
 
-<div class="editor-header">
-    <div>
-        <h1 class="hero-title">@Model.Editor.Name</h1>
-        <p class="page-sub">Manage display name, description, and claims for this API scope.</p>
-    </div>
+<page-header title="@Model.Editor.Name" sub="Manage display name, description, and claims for this API scope." variant="editor">
     <partial name="_BackLink" />
-</div>
+</page-header>
 
 <div class="panel editor-panel">
     <form method="post" asp-page-handler="Save" asp-route-name="@Model.Editor.Name" class="editor-form">

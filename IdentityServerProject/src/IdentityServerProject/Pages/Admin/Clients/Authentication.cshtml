@@ -11,13 +11,9 @@
     };
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Configure Client Authentication</h1>
-        <p class="page-sub">Manage grant types, PKCE, client secret requirement, and redirect/CORS URIs.</p>
-    </div>
+<page-header title="Configure Client Authentication" sub="Manage grant types, PKCE, client secret requirement, and redirect/CORS URIs.">
     <partial name="_BackLink" model='new BackLinkModel("./Details", "Back to Client", new Dictionary<string, string> { { "id", Model.Id } })' />
-</div>
+</page-header>
 
 @if (Model.HasDrifted)
 {

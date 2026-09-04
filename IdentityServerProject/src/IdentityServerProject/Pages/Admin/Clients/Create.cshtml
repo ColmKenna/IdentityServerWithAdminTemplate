@@ -5,13 +5,9 @@
     ViewData["Title"] = "Register New Client";
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Register New Client</h1>
-        <p class="page-sub">Create a new OAuth 2.0 / OIDC client application using a guided preset</p>
-    </div>
+<page-header title="Register New Client" sub="Create a new OAuth 2.0 / OIDC client application using a guided preset">
     <partial name="_BackLink" model='new BackLinkModel("./Index", "Back to Clients")' />
-</div>
+</page-header>
 
 @if (!string.IsNullOrEmpty(Model.CreatedSecret))
 {

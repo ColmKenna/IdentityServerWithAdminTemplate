@@ -4,12 +4,8 @@
     ViewData["Title"] = "Persisted Grants";
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Persisted Grants</h1>
-        <p class="page-sub">Active user sessions, refresh tokens, and consent grants stored by IdentityServer</p>
-    </div>
-</div>
+<page-header title="Persisted Grants" sub="Active user sessions, refresh tokens, and consent grants stored by IdentityServer">
+</page-header>
 
 @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
 {

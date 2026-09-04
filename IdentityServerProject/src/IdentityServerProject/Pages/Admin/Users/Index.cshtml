@@ -4,20 +4,12 @@
     ViewData["Title"] = "Users";
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Users</h1>
-        <p class="page-sub">Provisioned user accounts and access controls</p>
-    </div>
+<page-header title="Users" sub="Provisioned user accounts and access controls">
     <a id="new-user-link" class="btn-primary" asp-page="./Create">
-        <svg aria-hidden="true" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
+        <partial name="_AdminIcon" model='("plus", "btn-icon")' />
         New user
     </a>
-</div>
+</page-header>
 
 <div class="panel">
     @if (!string.IsNullOrEmpty(Model.StatusMessage))

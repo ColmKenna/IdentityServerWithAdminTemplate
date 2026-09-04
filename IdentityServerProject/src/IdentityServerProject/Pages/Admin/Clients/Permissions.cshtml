@@ -11,13 +11,9 @@
     };
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Configure Client Permissions</h1>
-        <p class="page-sub">Select which identity resources and API scopes this client may request.</p>
-    </div>
+<page-header title="Configure Client Permissions" sub="Select which identity resources and API scopes this client may request.">
     <partial name="_BackLink" model='new BackLinkModel("./Details", "Back to Client", new Dictionary<string, string> { { "id", Model.Id } })' />
-</div>
+</page-header>
 
 <form method="post" id="edit-client-permissions-form">
     <div asp-validation-summary="All" role="alert" class="validation-summary alert-panel alert-danger"></div>

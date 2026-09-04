@@ -4,20 +4,12 @@
     ViewData["Title"] = "Clients";
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Clients</h1>
-        <p class="page-sub">OAuth/OIDC client applications registered with IdentityServer</p>
-    </div>
+<page-header title="Clients" sub="OAuth/OIDC client applications registered with IdentityServer">
     <a id="new-client-link" class="btn-primary" asp-page="./Create">
-        <svg aria-hidden="true" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
+        <partial name="_AdminIcon" model='("plus", "btn-icon")' />
         New client
     </a>
-</div>
+</page-header>
 
 <div class="panel">
     <partial name="_ListFilter" model='new ListFilterModel("client-filter", "Filter clients", "Filter by name or client ID", Model.Filter)' />

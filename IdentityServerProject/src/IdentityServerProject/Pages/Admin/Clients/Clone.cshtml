@@ -11,14 +11,11 @@
     };
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Clone Client</h1>
-        <p class="page-sub">Create a new client based on <strong>@Model.SourceClientName</strong>. The new client will
-            inherit all settings and scopes, except for the client secrets.</p>
-    </div>
+<page-header title="Clone Client">
+    <page-sub>Create a new client based on <strong>@Model.SourceClientName</strong>. The new client will
+            inherit all settings and scopes, except for the client secrets.</page-sub>
     <partial name="_BackLink" model='new BackLinkModel("./Details", "Back to Client", new Dictionary<string, string> { { "id", Model.SourceClientId } })' />
-</div>
+</page-header>
 
 <form method="post" id="clone-client-form">
     <div asp-validation-summary="All" role="alert" class="validation-summary alert-panel alert-danger"></div>

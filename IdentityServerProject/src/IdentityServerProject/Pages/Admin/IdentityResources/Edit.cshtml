@@ -6,13 +6,9 @@
     var isProtected = Model.Editor.IsProtected;
 }
 
-<div class="editor-header">
-    <div>
-        <h1 class="hero-title">@Model.Editor.Name</h1>
-        <p class="page-sub">Manage display name, description, flags, and user claims for this identity resource.</p>
-    </div>
+<page-header title="@Model.Editor.Name" sub="Manage display name, description, flags, and user claims for this identity resource." variant="editor">
     <partial name="_BackLink" />
-</div>
+</page-header>
 
 <div class="panel editor-panel">
     @if (isProtected)
