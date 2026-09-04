@@ -14,7 +14,7 @@
 <div class="panel">
     <partial name="_ListFilter" model='new ListFilterModel("client-filter", "Filter clients", "Filter by name or client ID", Model.Filter)' />
 
-    <ck-responsive-table class="clients-table" mobile-breakpoint="768px">
+    <ck-responsive-table mobile-breakpoint="768px">
         <ck-responsive-thead>
             <ck-responsive-col-head>Name</ck-responsive-col-head>
             <ck-responsive-col-head>Client ID</ck-responsive-col-head>
@@ -26,7 +26,7 @@
             @foreach (var clientItem in Model.Clients.Items)
             {
                 <ck-responsive-row>
-                    <ck-responsive-col class="client-name">
+                    <ck-responsive-col>
                         <a asp-page="./Details" asp-route-id="@clientItem.ClientId"
                            class="client-title-link">@clientItem.ClientName</a>
                     </ck-responsive-col>

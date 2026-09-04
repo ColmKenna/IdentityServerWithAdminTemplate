@@ -9,7 +9,6 @@ function initializeAdminPage() {
 
     initializeUserMenu();
     initializeTooltips(sidebar.burger);
-    initializeTableFiltering();
     initializeScopeDeletionDialog();
     initializeDialogCloseButtons();
     initializeCopyButtons();
@@ -113,24 +112,6 @@ function initializeTooltips(burger) {
     }
 
     document.querySelector('.sidebar-scroll')?.addEventListener('scroll', hideTooltip);
-}
-
-function initializeTableFiltering() {
-    document.querySelectorAll('input[data-table]').forEach(input => {
-        const table = document.querySelector(`.${input.dataset.table}`);
-
-        if (!table) {
-            return;
-        }
-
-        input.addEventListener('input', () => {
-            const filterText = input.value.toLowerCase();
-
-            table.querySelectorAll('ck-responsive-row').forEach(row => {
-                row.style.display = row.textContent.toLowerCase().includes(filterText) ? '' : 'none';
-            });
-        });
-    });
 }
 
 function initializeScopeDeletionDialog() {

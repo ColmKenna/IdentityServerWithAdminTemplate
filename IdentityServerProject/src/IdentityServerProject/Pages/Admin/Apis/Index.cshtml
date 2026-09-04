@@ -19,7 +19,7 @@
 <div class="panel">
     <partial name="_ListFilter" model='new ListFilterModel("apis-filter", "Filter API resources", "Filter by name or display name", Model.Filter)' />
 
-    <ck-responsive-table class="apis-table" mobile-breakpoint="768px">
+    <ck-responsive-table mobile-breakpoint="768px">
         <ck-responsive-thead>
             <ck-responsive-col-head>Name</ck-responsive-col-head>
             <ck-responsive-col-head>Display Name</ck-responsive-col-head>
@@ -31,7 +31,7 @@
             @foreach (var apiResource in Model.ApiResources.Items)
             {
                 <ck-responsive-row>
-                    <ck-responsive-col class="resource-name">
+                    <ck-responsive-col>
                         <a asp-page="./Editor" asp-route-name="@apiResource.Name"
                            class="resource-title-link"><code>@apiResource.Name</code></a>
                     </ck-responsive-col>

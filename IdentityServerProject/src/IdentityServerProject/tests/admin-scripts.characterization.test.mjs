@@ -26,28 +26,15 @@ async function executeDomReadyScript(dom, script) {
     await new Promise(resolve => dom.window.setTimeout(resolve, 0));
 }
 
-test('admin shell persists sidebar state and filters responsive table rows', async () => {
+test('admin shell persists sidebar state', async () => {
     const script = await readProjectFile('wwwroot/js/admin.js');
-    const dom = createDom(`
-        <button id="burger"></button>
-        <input data-table="users-table" />
-        <div class="users-table">
-            <ck-responsive-row id="ada">Ada Lovelace</ck-responsive-row>
-            <ck-responsive-row id="grace">Grace Hopper</ck-responsive-row>
-        </div>
-    `);
+    const dom = createDom(`<button id="burger"></button>`);
 
     await executeDomReadyScript(dom, script);
 
     dom.window.document.getElementById('burger').click();
     assert.equal(dom.window.document.body.classList.contains('collapsed'), true);
     assert.equal(dom.window.localStorage.getItem('admin_sidebar_collapsed'), 'true');
-
-    const filter = dom.window.document.querySelector('[data-table]');
-    filter.value = 'grace';
-    filter.dispatchEvent(new dom.window.Event('input', {bubbles: true}));
-    assert.equal(dom.window.document.getElementById('ada').style.display, 'none');
-    assert.equal(dom.window.document.getElementById('grace').style.display, '');
 });
 
 test('admin shell still toggles when localStorage is unavailable', async () => {

@@ -19,7 +19,7 @@
 <div class="panel">
     <partial name="_ListFilter" model='new ListFilterModel("identity-resource-filter", "Filter identity resources", "Filter by name or display name", Model.Filter)' />
 
-    <ck-responsive-table class="identity-resources-table" mobile-breakpoint="768px">
+    <ck-responsive-table mobile-breakpoint="768px">
         <ck-responsive-thead>
             <ck-responsive-col-head>Name</ck-responsive-col-head>
             <ck-responsive-col-head>Display Name</ck-responsive-col-head>
@@ -32,7 +32,7 @@
             @foreach (var resource in Model.IdentityResources.Items)
             {
                 <ck-responsive-row>
-                    <ck-responsive-col class="resource-name">
+                    <ck-responsive-col>
                         <a asp-page="./Edit" asp-route-name="@resource.Name"
                            class="resource-title-link"><code>@resource.Name</code></a>
                     </ck-responsive-col>

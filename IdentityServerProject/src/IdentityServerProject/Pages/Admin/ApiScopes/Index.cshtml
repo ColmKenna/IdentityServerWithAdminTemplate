@@ -19,7 +19,7 @@
 <div class="panel">
     <partial name="_ListFilter" model='new ListFilterModel("api-scope-filter", "Filter API scopes", "Filter by name or display name", Model.Filter)' />
 
-    <ck-responsive-table class="api-scopes-table" mobile-breakpoint="768px">
+    <ck-responsive-table mobile-breakpoint="768px">
         <ck-responsive-thead>
             <ck-responsive-col-head>Name</ck-responsive-col-head>
             <ck-responsive-col-head>Display Name</ck-responsive-col-head>
@@ -31,7 +31,7 @@
             @foreach (var apiScope in Model.ApiScopes.Items)
             {
                 <ck-responsive-row>
-                    <ck-responsive-col class="scope-name">
+                    <ck-responsive-col>
                         <a asp-page="./Edit" asp-route-name="@apiScope.Name"
                            class="resource-title-link"><code>@apiScope.Name</code></a>
                     </ck-responsive-col>

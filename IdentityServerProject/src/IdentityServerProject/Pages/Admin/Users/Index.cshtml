@@ -21,7 +21,7 @@
 
     <partial name="_ListFilter" model='new ListFilterModel("user-filter", "Filter users", "Filter by name, username, or email", Model.Filter)' />
 
-    <ck-responsive-table class="users-table" mobile-breakpoint="768px">
+    <ck-responsive-table mobile-breakpoint="768px">
         <ck-responsive-thead>
             <ck-responsive-col-head>User</ck-responsive-col-head>
             <ck-responsive-col-head>Email</ck-responsive-col-head>
@@ -32,7 +32,7 @@
             @foreach (var userItem in Model.Users.Items)
             {
                 <ck-responsive-row>
-                    <ck-responsive-col class="user-name">
+                    <ck-responsive-col>
                         <a asp-page="./Details" asp-route-id="@userItem.Id" class="user-title-link">
                             @(string.IsNullOrWhiteSpace(userItem.FullName) ? userItem.UserName : userItem.FullName)
                         </a>
