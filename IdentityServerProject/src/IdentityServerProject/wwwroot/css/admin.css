@@ -560,9 +560,21 @@ body.collapsed .main {
     background: #2a2e33;
 }
 
+.btn-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+
 .btn-primary .btn-icon {
     width: 18px;
     height: 18px;
+    margin-right: 0;
     stroke-width: 2.4;
 }
 
@@ -928,6 +940,10 @@ ck-responsive-col.actions-cell {
     height: 22px;
     stroke: #0f172a;
     flex-shrink: 0;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .card-header h2 {
@@ -1035,6 +1051,10 @@ ck-responsive-col.actions-cell {
     height: 22px;
     stroke: #b91c1c;
     flex-shrink: 0;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .deactivate-header h2 {

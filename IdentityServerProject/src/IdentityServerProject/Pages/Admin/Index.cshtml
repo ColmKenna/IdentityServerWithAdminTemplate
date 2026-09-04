@@ -7,22 +7,27 @@
         ("Admin", null)
     };
 
-    var configureCards = new[]
+    @* Both groups use the same card shape so one loop can render them. Warning state and
+       badge are null for everything except Diagnostics today, but they are part of the
+       shape rather than a second one. *@
+    var cardGroups = new[]
     {
-        (Page: "/Admin/Clients/Index", Id: "dashboard-card-clients", Icon: "clients", Title: "Clients", Desc: "OAuth/OIDC client applications, redirect URIs, and credentials."),
-        (Page: "/Admin/Apis/Index", Id: "dashboard-card-apis", Icon: "apis", Title: "API Resources", Desc: "Protected API definitions, secrets, and user claims."),
-        (Page: "/Admin/ApiScopes/Index", Id: "dashboard-card-apiscopes", Icon: "apiscopes", Title: "API Scopes", Desc: "Granular token permissions, resource associations, and audiences."),
-        (Page: "/Admin/IdentityResources/Index", Id: "dashboard-card-identityresources", Icon: "identityresources", Title: "Identity Resources", Desc: "OpenID Connect scopes such as openid, profile, and email."),
-        (Page: "/Admin/Keys/Index", Id: "dashboard-card-keys", Icon: "keys", Title: "Signing Keys", Desc: "Active and historical cryptographic keys for token signing.")
-    };
-
-    var administerCards = new[]
-    {
-        (Page: "/Admin/Users/Index", Id: "dashboard-card-users", Icon: "users", Title: "Users", Desc: "Manage accounts, roles, claims, and credentials.", IsWarning: false, Badge: (int?)null),
-        (Page: "/Admin/Roles/Index", Id: "dashboard-card-roles", Icon: "roles", Title: "Roles", Desc: "Define and manage roles for access control.", IsWarning: false, Badge: (int?)null),
-        (Page: "/Admin/Grants/Index", Id: "dashboard-card-grants", Icon: "grants", Title: "Persisted Grants", Desc: "Active refresh tokens, authorization codes, and consent records.", IsWarning: false, Badge: (int?)null),
-        (Page: "/Admin/AuditLogs/Index", Id: "dashboard-card-auditlogs", Icon: "auditlogs", Title: "Audit Logs", Desc: "Security event trail, actor logins, and administrative mutations.", IsWarning: false, Badge: (int?)null),
-        (Page: "/Admin/Diagnostics/Index", Id: "dashboard-card-diagnostics", Icon: "diagnostics", Title: "Diagnostics", Desc: "Store connectivity, signing credentials, and claim validation.", IsWarning: Model.HasIssues, Badge: Model.HasIssues ? Model.Issues.Count : (int?)null)
+        (Label: "Configure", Cards: new[]
+        {
+            (Page: "/Admin/Clients/Index", Id: "dashboard-card-clients", Icon: "clients", Title: "Clients", Desc: "OAuth/OIDC client applications, redirect URIs, and credentials.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/Apis/Index", Id: "dashboard-card-apis", Icon: "apis", Title: "API Resources", Desc: "Protected API definitions, secrets, and user claims.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/ApiScopes/Index", Id: "dashboard-card-apiscopes", Icon: "apiscopes", Title: "API Scopes", Desc: "Granular token permissions, resource associations, and audiences.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/IdentityResources/Index", Id: "dashboard-card-identityresources", Icon: "identityresources", Title: "Identity Resources", Desc: "OpenID Connect scopes such as openid, profile, and email.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/Keys/Index", Id: "dashboard-card-keys", Icon: "keys", Title: "Signing Keys", Desc: "Active and historical cryptographic keys for token signing.", IsWarning: false, Badge: (int?)null)
+        }),
+        (Label: "Administer", Cards: new[]
+        {
+            (Page: "/Admin/Users/Index", Id: "dashboard-card-users", Icon: "users", Title: "Users", Desc: "Manage accounts, roles, claims, and credentials.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/Roles/Index", Id: "dashboard-card-roles", Icon: "roles", Title: "Roles", Desc: "Define and manage roles for access control.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/Grants/Index", Id: "dashboard-card-grants", Icon: "grants", Title: "Persisted Grants", Desc: "Active refresh tokens, authorization codes, and consent records.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/AuditLogs/Index", Id: "dashboard-card-auditlogs", Icon: "auditlogs", Title: "Audit Logs", Desc: "Security event trail, actor logins, and administrative mutations.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/Diagnostics/Index", Id: "dashboard-card-diagnostics", Icon: "diagnostics", Title: "Diagnostics", Desc: "Store connectivity, signing credentials, and claim validation.", IsWarning: Model.HasIssues, Badge: Model.HasIssues ? Model.Issues.Count : (int?)null)
+        })
     };
 }
 
@@ -55,48 +60,31 @@
     </div>
 }
 
-<div class="dashboard-section-label">Configure</div>
+@foreach (var cardGroup in cardGroups)
+{
+    <div class="dashboard-section-label">@cardGroup.Label</div>
 
-<div class="dashboard-grid">
-    @foreach (var card in configureCards)
-    {
-        <a asp-page="@card.Page" class="dashboard-card" id="@card.Id">
-            <div class="dashboard-card-icon-wrap">
-                <partial name="_AdminIcon" model='(card.Icon, "dashboard-card-icon")' />
-            </div>
-            <div class="dashboard-card-body">
-                <span class="dashboard-card-title">@card.Title</span>
-                <span class="dashboard-card-desc">@card.Desc</span>
-            </div>
-            <svg aria-hidden="true" class="dashboard-card-arrow" viewBox="0 0 24 24">
-                <polyline points="9 18 15 12 9 6"/>
-            </svg>
-        </a>
-    }
-</div>
-
-<div class="dashboard-section-label">Administer</div>
-
-<div class="dashboard-grid">
-    @foreach (var card in administerCards)
-    {
-        <a asp-page="@card.Page" class="dashboard-card @(card.IsWarning ? "dashboard-card--warning" : "")" id="@card.Id">
-            <div class="dashboard-card-icon-wrap @(card.IsWarning ? "dashboard-card-icon-wrap--warning" : "")">
-                <partial name="_AdminIcon" model='(card.Icon, "dashboard-card-icon")' />
-            </div>
-            <div class="dashboard-card-body">
-                <span class="dashboard-card-title">
-                    @card.Title
-                    @if (card.Badge.HasValue)
-                    {
-                        <span class="card-badge">@card.Badge.Value</span>
-                    }
-                </span>
-                <span class="dashboard-card-desc">@card.Desc</span>
-            </div>
-            <svg aria-hidden="true" class="dashboard-card-arrow" viewBox="0 0 24 24">
-                <polyline points="9 18 15 12 9 6"/>
-            </svg>
-        </a>
-    }
-</div>
+    <div class="dashboard-grid">
+        @foreach (var card in cardGroup.Cards)
+        {
+            <a asp-page="@card.Page" class="dashboard-card @(card.IsWarning ? "dashboard-card--warning" : "")" id="@card.Id">
+                <div class="dashboard-card-icon-wrap @(card.IsWarning ? "dashboard-card-icon-wrap--warning" : "")">
+                    <partial name="_AdminIcon" model='(card.Icon, "dashboard-card-icon")' />
+                </div>
+                <div class="dashboard-card-body">
+                    <span class="dashboard-card-title">
+                        @card.Title
+                        @if (card.Badge.HasValue)
+                        {
+                            <span class="card-badge">@card.Badge.Value</span>
+                        }
+                    </span>
+                    <span class="dashboard-card-desc">@card.Desc</span>
+                </div>
+                <svg aria-hidden="true" class="dashboard-card-arrow" viewBox="0 0 24 24">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </a>
+        }
+    </div>
+}
