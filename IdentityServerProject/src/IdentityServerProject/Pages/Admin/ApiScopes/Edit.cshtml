@@ -2,6 +2,12 @@
 @model EditModel
 @{
     ViewData["Title"] = Model.Editor.Name;
+    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    {
+        ("Admin", "/Admin/Index"),
+        ("API Scopes", "/Admin/ApiScopes/Index"),
+        (Model.Editor.Name, null)
+    };
 }
 
 <page-header title="@Model.Editor.Name" sub="Manage display name, description, and claims for this API scope." variant="editor">

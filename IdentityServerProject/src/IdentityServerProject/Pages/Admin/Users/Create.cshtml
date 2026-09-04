@@ -2,6 +2,12 @@
 @model CreateModel
 @{
     ViewData["Title"] = "New User";
+    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    {
+        ("Admin", "/Admin/Index"),
+        ("Users", "/Admin/Users/Index"),
+        ("New User", null)
+    };
 }
 
 <page-header title="New User" sub="Provision a new user account with validated credentials.">

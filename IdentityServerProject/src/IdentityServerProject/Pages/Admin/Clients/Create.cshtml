@@ -3,6 +3,12 @@
 @model CreateModel
 @{
     ViewData["Title"] = "Register New Client";
+    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    {
+        ("Admin", "/Admin/Index"),
+        ("Clients", "/Admin/Clients/Index"),
+        ("Register New Client", null)
+    };
 }
 
 <page-header title="Register New Client" sub="Create a new OAuth 2.0 / OIDC client application using a guided preset">

@@ -2,6 +2,12 @@
 @model CreateModel
 @{
     ViewData["Title"] = "Create Identity Resource";
+    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    {
+        ("Admin", "/Admin/Index"),
+        ("Identity Resources", "/Admin/IdentityResources/Index"),
+        ("Create Identity Resource", null)
+    };
 }
 
 <page-header title="Create Identity Resource" sub="Add a new OpenID Connect identity resource with optional template quick-fill." variant="editor">

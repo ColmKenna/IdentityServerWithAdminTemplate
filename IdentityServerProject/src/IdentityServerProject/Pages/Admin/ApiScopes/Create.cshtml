@@ -2,6 +2,12 @@
 @model CreateModel
 @{
     ViewData["Title"] = "Create API Scope";
+    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    {
+        ("Admin", "/Admin/Index"),
+        ("API Scopes", "/Admin/ApiScopes/Index"),
+        ("Create API Scope", null)
+    };
 }
 
 <page-header title="Create API Scope" sub="Add a new API scope that clients can request access to." variant="editor">

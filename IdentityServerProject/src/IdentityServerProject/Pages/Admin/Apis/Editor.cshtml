@@ -4,7 +4,7 @@
     ViewData["Title"] = Model.Editor.IsNew ? "New API Resource" : Model.Editor.Name;
     ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
     {
-        ("Admin", "/Admin/Apis/Index"),
+        ("Admin", "/Admin/Index"),
         ("API Resources", "/Admin/Apis/Index"),
         (Model.Editor.IsNew ? "New API Resource" : Model.Editor.Name, null)
     };
