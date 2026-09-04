@@ -1,3 +1,37 @@
+/* =============================================================================
+   Admin console stylesheet — plain CSS, no preprocessor and no build step.
+   Linked whole by both layouts (_AdminLayout and _Layout), so source order is
+   the cascade order.
+
+   Sections, in file order. No line numbers on purpose: they go stale silently.
+   Search for the banner text instead.
+
+     :root, reset, body ................ design tokens, the * reset, body
+     Sidebar ........................... the collapsible nav rail
+     Header ............................ top bar, breadcrumbs, user menu
+     Main .............................. page frame, tooltips, page titles
+     Clients list ...................... list pages, tables, pagination, badges
+     Client Details Page ............... the detail-card grid and its hero
+     Responsive Table Web Component Overrides
+     Alerts ............................ alert-success / -error / -warning
+     Danger actions .................... destructive buttons and rows
+     Data-* driven modal ............... <dialog class="modal">
+     API resource editor ............... editor pages, chips, forms, tabs
+     Presets and Form Grids ............ preset cards, form-control family
+     Admin Dashboard Hub ............... dashboard cards and section labels
+     Shared form, alert and button components
+     Page styles — client token settings and user detail
+     Page styles — diagnostics
+     Shared layout and text utilities
+     Public & Auth Card Styling ........ sign-in, consent and error pages
+
+   Where to add a rule: shared components go in one of the two "Shared" sections;
+   anything only one page uses belongs in that page's section. The four sections
+   from "Shared form..." onward were one block named after a review finding; they
+   accreted when inline styles were given class names, which is why page styles
+   sit between two shared ones.
+   ============================================================================= */
+
 :root {
     --sidebar-w: 290px;
     --sidebar-w-collapsed: 68px;
@@ -1996,7 +2030,7 @@ ck-responsive-table {
     }
 }
 
-/* ============ Utility Classes & Missing Shared Definitions (I-004) ============ */
+/* ============ Shared form, alert and button components ============ */
 .form-group {
     margin-bottom: 20px;
 }
@@ -2200,6 +2234,7 @@ ck-responsive-table {
 .form-actions-wide {
     gap: 12px;
 }
+/* ============ Page styles — client token settings and user detail ============ */
 
 .refresh-token-settings {
     display: none;
@@ -2294,6 +2329,7 @@ ck-responsive-table {
     max-width: 400px;
     margin-bottom: 12px;
 }
+/* ============ Page styles — diagnostics ============ */
 
 .diagnostics-grid {
     display: grid;
@@ -2344,6 +2380,7 @@ ck-responsive-table {
     font-size: 0.95rem;
     font-weight: 700;
 }
+/* ============ Shared layout and text utilities ============ */
 
 .section-title {
     font-size: 1rem;
