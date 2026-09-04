@@ -1,22 +1,27 @@
+// Kept in step with the 768px media queries in admin.css and the mobile-breakpoint
+// attributes on every <ck-responsive-table>. See the note in admin.css for the full set.
+const MOBILE_BREAKPOINT = 768;
+
 document.addEventListener('DOMContentLoaded', initializeAdminPage);
 
 function initializeAdminPage() {
     const sidebar = initializeSidebar();
 
-    initializeSidebarGroups(sidebar.setCollapsed);
     initializeUserMenu();
     initializeTooltips(sidebar.burger);
-    initializeTableFiltering();
     initializeScopeDeletionDialog();
     initializeDialogCloseButtons();
+    initializeCopyButtons();
     initializeEditorTabs();
 }
 
 function initializeSidebar() {
     const storageKey = 'admin_sidebar_collapsed';
+    document.documentElement.classList.remove('sidebar-collapsed-preload');
 
     function setCollapsed(collapsed) {
         document.body.classList.toggle('collapsed', collapsed);
+        document.documentElement.classList.remove('sidebar-collapsed-preload');
 
         try {
             localStorage.setItem(storageKey, String(collapsed));
@@ -38,23 +43,7 @@ function initializeSidebar() {
         });
     }
 
-    return {burger, setCollapsed};
-}
-
-function initializeSidebarGroups(setCollapsed) {
-    document.querySelectorAll('.group-toggle').forEach(button => {
-        button.addEventListener('click', () => {
-            const group = button.parentElement;
-
-            if (document.body.classList.contains('collapsed') && window.innerWidth > 760) {
-                setCollapsed(false);
-                group.classList.add('open');
-                return;
-            }
-
-            group.classList.toggle('open');
-        });
-    });
+    return {burger};
 }
 
 function initializeUserMenu() {
@@ -93,22 +82,22 @@ function initializeTooltips(burger) {
     let tooltipTarget;
 
     function hideTooltip() {
-        tooltip.style.display = 'none';
+        tooltip.classList.remove('show');
         tooltipTarget = null;
     }
 
     function showTooltip(target) {
-        if (!document.body.classList.contains('collapsed') || window.innerWidth <= 760 || !target.dataset.tip) {
+        if (!document.body.classList.contains('collapsed') || window.innerWidth <= MOBILE_BREAKPOINT || !target.dataset.tip) {
             return;
         }
 
         tooltipTarget = target;
         tooltip.textContent = target.dataset.tip;
-        tooltip.style.display = 'block';
 
         const targetBounds = target.getBoundingClientRect();
         tooltip.style.top = `${targetBounds.top + targetBounds.height / 2 - tooltip.offsetHeight / 2}px`;
         tooltip.style.left = `${targetBounds.right + 8}px`;
+        tooltip.classList.add('show');
     }
 
     document.querySelectorAll('[data-tip]').forEach(element => {
@@ -123,24 +112,6 @@ function initializeTooltips(burger) {
     }
 
     document.querySelector('.sidebar-scroll')?.addEventListener('scroll', hideTooltip);
-}
-
-function initializeTableFiltering() {
-    document.querySelectorAll('input[data-table]').forEach(input => {
-        const table = document.querySelector(`.${input.dataset.table}`);
-
-        if (!table) {
-            return;
-        }
-
-        input.addEventListener('input', () => {
-            const filterText = input.value.toLowerCase();
-
-            table.querySelectorAll('ck-responsive-row').forEach(row => {
-                row.style.display = row.textContent.toLowerCase().includes(filterText) ? '' : 'none';
-            });
-        });
-    });
 }
 
 function initializeScopeDeletionDialog() {
@@ -171,6 +142,40 @@ function initializeScopeDeletionDialog() {
 function initializeDialogCloseButtons() {
     document.querySelectorAll('[data-action="close-modal"]').forEach(button => {
         button.addEventListener('click', () => button.closest('dialog').close());
+    });
+}
+
+function initializeCopyButtons() {
+    document.querySelectorAll('[data-copy-target]').forEach(button => {
+        button.addEventListener('click', () => {
+            const target = document.getElementById(button.dataset.copyTarget);
+            if (!target) return;
+            const textToCopy = target.value !== undefined ? target.value : (target.textContent || '');
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const origText = button.textContent;
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = origText;
+                }, 2000);
+            });
+        });
+    });
+}
+
+function copySecretToClipboard() {
+    const input = document.getElementById('generated-secret-input');
+    if (!input) return;
+
+    input.select();
+    navigator.clipboard.writeText(input.value).then(() => {
+        const btn = document.getElementById('copy-secret-btn');
+        if (btn) {
+            const origText = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => {
+                btn.textContent = origText;
+            }, 2000);
+        }
     });
 }
 

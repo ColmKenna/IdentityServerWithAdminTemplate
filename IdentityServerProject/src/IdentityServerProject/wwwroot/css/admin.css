@@ -1,3 +1,37 @@
+/* =============================================================================
+   Admin console stylesheet — plain CSS, no preprocessor and no build step.
+   Linked whole by both layouts (_AdminLayout and _Layout), so source order is
+   the cascade order.
+
+   Sections, in file order. No line numbers on purpose: they go stale silently.
+   Search for the banner text instead.
+
+     :root, reset, body ................ design tokens, the * reset, body
+     Sidebar ........................... the collapsible nav rail
+     Header ............................ top bar, breadcrumbs, user menu
+     Main .............................. page frame, tooltips, page titles
+     Clients list ...................... list pages, tables, pagination, badges
+     Client Details Page ............... the detail-card grid and its hero
+     Responsive Table Web Component Overrides
+     Alerts ............................ alert-success / -error / -warning
+     Danger actions .................... destructive buttons and rows
+     Data-* driven modal ............... <dialog class="modal">
+     API resource editor ............... editor pages, chips, forms, tabs
+     Presets and Form Grids ............ preset cards, form-control family
+     Admin Dashboard Hub ............... dashboard cards and section labels
+     Shared form, alert and button components
+     Page styles — client token settings and user detail
+     Page styles — diagnostics
+     Shared layout and text utilities
+     Public & Auth Card Styling ........ sign-in, consent and error pages
+
+   Where to add a rule: shared components go in one of the two "Shared" sections;
+   anything only one page uses belongs in that page's section. The four sections
+   from "Shared form..." onward were one block named after a review finding; they
+   accreted when inline styles were given class names, which is why page styles
+   sit between two shared ones.
+   ============================================================================= */
+
 :root {
     --sidebar-w: 290px;
     --sidebar-w-collapsed: 68px;
@@ -21,8 +55,21 @@
     --bg-surface: var(--bg);
     --primary: var(--accent);
     --sidebar-bg: var(--panel);
-    --font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --danger: #c8433b;
+    --danger-soft: #fdf2f2;
+    /* Danger scale. These are the values the console already used, now named by role.
+       Whether it should collapse to one red is a design question, not a refactor. */
+    --danger-strong: #b91c1c;  /* destructive outline buttons, deactivate icons and headings */
+    --danger-solid: #c0392b;   /* filled danger buttons, destructive action links */
+    --danger-deep: #922b21;    /* danger text sitting on a tinted background */
+    --line-soft: #dde3e8;
+    --navy: #16324f;
+    --muted: #6b7280;
+    /* Inter and JetBrains Mono were named here but never loaded — no @font-face, no font
+       link, no font package — so both always fell through to the next entry. The stacks now
+       say what actually renders. Adding a webfont is a product decision, not a cleanup. */
+    --font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 15px;
 
     /* ck-tabs web component theming (WI-07) — custom properties pierce the
@@ -51,7 +98,7 @@
 }
 
 body {
-    font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    font-family: var(--font-family);
     background: var(--bg);
     color: var(--ink);
 }
@@ -63,7 +110,7 @@ body {
     left: 0;
     bottom: 0;
     width: var(--sidebar-w);
-    background: var(--panel);
+    background: var(--sidebar-bg);
     color: var(--text);
     display: flex;
     flex-direction: column;
@@ -145,8 +192,7 @@ body.collapsed .sidebar {
 }
 
 /* nav items */
-.nav-item,
-.group-toggle {
+.nav-item {
     display: flex;
     align-items: center;
     gap: 16px;
@@ -166,9 +212,7 @@ body.collapsed .sidebar {
 }
 
 .nav-item:hover,
-.group-toggle:hover,
-.nav-item:focus-visible,
-.group-toggle:focus-visible {
+.nav-item:focus-visible {
     background: var(--panel-hover);
 }
 
@@ -191,8 +235,7 @@ body.collapsed .sidebar {
     transition: stroke .15s;
 }
 
-.nav-item:hover .item-icon,
-.group-toggle:hover .item-icon {
+.nav-item:hover .item-icon {
     stroke: #d7dbe0;
 }
 
@@ -210,68 +253,6 @@ body.collapsed .sidebar {
 body.collapsed .label {
     opacity: 0;
     max-width: 0;
-}
-
-/* collapsible groups */
-.group-toggle .caret {
-    margin-left: auto;
-    flex: 0 0 15px;
-    width: 15px;
-    height: 15px;
-    stroke: var(--text-dim);
-    transition: transform .22s, opacity .15s;
-}
-
-.group.open > .group-toggle .caret {
-    transform: rotate(90deg);
-}
-
-body.collapsed .caret {
-    opacity: 0;
-}
-
-.submenu {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height .25s ease;
-}
-
-.group.open > .submenu {
-    max-height: 400px;
-}
-
-body.collapsed .submenu {
-    max-height: 0;
-}
-
-.submenu a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 11px 20px 11px 58px;
-    color: var(--text-dim);
-    text-decoration: none;
-    font-size: .92rem;
-    white-space: nowrap;
-}
-
-.submenu a:hover,
-.submenu a:focus-visible {
-    color: #fff;
-    background: var(--panel-hover);
-}
-
-.submenu a::before {
-    content: "";
-    flex: 0 0 5px;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: #4a4f55;
-}
-
-.submenu a:hover::before {
-    background: var(--accent);
 }
 
 /* bottom user card */
@@ -381,23 +362,6 @@ body.collapsed .header {
     flex: 1;
 }
 
-/* header right icons */
-.icon-btn {
-    background: none;
-    border: 0;
-    cursor: pointer;
-    padding: 9px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    color: #33383e;
-}
-
-.icon-btn:hover,
-.icon-btn:focus-visible {
-    background: #f1f3f5;
-}
-
 /* user menu */
 .user-menu {
     position: relative;
@@ -488,7 +452,7 @@ body.collapsed .header {
 }
 
 .dropdown .logout {
-    color: #c8433b;
+    color: var(--danger);
 }
 
 .dropdown .logout:hover,
@@ -523,15 +487,7 @@ body.collapsed .main {
     max-width: 900px;
 }
 
-.placeholder {
-    margin-top: 44px;
-    border: 1px dashed #d5dae0;
-    border-radius: 14px;
-    padding: 60px;
-    text-align: center;
-    color: #9aa1a9;
-    font-size: 1rem;
-}
+/* Note: .placeholder removed (superseded by .empty-state) */
 
 /* tooltip element (positioned by JS when collapsed) */
 .tip {
@@ -568,7 +524,14 @@ body.collapsed .main {
 }
 
 /* mobile: sidebar overlays */
-@media (max-width: 760px) {
+/* 768px is the console's mobile breakpoint. Custom properties cannot be used in a media
+   condition and there is no build step, so it stays a literal — but it is a literal in
+   several places at once. Changing it means all of:
+     - the three @media (max-width: 768px) blocks in this file
+     - MOBILE_BREAKPOINT in wwwroot/js/admin.js
+     - mobile-breakpoint="768px" on eleven <ck-responsive-table> elements, which is not
+       droppable: the vendored component defaults to 600px, so each attribute is load-bearing. */
+@media (max-width: 768px) {
     .sidebar {
         transform: translateX(-100%);
         transition: transform .25s;
@@ -602,14 +565,6 @@ body.collapsed .main {
         max-width: 190px;
     }
 
-    body.collapsed .caret {
-        opacity: 1;
-    }
-
-    body.collapsed .group.open > .submenu {
-        max-height: 400px;
-    }
-
     .page-title {
         font-size: 2rem;
     }
@@ -620,7 +575,11 @@ body.collapsed .main {
 }
 
 /* ============ Clients list ============ */
-.page-header {
+/* One wrapper treatment for both page shapes. The visible difference between a list
+   page and an editor page comes from the heading class inside (.page-title vs
+   .hero-title), not from the wrapper. */
+.page-header,
+.editor-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -650,9 +609,21 @@ body.collapsed .main {
     background: #2a2e33;
 }
 
+.btn-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+
 .btn-primary .btn-icon {
     width: 18px;
     height: 18px;
+    margin-right: 0;
     stroke-width: 2.4;
 }
 
@@ -662,6 +633,10 @@ body.collapsed .main {
     border-radius: 14px;
     overflow: hidden;
     background: #fff;
+}
+
+.panel-padded {
+    padding: 28px;
 }
 
 /* Shared styling for every admin table. The ck-responsive-table web component
@@ -689,7 +664,7 @@ ck-responsive-col-head {
     font-size: .85rem;
     letter-spacing: .05em;
     font-weight: 600;
-    color: var(--text-dim, #6b7280);
+    color: var(--text-dim);
     background: #fafbfc;
     border-bottom: 1px solid var(--border);
 }
@@ -809,6 +784,8 @@ ck-responsive-col.actions-cell {
     background: #2ba84a;
 }
 
+/* Part of the status-badge palette (paired with its own tint, alongside .enabled and
+   .disabled), not the danger-action scale — which is why it stays a literal here. */
 .status-badge.failure {
     background: #fdeceb;
     color: #b3261e;
@@ -886,15 +863,12 @@ ck-responsive-col.actions-cell {
     .header,
     .main,
     .label,
-    .caret,
-    .submenu,
     .item-icon,
     .chev,
     .dropdown,
     .tip,
     .btn-primary,
-    .nav-item,
-    .group-toggle {
+    .nav-item {
         transition: none;
     }
 }
@@ -1017,6 +991,10 @@ ck-responsive-col.actions-cell {
     height: 22px;
     stroke: #0f172a;
     flex-shrink: 0;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .card-header h2 {
@@ -1036,14 +1014,26 @@ ck-responsive-col.actions-cell {
     color: #334155;
 }
 
+/* One class, two roles: the Client Details card rows and the Diagnostics / Users
+   definition rows. Both sets of declarations already applied to every .field-group —
+   CSS merges same-selector rules — so this states what they computed together.
+   Note the earlier rule's intent for .field-label (700 weight, #1e293b) has been dead
+   since the second copy arrived: font-weight and color are the two properties both
+   declared, so the later values won. Restoring them is a design decision, not a
+   reconciliation, and is deliberately not made here. */
 .field-group {
     line-height: 1.5;
+    display: flex;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line-soft);
 }
 
 .field-label {
-    font-weight: 700;
-    color: #1e293b;
+    font-weight: 600;
+    color: var(--text-dim);
     margin-right: 6px;
+    min-width: 120px;
 }
 
 .field-value {
@@ -1057,6 +1047,7 @@ ck-responsive-col.actions-cell {
 .scope-chips-row {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 8px;
     margin-top: 8px;
 }
@@ -1109,14 +1100,18 @@ ck-responsive-col.actions-cell {
 .deactivate-icon {
     width: 22px;
     height: 22px;
-    stroke: #b91c1c;
+    stroke: var(--danger-strong);
     flex-shrink: 0;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .deactivate-header h2 {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #b91c1c;
+    color: var(--danger-strong);
     margin: 0;
 }
 
@@ -1142,7 +1137,7 @@ ck-responsive-col.actions-cell {
 
 .btn-danger-outline {
     background: #fff;
-    color: #b91c1c;
+    color: var(--danger-strong);
     border: 1px solid #fca5a5;
     border-radius: 10px;
     padding: 10px 20px;
@@ -1172,8 +1167,8 @@ ck-responsive-table {
     .responsive-table tr {
         padding: 12px;
         border-radius: 8px;
-        background: var(--bg-surface, #fff);
-        border: 1px solid var(--border, #e5e7eb) !important;
+        background: var(--bg-surface);
+        border: 1px solid var(--border) !important;
         margin-bottom: 12px;
     }
 }
@@ -1188,7 +1183,7 @@ ck-responsive-table {
 
 .alert-error {
     background: #fdecea;
-    color: #922b21;
+    color: var(--danger-deep);
     border: 1px solid #f5b7b1;
 }
 
@@ -1197,7 +1192,7 @@ ck-responsive-table {
     background: none;
     border: 0;
     padding: 0;
-    color: #c0392b;
+    color: var(--danger-solid);
     text-decoration: none;
     font-weight: 600;
     font-size: 0.92rem;
@@ -1210,6 +1205,9 @@ ck-responsive-table {
 }
 
 .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
     background: #fff;
     color: var(--ink);
     border: 1px solid var(--border);
@@ -1226,7 +1224,7 @@ ck-responsive-table {
 }
 
 .btn-danger {
-    background: #c0392b;
+    background: var(--danger-solid);
     color: #fff;
     border: 0;
     border-radius: 10px;
@@ -1247,7 +1245,7 @@ ck-responsive-table {
 }
 
 /* ============ Data-* driven modal ============ */
-dialog.modal {
+.modal {
     border: 0;
     border-radius: 14px;
     padding: 0;
@@ -1255,11 +1253,11 @@ dialog.modal {
     box-shadow: var(--shadow);
 }
 
-dialog.modal::backdrop {
+.modal::backdrop {
     background: rgba(15, 20, 28, .5);
 }
 
-dialog.modal form {
+.modal form {
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -1279,7 +1277,7 @@ dialog.modal form {
 }
 
 .modal-body-blocked {
-    color: #922b21;
+    color: var(--danger-deep);
 }
 
 .modal-actions {
@@ -1294,20 +1292,9 @@ dialog.modal form {
 }
 
 /* ============ API resource editor ============ */
-.editor-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
-    flex-wrap: wrap;
-}
+/* .editor-header is declared with .page-header in the Clients list section above. */
 
-.title-with-badge {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
+/* .title-with-badge is defined in the Client Details section above. */
 
 .alert-success {
     background: #eafaf1;
@@ -1335,37 +1322,7 @@ dialog.modal form {
     word-break: break-all;
 }
 
-.editor-tabs {
-    display: flex;
-    gap: 4px;
-    margin-top: 32px;
-    border-bottom: 1px solid var(--border);
-}
-
-.editor-tab {
-    display: inline-block;
-    padding: 12px 18px;
-    font-weight: 600;
-    font-size: .92rem;
-    color: #6b7280;
-    text-decoration: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-}
-
-.editor-tab:hover:not(.disabled) {
-    color: var(--ink);
-}
-
-.editor-tab.active {
-    color: var(--ink);
-    border-bottom-color: var(--accent);
-}
-
-.editor-tab.disabled {
-    color: #c3c8cf;
-    cursor: not-allowed;
-}
+/* .editor-tabs & .editor-tab removed (migrated to ck-tabs) */
 
 .editor-panel {
     margin-top: 0;
@@ -1384,62 +1341,19 @@ dialog.modal form {
 .user-details-tabs {
     display: block !important;
     width: 100% !important;
-    margin: 32px 0 0 !important;
     border: none !important;
     border-radius: 0 !important;
     background: transparent !important;
     overflow: visible !important;
 }
 
+.api-resource-editor-tabs,
+.user-details-tabs {
+    margin: 32px 0 0 !important;
+}
+
 .client-editor-tabs {
-    margin-top: 0 !important;
-}
-
-/* ck-tabs used as the sub-navigation strip shared by the five Client editor pages (WI-07),
-   rendered by Pages/Admin/Clients/_ClientEditorTabs.cshtml. Each tab links to a sibling page,
-   so wwwroot/js/client-editor-tabs.js hides the component's panels and only the headings show.
-   The --tab-* overrides below are scoped to this element so the sub-nav reads as an underline
-   strip and stays visually distinct from the in-page .client-editor-tabs on the same pages. */
-.client-editor-nav {
-    margin-bottom: 28px;
-
-    --tab-bg: transparent;
-    --tab-text: var(--text-dim);
-    --tab-hover-bg: #f5f6f8;
-    --tab-border: var(--border);
-    --primary-hover: transparent; /* active heading background */
-    --text-light: var(--ink); /* active heading text */
-    --primary-color: var(--accent); /* active heading underline */
-}
-
-.client-editor-nav:defined {
-    display: block;
-    width: 100%;
-    border: none;
-    border-radius: 0;
-    background: transparent;
-    overflow: visible;
-}
-
-/* Before the component upgrades - and permanently, if scripting is unavailable - each <ck-tab>
-   still holds the plain link the partial emits. Lay those out as a readable link row. */
-.client-editor-nav:not(:defined) {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-}
-
-.client-editor-nav:not(:defined) a {
-    color: var(--text-dim);
-    font-weight: 600;
-    font-size: .95rem;
-    text-decoration: none;
-}
-
-.client-editor-nav:not(:defined) ck-tab[data-current] a {
-    color: var(--ink);
+    margin: 0 !important;
 }
 
 .editor-form {
@@ -1461,24 +1375,136 @@ dialog.modal form {
     gap: 6px;
 }
 
+.form-group,
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.form-control-sm {
+    max-width: 250px;
+}
+
+.form-control-xs {
+    max-width: 200px;
+}
+
+.form-control-md {
+    max-width: 450px;
+}
+
 .form-label {
+    display: block;
     font-weight: 600;
     font-size: .88rem;
     color: var(--ink);
+    margin-bottom: 2px;
+}
+
+/* <fieldset> used only to group and name related controls. The UA border, padding
+   and margin would read as a second panel nested inside the form's own .panel, so
+   they are cleared; min-width:0 stops the fieldset refusing to shrink in a flex or
+   grid parent, which is a UA quirk specific to this element. Distinct from
+   .editor-fieldset, which is a deliberately bordered box. */
+.fieldset-plain {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+}
+
+.fieldset-plain > legend {
+    padding: 0;
 }
 
 .form-control {
+    display: block;
+    width: 100%;
+    max-width: 550px;
+    box-sizing: border-box;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 8px;
     padding: 10px 14px;
     font-size: .95rem;
     font-family: inherit;
     color: var(--ink);
+    background-color: #fff;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 .form-control:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 1px;
+}
+
+.form-control:disabled {
+    background-color: #f1f3f5;
+    border-color: var(--border);
+    color: var(--text-dim);
+    cursor: not-allowed;
+}
+
+.form-text {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+}
+
+.required {
+    color: var(--danger);
+    font-weight: 700;
+    margin-left: 2px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.92rem;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 0.82rem;
+    border-radius: 6px;
+}
+
+.uri-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    max-width: 600px;
+}
+
+.uri-input-row .form-control {
+    flex: 1;
+    max-width: none;
+}
+
+.uri-input-row .btn-danger {
+    padding: 0;
+    width: 38px;
+    height: 38px;
+    font-size: 1.25rem;
+    line-height: 1;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.uri-add-btn {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .form-actions {
@@ -1487,33 +1513,150 @@ dialog.modal form {
 }
 
 .field-validation-error {
-    color: #922b21;
-    font-size: .85rem;
+    display: block;
+    margin-top: 4px;
+    font-size: 0.82rem;
+    color: var(--danger);
+}
+
+.text-danger {
+    color: var(--danger);
+}
+
+.badge-reserved {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 4px;
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1px solid rgba(200, 67, 59, 0.25);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.badge-success {
+    background: #e6f4ea;
+    color: #1e8e3e;
+    border: 1px solid #1e8e3e;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.badge-primary {
+    background: #e8f0fe;
+    color: #1a73e8;
+    border: 1px solid #1a73e8;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.alert-warning-drift {
+    border-left: 5px solid #b8860b;
+    background: #fdf6e3;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.drift-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.drift-details {
+    font-size: 13px;
+    color: #6b5106;
+}
+
+.audit-metadata {
+    margin-top: 0.4rem;
+}
+
+.audit-metadata summary {
+    cursor: pointer;
+}
+
+.audit-metadata dl {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.25rem 0.75rem;
+    margin: 0.5rem 0;
+}
+
+.audit-metadata dt {
+    font-weight: 600;
+}
+
+.audit-metadata dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.audit-metadata h3 {
+    font-size: 0.9rem;
+    margin: 0.75rem 0 0.25rem;
+}
+
+.audit-metadata pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 .editor-scope-list {
     margin-bottom: 24px;
 }
 
-.scope-chip-form {
+.scope-chip-container {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     background: #f5f6f8;
     border-radius: 999px;
     padding: 4px 6px 4px 12px;
 }
 
-.scope-chip-form .scope-chip {
+.scope-chip-container .scope-chip {
     background: transparent;
     border: 0;
     padding: 0;
 }
 
-.scope-chip-form .action-link-danger {
+/* The form is a flex child of the pill, not the pill itself — the container carries
+   the background, radius and padding. */
+.scope-chip-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.scope-chip-form .action-link-danger,
+.scope-chip-container .action-link-danger {
     font-size: 1.1rem;
     line-height: 1;
     padding: 2px 6px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
 }
 
 .danger-zone {
@@ -1542,6 +1685,7 @@ dialog.modal form {
 }
 
 .danger-row-desc {
+    display: block;
     color: #6b7280;
     font-size: .88rem;
     margin-top: 2px;
@@ -1576,23 +1720,16 @@ dialog.modal form {
     gap: 8px;
 }
 
-.scope-chip-container {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
 .list-filter {
     display: flex;
     gap: 12px;
     padding: 16px 20px;
-    background: var(--bg-surface, #fff);
+    background: var(--bg-surface);
     border-bottom: 1px solid var(--border);
     align-items: center;
 }
 
-.list-filter .form-control {
+.list-filter > .form-control {
     flex: 1;
     max-width: 420px;
 }
@@ -1615,7 +1752,7 @@ dialog.modal form {
     font-weight: 600;
 }
 
-.list-filter .filter-grid .form-control {
+.filter-grid .form-control {
     width: 100%;
     max-width: none;
 }
@@ -1640,21 +1777,24 @@ dialog.modal form {
 
 /* Preset Cards */
 .preset-card {
-    border: 2px solid var(--line-soft, #dde3e8);
+    border: 2px solid var(--line-soft);
     border-radius: 6px;
     padding: 14px;
     cursor: pointer;
     background: #fff;
-    transition: all 0.2s ease;
+    text-align: left;
+    font-family: inherit;
+    color: inherit;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .preset-card:hover {
-    border-color: var(--navy, #16324f);
+    border-color: var(--navy);
     background: #f8fafc;
 }
 
 .preset-card.active {
-    border-color: var(--navy, #16324f);
+    border-color: var(--navy);
     background: #eef2f5;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
@@ -1668,12 +1808,12 @@ dialog.modal form {
     font-weight: 600;
     font-size: 14px;
     margin-bottom: 4px;
-    color: var(--navy, #16324f);
+    color: var(--navy);
 }
 
 .preset-desc {
     font-size: 12px;
-    color: var(--muted, #5a6a78);
+    color: var(--muted);
     line-height: 1.4;
 }
 
@@ -1880,7 +2020,7 @@ dialog.modal form {
 }
 
 /* Responsive: smaller cards on mobile */
-@media (max-width: 760px) {
+@media (max-width: 768px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
     }
@@ -1889,3 +2029,556 @@ dialog.modal form {
         margin-top: 28px;
     }
 }
+
+/* ============ Shared form, alert and button components ============ */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.validation-summary {
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    margin-bottom: 20px;
+}
+
+.validation-summary-valid {
+    display: none;
+}
+
+.validation-summary ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.alert-panel {
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.92rem;
+}
+
+.alert-danger {
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1px solid rgba(200, 67, 59, 0.25);
+}
+
+.alert-warning {
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.alert-dismissible {
+    position: relative;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 16px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-login {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 16px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.btn-login:hover {
+    background: #2557d6;
+    color: #fff;
+}
+
+.btn-tertiary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.btn-tertiary:hover {
+    color: var(--ink);
+    background: #f1f3f5;
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.form-check-input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.form-check-label {
+    font-size: 0.92rem;
+    cursor: pointer;
+}
+
+.d-block {
+    display: block !important;
+}
+
+.panel-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 14px;
+}
+
+.panel-title-danger {
+    color: var(--danger);
+}
+
+.form-option-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+}
+
+.form-option-row-spaced {
+    margin-bottom: 16px;
+}
+
+.checkbox-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.checkbox-label-compact {
+    gap: 6px;
+}
+
+.form-indent {
+    margin-top: 8px;
+}
+
+.section-divider {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+}
+
+.subsection-heading {
+    font-size: 1.1rem;
+    margin: 0 0 16px;
+}
+
+.preset-grid-wide {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.fieldset-spaced {
+    margin-bottom: 16px;
+}
+
+.scope-checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.scope-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid var(--line-soft);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.scope-checkbox-disabled {
+    cursor: not-allowed;
+}
+
+.form-actions-spaced {
+    margin-top: 24px;
+}
+
+.form-actions-wide {
+    gap: 12px;
+}
+/* ============ Page styles — client token settings and user detail ============ */
+
+.refresh-token-settings {
+    display: none;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+}
+
+.user-detail-actions {
+    align-items: center;
+    margin-top: 20px;
+}
+
+.claim-list.user-detail-list,
+.role-list.user-detail-list {
+    margin-bottom: 20px;
+}
+
+.role-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.role-name {
+    font-weight: 500;
+}
+
+.user-detail-subheading {
+    margin: 24px 0 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.role-assignment-form {
+    display: flex;
+    gap: 10px;
+    max-width: 400px;
+}
+
+.form-control-grow {
+    flex: 1;
+}
+
+.claim-row.user-claim-row {
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.claim-row-action {
+    margin-left: auto;
+}
+
+.claim-entry-form {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.user-detail-help {
+    margin-top: 10px;
+    font-size: 0.85rem;
+}
+
+.user-detail-description {
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+}
+
+.panel-danger {
+    border-top: 3px solid var(--danger);
+}
+
+.danger-section {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.danger-action-heading {
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+
+.delete-confirmation-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 400px;
+    margin-bottom: 12px;
+}
+/* ============ Page styles — diagnostics ============ */
+
+.diagnostics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.diagnostic-card {
+    padding: 16px;
+    border: 1px solid var(--line-soft);
+}
+
+.diagnostic-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.text-caption {
+    font-size: 0.85rem;
+}
+
+.diagnostics-intro {
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+}
+
+.plain-list {
+    list-style: none;
+    padding: 0;
+}
+
+.diagnostic-list-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.field-label-wide {
+    min-width: 140px;
+}
+
+.diagnostics-subheading {
+    margin: 20px 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+/* ============ Shared layout and text utilities ============ */
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 12px;
+}
+
+.hero-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.panel-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.inline-action-form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.unlock-btn {
+    cursor: pointer;
+}
+
+.mono {
+    font-family: var(--font-mono);
+}
+
+.claim-list, .role-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.claim-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.editor-fieldset {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+
+.user-username {
+    font-weight: 600;
+}
+
+/* ============ Public & Auth Card Styling ============ */
+body.public-page {
+    background: #f8fafc;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 32px 16px;
+}
+
+body.public-page .public-container {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 440px;
+    padding: 36px 32px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.auth-card-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.auth-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    text-decoration: none;
+}
+
+.auth-brand .brand-icon {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border-radius: 11px;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(47, 107, 255, 0.25);
+}
+
+.auth-brand-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.auth-brand-name {
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--ink);
+    line-height: 1.2;
+}
+
+.auth-brand-sub {
+    font-size: .65rem;
+    letter-spacing: .2em;
+    color: var(--text-dim);
+    font-weight: 600;
+}
+
+.auth-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -.5px;
+    margin-bottom: 6px;
+}
+
+.auth-subtitle {
+    font-size: .92rem;
+    color: var(--muted);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon .field-icon {
+    position: absolute;
+    left: 14px;
+    width: 18px;
+    height: 18px;
+    color: var(--text-dim);
+    pointer-events: none;
+    transition: color .15s ease;
+}
+
+.input-with-icon .input-has-icon {
+    padding-left: 42px;
+    width: 100%;
+}
+
+.input-with-icon:focus-within .field-icon {
+    color: var(--accent);
+}
+
+.auth-submit-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 13px 20px;
+    font-size: .98rem;
+    margin-top: 6px;
+}
+
+.auth-card-footer {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+}
+
+.auth-footer-text {
+    font-size: .8rem;
+    color: var(--text-dim);
+}
+
+@media (max-width: 480px) {
+    body.public-page {
+        padding: 16px 12px;
+    }
+    body.public-page .public-container {
+        padding: 28px 20px;
+    }
+    .auth-title {
+        font-size: 1.35rem;
+    }
+}
+
+/* Accessible screen-reader-only utility */

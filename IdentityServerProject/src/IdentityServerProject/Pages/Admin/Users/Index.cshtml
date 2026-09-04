@@ -4,20 +4,12 @@
     ViewData["Title"] = "Users";
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Users</h1>
-        <p class="page-sub">Provisioned user accounts and access controls</p>
-    </div>
+<page-header title="Users" sub="Provisioned user accounts and access controls">
     <a id="new-user-link" class="btn-primary" asp-page="./Create">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
+        <partial name="_AdminIcon" model='("plus", "btn-icon")' />
         New user
     </a>
-</div>
+</page-header>
 
 <div class="panel">
     @if (!string.IsNullOrEmpty(Model.StatusMessage))
@@ -26,7 +18,10 @@
             @Model.StatusMessage
         </div>
     }
-    <ck-responsive-table class="users-table" mobile-breakpoint="768px">
+
+    <partial name="_ListFilter" model='new ListFilterModel("user-filter", "Filter users", "Filter by name, username, or email", Model.Filter)' />
+
+    <ck-responsive-table mobile-breakpoint="768px">
         <ck-responsive-thead>
             <ck-responsive-col-head>User</ck-responsive-col-head>
             <ck-responsive-col-head>Email</ck-responsive-col-head>
@@ -37,7 +32,7 @@
             @foreach (var userItem in Model.Users.Items)
             {
                 <ck-responsive-row>
-                    <ck-responsive-col class="user-name">
+                    <ck-responsive-col>
                         <a asp-page="./Details" asp-route-id="@userItem.Id" class="user-title-link">
                             @(string.IsNullOrWhiteSpace(userItem.FullName) ? userItem.UserName : userItem.FullName)
                         </a>
@@ -71,28 +66,5 @@
         <div class="empty-state">No users found.</div>
     }
 
-    <div class="pagination-footer">
-        <span class="pagination-summary">Showing @Model.Users.Items.Count of @Model.Users.TotalCount users</span>
-        <div class="pagination-controls">
-            @if (!Model.Users.HasPreviousPage)
-            {
-                <span data-pagination="previous" class="pagination-btn disabled" aria-disabled="true">&lsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
-                   asp-route-PageNumber="@(Model.Users.PageNumber - 1)">&lsaquo;</a>
-            }
-            <span class="pagination-page">Page @Model.Users.PageNumber of @Model.Users.TotalPages</span>
-            @if (!Model.Users.HasNextPage)
-            {
-                <span data-pagination="next" class="pagination-btn disabled" aria-disabled="true">&rsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
-                   asp-route-PageNumber="@(Model.Users.PageNumber + 1)">&rsaquo;</a>
-            }
-        </div>
-    </div>
+    <partial name="_PaginationFooter" model='Model.Users.ToPagination("users", Model.Filter)' />
 </div>

@@ -3,16 +3,14 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Keys";
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Index"),
-        ("Keys", null)
+        new("Admin", "/Admin/Index"),
+        new("Keys")
     };
 }
 
-<div class="page-header">
-    <h1 class="page-title">Signing Keys</h1>
-</div>
+<page-header title="Signing Keys"></page-header>
 
 <div class="panel">
     <h2 class="panel-title" style="margin-bottom: 20px;">Key Material</h2>
@@ -26,7 +24,7 @@
     }
     else
     {
-        <ck-responsive-table class="keys-table" mobile-breakpoint="768px">
+        <ck-responsive-table mobile-breakpoint="768px">
             <ck-responsive-thead>
                 <ck-responsive-col-head>ID / Thumbprint</ck-responsive-col-head>
                 <ck-responsive-col-head>Algorithm</ck-responsive-col-head>
@@ -58,25 +56,3 @@
         </ck-responsive-table>
     }
 </div>
-
-<style>
-    .badge-success {
-        background: #e6f4ea;
-        color: #1e8e3e;
-        border: 1px solid #1e8e3e;
-        border-radius: 999px;
-        padding: 2px 8px;
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-
-    .badge-primary {
-        background: #e8f0fe;
-        color: #1a73e8;
-        border: 1px solid #1a73e8;
-        border-radius: 999px;
-        padding: 2px 8px;
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-</style>

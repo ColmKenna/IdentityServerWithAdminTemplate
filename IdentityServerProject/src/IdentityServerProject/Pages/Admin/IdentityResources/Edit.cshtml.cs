@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using IdentityServerProject.Pages.Shared;
 using IdentityServerProject.Services.IdentityResources;
 using IdentityServerProject.Services.Scopes;
 using IdentityServerProject.Services.Validation;
@@ -44,6 +45,52 @@ public class EditModel(IIdentityResourceEditorService editorService) : PageModel
         ShowInDiscoveryDocument = true,
         UserClaims = []
     };
+
+    /// <summary>
+    ///     The claim chips for the editor, each already told whether it is locked and why.
+    /// </summary>
+    /// <remarks>
+    ///     Which claims a resource may not lose is policy rather than presentation, so the view
+    ///     renders this instead of deciding it. The reasons come from
+    ///     <see cref="BuiltInIdentityResourcePolicy" />, which is also what the service quotes when it
+    ///     refuses, so the lock text and the refusal message cannot drift apart.
+    ///     <para>
+    ///         This only shapes the UI. <c>IdentityResourceEditorService.RemoveClaimCoreAsync</c>
+    ///         applies the same three rules in the same order, so a chip rendered without a remove
+    ///         button is an affordance, not the guard.
+    ///     </para>
+    /// </remarks>
+    public IReadOnlyList<ScopeChipItem> ClaimChips => BuildClaimChips(Editor);
+
+    /// <summary>
+    ///     "openid" is a scope, never a user claim, so it can never be removed from any resource.
+    ///     The authoritative copy is <c>IdentityResourceEditorService.OpenIdClaimType</c>, which is
+    ///     private; this mirrors it for display only and the service still decides.
+    /// </summary>
+    private const string OpenIdClaimType = "openid";
+
+    private static IReadOnlyList<ScopeChipItem> BuildClaimChips(IdentityResourceEditorModel editor) =>
+        editor.UserClaims
+            .Select(claim => new ScopeChipItem(claim, IsLocked(editor, claim), LockReason(editor, claim)))
+            .ToList();
+
+    private static bool IsLocked(IdentityResourceEditorModel editor, string claim) =>
+        editor.IsProtected
+        || string.Equals(claim, OpenIdClaimType, StringComparison.OrdinalIgnoreCase)
+        || BuiltInIdentityResourcePolicy.IsInvariantClaim(editor.Name, claim);
+
+    private static string LockReason(IdentityResourceEditorModel editor, string claim)
+    {
+        // Ordered so the operator gets the specific reason before the general one, matching the
+        // order the service checks them in.
+        if (BuiltInIdentityResourcePolicy.IsInvariantClaim(editor.Name, claim))
+            return BuiltInIdentityResourcePolicy.InvariantClaimMessage(editor.Name, claim);
+
+        if (string.Equals(claim, OpenIdClaimType, StringComparison.OrdinalIgnoreCase))
+            return $"The '{OpenIdClaimType}' claim is a scope rather than a user claim and cannot be removed.";
+
+        return BuiltInIdentityResourcePolicy.ProtectedMessage(editor.Name);
+    }
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {

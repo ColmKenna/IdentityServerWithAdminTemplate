@@ -2,27 +2,21 @@
 @model TokenSettingsModel
 @{
     ViewData["Title"] = "Configure Client Token Settings";
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Clients/Index"),
-        ("Clients", "/Admin/Clients/Index"),
-        (Model.ClientNameDisplay, $"/Admin/Clients/Details/{Model.Id}"),
-        ("Token Settings", null)
+        new("Admin", "/Admin/Index"),
+        new("Clients", "/Admin/Clients/Index"),
+        new(Model.ClientNameDisplay, "/Admin/Clients/Details", new Dictionary<string, string> { { "id", Model.Id } }),
+        new("Token Settings")
     };
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Configure Client Token Settings</h1>
-        <p class="page-sub">Set token lifetimes and consent/offline-access behavior for this client.</p>
-    </div>
-</div>
-
-<partial name="_ClientEditorTabs" model="new ClientEditorTabsModel(Model.Id, ClientEditorTab.TokenSettings)"/>
+<page-header title="Configure Client Token Settings" sub="Set token lifetimes and consent/offline-access behavior for this client.">
+    <partial name="_BackLink" model='new BackLinkModel("./Details", "Back to Client", new Dictionary<string, string> { { "id", Model.Id } })' />
+</page-header>
 
 <form method="post" id="edit-client-token-settings-form">
-    <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger" role="alert"
-         style="display: @(ViewData.ModelState.IsValid ? "none" : "block"); margin-bottom: 20px;"></div>
+    <div asp-validation-summary="All" class="validation-summary alert-panel alert-danger" role="alert"></div>
 
     <ck-tabs id="client-token-settings-tabs" class="client-editor-tabs">
         <ck-tab label="Token Lifetimes" active="@(Model.ActiveTabIndex == 0 ? "active" : null)">
@@ -43,21 +37,20 @@
             </div>
         </ck-tab>
         <ck-tab label="Consent &amp; Offline Access" active="@(Model.ActiveTabIndex == 1 ? "active" : null)">
-            <div style="display: flex; gap: 24px; flex-wrap: wrap;">
-                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <div class="form-option-row">
+                <label class="checkbox-label">
                     <input type="checkbox" asp-for="Input.RequireConsent"/>
                     <span>Require Consent</span>
                 </label>
 
-                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-label">
                     <input type="checkbox" asp-for="Input.AllowOfflineAccess" id="allow-offline-access"/>
                     <span>Allow Offline Access (Refresh Tokens)</span>
                 </label>
             </div>
 
-            <div id="refresh-token-settings"
-                 style="margin-top: 24px; border-top: 1px solid var(--border, #e6e8eb); padding-top: 24px; display: none;">
-                <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 16px;">Refresh Token Policies</h3>
+            <div id="refresh-token-settings" class="refresh-token-settings">
+                <h3 class="subsection-heading">Refresh Token Policies</h3>
 
                 <div class="form-field">
                     <label asp-for="Input.RefreshTokenUsage" class="form-label">Refresh Token Usage</label>
@@ -65,8 +58,8 @@
                         <option value="0">ReUse (0)</option>
                         <option value="1">OneTime (1)</option>
                     </select>
-                    <small class="form-text">ReUse: the refresh token handle will stay the same when refreshing
-                        tokens.<br/>OneTime: the refresh token handle will be updated when refreshing tokens.</small>
+                    <small class="form-text">ReUse: the refresh token handle will stay the same when refreshing tokens.</small>
+                    <small class="form-text">OneTime: the refresh token handle will be updated when refreshing tokens.</small>
                 </div>
 
                 <div class="form-field">
@@ -75,8 +68,8 @@
                         <option value="0">Sliding (0)</option>
                         <option value="1">Absolute (1)</option>
                     </select>
-                    <small class="form-text">Absolute: the refresh token will expire on a fixed point in time.<br/>Sliding:
-                        when refreshing the token, the lifetime of the refresh token will be renewed.</small>
+                    <small class="form-text">Absolute: the refresh token will expire on a fixed point in time.</small>
+                    <small class="form-text">Sliding: when refreshing the token, the lifetime of the refresh token will be renewed.</small>
                 </div>
 
                 <div class="form-field">
@@ -100,66 +93,12 @@
         </ck-tab>
     </ck-tabs>
 
-    <div class="form-actions" style="display: flex; gap: 12px; margin-top: 20px;">
+    <div class="form-actions">
         <button type="submit" class="btn-primary">Save Changes</button>
         <a asp-page="./Details" asp-route-id="@Model.Id" class="btn-secondary">Cancel</a>
     </div>
 </form>
 
-<style>
-    .form-field {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        margin-bottom: 20px;
-    }
-
-    .form-control {
-        width: 100%;
-        max-width: 250px;
-        border: 1px solid var(--border, #e6e8eb);
-        border-radius: 8px;
-        padding: 10px 14px;
-        font-size: 0.95rem;
-    }
-
-    .form-label {
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: var(--ink, #17191c);
-    }
-
-    .form-text {
-        font-size: 0.825rem;
-        color: var(--text-dim, #8b9096);
-        margin-top: 2px;
-    }
-
-    .field-validation-error {
-        font-size: 0.85rem;
-        color: #c8433b;
-        margin-top: 2px;
-    }
-</style>
-
 @section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const checkbox = document.getElementById('allow-offline-access');
-            const panel = document.getElementById('refresh-token-settings');
-
-            function togglePanel() {
-                if (checkbox.checked) {
-                    panel.style.display = 'block';
-                } else {
-                    panel.style.display = 'none';
-                }
-            }
-
-            if (checkbox && panel) {
-                checkbox.addEventListener('change', togglePanel);
-                togglePanel();
-            }
-        });
-    </script>
+    <script src="~/js/client-token-settings.js" asp-append-version="true"></script>
 }

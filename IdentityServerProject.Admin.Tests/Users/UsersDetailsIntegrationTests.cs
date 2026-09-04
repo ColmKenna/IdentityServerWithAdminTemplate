@@ -288,7 +288,13 @@ public class UsersDetailsIntegrationTests : IDisposable
             as IHtmlButtonElement;
         Assert.NotNull(removeButton);
         Assert.True(removeButton!.IsDisabled);
-        Assert.Contains("own SysAdmin", removeButton.Title, StringComparison.OrdinalIgnoreCase);
+
+        // The reason is visible text, not a title. A disabled control is not focusable, so a
+        // title on it is unreachable by keyboard and never announced — it explained the refusal
+        // only to a sighted mouse user hovering the button they had been told not to press.
+        IElement? reason = document.QuerySelector("#tab-panel-roles .danger-row-desc");
+        Assert.NotNull(reason);
+        Assert.Contains("own SysAdmin", reason!.TextContent, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

@@ -4,12 +4,8 @@
     ViewData["Title"] = "Persisted Grants";
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Persisted Grants</h1>
-        <p class="page-sub">Active user sessions, refresh tokens, and consent grants stored by IdentityServer</p>
-    </div>
-</div>
+<page-header title="Persisted Grants" sub="Active user sessions, refresh tokens, and consent grants stored by IdentityServer">
+</page-header>
 
 @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
 {
@@ -43,7 +39,7 @@
         </div>
     </form>
 
-    <ck-responsive-table class="grants-table" mobile-breakpoint="768px">
+    <ck-responsive-table mobile-breakpoint="768px">
         <ck-responsive-thead>
             <ck-responsive-col-head>Grant / Type</ck-responsive-col-head>
             <ck-responsive-col-head>Client</ck-responsive-col-head>
@@ -56,7 +52,7 @@
             @foreach (var grant in Model.Grants.Items)
             {
                 <ck-responsive-row>
-                    <ck-responsive-col class="grant-key">
+                    <ck-responsive-col>
                         <code>@grant.Key</code>
                         <div><span class="badge">@grant.Type</span></div>
                     </ck-responsive-col>
@@ -98,36 +94,10 @@
         <div class="empty-state">No persisted grants found.</div>
     }
 
-    <div class="pagination-footer">
-        <span
-            class="pagination-summary">Showing @Model.Grants.Items.Count of @Model.Grants.TotalCount persisted grants</span>
-        <div class="pagination-controls">
-            @if (!Model.Grants.HasPreviousPage)
-            {
-                <span data-pagination="previous" class="pagination-btn disabled" aria-disabled="true">&lsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="previous" class="pagination-btn" asp-page="./Index"
-                   asp-route-PageNumber="@(Model.Grants.PageNumber - 1)" asp-route-SubjectId="@Model.SubjectId"
-                   asp-route-ClientId="@Model.ClientId" asp-route-TypeFilter="@Model.TypeFilter">&lsaquo;</a>
-            }
-            <span class="pagination-page">Page @Model.Grants.PageNumber of @Model.Grants.TotalPages</span>
-            @if (!Model.Grants.HasNextPage)
-            {
-                <span data-pagination="next" class="pagination-btn disabled" aria-disabled="true">&rsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="next" class="pagination-btn" asp-page="./Index"
-                   asp-route-PageNumber="@(Model.Grants.PageNumber + 1)" asp-route-SubjectId="@Model.SubjectId"
-                   asp-route-ClientId="@Model.ClientId" asp-route-TypeFilter="@Model.TypeFilter">&rsaquo;</a>
-            }
-        </div>
-    </div>
+    <partial name="_PaginationFooter" model='Model.Grants.ToPagination("persisted grants", Model.GetRouteValues())' />
 </div>
 
-<dialog id="revoke-grant-modal" class="modal">
+<dialog id="revoke-grant-modal" class="modal" aria-labelledby="revoke-grant-modal-title">
     <form method="post" asp-page-handler="Revoke">
         <input type="hidden" name="key" id="revoke-grant-modal-key-input" value=""/>
         <input type="hidden" name="PageNumber" value="@Model.Grants.PageNumber"/>
@@ -135,7 +105,7 @@
         <input type="hidden" name="ClientId" value="@Model.ClientId"/>
         <input type="hidden" name="TypeFilter" value="@Model.TypeFilter"/>
 
-        <h2 class="modal-title">Revoke persisted grant</h2>
+        <h2 class="modal-title" id="revoke-grant-modal-title">Revoke persisted grant</h2>
 
         <p class="modal-body" id="revoke-grant-modal-message">
             Are you sure you want to revoke grant <strong id="revoke-grant-modal-key-text"></strong> for client

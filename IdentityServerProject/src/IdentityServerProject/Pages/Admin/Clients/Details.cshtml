@@ -2,11 +2,11 @@
 @model DetailsModel
 @{
     ViewData["Title"] = Model.Client.ClientName;
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Clients/Index"),
-        ("Clients", "/Admin/Clients/Index"),
-        (Model.Client.ClientName, null)
+        new("Admin", "/Admin/Index"),
+        new("Clients", "/Admin/Clients/Index"),
+        new(Model.Client.ClientName)
     };
 }
 
@@ -28,21 +28,10 @@
             </div>
             <div style="display: flex; gap: 12px; align-items: center;">
                 <a asp-page="./Clone" asp-route-sourceClientId="@Model.Client.ClientId" class="btn-secondary btn-sm">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                         stroke-linejoin="round" style="width: 16px; height: 16px; margin-right: 4px;">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
+                    <partial name="_AdminIcon" model='("clone", "btn-icon")' />
                     Clone Client
                 </a>
-                <a asp-page="./Index" class="back-link">
-                    <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                         stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    Back to list
-                </a>
+                <partial name="_BackLink" />
             </div>
         </div>
     </div>
@@ -52,13 +41,7 @@
         <!-- Card 1: Basics -->
         <div class="panel detail-card" id="card-basics">
             <div class="card-header">
-                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                     stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-                    <line x1="7" y1="8" x2="12" y2="8"></line>
-                    <line x1="7" y1="12" x2="17" y2="12"></line>
-                    <line x1="7" y1="16" x2="14" y2="16"></line>
-                </svg>
+                <partial name="_AdminIcon" model='("card-basics", "card-icon")' />
                 <h2>Basics</h2>
             </div>
             <div class="card-body">
@@ -81,18 +64,7 @@
         <!-- Card 2: Authentication & Redirects -->
         <div class="panel detail-card" id="card-auth-redirects">
             <div class="card-header">
-                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                     stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="4" y1="21" x2="4" y2="14"></line>
-                    <line x1="4" y1="10" x2="4" y2="3"></line>
-                    <line x1="12" y1="21" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12" y2="3"></line>
-                    <line x1="20" y1="21" x2="20" y2="16"></line>
-                    <line x1="20" y1="12" x2="20" y2="3"></line>
-                    <line x1="1" y1="14" x2="7" y2="14"></line>
-                    <line x1="9" y1="8" x2="15" y2="8"></line>
-                    <line x1="17" y1="16" x2="23" y2="16"></line>
-                </svg>
+                <partial name="_AdminIcon" model='("card-auth", "card-icon")' />
                 <h2>Authentication &amp; Redirects</h2>
             </div>
             <div class="card-body">
@@ -122,12 +94,7 @@
         <!-- Card 3: Secrets -->
         <div class="panel detail-card" id="card-secrets">
             <div class="card-header">
-                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                     stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 2l-2 2m-2-2l2 2m7 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    <circle cx="7.5" cy="7.5" r="2.5"></circle>
-                    <path d="M14 10l7.5 7.5a2.12 2.12 0 01-3 3L11 13"></path>
-                </svg>
+                <partial name="_AdminIcon" model='("card-secrets", "card-icon")' />
                 <h2>Secrets</h2>
             </div>
             <div class="card-body">
@@ -148,15 +115,7 @@
         <!-- Card 4: Permissions (Scopes) -->
         <div class="panel detail-card" id="card-scopes">
             <div class="card-header">
-                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                     stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="8" y1="6" x2="21" y2="6"></line>
-                    <line x1="8" y1="12" x2="21" y2="12"></line>
-                    <line x1="8" y1="18" x2="21" y2="18"></line>
-                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                </svg>
+                <partial name="_AdminIcon" model='("card-scopes", "card-icon")' />
                 <h2>Permissions (Scopes)</h2>
             </div>
             <div class="card-body">
@@ -183,11 +142,7 @@
         <!-- Card 5: Token Settings -->
         <div class="panel detail-card" id="card-token-settings">
             <div class="card-header">
-                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                     stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
+                <partial name="_AdminIcon" model='("card-tokens", "card-icon")' />
                 <h2>Token Settings</h2>
             </div>
             <div class="card-body">
@@ -214,12 +169,7 @@
     <!-- Bottom Danger/Warning Zone: Deactivate Client Application -->
     <div class="panel deactivate-card" id="card-deactivate">
         <div class="deactivate-header">
-            <svg class="deactivate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
+            <partial name="_AdminIcon" model='("shield-alert", "deactivate-icon")' />
             <h2>@(Model.Client.Enabled ? "Deactivate Client Application" : "Activate Client Application")</h2>
         </div>
         <div class="deactivate-content">
@@ -247,11 +197,7 @@
     <!-- Bottom Danger Zone: Delete Client Application -->
     <div class="panel deactivate-card" id="card-delete">
         <div class="deactivate-header">
-            <svg class="deactivate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
-            </svg>
+            <partial name="_AdminIcon" model='("trash", "deactivate-icon")' />
             <h2>Delete Client Application</h2>
         </div>
         <div class="deactivate-content">
@@ -266,15 +212,17 @@
                     @:@Model.Client.DeleteBlockReason
                 }
             </p>
-            <form asp-page-handler="Delete" asp-route-id="@Model.Client.ClientId" method="post" class="deactivate-form"
-                  onsubmit="return confirm('Permanently delete this client? This cannot be undone.');">
+            <form asp-page-handler="Delete" asp-route-id="@Model.Client.ClientId" method="post" class="deactivate-form">
                 <label for="delete-confirmation" class="field-label">Type <code>DELETE</code> to confirm</label>
                 <input id="delete-confirmation" asp-for="DeleteConfirmation" class="form-control" autocomplete="off"
                        disabled="@(!Model.Client.CanDelete)"/>
-                <button type="submit" class="btn-danger-outline" disabled="@(!Model.Client.CanDelete)"
-                        title="@(Model.Client.CanDelete ? null : Model.Client.DeleteBlockReason)">
+                <button type="submit" class="btn-danger-outline" disabled="@(!Model.Client.CanDelete)">
                     Delete client
                 </button>
+                @if (!Model.Client.CanDelete)
+                {
+                    <p class="danger-row-desc">@Model.Client.DeleteBlockReason</p>
+                }
             </form>
         </div>
     </div>

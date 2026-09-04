@@ -5,12 +5,8 @@
     ViewData["Title"] = "Audit Log";
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Audit Log</h1>
-        <p class="page-sub">Searchable, read-only history of administrative actions</p>
-    </div>
-</div>
+<page-header title="Audit Log" sub="Searchable, read-only history of administrative actions">
+</page-header>
 
 <div class="panel">
     <form method="get" class="list-filter" role="search">
@@ -51,7 +47,7 @@
         </div>
     </form>
 
-    <ck-responsive-table class="audit-log-table" mobile-breakpoint="768px">
+    <ck-responsive-table mobile-breakpoint="768px">
         <ck-responsive-thead>
             <ck-responsive-col-head>Actor</ck-responsive-col-head>
             <ck-responsive-col-head>Action</ck-responsive-col-head>
@@ -68,13 +64,13 @@
                         @switch (entry.Outcome)
                         {
                             case AuditOutcome.Succeeded:
-                                <span class="status-badge success" title="Succeeded">✓</span>
+                                <span class="status-badge success"><span aria-hidden="true">✓</span><span class="visually-hidden">Succeeded</span></span>
                                 break;
                             case AuditOutcome.Denied:
-                                <span class="status-badge warning" title="Denied">⚠</span>
+                                <span class="status-badge warning"><span aria-hidden="true">⚠</span><span class="visually-hidden">Denied</span></span>
                                 break;
                             default:
-                                <span class="status-badge failure" title="Failed">✗</span>
+                                <span class="status-badge failure"><span aria-hidden="true">✗</span><span class="visually-hidden">Failed</span></span>
                                 break;
                         }
                         @entry.Category / @entry.Action
@@ -100,12 +96,12 @@
                             </dl>
                             @if (!string.IsNullOrWhiteSpace(entry.OldValuesJson))
                             {
-                                <h3>Before</h3>
+                                <strong>Before</strong>
                                 <pre>@entry.OldValuesJson</pre>
                             }
                             @if (!string.IsNullOrWhiteSpace(entry.NewValuesJson))
                             {
-                                <h3>After</h3>
+                                <strong>After</strong>
                                 <pre>@entry.NewValuesJson</pre>
                             }
                         </details>
@@ -121,78 +117,5 @@
         <div class="empty-state">No audit log entries found.</div>
     }
 
-    <div class="pagination-footer">
-        <span
-            class="pagination-summary">Showing @Model.AuditLogEntries.Items.Count of @Model.AuditLogEntries.TotalCount entries</span>
-        <div class="pagination-controls">
-            @if (!Model.AuditLogEntries.HasPreviousPage)
-            {
-                <span data-pagination="previous" class="pagination-btn disabled" aria-disabled="true">&lsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="previous" class="pagination-btn" asp-page="./Index"
-                   asp-route-Filter.ActorSubjectId="@Model.Filter.ActorSubjectId"
-                   asp-route-Filter.TargetId="@Model.Filter.TargetId"
-                   asp-route-Filter.Category="@Model.Filter.Category?.Value"
-                   asp-route-Filter.Action="@Model.Filter.Action?.Value"
-                   asp-route-Filter.Outcome="@Model.Filter.Outcome"
-                   asp-route-Filter.CorrelationId="@Model.Filter.CorrelationId"
-                   asp-route-PageNumber="@(Model.AuditLogEntries.PageNumber - 1)">&lsaquo;</a>
-            }
-            <span
-                class="pagination-page">Page @Model.AuditLogEntries.PageNumber of @Model.AuditLogEntries.TotalPages</span>
-            @if (!Model.AuditLogEntries.HasNextPage)
-            {
-                <span data-pagination="next" class="pagination-btn disabled" aria-disabled="true">&rsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="next" class="pagination-btn" asp-page="./Index"
-                   asp-route-Filter.ActorSubjectId="@Model.Filter.ActorSubjectId"
-                   asp-route-Filter.TargetId="@Model.Filter.TargetId"
-                   asp-route-Filter.Category="@Model.Filter.Category?.Value"
-                   asp-route-Filter.Action="@Model.Filter.Action?.Value"
-                   asp-route-Filter.Outcome="@Model.Filter.Outcome"
-                   asp-route-Filter.CorrelationId="@Model.Filter.CorrelationId"
-                   asp-route-PageNumber="@(Model.AuditLogEntries.PageNumber + 1)">&rsaquo;</a>
-            }
-        </div>
-    </div>
+    <partial name="_PaginationFooter" model='Model.AuditLogEntries.ToPagination("entries", Model.GetRouteValues())' />
 </div>
-
-<style>
-    .audit-metadata {
-        margin-top: 0.4rem;
-    }
-
-    .audit-metadata summary {
-        cursor: pointer;
-    }
-
-    .audit-metadata dl {
-        display: grid;
-        grid-template-columns: max-content minmax(0, 1fr);
-        gap: 0.25rem 0.75rem;
-        margin: 0.5rem 0;
-    }
-
-    .audit-metadata dt {
-        font-weight: 600;
-    }
-
-    .audit-metadata dd {
-        margin: 0;
-        overflow-wrap: anywhere;
-    }
-
-    .audit-metadata h3 {
-        font-size: 0.9rem;
-        margin: 0.75rem 0 0.25rem;
-    }
-
-    .audit-metadata pre {
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-    }
-</style>

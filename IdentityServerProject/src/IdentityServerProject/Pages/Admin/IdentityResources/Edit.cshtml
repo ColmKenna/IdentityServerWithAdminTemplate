@@ -1,25 +1,19 @@
 @page
-@using IdentityServerProject.Services.IdentityResources
 @model EditModel
 @{
     ViewData["Title"] = Model.Editor.Name;
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
+    {
+        new("Admin", "/Admin/Index"),
+        new("Identity Resources", "/Admin/IdentityResources/Index"),
+        new(Model.Editor.Name)
+    };
     var isProtected = Model.Editor.IsProtected;
 }
 
-<div class="editor-header">
-    <div>
-        <h1 class="hero-title">@Model.Editor.Name</h1>
-        <p class="page-sub">Manage display name, description, flags, and user claims for this identity resource.</p>
-    </div>
-    <a asp-page="./Index" class="back-link">
-        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-        Back to list
-    </a>
-</div>
+<page-header title="@Model.Editor.Name" sub="Manage display name, description, flags, and user claims for this identity resource." variant="editor">
+    <partial name="_BackLink" />
+</page-header>
 
 <div class="panel editor-panel">
     @if (isProtected)
@@ -32,9 +26,9 @@
     }
 
     <form method="post" asp-page-handler="Save" asp-route-name="@Model.Editor.Name" class="editor-form">
-        <div asp-validation-summary="All" class="validation-summary"></div>
+        <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
 
-        <fieldset class="editor-fieldset" style="border:0; padding:0; margin:0; min-width:0;" disabled="@isProtected">
+        <fieldset class="fieldset-plain" disabled="@isProtected">
 
             <div class="form-field">
                 <label class="form-label" for="resource-name">Name</label>
@@ -57,28 +51,23 @@
 
             <div class="form-group checkbox-grid">
                 <div class="form-check">
-                    <input class="form-control" type="checkbox" id="resource-enabled" asp-for="Input.Enabled"/>
-                    <label class="form-check-label"
-                           for="resource-enabled">@Html.DisplayNameFor(m => m.Input.Enabled)</label>
+                    <input class="form-check-input" type="checkbox" asp-for="Input.Enabled"/>
+                    <label class="form-check-label" asp-for="Input.Enabled"></label>
                 </div>
 
                 <div class="form-check">
-                    <input class="form-control" type="checkbox" id="resource-required" asp-for="Input.Required"/>
-                    <label class="form-check-label"
-                           for="resource-required">@Html.DisplayNameFor(m => m.Input.Required)</label>
+                    <input class="form-check-input" type="checkbox" asp-for="Input.Required"/>
+                    <label class="form-check-label" asp-for="Input.Required"></label>
                 </div>
 
                 <div class="form-check">
-                    <input class="form-control" type="checkbox" id="resource-emphasize" asp-for="Input.Emphasize"/>
-                    <label class="form-check-label"
-                           for="resource-emphasize">@Html.DisplayNameFor(m => m.Input.Emphasize)</label>
+                    <input class="form-check-input" type="checkbox" asp-for="Input.Emphasize"/>
+                    <label class="form-check-label" asp-for="Input.Emphasize"></label>
                 </div>
 
                 <div class="form-check">
-                    <input class="form-control" type="checkbox" id="resource-show-discovery"
-                           asp-for="Input.ShowInDiscoveryDocument"/>
-                    <label class="form-check-label"
-                           for="resource-show-discovery">@Html.DisplayNameFor(m => m.Input.ShowInDiscoveryDocument)</label>
+                    <input class="form-check-input" type="checkbox" asp-for="Input.ShowInDiscoveryDocument"/>
+                    <label class="form-check-label" asp-for="Input.ShowInDiscoveryDocument"></label>
                 </div>
             </div>
 
@@ -91,45 +80,11 @@
 
     <h2 class="section-title">User Claims</h2>
 
-    @if (Model.Editor.UserClaims.Count > 0)
-    {
-        <div class="scope-chips-row editor-scope-list">
-            @foreach (var claim in Model.Editor.UserClaims)
-            {
-                var isOpenId = string.Equals(claim, "openid", StringComparison.OrdinalIgnoreCase);
-                var isInvariant = BuiltInIdentityResourcePolicy.IsInvariantClaim(Model.Editor.Name, claim);
-                var isLocked = isProtected || isOpenId || isInvariant;
-                var lockReason = isInvariant
-                    ? $"The '{claim}' claim is required by the '{Model.Editor.Name}' identity resource"
-                    : isOpenId
-                        ? "The 'openid' claim is required and protected"
-                        : "This resource is protected and its claims are read-only";
-                <div class="scope-chip-container" data-claim-locked="@(isLocked ? "true" : "false")">
-                    <code class="scope-chip" style="@(isLocked ? "opacity: 0.6;" : "")">@claim</code>
-                    @if (!isLocked)
-                    {
-                        <form method="post" asp-page-handler="RemoveClaim" asp-route-name="@Model.Editor.Name"
-                              asp-route-claimType="@claim" class="scope-chip-form">
-                            <button type="submit" class="action-link action-link-danger" title="Remove @claim">&times;
-                            </button>
-                        </form>
-                    }
-                    else
-                    {
-                        <span class="action-link" title="@lockReason">🔒</span>
-                    }
-                </div>
-            }
-        </div>
-    }
-    else
-    {
-        <div class="empty-state">No claims configured.</div>
-    }
+    <partial name="_ScopeChipsRow" model='new ScopeChipsRowModel(Model.ClaimChips, "No claims configured.", "RemoveClaim", Model.Editor.Name, "claimType")' />
 
     <form method="post" asp-page-handler="AddClaim" asp-route-name="@Model.Editor.Name"
           class="editor-form editor-subform">
-        <fieldset class="editor-fieldset" style="border:0; padding:0; margin:0; min-width:0;" disabled="@isProtected">
+        <fieldset class="fieldset-plain" disabled="@isProtected">
             <h3 class="section-title">Add a claim type</h3>
             <div class="form-field">
                 <label class="form-label" for="new-claim-type">Claim type</label>

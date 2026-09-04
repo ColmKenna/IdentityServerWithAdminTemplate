@@ -68,42 +68,58 @@ public partial class ClientDetailsService
         if (expiration.HasValue && expiration.Value.ToUniversalTime() <= DateTime.UtcNow)
             return await DenySecretExpirationInPastAsync(clientId, cancellationToken);
 
-        await using IDbContextTransaction transaction =
-            await _configurationDbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable,
-                cancellationToken);
+        string targetName = clientId;
+        var outcome = ClientSecretGenerateResult.Failed("Client not found.");
         try
         {
-            Client? client = await _configurationDbContext.Clients
-                .Include(c => c.ClientSecrets)
-                .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
-
-            if (client is null)
-                return await DenySecretGenerationClientNotFoundAsync(transaction, clientId, cancellationToken);
-
-            string plaintextSecret = CryptoRandom.CreateUniqueId();
-            client.ClientSecrets.Add(new ClientSecret
+            IExecutionStrategy strategy = _configurationDbContext.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                Description = trimmedDescription,
-                Value = plaintextSecret.Sha256(),
-                Type = SecretType.SharedSecret.ToSecretTypeValue(),
-                Expiration = expiration?.ToUniversalTime(),
-                Created = DateTime.UtcNow
+                _configurationDbContext.ChangeTracker.Clear();
+                await using IDbContextTransaction transaction =
+                    await _configurationDbContext.Database.BeginTransactionAsync(
+                        IsolationLevel.Serializable, cancellationToken);
+
+                Client? client = await _configurationDbContext.Clients
+                    .Include(c => c.ClientSecrets)
+                    .FirstOrDefaultAsync(c => c.ClientId == clientId, cancellationToken);
+
+                if (client is null)
+                {
+                    outcome = ClientSecretGenerateResult.Failed("Client not found.");
+                    await transaction.RollbackAsync(cancellationToken);
+                    return;
+                }
+
+                targetName = client.ClientName ?? clientId;
+                string plaintextSecret = CryptoRandom.CreateUniqueId();
+                client.ClientSecrets.Add(new ClientSecret
+                {
+                    Description = trimmedDescription,
+                    Value = plaintextSecret.Sha256(),
+                    Type = SecretType.SharedSecret.ToSecretTypeValue(),
+                    Expiration = expiration?.ToUniversalTime(),
+                    Created = DateTime.UtcNow
+                });
+
+                await _configurationDbContext.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                outcome = ClientSecretGenerateResult.Succeeded(plaintextSecret);
             });
 
-            await _configurationDbContext.SaveChangesAsync(cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
+            if (!outcome.Success)
+                return await DenySecretGenerationClientNotFoundAsync(clientId, targetName, cancellationToken);
 
             await _auditWriter.WriteAsync(new AdminAuditEvent(
                 AuditCategory.Client, AuditAction.GenerateSecret, AuditOutcome.Succeeded, AuditReasonCode.Succeeded,
-                clientId, client.ClientName ?? clientId,
+                clientId, targetName,
                 Details: "Generated new client secret"), cancellationToken);
-            return ClientSecretGenerateResult.Succeeded(plaintextSecret);
+
+            return outcome;
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync(cancellationToken);
-            await AuditFailedAsync(AuditAction.GenerateSecret, clientId, clientId, ex, cancellationToken);
+            await AuditFailedAsync(AuditAction.GenerateSecret, clientId, targetName, ex, cancellationToken);
             throw;
         }
     }
@@ -133,10 +149,9 @@ public partial class ClientDetailsService
     }
 
     private async Task<ClientSecretGenerateResult> DenySecretGenerationClientNotFoundAsync(
-        IDbContextTransaction transaction, string clientId, CancellationToken cancellationToken)
+        string clientId, string targetName, CancellationToken cancellationToken)
     {
-        await transaction.RollbackAsync(cancellationToken);
-        await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.NotFound, clientId, clientId,
+        await AuditDeniedAsync(AuditAction.GenerateSecret, AuditReasonCode.NotFound, clientId, targetName,
             "Client not found.", cancellationToken);
         return ClientSecretGenerateResult.Failed("Client not found.");
     }

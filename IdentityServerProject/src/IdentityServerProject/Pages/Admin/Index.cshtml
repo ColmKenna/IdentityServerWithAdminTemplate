@@ -2,24 +2,43 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Admin Dashboard";
-    ViewData["BreadcrumbItems"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", null)
+        new("Admin")
+    };
+
+    @* Both groups use the same card shape so one loop can render them. Warning state and
+       badge are null for everything except Diagnostics today, but they are part of the
+       shape rather than a second one. *@
+    var cardGroups = new[]
+    {
+        (Label: "Configure", Cards: new[]
+        {
+            (Page: "/Admin/Clients/Index", Id: "dashboard-card-clients", Icon: "clients", Title: "Clients", Desc: "OAuth/OIDC client applications, redirect URIs, and credentials.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/Apis/Index", Id: "dashboard-card-apis", Icon: "apis", Title: "API Resources", Desc: "Protected API definitions, secrets, and user claims.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/ApiScopes/Index", Id: "dashboard-card-apiscopes", Icon: "apiscopes", Title: "API Scopes", Desc: "Granular token permissions, resource associations, and audiences.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/IdentityResources/Index", Id: "dashboard-card-identityresources", Icon: "identityresources", Title: "Identity Resources", Desc: "OpenID Connect scopes such as openid, profile, and email.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/Keys/Index", Id: "dashboard-card-keys", Icon: "keys", Title: "Signing Keys", Desc: "Active and historical cryptographic keys for token signing.", IsWarning: false, Badge: (int?)null)
+        }),
+        (Label: "Administer", Cards: new[]
+        {
+            (Page: "/Admin/Users/Index", Id: "dashboard-card-users", Icon: "users", Title: "Users", Desc: "Manage accounts, roles, claims, and credentials.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/Roles/Index", Id: "dashboard-card-roles", Icon: "roles", Title: "Roles", Desc: "Define and manage roles for access control.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/Grants/Index", Id: "dashboard-card-grants", Icon: "grants", Title: "Persisted Grants", Desc: "Active refresh tokens, authorization codes, and consent records.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/AuditLogs/Index", Id: "dashboard-card-auditlogs", Icon: "auditlogs", Title: "Audit Logs", Desc: "Security event trail, actor logins, and administrative mutations.", IsWarning: false, Badge: (int?)null),
+            (Page: "/Admin/Diagnostics/Index", Id: "dashboard-card-diagnostics", Icon: "diagnostics", Title: "Diagnostics", Desc: "Store connectivity, signing credentials, and claim validation.", IsWarning: Model.HasIssues, Badge: Model.HasIssues ? Model.Issues.Count : (int?)null)
+        })
     };
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Admin Dashboard</h1>
-        <p class="page-sub">IdentityServer management, configuration, and security operations.</p>
-    </div>
-</div>
+<page-header title="Admin Dashboard" sub="IdentityServer management, configuration, and security operations.">
+</page-header>
 
 @if (Model.HasIssues)
 {
     <div class="dashboard-alert" id="dashboard-alert" role="alert">
         <div class="dashboard-alert-header">
-            <svg class="dashboard-alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            <svg aria-hidden="true" class="dashboard-alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round">
                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
                 <line x1="12" y1="9" x2="12" y2="13"/>
@@ -37,189 +56,31 @@
     </div>
 }
 
-<div class="dashboard-section-label">Configure</div>
+@foreach (var cardGroup in cardGroups)
+{
+    <div class="dashboard-section-label">@cardGroup.Label</div>
 
-<div class="dashboard-grid">
-    <a asp-page="/Admin/Clients/Index" class="dashboard-card" id="dashboard-card-clients">
-        <div class="dashboard-card-icon-wrap">
-            <svg class="dashboard-card-icon" viewBox="0 0 24 24">
-                <rect x="2" y="4" width="20" height="13" rx="2"/>
-                <line x1="8" y1="21" x2="16" y2="21"/>
-                <line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>
-        </div>
-        <div class="dashboard-card-body">
-            <span class="dashboard-card-title">Clients</span>
-            <span class="dashboard-card-desc">OAuth/OIDC client applications, redirect URIs, and credentials.</span>
-        </div>
-        <svg class="dashboard-card-arrow" viewBox="0 0 24 24">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
-    </a>
-
-    <a asp-page="/Admin/Apis/Index" class="dashboard-card" id="dashboard-card-apis">
-        <div class="dashboard-card-icon-wrap">
-            <svg class="dashboard-card-icon" viewBox="0 0 24 24">
-                <path d="M21 16V8l-9-5-9 5v8l9 5 9-5z"/>
-                <polyline points="3.3 7.5 12 12.5 20.7 7.5"/>
-                <line x1="12" y1="21" x2="12" y2="12.5"/>
-            </svg>
-        </div>
-        <div class="dashboard-card-body">
-            <span class="dashboard-card-title">API Resources</span>
-            <span class="dashboard-card-desc">Protected API definitions, secrets, and user claims.</span>
-        </div>
-        <svg class="dashboard-card-arrow" viewBox="0 0 24 24">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
-    </a>
-
-    <a asp-page="/Admin/ApiScopes/Index" class="dashboard-card" id="dashboard-card-apiscopes">
-        <div class="dashboard-card-icon-wrap">
-            <svg class="dashboard-card-icon" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="9"/>
-                <circle cx="12" cy="12" r="5"/>
-                <circle cx="12" cy="12" r="1.2"/>
-            </svg>
-        </div>
-        <div class="dashboard-card-body">
-            <span class="dashboard-card-title">API Scopes</span>
-            <span class="dashboard-card-desc">Granular token permissions, resource associations, and audiences.</span>
-        </div>
-        <svg class="dashboard-card-arrow" viewBox="0 0 24 24">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
-    </a>
-
-    <a asp-page="/Admin/IdentityResources/Index" class="dashboard-card" id="dashboard-card-identityresources">
-        <div class="dashboard-card-icon-wrap">
-            <svg class="dashboard-card-icon" viewBox="0 0 24 24">
-                <rect x="2" y="5" width="20" height="14" rx="2"/>
-                <circle cx="8" cy="11" r="2.2"/>
-                <path d="M4.5 17c.4-2 1.9-3 3.5-3s3.1 1 3.5 3"/>
-                <line x1="14" y1="9.5" x2="19.5" y2="9.5"/>
-                <line x1="14" y1="13" x2="19.5" y2="13"/>
-            </svg>
-        </div>
-        <div class="dashboard-card-body">
-            <span class="dashboard-card-title">Identity Resources</span>
-            <span class="dashboard-card-desc">OpenID Connect scopes such as openid, profile, and email.</span>
-        </div>
-        <svg class="dashboard-card-arrow" viewBox="0 0 24 24">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
-    </a>
-
-    <a asp-page="/Admin/Keys/Index" class="dashboard-card" id="dashboard-card-keys">
-        <div class="dashboard-card-icon-wrap">
-            <svg class="dashboard-card-icon" viewBox="0 0 24 24">
-                <path
-                    d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-            </svg>
-        </div>
-        <div class="dashboard-card-body">
-            <span class="dashboard-card-title">Signing Keys</span>
-            <span class="dashboard-card-desc">Active and historical cryptographic keys for token signing.</span>
-        </div>
-        <svg class="dashboard-card-arrow" viewBox="0 0 24 24">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
-    </a>
-</div>
-
-<div class="dashboard-section-label">Administer</div>
-
-<div class="dashboard-grid">
-    <a asp-page="/Admin/Users/Index" class="dashboard-card" id="dashboard-card-users">
-        <div class="dashboard-card-icon-wrap">
-            <svg class="dashboard-card-icon" viewBox="0 0 24 24">
-                <circle cx="9" cy="8" r="3.5"/>
-                <path d="M2.5 20c0-3.3 2.9-5 6.5-5s6.5 1.7 6.5 5"/>
-                <circle cx="17.5" cy="9" r="2.5"/>
-                <path d="M16 15.3c3 .2 5.5 1.7 5.5 4.7"/>
-            </svg>
-        </div>
-        <div class="dashboard-card-body">
-            <span class="dashboard-card-title">Users</span>
-            <span class="dashboard-card-desc">Manage accounts, roles, claims, and credentials.</span>
-        </div>
-        <svg class="dashboard-card-arrow" viewBox="0 0 24 24">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
-    </a>
-
-    <a asp-page="/Admin/Roles/Index" class="dashboard-card" id="dashboard-card-roles">
-        <div class="dashboard-card-icon-wrap">
-            <svg class="dashboard-card-icon" viewBox="0 0 24 24">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-        </div>
-        <div class="dashboard-card-body">
-            <span class="dashboard-card-title">Roles</span>
-            <span class="dashboard-card-desc">Define and manage roles for access control.</span>
-        </div>
-        <svg class="dashboard-card-arrow" viewBox="0 0 24 24">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
-    </a>
-
-    <a asp-page="/Admin/Grants/Index" class="dashboard-card" id="dashboard-card-grants">
-        <div class="dashboard-card-icon-wrap">
-            <svg class="dashboard-card-icon" viewBox="0 0 24 24">
-                <ellipse cx="12" cy="5.5" rx="8" ry="3"/>
-                <path d="M4 5.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>
-                <path d="M4 11.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>
-            </svg>
-        </div>
-        <div class="dashboard-card-body">
-            <span class="dashboard-card-title">Persisted Grants</span>
-            <span class="dashboard-card-desc">Active refresh tokens, authorization codes, and consent records.</span>
-        </div>
-        <svg class="dashboard-card-arrow" viewBox="0 0 24 24">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
-    </a>
-
-    <a asp-page="/Admin/AuditLogs/Index" class="dashboard-card" id="dashboard-card-auditlogs">
-        <div class="dashboard-card-icon-wrap">
-            <svg class="dashboard-card-icon" viewBox="0 0 24 24">
-                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 3 14 8 19 8"/>
-                <line x1="9" y1="13" x2="15" y2="13"/>
-                <line x1="9" y1="17" x2="13" y2="17"/>
-            </svg>
-        </div>
-        <div class="dashboard-card-body">
-            <span class="dashboard-card-title">Audit Logs</span>
-            <span class="dashboard-card-desc">Security event trail, actor logins, and administrative mutations.</span>
-        </div>
-        <svg class="dashboard-card-arrow" viewBox="0 0 24 24">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
-    </a>
-
-    <a asp-page="/Admin/Diagnostics/Index" class="dashboard-card @(Model.HasIssues ? "dashboard-card--warning" : "")"
-       id="dashboard-card-diagnostics">
-        <div class="dashboard-card-icon-wrap @(Model.HasIssues ? "dashboard-card-icon-wrap--warning" : "")">
-            <svg class="dashboard-card-icon" viewBox="0 0 24 24">
-                <polyline points="2 12 7 12 10 5 14 19 17 12 22 12"/>
-            </svg>
-        </div>
-        <div class="dashboard-card-body">
-            <span class="dashboard-card-title">
-                Diagnostics
-                @if (Model.HasIssues)
-                {
-                    <span class="card-badge">@Model.Issues.Count</span>
-                }
-            </span>
-            <span class="dashboard-card-desc">Store connectivity, signing credentials, and claim validation.</span>
-        </div>
-        <svg class="dashboard-card-arrow" viewBox="0 0 24 24">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
-    </a>
-</div>
+    <div class="dashboard-grid">
+        @foreach (var card in cardGroup.Cards)
+        {
+            <a asp-page="@card.Page" class="dashboard-card @(card.IsWarning ? "dashboard-card--warning" : "")" id="@card.Id">
+                <div class="dashboard-card-icon-wrap @(card.IsWarning ? "dashboard-card-icon-wrap--warning" : "")">
+                    <partial name="_AdminIcon" model='(card.Icon, "dashboard-card-icon")' />
+                </div>
+                <div class="dashboard-card-body">
+                    <span class="dashboard-card-title">
+                        @card.Title
+                        @if (card.Badge.HasValue)
+                        {
+                            <span class="card-badge">@card.Badge.Value</span>
+                        }
+                    </span>
+                    <span class="dashboard-card-desc">@card.Desc</span>
+                </div>
+                <svg aria-hidden="true" class="dashboard-card-arrow" viewBox="0 0 24 24">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </a>
+        }
+    </div>
+}

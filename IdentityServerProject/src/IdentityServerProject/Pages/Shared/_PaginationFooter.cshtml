@@ -1,0 +1,58 @@
+@model IdentityServerProject.Pages.Shared.PaginationModel
+@{
+    var baseRouteValues = new Dictionary<string, string?>(Model.RouteValues);
+
+    // If route values were not explicitly provided, harvest from current query string
+    if (baseRouteValues.Count == 0 && ViewContext?.HttpContext?.Request?.Query != null)
+    {
+        foreach (var query in ViewContext.HttpContext.Request.Query)
+        {
+            if (!query.Key.Equals("PageNumber", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(query.Value))
+            {
+                baseRouteValues[query.Key] = query.Value.ToString();
+            }
+        }
+    }
+
+    var cleanRoutes = new Dictionary<string, string?>();
+    foreach (var kvp in baseRouteValues)
+    {
+        if (!string.IsNullOrEmpty(kvp.Value))
+        {
+            cleanRoutes[kvp.Key] = kvp.Value;
+        }
+    }
+
+    var prevRoutes = new Dictionary<string, string?>(cleanRoutes)
+    {
+        ["PageNumber"] = (Model.PageNumber - 1).ToString()
+    };
+
+    var nextRoutes = new Dictionary<string, string?>(cleanRoutes)
+    {
+        ["PageNumber"] = (Model.PageNumber + 1).ToString()
+    };
+}
+
+<div class="pagination-footer">
+    <span class="pagination-summary">Showing @Model.CurrentCount of @Model.TotalCount @Model.Noun</span>
+    <div class="pagination-controls">
+        @if (!Model.HasPreviousPage)
+        {
+            <span data-pagination="previous" class="pagination-btn disabled" aria-disabled="true" aria-label="Previous page">&lsaquo;</span>
+        }
+        else
+        {
+            <a data-pagination="previous" class="pagination-btn" aria-label="Previous page" asp-page="@Model.Page" asp-all-route-data="prevRoutes">&lsaquo;</a>
+        }
+        <span class="pagination-page">Page @Model.PageNumber of @Model.TotalPages</span>
+        @if (!Model.HasNextPage)
+        {
+            <span data-pagination="next" class="pagination-btn disabled" aria-disabled="true" aria-label="Next page">&rsaquo;</span>
+        }
+        else
+        {
+            <a data-pagination="next" class="pagination-btn" aria-label="Next page" asp-page="@Model.Page" asp-all-route-data="nextRoutes">&rsaquo;</a>
+        }
+    </div>
+</div>

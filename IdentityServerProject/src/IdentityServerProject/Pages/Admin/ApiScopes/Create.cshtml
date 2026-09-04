@@ -2,26 +2,21 @@
 @model CreateModel
 @{
     ViewData["Title"] = "Create API Scope";
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
+    {
+        new("Admin", "/Admin/Index"),
+        new("API Scopes", "/Admin/ApiScopes/Index"),
+        new("Create API Scope")
+    };
 }
 
-<div class="editor-header">
-    <div>
-        <h1 class="hero-title">Create API Scope</h1>
-        <p class="page-sub">Add a new API scope that clients can request access to.</p>
-    </div>
-    <a asp-page="./Index" class="back-link">
-        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-        Back to list
-    </a>
-</div>
+<page-header title="Create API Scope" sub="Add a new API scope that clients can request access to." variant="editor">
+    <partial name="_BackLink" />
+</page-header>
 
 <div class="panel editor-panel">
     <form method="post" class="editor-form">
-        <div asp-validation-summary="All" class="validation-summary"></div>
+        <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
 
         <div class="form-field">
             <label class="form-label" for="scope-name">Scope Name *</label>

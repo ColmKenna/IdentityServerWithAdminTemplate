@@ -2,17 +2,19 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Roles";
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Index"),
-        ("Roles", null)
+        new("Admin", "/Admin/Index"),
+        new("Roles")
     };
 }
 
-<div class="page-header">
-    <h1 class="page-title">Roles</h1>
-    <a asp-page="./Create" class="btn-primary">New Role</a>
-</div>
+<page-header title="Roles" sub="Manage identity roles and user assignments">
+    <a id="new-role-link" class="btn-primary" asp-page="./Create">
+        <partial name="_AdminIcon" model='("plus", "btn-icon")' />
+        New Role
+    </a>
+</page-header>
 
 @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
 {
@@ -24,17 +26,8 @@
 }
 
 <div class="panel">
-    <div class="panel-toolbar"
-         style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px;">
-        <form method="get" style="display: flex; gap: 10px;">
-            <input type="text" asp-for="Filter" class="form-control" placeholder="Search roles..."
-                   style="width: 250px;"/>
-            <button type="submit" class="btn-secondary">Search</button>
-            @if (!string.IsNullOrWhiteSpace(Model.Filter))
-            {
-                <a asp-page="./Index" class="btn-tertiary">Clear</a>
-            }
-        </form>
+    <div class="panel-toolbar">
+        <partial name="_ListFilter" model='new ListFilterModel("role-filter", "Filter roles", "Search roles...", Model.Filter)' />
     </div>
 
     @if (Model.Roles.Items.Count == 0)
@@ -52,7 +45,7 @@
     }
     else
     {
-        <ck-responsive-table class="roles-table" mobile-breakpoint="768px">
+        <ck-responsive-table mobile-breakpoint="768px">
             <ck-responsive-thead>
                 <ck-responsive-col-head>Role Name</ck-responsive-col-head>
                 <ck-responsive-col-head class="actions-cell">Actions</ck-responsive-col-head>
@@ -74,9 +67,12 @@
                                   style="display:inline;">
                                 <button type="submit" class="btn-sm btn-secondary text-danger"
                                         disabled="@item.IsProtected"
-                                        title="@(item.IsProtected ? "Cannot delete a protected role." : "Delete role")"
                                         onclick="return confirm('Are you sure you want to delete this role?');">Delete
                                 </button>
+                                @if (item.IsProtected)
+                                {
+                                    <span class="danger-row-desc">Protected — cannot be deleted</span>
+                                }
                             </form>
                         </ck-responsive-col>
                     </ck-responsive-row>
@@ -85,51 +81,5 @@
         </ck-responsive-table>
     }
 
-    <div class="pagination-footer">
-        <span class="pagination-summary">Showing @Model.Roles.Items.Count of @Model.Roles.TotalCount roles</span>
-        <div class="pagination-controls">
-            @if (!Model.Roles.HasPreviousPage)
-            {
-                <span data-pagination="previous" class="pagination-btn disabled" aria-disabled="true">&lsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
-                   asp-route-PageNumber="@(Model.Roles.PageNumber - 1)">&lsaquo;</a>
-            }
-            <span class="pagination-page">Page @Model.Roles.PageNumber of @Model.Roles.TotalPages</span>
-            @if (!Model.Roles.HasNextPage)
-            {
-                <span data-pagination="next" class="pagination-btn disabled" aria-disabled="true">&rsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
-                   asp-route-PageNumber="@(Model.Roles.PageNumber + 1)">&rsaquo;</a>
-            }
-        </div>
-    </div>
+    <partial name="_PaginationFooter" model='Model.Roles.ToPagination("roles", Model.Filter)' />
 </div>
-
-<style>
-    .form-control {
-        border: 1px solid var(--border, #e6e8eb);
-        border-radius: 8px;
-        padding: 8px 12px;
-        font-size: 0.9rem;
-    }
-
-    .badge-reserved {
-        background: var(--danger-soft, #fdecec);
-        color: var(--danger, #b3261e);
-        border: 1px solid var(--danger, #b3261e);
-        border-radius: 999px;
-        padding: 1px 8px;
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-
-    .text-danger {
-        color: var(--danger, #b3261e);
-    }
-</style>

@@ -2,37 +2,24 @@
 @model IndexModel
 @{
     ViewData["Title"] = "API Resources";
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Apis/Index"),
-        ("API Resources", null)
+        new("Admin", "/Admin/Index"),
+        new("API Resources")
     };
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">API Resources</h1>
-        <p class="page-sub">Secured web APIs registered with IdentityServer</p>
-    </div>
+<page-header title="API Resources" sub="Secured web APIs registered with IdentityServer">
     <a id="new-api-resource-link" class="btn-primary" asp-page="./Editor">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
+        <partial name="_AdminIcon" model='("plus", "btn-icon")' />
         New API resource
     </a>
-</div>
+</page-header>
 
 <div class="panel">
-    <form method="get" class="list-filter" role="search">
-        <label class="visually-hidden" for="apis-filter">Filter API resources</label>
-        <input type="search" id="apis-filter" name="Filter" class="form-control"
-               placeholder="Filter by name or display name" value="@Model.Filter"/>
-        <button type="submit" class="btn-secondary">Filter</button>
-    </form>
+    <partial name="_ListFilter" model='new ListFilterModel("apis-filter", "Filter API resources", "Filter by name or display name", Model.Filter)' />
 
-    <ck-responsive-table class="apis-table" mobile-breakpoint="768px">
+    <ck-responsive-table mobile-breakpoint="768px">
         <ck-responsive-thead>
             <ck-responsive-col-head>Name</ck-responsive-col-head>
             <ck-responsive-col-head>Display Name</ck-responsive-col-head>
@@ -44,7 +31,7 @@
             @foreach (var apiResource in Model.ApiResources.Items)
             {
                 <ck-responsive-row>
-                    <ck-responsive-col class="resource-name">
+                    <ck-responsive-col>
                         <a asp-page="./Editor" asp-route-name="@apiResource.Name"
                            class="resource-title-link"><code>@apiResource.Name</code></a>
                     </ck-responsive-col>
@@ -69,29 +56,5 @@
         <div class="empty-state">No API resources found.</div>
     }
 
-    <div class="pagination-footer">
-        <span
-            class="pagination-summary">Showing @Model.ApiResources.Items.Count of @Model.ApiResources.TotalCount resources</span>
-        <div class="pagination-controls">
-            @if (!Model.ApiResources.HasPreviousPage)
-            {
-                <span data-pagination="previous" class="pagination-btn disabled" aria-disabled="true">&lsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="previous" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
-                   asp-route-PageNumber="@(Model.ApiResources.PageNumber - 1)">&lsaquo;</a>
-            }
-            <span class="pagination-page">Page @Model.ApiResources.PageNumber of @Model.ApiResources.TotalPages</span>
-            @if (!Model.ApiResources.HasNextPage)
-            {
-                <span data-pagination="next" class="pagination-btn disabled" aria-disabled="true">&rsaquo;</span>
-            }
-            else
-            {
-                <a data-pagination="next" class="pagination-btn" asp-page="./Index" asp-route-Filter="@Model.Filter"
-                   asp-route-PageNumber="@(Model.ApiResources.PageNumber + 1)">&rsaquo;</a>
-            }
-        </div>
-    </div>
+    <partial name="_PaginationFooter" model='Model.ApiResources.ToPagination("resources", Model.Filter)' />
 </div>

@@ -2,15 +2,21 @@
 @model EditorModel
 @{
     ViewData["Title"] = Model.Editor.IsNew ? "New API Resource" : Model.Editor.Name;
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Apis/Index"),
-        ("API Resources", "/Admin/Apis/Index"),
-        (Model.Editor.IsNew ? "New API Resource" : Model.Editor.Name, null)
+        new("Admin", "/Admin/Index"),
+        new("API Resources", "/Admin/Apis/Index"),
+        new(Model.Editor.IsNew ? "New API Resource" : Model.Editor.Name)
     };
     var tab = Model.Tab;
 }
 
+@*
+    Deliberately not the <page-header> TagHelper. This is the one header whose title is a
+    group rather than a string — the resource name sits beside a live enabled/disabled
+    badge in .title-with-badge. Giving the component a title slot for a single call site
+    would cost more than the duplication does.
+*@
 <div class="editor-header">
     <div>
         <div class="title-with-badge">
@@ -23,14 +29,7 @@
         </div>
         <p class="page-sub">@(Model.Editor.IsNew ? "Register a new secured web API." : "Manage basics, secrets, scopes, and claims for this API resource.")</p>
     </div>
-    <a asp-page="./Index" class="back-link">
-        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-        Back to list
-    </a>
+    <partial name="_BackLink" />
 </div>
 
 @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
@@ -55,7 +54,7 @@
     <ck-tab label="Basics" data-tab="basics" active="@(tab == "basics" ? "active" : null)">
         <form method="post" asp-page-handler="SaveBasics" class="editor-form">
             <input type="hidden" name="Name" value="@Model.Editor.Name"/>
-            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+            <div asp-validation-summary="ModelOnly" role="alert" class="validation-summary"></div>
 
             <div class="form-field">
                 <label class="form-label" for="basics-name">Name</label>
@@ -182,24 +181,7 @@
         </ck-tab>
 
         <ck-tab label="Scopes" data-tab="scopes" active="@(tab == "scopes" ? "active" : null)">
-            @if (Model.Editor.Scopes.Count > 0)
-            {
-                <div class="scope-chips-row editor-scope-list">
-                    @foreach (var scope in Model.Editor.Scopes)
-                    {
-                        <form method="post" asp-page-handler="DetachScope" asp-route-name="@Model.Editor.Name"
-                              asp-route-scopeName="@scope" class="scope-chip-form">
-                            <code class="scope-chip">@scope</code>
-                            <button type="submit" class="action-link action-link-danger" title="Detach @scope">&times;
-                            </button>
-                        </form>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="empty-state">No scopes attached.</div>
-            }
+            <partial name="_ScopeChipsRow" model='ScopeChipsRowModel.ForSimpleList(Model.Editor.Scopes, "No scopes attached.", "DetachScope", Model.Editor.Name, "scopeName")' />
 
             @if (Model.AttachableScopeNames.Count > 0)
             {
@@ -207,7 +189,8 @@
                       class="editor-form editor-subform">
                     <h3 class="section-title">Attach an existing scope</h3>
                     <div class="form-field">
-                        <select class="form-control" asp-for="AttachScope.ScopeName">
+                        <label class="form-label" for="attach-scope-name">Scope</label>
+                        <select class="form-control" id="attach-scope-name" asp-for="AttachScope.ScopeName">
                             @foreach (var scope in Model.AttachableScopeNames)
                             {
                                 <option value="@scope">@scope</option>
@@ -241,24 +224,7 @@
         </ck-tab>
 
         <ck-tab label="Claims" data-tab="claims" active="@(tab == "claims" ? "active" : null)">
-            @if (Model.Editor.Claims.Count > 0)
-            {
-                <div class="scope-chips-row editor-scope-list">
-                    @foreach (var claim in Model.Editor.Claims)
-                    {
-                        <form method="post" asp-page-handler="RemoveClaim" asp-route-name="@Model.Editor.Name"
-                              asp-route-claimType="@claim" class="scope-chip-form">
-                            <code class="scope-chip">@claim</code>
-                            <button type="submit" class="action-link action-link-danger" title="Remove @claim">&times;
-                            </button>
-                        </form>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="empty-state">No claims configured.</div>
-            }
+            <partial name="_ScopeChipsRow" model='ScopeChipsRowModel.ForSimpleList(Model.Editor.Claims, "No claims configured.", "RemoveClaim", Model.Editor.Name, "claimType")' />
 
             <form method="post" asp-page-handler="AddClaim" asp-route-name="@Model.Editor.Name"
                   class="editor-form editor-subform">
@@ -278,48 +244,9 @@
 
 @if (!Model.Editor.IsNew)
 {
-    <dialog id="disable-modal" class="modal">
-        <form method="post" asp-page-handler="Disable" asp-route-name="@Model.Editor.Name">
-            <h2 class="modal-title">Disable API resource</h2>
-            <p class="modal-body">Type <strong>DISABLE</strong> to confirm. Existing tokens already issued for this
-                resource remain valid until they expire.</p>
-            <input type="text" name="confirmation" class="form-control confirm-input" data-confirm-word="DISABLE"
-                   autocomplete="off"/>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
-                <button type="submit" class="btn-danger" data-confirm-submit disabled>Disable</button>
-            </div>
-        </form>
-    </dialog>
-
-    <dialog id="delete-modal" class="modal">
-        <form method="post" asp-page-handler="Delete" asp-route-name="@Model.Editor.Name">
-            <h2 class="modal-title">Delete API resource</h2>
-            <p class="modal-body">Type <strong>DELETE</strong> to permanently remove <strong>@Model.Editor.Name</strong>,
-                its secrets, scopes, and claims. This cannot be undone.</p>
-            <input type="text" name="confirmation" class="form-control confirm-input" data-confirm-word="DELETE"
-                   autocomplete="off"/>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
-                <button type="submit" class="btn-danger" data-confirm-submit disabled>Delete</button>
-            </div>
-        </form>
-    </dialog>
-
-    <dialog id="revoke-secret-modal" class="modal">
-        <form method="post" asp-page-handler="RevokeSecret" asp-route-name="@Model.Editor.Name">
-            <input type="hidden" name="secretId" id="revoke-secret-id-input" value=""/>
-            <h2 class="modal-title">Revoke secret</h2>
-            <p class="modal-body">Type <strong>REVOKE</strong> to confirm. Any client using this secret will immediately
-                fail to authenticate.</p>
-            <input type="text" name="confirmation" class="form-control confirm-input" data-confirm-word="REVOKE"
-                   autocomplete="off"/>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
-                <button type="submit" class="btn-danger" data-confirm-submit disabled>Revoke</button>
-            </div>
-        </form>
-    </dialog>
+    <partial name="_ConfirmationModal" model='new ConfirmationModalModel("disable-modal", "Disable API resource", "Disable", "Type <strong>DISABLE</strong> to confirm. Existing tokens already issued for this resource remain valid until they expire.", confirmWord: "DISABLE", submitText: "Disable", routeName: Model.Editor.Name, bodyId: "disable-modal-desc")' />
+    <partial name="_ConfirmationModal" model='new ConfirmationModalModel("delete-modal", "Delete API resource", "Delete", "Type <strong>DELETE</strong> to permanently remove <strong>{0}</strong>, its secrets, scopes, and claims. This cannot be undone.", confirmWord: "DELETE", submitText: "Delete", routeName: Model.Editor.Name, bodyId: "delete-modal-desc", bodyArgs: new[] { Model.Editor.Name })' />
+    <partial name="_ConfirmationModal" model='new ConfirmationModalModel("revoke-secret-modal", "Revoke secret", "RevokeSecret", "Type <strong>REVOKE</strong> to confirm. Any client using this secret will immediately fail to authenticate.", confirmWord: "REVOKE", submitText: "Revoke", routeName: Model.Editor.Name, hiddenInputName: "secretId", hiddenInputId: "revoke-secret-id-input", bodyId: "revoke-modal-desc")' />
 }
 
 @section Scripts {

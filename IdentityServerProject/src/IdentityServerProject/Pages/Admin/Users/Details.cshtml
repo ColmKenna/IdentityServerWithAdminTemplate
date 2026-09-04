@@ -3,23 +3,20 @@
 @model DetailsModel
 @{
     ViewData["Title"] = Model.Account.UserName;
-    ViewData["Breadcrumbs"] = new List<(string Text, string? Url)>
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
-        ("Admin", "/Admin/Users"),
-        ("Users", "/Admin/Users"),
-        (Model.Account.UserName, null)
+        new("Admin", "/Admin/Index"),
+        new("Users", "/Admin/Users/Index"),
+        new(Model.Account.UserName)
     };
 
     var unassignedRoles = Model.Account.AllRoles.Except(Model.Account.AssignedRoles).ToList();
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">@(string.IsNullOrWhiteSpace(Model.Account.FullName) ? Model.Account.UserName : Model.Account.FullName)</h1>
-        <p class="page-sub"><code>@Model.Account.UserName</code> &middot; @(Model.Account.Email ?? "No email")</p>
-    </div>
-    <a asp-page="./Index" class="btn-secondary">&larr; Back to Users</a>
-</div>
+<page-header title="@(string.IsNullOrWhiteSpace(Model.Account.FullName) ? Model.Account.UserName : Model.Account.FullName)">
+    <page-sub><code>@Model.Account.UserName</code> &middot; @(Model.Account.Email ?? "No email")</page-sub>
+    <partial name="_BackLink" model='new BackLinkModel("./Index", "Back to Users")' />
+</page-header>
 
 @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
 {
@@ -36,8 +33,8 @@
 
 <ck-tabs id="user-details-tabs" class="user-details-tabs" aria-label="User detail workspace tabs">
     <ck-tab label="Overview" data-tab="overview" active="@(Model.Tab == "overview" ? "active" : null)">
-        <div class="panel" id="tab-panel-overview" style="padding: 28px;">
-            <h2 class="panel-title" style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700;">Account
+        <div class="panel panel-padded" id="tab-panel-overview">
+            <h2 class="panel-title">Account
                 Overview</h2>
             <div class="field-group"><span class="field-label">Username:</span> <span
                     class="field-value">@Model.Account.UserName</span></div>
@@ -53,11 +50,11 @@
             <div class="field-group"><span class="field-label">Roles:</span> <span
                     class="field-value">@(Model.Account.AssignedRoles.Count == 0 ? "None" : string.Join(", ", Model.Account.AssignedRoles))</span>
             </div>
-            <div class="form-actions" style="margin-top: 20px; display: flex; gap: 10px; align-items: center;">
+            <div class="form-actions user-detail-actions">
                 <a asp-page="./ResetPassword" asp-route-id="@Model.Id" class="btn-secondary">Reset Password</a>
                 @if (Model.Account.IsLockedOut)
                 {
-                    <form method="post" asp-page-handler="Unlock" asp-route-id="@Model.Id" style="display: inline;">
+                    <form method="post" asp-page-handler="Unlock" asp-route-id="@Model.Id" class="inline-action-form">
                         <button type="submit" class="btn-secondary">Unlock Account</button>
                     </form>
                 }
@@ -65,8 +62,8 @@
         </div>
     </ck-tab>
     <ck-tab label="Roles" data-tab="roles" active="@(Model.Tab == "roles" ? "active" : null)">
-        <div class="panel" id="tab-panel-roles" style="padding: 28px;">
-            <h2 class="panel-title" style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700;">Assigned
+        <div class="panel panel-padded" id="tab-panel-roles">
+            <h2 class="panel-title">Assigned
                 Roles</h2>
 
             @if (Model.Account.AssignedRoles.Count == 0)
@@ -75,32 +72,34 @@
             }
             else
             {
-                <ul class="role-list" style="list-style: none; padding: 0; margin-bottom: 20px;">
+                <ul class="role-list user-detail-list">
                     @foreach (var role in Model.Account.AssignedRoles)
                     {
-                        <li style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line-soft, #eef1f3);">
-                            <span style="font-weight: 500;">@role</span>
+                        var lockedRole = Model.Account.IsCurrentUser && role == Config.SysAdminRole;
+                        <li class="role-list-item">
+                            <span class="role-name">@role</span>
                             <form method="post" asp-page-handler="RemoveRole" asp-route-id="@Model.Id"
                                   asp-route-role="@role">
                                 <input type="hidden" name="role" value="@role"/>
                                 <button type="submit" class="btn-sm btn-secondary" data-action="remove-role"
-                                        data-role="@role"
-                                        disabled="@(Model.Account.IsCurrentUser && role == Config.SysAdminRole)"
-                                        title="@(Model.Account.IsCurrentUser && role == Config.SysAdminRole ? "You cannot remove your own SysAdmin role." : null)">
+                                        data-role="@role" disabled="@lockedRole">
                                     Remove
                                 </button>
+                                @if (lockedRole)
+                                {
+                                    <span class="danger-row-desc">You cannot remove your own SysAdmin role</span>
+                                }
                             </form>
                         </li>
                     }
                 </ul>
             }
 
-            <h3 style="font-size: 0.95rem; margin-bottom: 12px; margin-top: 24px; font-weight: 600;">Assign Role</h3>
-            <form method="post" asp-page-handler="AddRole" asp-route-id="@Model.Id"
-                  style="display: flex; gap: 10px; max-width: 400px;">
-                <select name="role" class="form-control" style="flex: 1;">
+            <h3 class="user-detail-subheading">Assign Role</h3>
+            <form method="post" asp-page-handler="AddRole" asp-route-id="@Model.Id" class="role-assignment-form">
+                <select name="role" class="form-control form-control-grow" aria-label="Select a role to assign">
                     <option value="">-- Select a role --</option>
-                    @foreach (var role in Model.Account.AllRoles.Where(r => !Model.Account.AssignedRoles.Contains(r)))
+                    @foreach (var role in unassignedRoles)
                     {
                         <option value="@role">@role</option>
                     }
@@ -110,8 +109,8 @@
         </div>
     </ck-tab>
     <ck-tab label="Claims" data-tab="claims" active="@(Model.Tab == "claims" ? "active" : null)">
-        <div class="panel" id="tab-panel-claims" style="padding: 28px;">
-            <h2 class="panel-title" style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700;">Claims</h2>
+        <div class="panel panel-padded" id="tab-panel-claims">
+            <h2 class="panel-title">Claims</h2>
 
             @if (Model.Account.Claims.Count == 0)
             {
@@ -119,11 +118,10 @@
             }
             else
             {
-                <ul class="claim-list" style="list-style: none; padding: 0; margin-bottom: 20px;">
+                <ul class="claim-list user-detail-list">
                     @foreach (var claim in Model.Account.Claims)
                     {
-                        <li class="claim-row" data-reserved="@(claim.IsReserved ? "true" : "false")"
-                            style="display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft, #eef1f3);">
+                        <li class="claim-row user-claim-row" data-reserved="@(claim.IsReserved ? "true" : "false")">
                             <code>@claim.Type</code> = <code>@claim.Value</code>
                             @if (claim.IsReserved)
                             {
@@ -131,7 +129,7 @@
                                       title="This claim type is issued by the framework. A stored claim of this type is copied onto the sign-in principal, so it can grant privilege that the Roles tab cannot see. It should be removed.">Reserved</span>
                             }
                             <form method="post" asp-page-handler="RemoveClaim" asp-route-id="@Model.Id"
-                                  style="margin-left: auto;">
+                                  class="claim-row-action">
                                 <input type="hidden" name="claimType" value="@claim.Type"/>
                                 <input type="hidden" name="claimValue" value="@claim.Value"/>
                                 <button type="submit" class="btn-sm btn-secondary" data-action="remove-claim">Remove
@@ -142,15 +140,14 @@
                 </ul>
             }
 
-            <form method="post" asp-page-handler="AddClaim" asp-route-id="@Model.Id"
-                  style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <input type="text" name="claimType" class="form-control" placeholder="Claim type"
-                       style="max-width: 200px;" maxlength="@ValidationConstants.MaxClaimTypeLength" required/>
-                <input type="text" name="claimValue" class="form-control" placeholder="Claim value"
-                       style="max-width: 200px;" maxlength="@ValidationConstants.MaxClaimValueLength" required/>
+            <form method="post" asp-page-handler="AddClaim" asp-route-id="@Model.Id" class="claim-entry-form">
+                <input type="text" name="claimType" class="form-control form-control-xs" placeholder="Claim type" aria-label="Claim type"
+                       maxlength="@ValidationConstants.MaxClaimTypeLength" required/>
+                <input type="text" name="claimValue" class="form-control form-control-xs" placeholder="Claim value" aria-label="Claim value"
+                       maxlength="@ValidationConstants.MaxClaimValueLength" required/>
                 <button type="submit" class="btn-primary btn-sm">Add Claim</button>
             </form>
-            <p class="text-muted" id="claim-type-help" style="font-size: 0.85rem; margin-top: 10px;">
+            <p class="text-muted user-detail-help" id="claim-type-help">
                 Identity and authorization claim types (<code>role</code>, <code>sub</code>, <code>amr</code>,
                 <code>idp</code>, and the <code>AspNet.Identity.*</code> and WS-* equivalents) are reserved and
                 cannot be added here. Grant roles on the <strong>Roles</strong> tab.
@@ -158,93 +155,74 @@
         </div>
     </ck-tab>
     <ck-tab label="Access & grants" data-tab="access" active="@(Model.Tab == "access" ? "active" : null)">
-        <div class="panel" id="tab-panel-access" style="padding: 28px;">
-            <h2 class="panel-title" style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700;">Access & Active
+        <div class="panel panel-padded" id="tab-panel-access">
+            <h2 class="panel-title">Access & Active
                 Sessions</h2>
-            <p class="text-muted" style="margin-bottom: 16px; font-size: 0.9rem;">
+            <p class="text-muted user-detail-description">
                 This user has <strong>@Model.Account.PersistedGrantCount</strong> persisted grant(s) (refresh tokens,
                 user consents, or reference tokens) in the operational store.
             </p>
 
             <form method="post" asp-page-handler="RevokeUserAccess" asp-route-id="@Model.Id">
-                <button type="submit" class="btn-danger" disabled="@Model.Account.IsCurrentUser"
-                        title="@(Model.Account.IsCurrentUser ? "You cannot revoke your own session." : null)">
+                <button type="submit" class="btn-danger" disabled="@Model.Account.IsCurrentUser">
                     Revoke All Access & End Sessions
                 </button>
+                @if (Model.Account.IsCurrentUser)
+                {
+                    <p class="danger-row-desc">You cannot revoke your own session.</p>
+                }
             </form>
         </div>
     </ck-tab>
     <ck-tab label="Danger Zone" data-tab="danger" active="@(Model.Tab == "danger" ? "active" : null)">
-        <div class="panel" id="tab-panel-danger" style="padding: 28px; border-top: 3px solid var(--danger, #b3261e);">
-            <h2 class="panel-title"
-                style="font-size: 1.1rem; margin-bottom: 16px; font-weight: 700; color: var(--danger, #b3261e);">Danger
+        <div class="panel panel-padded panel-danger" id="tab-panel-danger">
+            <h2 class="panel-title panel-title-danger">Danger
                 Zone</h2>
 
-            <div style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--line-soft, #eef1f3);">
-                <h3 style="font-size: 1rem; margin-bottom: 8px;">Suspend User</h3>
-                <p class="text-muted" style="margin-bottom: 16px; font-size: 0.9rem;">Suspending a user indefinitely
+            <div class="danger-section">
+                <h3 class="danger-action-heading">Suspend User</h3>
+                <p class="text-muted user-detail-description">Suspending a user indefinitely
                     prevents them from authenticating. Active sessions are not immediately killed unless you also revoke
                     access.</p>
                 <form method="post" asp-page-handler="Suspend" asp-route-id="@Model.Id">
                     <button type="submit" class="btn-danger-outline"
-                            disabled="@(Model.Account.IsCurrentUser || Model.Account.IsLockedOut)"
-                            title="@(Model.Account.IsCurrentUser ? "You cannot suspend your own account." : Model.Account.IsLockedOut ? "User is already suspended." : null)">
+                            disabled="@(Model.Account.IsCurrentUser || Model.Account.IsLockedOut)">
                         Suspend User
                     </button>
+                    @if (Model.Account.IsCurrentUser)
+                    {
+                        <p class="danger-row-desc">You cannot suspend your own account.</p>
+                    }
+                    else if (Model.Account.IsLockedOut)
+                    {
+                        <p class="danger-row-desc">This user is already suspended.</p>
+                    }
                 </form>
             </div>
 
             <div>
-                <h3 style="font-size: 1rem; margin-bottom: 8px;">Delete User</h3>
-                <p class="text-muted" style="margin-bottom: 16px; font-size: 0.9rem;">Once you delete a user, there is
+                <h3 class="danger-action-heading">Delete User</h3>
+                <p class="text-muted user-detail-description" id="delete-user-desc">Once you delete a user, there is
                     no going back. Please be certain.</p>
                 <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Id"
                       onsubmit="return confirmDelete(this);">
-                    <div style="display: flex; gap: 10px; align-items: center; max-width: 400px; margin-bottom: 12px;">
-                        <input type="text" id="deleteConfirmInput" asp-for="DeleteConfirmation" class="form-control"
-                               placeholder="Type DELETE to confirm" required style="flex: 1;"/>
+                    <div class="delete-confirmation-row">
+                        <label for="deleteConfirmInput" class="visually-hidden">Type DELETE to confirm user deletion</label>
+                        <input type="text" id="deleteConfirmInput" asp-for="DeleteConfirmation" class="form-control form-control-grow"
+                               placeholder="Type DELETE to confirm" aria-describedby="delete-user-desc" required/>
                     </div>
-                    <button type="submit" class="btn-danger" disabled="@Model.Account.IsCurrentUser"
-                            title="@(Model.Account.IsCurrentUser ? "You cannot delete your own account." : null)">
+                    <button type="submit" class="btn-danger" disabled="@Model.Account.IsCurrentUser">
                         Delete User
                     </button>
+                    @if (Model.Account.IsCurrentUser)
+                    {
+                        <p class="danger-row-desc">You cannot delete your own account.</p>
+                    }
                 </form>
             </div>
         </div>
     </ck-tab>
 </ck-tabs>
-
-<style>
-    .field-group {
-        display: flex;
-        gap: 8px;
-        padding: 8px 0;
-        border-bottom: 1px solid var(--line-soft, #eef1f3);
-    }
-
-    .field-label {
-        font-weight: 600;
-        min-width: 120px;
-        color: var(--text-dim, #8b9096);
-    }
-
-    .form-control {
-        border: 1px solid var(--border, #e6e8eb);
-        border-radius: 8px;
-        padding: 8px 12px;
-        font-size: 0.9rem;
-    }
-
-    .badge-reserved {
-        background: var(--danger-soft, #fdecec);
-        color: var(--danger, #b3261e);
-        border: 1px solid var(--danger, #b3261e);
-        border-radius: 999px;
-        padding: 1px 8px;
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-</style>
 
 @section Scripts {
     <script src="~/js/tab-query-sync.js" asp-append-version="true"></script>

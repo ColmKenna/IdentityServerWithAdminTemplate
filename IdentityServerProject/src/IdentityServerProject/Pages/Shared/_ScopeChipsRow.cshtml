@@ -1,0 +1,31 @@
+@model IdentityServerProject.Pages.Shared.ScopeChipsRowModel
+
+@if (Model.Items.Count > 0)
+{
+    <div class="scope-chips-row editor-scope-list">
+        @foreach (var item in Model.Items)
+        {
+            <div class="scope-chip-container" data-claim-locked="@(item.IsLocked ? "true" : "false")">
+                <code class="scope-chip" style="@(item.IsLocked ? "opacity: 0.6;" : "")">@item.Text</code>
+                @if (!item.IsLocked)
+                {
+                    <form method="post" asp-page-handler="@Model.HandlerName"
+                          asp-all-route-data='new Dictionary<string, string> { { Model.RouteNameKey, Model.RouteNameValue }, { Model.RouteParamKey, item.Text } }'
+                          class="scope-chip-form">
+                        <button type="submit" class="action-link action-link-danger"
+                                title="Remove @item.Text"
+                                aria-label="Remove @item.Text">&times;</button>
+                    </form>
+                }
+                else
+                {
+                    <span class="action-link" title="@item.LockReason">🔒</span>
+                }
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="empty-state">@Model.EmptyStateText</div>
+}

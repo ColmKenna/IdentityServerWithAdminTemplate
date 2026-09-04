@@ -1,0 +1,12 @@
+@model IdentityServerProject.Pages.Shared.ScopeCheckboxGridModel
+
+<div class="scope-checkbox-grid">
+    @foreach (var scope in Model.Scopes)
+    {
+        <label class="scope-checkbox">
+            <input type="checkbox" name="@Model.InputName" value="@scope" class="scope-checkbox"
+                   @(Model.Selected.Contains(scope) ? "checked" : "")/>
+            <code>@scope</code>
+        </label>
+    }
+</div>

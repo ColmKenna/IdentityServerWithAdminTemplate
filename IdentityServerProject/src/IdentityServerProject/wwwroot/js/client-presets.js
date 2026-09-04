@@ -1,3 +1,19 @@
+function getAvailablePresets() {
+    if (Array.isArray(window.availablePresets)) {
+        return window.availablePresets;
+    }
+    const dataEl = document.getElementById('available-presets-data');
+    if (dataEl && dataEl.textContent) {
+        try {
+            window.availablePresets = JSON.parse(dataEl.textContent);
+            return window.availablePresets;
+        } catch (e) {
+            console.error('Failed to parse available presets data', e);
+        }
+    }
+    return [];
+}
+
 function selectPreset(presetKey) {
     document.getElementById('selected-preset-input').value = presetKey;
 
@@ -9,7 +25,7 @@ function selectPreset(presetKey) {
         }
     });
 
-    const preset = window.availablePresets.find(p => p.id === presetKey);
+    const preset = getAvailablePresets().find(p => p.id === presetKey);
     if (!preset) return;
 
     const pkceInput = document.getElementById('input-require-pkce');
@@ -65,10 +81,11 @@ function copySecretToClipboard() {
 
 // Initialise preset view state on page load
 document.addEventListener('DOMContentLoaded', () => {
-    if (!window.availablePresets) return;
+    const presets = getAvailablePresets();
+    if (!presets || presets.length === 0) return;
 
     const currentPresetId = document.getElementById('selected-preset-input').value || 'web';
-    const preset = window.availablePresets.find(p => p.id === currentPresetId);
+    const preset = presets.find(p => p.id === currentPresetId);
 
     if (preset && !preset.grantTypes.includes('authorization_code') && !preset.grantTypes.includes('implicit')) {
         const uriSection = document.getElementById('uri-configuration-section');

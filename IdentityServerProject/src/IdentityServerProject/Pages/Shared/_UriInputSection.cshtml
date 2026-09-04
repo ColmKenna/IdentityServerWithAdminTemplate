@@ -1,0 +1,33 @@
+@model IdentityServerProject.Pages.Shared.UriInputSectionModel
+
+<div class="form-group">
+    <label class="form-label">@Model.Label</label>
+    <span class="text-danger field-validation-error" data-valmsg-for="@Model.InputName" data-valmsg-replace="true"></span>
+    <div id="@Model.ContainerId">
+        @if (Model.Values.Count == 0)
+        {
+            <div class="uri-input-row">
+                <input type="url" name="@Model.InputName" class="form-control"
+                       placeholder="@Model.Placeholder"
+                       aria-label="@Model.AriaLabel"/>
+                <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)" aria-label="Remove @Model.AriaLabel.ToLowerInvariant()">&times;</button>
+            </div>
+        }
+        else
+        {
+            @foreach (var val in Model.Values)
+            {
+                <div class="uri-input-row">
+                    <input type="url" name="@Model.InputName" class="form-control" value="@val"
+                           placeholder="@Model.Placeholder"
+                           aria-label="@Model.AriaLabel"/>
+                    <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)" aria-label="Remove @Model.AriaLabel.ToLowerInvariant()">&times;</button>
+                </div>
+            }
+        }
+    </div>
+    <button type="button" class="btn-secondary btn-sm uri-add-btn"
+            onclick="addUriRow('@Model.ContainerId', '@Model.InputName', '@Model.Placeholder')">
+        @Model.ButtonText
+    </button>
+</div>

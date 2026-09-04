@@ -2,25 +2,20 @@
 @model CreateModel
 @{
     ViewData["Title"] = "Create Identity Resource";
+    ViewData["Breadcrumbs"] = new List<Breadcrumb>
+    {
+        new("Admin", "/Admin/Index"),
+        new("Identity Resources", "/Admin/IdentityResources/Index"),
+        new("Create Identity Resource")
+    };
 }
 
-<div class="editor-header">
-    <div>
-        <h1 class="hero-title">Create Identity Resource</h1>
-        <p class="page-sub">Add a new OpenID Connect identity resource with optional template quick-fill.</p>
-    </div>
-    <a asp-page="./Index" class="back-link">
-        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-        Back to list
-    </a>
-</div>
+<page-header title="Create Identity Resource" sub="Add a new OpenID Connect identity resource with optional template quick-fill." variant="editor">
+    <partial name="_BackLink" />
+</page-header>
 
 <form method="post" id="create-resource-form">
-    <div asp-validation-summary="All" class="validation-summary"></div>
+    <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
 
     <div class="panel editor-panel">
         <h2 class="panel-title">1. Select a Template (Optional)</h2>
@@ -29,29 +24,29 @@
         </p>
 
         <div class="preset-grid">
-            <div class="preset-card" data-template="profile" onclick="applyTemplate('profile')">
+            <button type="button" class="preset-card" data-template="profile" onclick="applyTemplate('profile')">
                 <div class="preset-icon">👤</div>
                 <div class="preset-title">Profile</div>
                 <div class="preset-desc">User profile information (name, picture, etc.)</div>
-            </div>
+            </button>
 
-            <div class="preset-card" data-template="email" onclick="applyTemplate('email')">
+            <button type="button" class="preset-card" data-template="email" onclick="applyTemplate('email')">
                 <div class="preset-icon">📧</div>
                 <div class="preset-title">Email</div>
                 <div class="preset-desc">Email address and verification status</div>
-            </div>
+            </button>
 
-            <div class="preset-card" data-template="address" onclick="applyTemplate('address')">
+            <button type="button" class="preset-card" data-template="address" onclick="applyTemplate('address')">
                 <div class="preset-icon">🏠</div>
                 <div class="preset-title">Address</div>
                 <div class="preset-desc">User address information</div>
-            </div>
+            </button>
 
-            <div class="preset-card" data-template="phone" onclick="applyTemplate('phone')">
+            <button type="button" class="preset-card" data-template="phone" onclick="applyTemplate('phone')">
                 <div class="preset-icon">📞</div>
                 <div class="preset-title">Phone</div>
                 <div class="preset-desc">Phone number and verification status</div>
-            </div>
+            </button>
         </div>
     </div>
 
@@ -80,22 +75,22 @@
 
         <div class="form-group checkbox-grid">
             <div class="form-check">
-                <input class="form-control" type="checkbox" id="resource-enabled" asp-for="Input.Enabled"/>
+                <input class="form-check-input" type="checkbox" id="resource-enabled" asp-for="Input.Enabled"/>
                 <label class="form-check-label" for="resource-enabled">Enabled</label>
             </div>
 
             <div class="form-check">
-                <input class="form-control" type="checkbox" id="resource-required" asp-for="Input.Required"/>
+                <input class="form-check-input" type="checkbox" id="resource-required" asp-for="Input.Required"/>
                 <label class="form-check-label" for="resource-required">Required</label>
             </div>
 
             <div class="form-check">
-                <input class="form-control" type="checkbox" id="resource-emphasize" asp-for="Input.Emphasize"/>
+                <input class="form-check-input" type="checkbox" id="resource-emphasize" asp-for="Input.Emphasize"/>
                 <label class="form-check-label" for="resource-emphasize">Emphasize</label>
             </div>
 
             <div class="form-check">
-                <input class="form-control" type="checkbox" id="resource-show-discovery"
+                <input class="form-check-input" type="checkbox" id="resource-show-discovery"
                        asp-for="Input.ShowInDiscoveryDocument" checked/>
                 <label class="form-check-label" for="resource-show-discovery">Show in Discovery</label>
             </div>
