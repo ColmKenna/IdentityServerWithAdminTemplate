@@ -83,8 +83,8 @@
             <div class="form-group">
                 <label asp-for="Input.FrontChannelLogoutUri" class="form-label">Front-channel Logout URI</label>
                 <input asp-for="Input.FrontChannelLogoutUri" type="url" class="form-control"
-                       placeholder="https://localhost:5001/signout-frontchannel"/>
-                <span asp-validation-for="Input.FrontChannelLogoutUri"
+                       placeholder="https://localhost:5001/signout-frontchannel" aria-describedby="front-channel-logout-uri-error"/>
+                <span asp-validation-for="Input.FrontChannelLogoutUri" id="front-channel-logout-uri-error"
                       class="text-danger field-validation-error"></span>
                 <div class="form-indent">
                     <label class="checkbox-label">
@@ -97,8 +97,8 @@
             <div class="form-group">
                 <label asp-for="Input.BackChannelLogoutUri" class="form-label">Back-channel Logout URI</label>
                 <input asp-for="Input.BackChannelLogoutUri" type="url" class="form-control"
-                       placeholder="https://localhost:5001/signout-backchannel"/>
-                <span asp-validation-for="Input.BackChannelLogoutUri" class="text-danger field-validation-error"></span>
+                       placeholder="https://localhost:5001/signout-backchannel" aria-describedby="back-channel-logout-uri-error"/>
+                <span asp-validation-for="Input.BackChannelLogoutUri" id="back-channel-logout-uri-error" class="text-danger field-validation-error"></span>
                 <div class="form-indent">
                     <label class="checkbox-label">
                         <input type="checkbox" asp-for="Input.BackChannelLogoutSessionRequired"/>

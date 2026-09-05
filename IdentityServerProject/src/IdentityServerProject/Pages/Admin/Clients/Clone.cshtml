@@ -25,8 +25,8 @@
     <div class="panel panel-padded">
         <div class="form-group">
             <label asp-for="Input.ClientId" class="form-label">New Client ID <span class="required">*</span></label>
-            <input asp-for="Input.ClientId" class="form-control" placeholder="e.g. my-web-app-clone" required/>
-            <span asp-validation-for="Input.ClientId" class="text-danger field-validation-error"></span>
+            <input asp-for="Input.ClientId" class="form-control" placeholder="e.g. my-web-app-clone" required aria-describedby="client-id-error"/>
+            <span asp-validation-for="Input.ClientId" id="client-id-error" class="text-danger field-validation-error"></span>
             <small class="form-text text-muted">Unique
                 alphanumeric identifier used in OAuth requests.</small>
         </div>
@@ -34,15 +34,15 @@
         <div class="form-group">
             <label asp-for="Input.ClientName" class="form-label">New Client Display Name <span class="required">*</span></label>
             <input asp-for="Input.ClientName" class="form-control" placeholder="e.g. Customer Portal Web Clone"
-                   required/>
-            <span asp-validation-for="Input.ClientName" class="text-danger field-validation-error"></span>
+                   required aria-describedby="client-name-error"/>
+            <span asp-validation-for="Input.ClientName" id="client-name-error" class="text-danger field-validation-error"></span>
         </div>
 
         <div class="form-group">
             <label asp-for="Input.Description" class="form-label">Description</label>
             <textarea asp-for="Input.Description" class="form-control" rows="2"
-                      placeholder="Optional notes about this client application"></textarea>
-            <span asp-validation-for="Input.Description" class="text-danger field-validation-error"></span>
+                      placeholder="Optional notes about this client application" aria-describedby="client-description-error"></textarea>
+            <span asp-validation-for="Input.Description" id="client-description-error" class="text-danger field-validation-error"></span>
         </div>
 
         <div class="form-actions form-actions-spaced">

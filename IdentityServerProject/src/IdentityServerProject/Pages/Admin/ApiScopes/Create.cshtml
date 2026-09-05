@@ -20,22 +20,22 @@
 
         <div class="form-field">
             <label class="form-label" for="scope-name">Scope Name *</label>
-            <input class="form-control" id="scope-name" asp-for="Input.Name"/>
-            <span asp-validation-for="Input.Name" class="field-validation-error"></span>
+            <input class="form-control" id="scope-name" asp-for="Input.Name" aria-describedby="scope-name-error"/>
+            <span asp-validation-for="Input.Name" id="scope-name-error" class="field-validation-error"></span>
             <small class="form-text">A unique identifier for this scope (e.g., 'api.read', 'api.write'). This cannot be
                 changed after creation.</small>
         </div>
 
         <div class="form-field">
             <label class="form-label" for="scope-display-name">Display Name</label>
-            <input class="form-control" id="scope-display-name" asp-for="Input.DisplayName"/>
-            <span asp-validation-for="Input.DisplayName" class="field-validation-error"></span>
+            <input class="form-control" id="scope-display-name" asp-for="Input.DisplayName" aria-describedby="scope-display-name-error"/>
+            <span asp-validation-for="Input.DisplayName" id="scope-display-name-error" class="field-validation-error"></span>
         </div>
 
         <div class="form-field">
             <label class="form-label" for="scope-description">Description</label>
-            <textarea class="form-control" id="scope-description" rows="3" asp-for="Input.Description"></textarea>
-            <span asp-validation-for="Input.Description" class="field-validation-error"></span>
+            <textarea class="form-control" id="scope-description" rows="3" asp-for="Input.Description" aria-describedby="scope-description-error"></textarea>
+            <span asp-validation-for="Input.Description" id="scope-description-error" class="field-validation-error"></span>
         </div>
 
         <div class="form-actions">

@@ -30,15 +30,15 @@
         <div class="form-field">
             <label asp-for="Input.ClientName" class="form-label">Client Display Name <span
                     class="required">*</span></label>
-            <input asp-for="Input.ClientName" class="form-control" placeholder="e.g. Customer Portal Web" required/>
-            <span asp-validation-for="Input.ClientName" class="text-danger field-validation-error"></span>
+            <input asp-for="Input.ClientName" class="form-control" placeholder="e.g. Customer Portal Web" required aria-describedby="client-name-error"/>
+            <span asp-validation-for="Input.ClientName" id="client-name-error" class="text-danger field-validation-error"></span>
         </div>
 
         <div class="form-field">
             <label asp-for="Input.Description" class="form-label">Description</label>
             <textarea asp-for="Input.Description" class="form-control" rows="4"
-                      placeholder="Optional notes about this client application"></textarea>
-            <span asp-validation-for="Input.Description" class="text-danger field-validation-error"></span>
+                      placeholder="Optional notes about this client application" aria-describedby="client-description-error"></textarea>
+            <span asp-validation-for="Input.Description" id="client-description-error" class="text-danger field-validation-error"></span>
         </div>
     </div>
 

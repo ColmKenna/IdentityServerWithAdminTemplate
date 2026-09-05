@@ -58,8 +58,8 @@
 
             <div class="form-field">
                 <label class="form-label" for="basics-name">Name</label>
-                <input class="form-control" id="basics-name" asp-for="Basics.Name"/>
-                <span asp-validation-for="Basics.Name" class="field-validation-error"></span>
+                <input class="form-control" id="basics-name" asp-for="Basics.Name" aria-describedby="basics-name-error"/>
+                <span asp-validation-for="Basics.Name" id="basics-name-error" class="field-validation-error"></span>
             </div>
 
             <div class="form-field">
@@ -166,13 +166,13 @@
                 <h3 class="section-title">Generate a new secret</h3>
                 <div class="form-field">
                     <label class="form-label" for="secret-description">Description (optional)</label>
-                    <input class="form-control" id="secret-description" asp-for="Secret.Description"/>
-                    <span asp-validation-for="Secret.Description" class="field-validation-error"></span>
+                    <input class="form-control" id="secret-description" asp-for="Secret.Description" aria-describedby="secret-description-error"/>
+                    <span asp-validation-for="Secret.Description" id="secret-description-error" class="field-validation-error"></span>
                 </div>
                 <div class="form-field">
                     <label class="form-label" for="secret-expiration">Expiration (optional)</label>
-                    <input class="form-control" id="secret-expiration" type="date" asp-for="Secret.Expiration"/>
-                    <span asp-validation-for="Secret.Expiration" class="field-validation-error"></span>
+                    <input class="form-control" id="secret-expiration" type="date" asp-for="Secret.Expiration" aria-describedby="secret-expiration-error"/>
+                    <span asp-validation-for="Secret.Expiration" id="secret-expiration-error" class="field-validation-error"></span>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn-primary">Generate secret</button>
@@ -190,13 +190,13 @@
                     <h3 class="section-title">Attach an existing scope</h3>
                     <div class="form-field">
                         <label class="form-label" for="attach-scope-name">Scope</label>
-                        <select class="form-control" id="attach-scope-name" asp-for="AttachScope.ScopeName">
+                        <select class="form-control" id="attach-scope-name" asp-for="AttachScope.ScopeName" aria-describedby="attach-scope-name-error">
                             @foreach (var scope in Model.AttachableScopeNames)
                             {
                                 <option value="@scope">@scope</option>
                             }
                         </select>
-                        <span asp-validation-for="AttachScope.ScopeName" class="field-validation-error"></span>
+                        <span asp-validation-for="AttachScope.ScopeName" id="attach-scope-name-error" class="field-validation-error"></span>
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="btn-secondary">Attach</button>
@@ -209,13 +209,13 @@
                 <h3 class="section-title">Create a new scope</h3>
                 <div class="form-field">
                     <label class="form-label" for="new-scope-name">Scope name</label>
-                    <input class="form-control" id="new-scope-name" asp-for="CreateScope.ScopeName" required/>
-                    <span asp-validation-for="CreateScope.ScopeName" class="field-validation-error"></span>
+                    <input class="form-control" id="new-scope-name" asp-for="CreateScope.ScopeName" required aria-describedby="new-scope-name-error"/>
+                    <span asp-validation-for="CreateScope.ScopeName" id="new-scope-name-error" class="field-validation-error"></span>
                 </div>
                 <div class="form-field">
                     <label class="form-label" for="new-scope-display-name">Display name (optional)</label>
-                    <input class="form-control" id="new-scope-display-name" asp-for="CreateScope.ScopeDisplayName"/>
-                    <span asp-validation-for="CreateScope.ScopeDisplayName" class="field-validation-error"></span>
+                    <input class="form-control" id="new-scope-display-name" asp-for="CreateScope.ScopeDisplayName" aria-describedby="new-scope-display-name-error"/>
+                    <span asp-validation-for="CreateScope.ScopeDisplayName" id="new-scope-display-name-error" class="field-validation-error"></span>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn-secondary">Create &amp; attach</button>
@@ -231,8 +231,8 @@
                 <h3 class="section-title">Add a claim type</h3>
                 <div class="form-field">
                     <label class="form-label" for="new-claim-type">Claim type</label>
-                    <input class="form-control" id="new-claim-type" asp-for="Claim.ClaimType" required/>
-                    <span asp-validation-for="Claim.ClaimType" class="field-validation-error"></span>
+                    <input class="form-control" id="new-claim-type" asp-for="Claim.ClaimType" required aria-describedby="new-claim-type-error"/>
+                    <span asp-validation-for="Claim.ClaimType" id="new-claim-type-error" class="field-validation-error"></span>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn-secondary">Add claim</button>
