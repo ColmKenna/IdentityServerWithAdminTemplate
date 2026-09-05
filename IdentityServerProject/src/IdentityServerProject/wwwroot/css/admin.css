@@ -1,12 +1,11 @@
 /* =============================================================================
    Admin console stylesheet — plain CSS, no preprocessor and no build step.
-   Linked whole by both layouts (_AdminLayout and _Layout), so source order is
-   the cascade order.
+   Loaded by _AdminLayout after shared.css, which supplies the tokens, the reset
+   and the button/form rules the public pages share with the console.
 
    Sections, in file order. No line numbers on purpose: they go stale silently.
    Search for the banner text instead.
 
-     :root, reset, body ................ design tokens, the * reset, body
      Sidebar ........................... the collapsible nav rail
      Header ............................ top bar, breadcrumbs, user menu
      Main .............................. page frame, tooltips, page titles
@@ -23,85 +22,11 @@
      Page styles — client token settings and user detail
      Page styles — diagnostics
      Shared layout and text utilities
-     Public & Auth Card Styling ........ sign-in, consent and error pages
 
-   Where to add a rule: shared components go in one of the two "Shared" sections;
-   anything only one page uses belongs in that page's section. The four sections
-   from "Shared form..." onward were one block named after a review finding; they
-   accreted when inline styles were given class names, which is why page styles
-   sit between two shared ones.
+   Where to add a rule: if a public page could ever render the class, it belongs
+   in shared.css instead. Otherwise shared components go in one of the two
+   "Shared" sections; anything only one page uses belongs in that page's section.
    ============================================================================= */
-
-:root {
-    --sidebar-w: 290px;
-    --sidebar-w-collapsed: 68px;
-    --header-h: 64px;
-    --bg: #ffffff;
-    --panel: #181a1c;
-    --panel-hover: #26282b;
-    --panel-active: #232629;
-    --accent: #2f6bff;
-    --text: #e8eaed;
-    --text-dim: #8b9096;
-    --border: #e6e8eb;
-    --shadow: 0 8px 28px rgba(10, 15, 25, .16);
-    --ink: #17191c;
-    --z-header: 40;
-    --z-sidebar: 50;
-    --z-dropdown: 80;
-    --z-tooltip: 100;
-
-    /* Canonical Design Token Aliases (US-CORE-002) */
-    --bg-surface: var(--bg);
-    --primary: var(--accent);
-    --sidebar-bg: var(--panel);
-    --danger: #c8433b;
-    --danger-soft: #fdf2f2;
-    /* Danger scale. These are the values the console already used, now named by role.
-       Whether it should collapse to one red is a design question, not a refactor. */
-    --danger-strong: #b91c1c;  /* destructive outline buttons, deactivate icons and headings */
-    --danger-solid: #c0392b;   /* filled danger buttons, destructive action links */
-    --danger-deep: #922b21;    /* danger text sitting on a tinted background */
-    --line-soft: #dde3e8;
-    --navy: #16324f;
-    --muted: #6b7280;
-    /* Inter and JetBrains Mono were named here but never loaded — no @font-face, no font
-       link, no font package — so both always fell through to the next entry. The stacks now
-       say what actually renders. Adding a webfont is a product decision, not a cleanup. */
-    --font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 15px;
-
-    /* ck-tabs web component theming (WI-07) — custom properties pierce the
-       shadow DOM by inheritance, so setting them here themes every <ck-tabs>
-       on the site without needing per-instance overrides. */
-    --tab-bg: var(--bg);
-    --tab-border: var(--border);
-    --tab-text: var(--text-dim);
-    --tab-hover-bg: #f5f6f8;
-    --primary-color: var(--accent);
-    --primary-hover: var(--bg);
-    --text-light: var(--ink);
-    --tab-content-bg: var(--bg);
-    --tab-content-text: var(--ink);
-    --focus-color: var(--accent);
-    --scrollbar-track: #f1f1f1;
-    --scrollbar-thumb: #c1c1c1;
-    --tab-font-family: var(--font-family);
-    --heading-font-family: var(--font-family);
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: var(--font-family);
-    background: var(--bg);
-    color: var(--ink);
-}
 
 /* ============ Sidebar ============ */
 .sidebar {
@@ -164,21 +89,6 @@ body.collapsed .brand {
     gap: 0;
     padding-left: 11px;
     padding-right: 11px;
-}
-
-.brand-icon {
-    flex: 0 0 46px;
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
-    background: var(--accent);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 1.15rem;
-    letter-spacing: -.5px;
 }
 
 .brand-text .brand-name {
@@ -630,46 +540,6 @@ body.collapsed .main {
     flex-wrap: wrap;
 }
 
-.btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--ink);
-    color: #fff;
-    border: 0;
-    border-radius: 10px;
-    padding: 14px 22px;
-    font-weight: 600;
-    font-size: 1rem;
-    text-decoration: none;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background .15s;
-}
-
-.btn-primary:hover,
-.btn-primary:focus-visible {
-    background: #2a2e33;
-}
-
-.btn-icon {
-    width: 16px;
-    height: 16px;
-    margin-right: 4px;
-    fill: none;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    flex-shrink: 0;
-}
-
-.btn-primary .btn-icon {
-    width: 18px;
-    height: 18px;
-    margin-right: 0;
-    stroke-width: 2.4;
-}
-
 .panel {
     margin-top: 44px;
     border: 1px solid var(--border);
@@ -899,22 +769,6 @@ ck-responsive-col.actions-cell {
 .pagination-btn.disabled {
     color: #c3c8cd;
     cursor: not-allowed;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .sidebar,
-    .header,
-    .main,
-    .label,
-    .brand,
-    .item-icon,
-    .chev,
-    .dropdown,
-    .tip,
-    .btn-primary,
-    .nav-item {
-        transition: none;
-    }
 }
 
 /* ============ Client Details Page ============ */
@@ -1210,14 +1064,6 @@ ck-responsive-col.actions-cell {
     color: #991b1b;
 }
 
-/* ============ Responsive Table Web Component Overrides ============ */
-/* Desktop styling for these tables lives in the shared ".responsive-table"
-   section above; the web component adds that class to the <table> it renders. */
-ck-responsive-table {
-    display: block;
-    width: 100%;
-}
-
 @media (max-width: 768px) {
     .responsive-table tr {
         padding: 12px;
@@ -1226,20 +1072,6 @@ ck-responsive-table {
         border: 1px solid var(--border) !important;
         margin-bottom: 12px;
     }
-}
-
-/* ============ Alerts ============ */
-.alert {
-    margin: 20px 0 0;
-    padding: 14px 18px;
-    border-radius: 10px;
-    font-size: .92rem;
-}
-
-.alert-error {
-    background: #fdecea;
-    color: var(--danger-deep);
-    border: 1px solid #f5b7b1;
 }
 
 /* ============ Danger actions ============ */
@@ -1257,25 +1089,6 @@ ck-responsive-table {
 .action-link-danger:hover,
 .action-link-danger:focus-visible {
     text-decoration: underline;
-}
-
-.btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    text-decoration: none;
-    background: var(--bg);
-    color: var(--ink);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px 18px;
-    font-weight: 600;
-    font-size: .92rem;
-    cursor: pointer;
-}
-
-.btn-secondary:hover,
-.btn-secondary:focus-visible {
-    background: #f5f6f8;
 }
 
 .btn-danger {
@@ -1424,14 +1237,6 @@ ck-responsive-table {
     border-top: 1px solid var(--border);
 }
 
-.form-group,
-.form-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 20px;
-}
-
 .form-control-sm {
     max-width: 250px;
 }
@@ -1442,14 +1247,6 @@ ck-responsive-table {
 
 .form-control-md {
     max-width: 450px;
-}
-
-.form-label {
-    display: block;
-    font-weight: 600;
-    font-size: .88rem;
-    color: var(--ink);
-    margin-bottom: 2px;
 }
 
 /* <fieldset> used only to group and name related controls. The UA border, padding
@@ -1466,33 +1263,6 @@ ck-responsive-table {
 
 .fieldset-plain > legend {
     padding: 0;
-}
-
-.form-control {
-    display: block;
-    width: 100%;
-    max-width: 550px;
-    box-sizing: border-box;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: .95rem;
-    font-family: inherit;
-    color: var(--ink);
-    background-color: var(--bg);
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-.form-control:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-}
-
-.form-control:disabled {
-    background-color: #f1f3f5;
-    border-color: var(--border);
-    color: var(--text-dim);
-    cursor: not-allowed;
 }
 
 .form-text {
@@ -1531,11 +1301,6 @@ ck-responsive-table {
     max-width: 600px;
 }
 
-.uri-input-row .form-control {
-    flex: 1;
-    max-width: none;
-}
-
 .uri-input-row .btn-danger {
     padding: 0;
     width: 38px;
@@ -1559,17 +1324,6 @@ ck-responsive-table {
 .form-actions {
     display: flex;
     gap: 10px;
-}
-
-.field-validation-error {
-    display: block;
-    margin-top: 4px;
-    font-size: 0.82rem;
-    color: var(--danger);
-}
-
-.text-danger {
-    color: var(--danger);
 }
 
 /* A badge that follows inline text rather than starting its own line. */
@@ -1794,11 +1548,6 @@ ck-responsive-table {
     align-items: center;
 }
 
-.list-filter > .form-control {
-    flex: 1;
-    max-width: 420px;
-}
-
 .filter-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1817,17 +1566,13 @@ ck-responsive-table {
     font-weight: 600;
 }
 
-.filter-grid .form-control {
-    width: 100%;
-    max-width: none;
-}
-
 .filter-actions {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
+/* Accessible screen-reader-only utility */
 .visually-hidden {
     position: absolute;
     width: 1px;
@@ -2521,11 +2266,6 @@ ck-responsive-table {
     margin-bottom: 18px;
 }
 
-.inline-action-form {
-    display: inline-flex;
-    margin: 0;
-}
-
 .unlock-btn {
     cursor: pointer;
 }
@@ -2558,173 +2298,3 @@ ck-responsive-table {
 .user-username {
     font-weight: 600;
 }
-
-/* ============ Public & Auth Card Styling ============ */
-body.public-page {
-    background: #f8fafc;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 32px 16px;
-}
-
-body.public-page .public-container {
-    margin: 0 auto;
-    width: 100%;
-    max-width: 440px;
-    padding: 36px 32px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-}
-
-.auth-card-header {
-    text-align: center;
-    margin-bottom: 28px;
-}
-
-.auth-brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    text-decoration: none;
-}
-
-.auth-brand .brand-icon {
-    width: 42px;
-    height: 42px;
-    flex: 0 0 42px;
-    border-radius: 11px;
-    font-size: 1.1rem;
-    box-shadow: 0 4px 12px rgba(47, 107, 255, 0.25);
-}
-
-.auth-brand-text {
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-}
-
-.auth-brand-name {
-    font-weight: 700;
-    font-size: 1.15rem;
-    color: var(--ink);
-    line-height: 1.2;
-}
-
-.auth-brand-sub {
-    font-size: .65rem;
-    letter-spacing: .2em;
-    color: var(--text-dim);
-    font-weight: 600;
-}
-
-.auth-title {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: var(--ink);
-    letter-spacing: -.5px;
-    margin-bottom: 6px;
-}
-
-.auth-subtitle {
-    font-size: .92rem;
-    color: var(--muted);
-}
-
-.auth-error {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 0;
-    margin-bottom: 20px;
-}
-
-.auth-error-icon {
-    flex-shrink: 0;
-}
-
-.auth-form {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-}
-
-.input-with-icon {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.input-with-icon .field-icon {
-    position: absolute;
-    left: 14px;
-    width: 18px;
-    height: 18px;
-    color: var(--text-dim);
-    pointer-events: none;
-    transition: color .15s ease;
-}
-
-.input-with-icon .input-has-icon {
-    padding-left: 42px;
-    width: 100%;
-}
-
-.input-with-icon:focus-within .field-icon {
-    color: var(--accent);
-}
-
-.auth-submit-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 13px 20px;
-    font-size: .98rem;
-    margin-top: 6px;
-}
-
-.auth-card-actions {
-    margin-top: 24px;
-    text-align: center;
-}
-
-.access-denied-actions {
-    margin-top: 24px;
-}
-
-.access-denied-actions-inline {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.auth-card-footer {
-    margin-top: 28px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border);
-    text-align: center;
-}
-
-.auth-footer-text {
-    font-size: .8rem;
-    color: var(--text-dim);
-}
-
-@media (max-width: 480px) {
-    body.public-page {
-        padding: 16px 12px;
-    }
-    body.public-page .public-container {
-        padding: 28px 20px;
-    }
-    .auth-title {
-        font-size: 1.35rem;
-    }
-}
-
-/* Accessible screen-reader-only utility */
