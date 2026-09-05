@@ -38,132 +38,97 @@
 
     <!-- 2-Column Grid of Configuration Cards -->
     <div class="details-grid">
-        <!-- Card 1: Basics -->
-        <div class="panel detail-card" id="card-basics">
-            <div class="card-header">
-                <partial name="_AdminIcon" model='("card-basics", "card-icon")' />
-                <h2>Basics</h2>
+        <detail-card id="card-basics" icon="card-basics" title="Basics">
+            <div class="field-group">
+                <span class="field-label">Name:</span>
+                <span class="field-value">@Model.Client.ClientName</span>
             </div>
-            <div class="card-body">
-                <div class="field-group">
-                    <span class="field-label">Name:</span>
-                    <span class="field-value">@Model.Client.ClientName</span>
-                </div>
-                <div class="field-group">
-                    <span class="field-label">Description:</span>
-                    <span
-                        class="field-value text-muted">@(string.IsNullOrWhiteSpace(Model.Client.Description) ? "No description seeded or configured." : Model.Client.Description)</span>
-                </div>
+            <div class="field-group">
+                <span class="field-label">Description:</span>
+                <span
+                    class="field-value text-muted">@(string.IsNullOrWhiteSpace(Model.Client.Description) ? "No description seeded or configured." : Model.Client.Description)</span>
             </div>
-            <div class="card-footer">
+            <card-action>
                 <a asp-page="./Basics" asp-route-id="@Model.Client.ClientId" class="card-action-link">Configure details
                     &rarr;</a>
-            </div>
-        </div>
+            </card-action>
+        </detail-card>
 
-        <!-- Card 2: Authentication & Redirects -->
-        <div class="panel detail-card" id="card-auth-redirects">
-            <div class="card-header">
-                <partial name="_AdminIcon" model='("card-auth", "card-icon")' />
-                <h2>Authentication &amp; Redirects</h2>
+        <detail-card id="card-auth-redirects" icon="card-auth" title="Authentication & Redirects">
+            <div class="field-group">
+                <span class="field-label">PKCE:</span>
+                <span class="field-value">@(Model.Client.RequirePkce ? "Required" : "Optional")</span>
             </div>
-            <div class="card-body">
-                <div class="field-group">
-                    <span class="field-label">PKCE:</span>
-                    <span class="field-value">@(Model.Client.RequirePkce ? "Required" : "Optional")</span>
-                </div>
-                <div class="field-group">
-                    <span class="field-label">Grant Types:</span>
-                    <span class="field-value">@Model.Client.AllowedGrantTypes</span>
-                </div>
-                <div class="field-group">
-                    <span class="field-label">Redirect URIs:</span>
-                    <span class="field-value">@Model.Client.RedirectUrisCount defined</span>
-                </div>
-                <div class="field-group">
-                    <span class="field-label">CORS Origins:</span>
-                    <span class="field-value">@Model.Client.CorsOriginsCount allowed</span>
-                </div>
+            <div class="field-group">
+                <span class="field-label">Grant Types:</span>
+                <span class="field-value">@Model.Client.AllowedGrantTypes</span>
             </div>
-            <div class="card-footer">
+            <div class="field-group">
+                <span class="field-label">Redirect URIs:</span>
+                <span class="field-value">@Model.Client.RedirectUrisCount defined</span>
+            </div>
+            <div class="field-group">
+                <span class="field-label">CORS Origins:</span>
+                <span class="field-value">@Model.Client.CorsOriginsCount allowed</span>
+            </div>
+            <card-action>
                 <a asp-page="./Authentication" asp-route-id="@Model.Client.ClientId" class="card-action-link">Manage
                     flows &amp; URIs &rarr;</a>
-            </div>
-        </div>
+            </card-action>
+        </detail-card>
 
-        <!-- Card 3: Secrets -->
-        <div class="panel detail-card" id="card-secrets">
-            <div class="card-header">
-                <partial name="_AdminIcon" model='("card-secrets", "card-icon")' />
-                <h2>Secrets</h2>
+        <detail-card id="card-secrets" icon="card-secrets" title="Secrets">
+            <div class="field-group">
+                <span class="field-label">Active Secrets:</span>
+                <span class="field-value">@Model.Client.SecretsCount secrets registered</span>
             </div>
-            <div class="card-body">
-                <div class="field-group">
-                    <span class="field-label">Active Secrets:</span>
-                    <span class="field-value">@Model.Client.SecretsCount secrets registered</span>
-                </div>
-                <div class="field-group text-muted">
-                    @(Model.Client.RequireClientSecret ? "Requires secrets to authenticate token requests." : "Does not require secrets to authenticate token requests.")
-                </div>
+            <div class="field-group text-muted">
+                @(Model.Client.RequireClientSecret ? "Requires secrets to authenticate token requests." : "Does not require secrets to authenticate token requests.")
             </div>
-            <div class="card-footer">
+            <card-action>
                 <a asp-page="./Secrets" asp-route-id="@Model.Client.ClientId" class="card-action-link">Credentials
                     lifecycle &rarr;</a>
-            </div>
-        </div>
+            </card-action>
+        </detail-card>
 
-        <!-- Card 4: Permissions (Scopes) -->
-        <div class="panel detail-card" id="card-scopes">
-            <div class="card-header">
-                <partial name="_AdminIcon" model='("card-scopes", "card-icon")' />
-                <h2>Permissions (Scopes)</h2>
+        <detail-card id="card-scopes" icon="card-scopes" title="Permissions (Scopes)">
+            <div class="field-group">
+                <span class="field-label">Allowed Scopes:</span>
+                <span class="field-value">@Model.Client.AllowedScopesCount scopes authorized</span>
             </div>
-            <div class="card-body">
-                <div class="field-group">
-                    <span class="field-label">Allowed Scopes:</span>
-                    <span class="field-value">@Model.Client.AllowedScopesCount scopes authorized</span>
+            @if (Model.Client.AllowedScopes.Count > 0)
+            {
+                <div class="scope-chips-row">
+                    @foreach (var scope in Model.Client.AllowedScopes)
+                    {
+                        <code class="scope-chip">@scope</code>
+                    }
                 </div>
-                @if (Model.Client.AllowedScopes.Count > 0)
-                {
-                    <div class="scope-chips-row">
-                        @foreach (var scope in Model.Client.AllowedScopes)
-                        {
-                            <code class="scope-chip">@scope</code>
-                        }
-                    </div>
-                }
-            </div>
-            <div class="card-footer">
+            }
+            <card-action>
                 <a asp-page="./Permissions" asp-route-id="@Model.Client.ClientId" class="card-action-link">Configure
                     allowed scopes &rarr;</a>
-            </div>
-        </div>
+            </card-action>
+        </detail-card>
 
-        <!-- Card 5: Token Settings -->
-        <div class="panel detail-card" id="card-token-settings">
-            <div class="card-header">
-                <partial name="_AdminIcon" model='("card-tokens", "card-icon")' />
-                <h2>Token Settings</h2>
+        <detail-card id="card-token-settings" icon="card-tokens" title="Token Settings">
+            <div class="field-group">
+                <span class="field-label">Access Token Lifetime:</span>
+                <span class="field-value">@Model.Client.AccessTokenLifetime s</span>
             </div>
-            <div class="card-body">
-                <div class="field-group">
-                    <span class="field-label">Access Token Lifetime:</span>
-                    <span class="field-value">@Model.Client.AccessTokenLifetime s</span>
-                </div>
-                <div class="field-group">
-                    <span class="field-label">Require Consent:</span>
-                    <span class="field-value">@(Model.Client.RequireConsent ? "Yes" : "No")</span>
-                </div>
-                <div class="field-group">
-                    <span class="field-label">Offline Access:</span>
-                    <span class="field-value">@(Model.Client.AllowOfflineAccess ? "Allowed" : "Not Allowed")</span>
-                </div>
+            <div class="field-group">
+                <span class="field-label">Require Consent:</span>
+                <span class="field-value">@(Model.Client.RequireConsent ? "Yes" : "No")</span>
             </div>
-            <div class="card-footer">
+            <div class="field-group">
+                <span class="field-label">Offline Access:</span>
+                <span class="field-value">@(Model.Client.AllowOfflineAccess ? "Allowed" : "Not Allowed")</span>
+            </div>
+            <card-action>
                 <a asp-page="./TokenSettings" asp-route-id="@Model.Client.ClientId" class="card-action-link">Configure
                     token lifetimes &rarr;</a>
-            </div>
-        </div>
+            </card-action>
+        </detail-card>
     </div>
 
     <!-- Bottom Danger/Warning Zone: Deactivate Client Application -->
