@@ -54,22 +54,35 @@ function initializeUserMenu() {
         return;
     }
 
+    // One path for every open and close, so the class the CSS reads and the
+    // aria-expanded the button reports can never drift apart.
+    function setOpen(open) {
+        userMenu.classList.toggle('open', open);
+        userButton.setAttribute('aria-expanded', String(open));
+    }
+
     userButton.addEventListener('click', () => {
-        const isOpen = userMenu.classList.toggle('open');
-        userButton.setAttribute('aria-expanded', String(isOpen));
+        setOpen(!userMenu.classList.contains('open'));
     });
 
     document.addEventListener('click', event => {
         if (!userMenu.contains(event.target)) {
-            userMenu.classList.remove('open');
-            userButton.setAttribute('aria-expanded', 'false');
+            setOpen(false);
         }
     });
 
     document.addEventListener('keydown', event => {
-        if (event.key === 'Escape') {
-            userMenu.classList.remove('open');
-            userButton.setAttribute('aria-expanded', 'false');
+        if (event.key !== 'Escape' || !userMenu.classList.contains('open')) {
+            return;
+        }
+
+        // Closing hides the menu, so focus inside it has to be moved somewhere
+        // deliberate rather than being dropped back to the document.
+        const closingFocusedMenu = userMenu.contains(document.activeElement);
+        setOpen(false);
+
+        if (closingFocusedMenu) {
+            userButton.focus();
         }
     });
 }

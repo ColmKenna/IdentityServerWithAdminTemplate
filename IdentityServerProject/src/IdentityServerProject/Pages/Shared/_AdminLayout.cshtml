@@ -154,7 +154,8 @@
     <div class="user-menu" id="userMenu">
         @if (User.Identity?.IsAuthenticated == true)
         {
-            <button class="user-btn" id="userBtn" aria-expanded="false">
+            <button class="user-btn" id="userBtn" aria-label="Account menu"
+                    aria-expanded="false" aria-controls="userMenuDropdown">
                 <span
                     class="avatar">@(User.Identity.Name?.Substring(0, Math.Min(2, User.Identity.Name.Length)).ToUpper() ?? "AD")</span>
                 <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -162,7 +163,7 @@
                     <polyline points="6 9 12 15 18 9"/>
                 </svg>
             </button>
-            <div class="dropdown">
+            <div class="dropdown" id="userMenuDropdown">
                 <form method="post" asp-page="/Account/Logout" class="logout-form" style="display:inline;">
                     <button type="submit" class="logout"
                             style="background:none; border:none; width:100%; text-align:left; cursor:pointer;">

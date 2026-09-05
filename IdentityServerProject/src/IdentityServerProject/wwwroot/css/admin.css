@@ -419,7 +419,11 @@ body.collapsed .header {
     opacity: 0;
     transform: translateY(-6px);
     pointer-events: none;
-    transition: opacity .18s, transform .18s;
+    /* visibility, not just opacity: a transparent menu still holds its Sign Out
+       button in the tab sequence and in the accessibility tree. Transitioning it
+       keeps the closing fade, because visibility stays visible until the end. */
+    visibility: hidden;
+    transition: opacity .18s, transform .18s, visibility .18s;
     z-index: var(--z-dropdown);
 }
 
@@ -427,6 +431,7 @@ body.collapsed .header {
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
+    visibility: visible;
 }
 
 .dropdown a {
