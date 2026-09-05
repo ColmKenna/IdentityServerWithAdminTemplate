@@ -39,7 +39,7 @@
 @if (User.IsInRole(Config.SysAdminRole))
 {
     <aside class="sidebar" id="sidebar">
-        <a asp-page="/Admin/Index" class="brand" style="text-decoration:none; color:inherit;">
+        <a asp-page="/Admin/Index" class="brand">
             <div class="brand-icon">id</div>
             <div class="brand-text label">
                 <div class="brand-name">IdentityServer</div>
@@ -164,9 +164,8 @@
                 </svg>
             </button>
             <div class="dropdown" id="userMenuDropdown">
-                <form method="post" asp-page="/Account/Logout" class="logout-form" style="display:inline;">
-                    <button type="submit" class="logout"
-                            style="background:none; border:none; width:100%; text-align:left; cursor:pointer;">
+                <form method="post" asp-page="/Account/Logout" class="logout-form">
+                    <button type="submit" class="logout">
                         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                              stroke-width="2" stroke-linecap="round" aria-hidden="true">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>

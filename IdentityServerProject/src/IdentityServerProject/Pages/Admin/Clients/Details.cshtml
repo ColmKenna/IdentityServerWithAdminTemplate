@@ -26,7 +26,7 @@
                     </span>
                 </div>
             </div>
-            <div style="display: flex; gap: 12px; align-items: center;">
+            <div class="hero-actions-row">
                 <a asp-page="./Clone" asp-route-sourceClientId="@Model.Client.ClientId" class="btn-secondary btn-sm">
                     <partial name="_AdminIcon" model='("clone", "btn-icon")' />
                     Clone Client
@@ -203,7 +203,7 @@
         <div class="deactivate-content">
             @if (!string.IsNullOrEmpty(Model.DeleteBlockedMessage))
             {
-                <p class="text-danger" style="font-weight: 500;">@Model.DeleteBlockedMessage</p>
+                <p class="text-danger deactivate-blocked-message">@Model.DeleteBlockedMessage</p>
             }
             <p class="deactivate-description">
                 Permanently removes this client and all of its configuration. This action cannot be undone.

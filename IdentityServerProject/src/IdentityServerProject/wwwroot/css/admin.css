@@ -151,6 +151,13 @@ body.collapsed .sidebar {
     transition: padding .25s ease, gap .25s ease;
 }
 
+/* The whole brand block is one link; it should read as the sidebar's own heading
+   rather than as link text. */
+.brand {
+    text-decoration: none;
+    color: inherit;
+}
+
 /* Collapsed, the expanded 18px inset leaves the 46px icon 7px right of centre in the
    68px rail, out of line with the nav icons below it. 11px + 46px + 11px centres it. */
 body.collapsed .brand {
@@ -469,6 +476,22 @@ body.collapsed .header {
     color: var(--danger);
 }
 
+/* The sign-out control has to be a submit button so the POST carries its
+   antiforgery token, but it sits in the menu as one more row. */
+.dropdown .logout {
+    width: 100%;
+    background: none;
+    border: 0;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* Forms that sit inside a line of content rather than owning a block of their own. */
+.logout-form,
+.inline-form {
+    display: inline;
+}
+
 .dropdown .logout:hover,
 .dropdown .logout:focus-visible {
     background: #fdf0ef;
@@ -657,6 +680,11 @@ body.collapsed .main {
 
 .panel-padded {
     padding: 28px;
+}
+
+/* A panel holding a single short form, kept to a readable measure. */
+.panel-narrow {
+    max-width: 600px;
 }
 
 /* Shared styling for every admin table. The ck-responsive-table web component
@@ -935,6 +963,12 @@ ck-responsive-col.actions-cell {
     border: 1px solid #e2e8f0;
 }
 
+.hero-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .hero-tags-row {
     display: flex;
     align-items: center;
@@ -1137,6 +1171,11 @@ ck-responsive-col.actions-cell {
     justify-content: space-between;
     gap: 24px;
     flex-wrap: wrap;
+}
+
+/* Why the destructive action is unavailable, above the description that explains it. */
+.deactivate-blocked-message {
+    font-weight: 500;
 }
 
 .deactivate-description {
@@ -1533,6 +1572,11 @@ ck-responsive-table {
     color: var(--danger);
 }
 
+/* A badge that follows inline text rather than starting its own line. */
+.badge-inline {
+    margin-left: 8px;
+}
+
 .badge-reserved {
     display: inline-flex;
     align-items: center;
@@ -1651,6 +1695,11 @@ ck-responsive-table {
     padding: 0;
 }
 
+/* The container already publishes the lock state for the chip to read. */
+.scope-chip-container[data-claim-locked="true"] .scope-chip {
+    opacity: .6;
+}
+
 /* The form is a flex child of the pill, not the pill itself — the container carries
    the background, radius and padding. */
 .scope-chip-form {
@@ -1713,6 +1762,12 @@ ck-responsive-table {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 12px;
     margin-top: 16px;
+}
+
+/* Hidden until a template supplies claims. identity-resource-create.js swaps this
+   and #no-claims-message by setting an inline display, which overrides this default. */
+.claims-list {
+    display: none;
 }
 
 .claims-container {
@@ -2048,6 +2103,11 @@ ck-responsive-table {
     margin-bottom: 20px;
 }
 
+/* A bare model-level error list that carries none of the summary panel's chrome. */
+.form-error-summary {
+    margin-bottom: 20px;
+}
+
 .validation-summary-valid {
     display: none;
 }
@@ -2078,6 +2138,48 @@ ck-responsive-table {
 
 .alert-dismissible {
     position: relative;
+}
+
+/* One-time client secret reveal. Its own tint and spacing, stronger than the plain
+   success alert it sits on, because the value is shown once and must be copied now. */
+.secret-reveal-banner {
+    border-left: 5px solid #278070;
+    background: #e8f8f5;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.secret-reveal-title {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: #16324f;
+}
+
+.secret-reveal-description {
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.secret-reveal-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.secret-reveal-value {
+    max-width: 450px;
+    background: var(--bg);
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.secret-reveal-warning {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: #a94442;
 }
 
 .btn {
@@ -2166,6 +2268,16 @@ ck-responsive-table {
 
 .panel-title-danger {
     color: var(--danger);
+}
+
+/* Heading and lead paragraph that introduce a panel, separated from its content. */
+.panel-intro {
+    margin-bottom: 20px;
+}
+
+/* A lead paragraph opening a tab panel. */
+.tab-intro {
+    margin-bottom: 14px;
 }
 
 .form-option-row {
