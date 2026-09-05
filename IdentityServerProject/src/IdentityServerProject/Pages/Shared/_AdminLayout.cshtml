@@ -1,5 +1,6 @@
 @{
     var nav = new AdminNavigationState(ViewContext.RouteData.Values["page"]?.ToString());
+    var components = AdminComponents.Required(ViewData);
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -171,8 +172,14 @@
     @RenderBody()
 </main>
 
-<script type="module" src="~/lib/ck-responsive-table-webcomponent/index.esm.js" asp-append-version="true"></script>
-<script type="module" src="~/lib/ck-tabs-webcomponent/index.esm.js" asp-append-version="true"></script>
+@if (components.HasFlag(AdminComponent.ResponsiveTable))
+{
+    <script type="module" src="~/lib/ck-responsive-table-webcomponent/index.esm.js" asp-append-version="true"></script>
+}
+@if (components.HasFlag(AdminComponent.Tabs))
+{
+    <script type="module" src="~/lib/ck-tabs-webcomponent/index.esm.js" asp-append-version="true"></script>
+}
 <script src="~/js/admin.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", false)
 </body>

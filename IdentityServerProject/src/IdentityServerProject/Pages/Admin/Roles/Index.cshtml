@@ -2,6 +2,7 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Roles";
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.ResponsiveTable;
     ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
         new("Admin", "/Admin/Index"),

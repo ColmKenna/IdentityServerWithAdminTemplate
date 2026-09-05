@@ -2,6 +2,7 @@
 @model AuthenticationModel
 @{
     ViewData["Title"] = "Configure Client Authentication";
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.Tabs;
     ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
         new("Admin", "/Admin/Index"),

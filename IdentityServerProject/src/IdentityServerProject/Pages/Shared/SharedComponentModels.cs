@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Html;
 
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+
 namespace IdentityServerProject.Pages.Shared;
 
 /// <summary>
@@ -15,6 +17,27 @@ namespace IdentityServerProject.Pages.Shared;
 ///     Interpolating a runtime value straight into the body string would bypass the encoder,
 ///     which is the mistake this shape exists to make hard.
 /// </remarks>
+/// <summary>
+///     Web component modules a page needs. The shared admin layout loads only what the page
+///     declares, so a page using neither component requests neither module.
+/// </summary>
+[Flags]
+public enum AdminComponent
+{
+    None = 0,
+    ResponsiveTable = 1,
+    Tabs = 2
+}
+
+public static class AdminComponents
+{
+    /// <summary>Pages declare their requirement as <c>ViewData["AdminComponents"]</c>.</summary>
+    public const string ViewDataKey = "AdminComponents";
+
+    public static AdminComponent Required(ViewDataDictionary viewData) =>
+        viewData[ViewDataKey] as AdminComponent? ?? AdminComponent.None;
+}
+
 public static class SafeMarkupBody
 {
     public static IHtmlContent Render(string markup, IReadOnlyList<string> args, HtmlEncoder encoder)

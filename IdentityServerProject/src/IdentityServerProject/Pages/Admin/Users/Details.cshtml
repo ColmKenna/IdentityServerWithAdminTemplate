@@ -3,6 +3,7 @@
 @model DetailsModel
 @{
     ViewData["Title"] = Model.Account.UserName;
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.Tabs;
     ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
         new("Admin", "/Admin/Index"),

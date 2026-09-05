@@ -2,6 +2,7 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Persisted Grants";
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.ResponsiveTable;
 }
 
 <page-header title="Persisted Grants" sub="Active user sessions, refresh tokens, and consent grants stored by IdentityServer">

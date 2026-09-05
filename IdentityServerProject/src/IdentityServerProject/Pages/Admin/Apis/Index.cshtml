@@ -2,6 +2,7 @@
 @model IndexModel
 @{
     ViewData["Title"] = "API Resources";
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.ResponsiveTable;
     ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
         new("Admin", "/Admin/Index"),

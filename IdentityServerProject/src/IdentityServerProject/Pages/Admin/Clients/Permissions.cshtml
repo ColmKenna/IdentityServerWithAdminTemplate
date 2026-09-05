@@ -2,6 +2,7 @@
 @model PermissionsModel
 @{
     ViewData["Title"] = "Configure Client Permissions";
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.Tabs;
     ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
         new("Admin", "/Admin/Index"),

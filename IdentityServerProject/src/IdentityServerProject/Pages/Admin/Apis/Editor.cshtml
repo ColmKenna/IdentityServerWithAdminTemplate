@@ -2,6 +2,7 @@
 @model EditorModel
 @{
     ViewData["Title"] = Model.Editor.IsNew ? "New API Resource" : Model.Editor.Name;
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.ResponsiveTable | AdminComponent.Tabs;
     ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
         new("Admin", "/Admin/Index"),

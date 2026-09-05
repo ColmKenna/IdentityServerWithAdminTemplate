@@ -2,6 +2,7 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Clients";
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.ResponsiveTable;
 }
 
 <page-header title="Clients" sub="OAuth/OIDC client applications registered with IdentityServer">

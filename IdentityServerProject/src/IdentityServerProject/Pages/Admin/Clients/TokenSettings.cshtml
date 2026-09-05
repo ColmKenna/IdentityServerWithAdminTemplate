@@ -2,6 +2,7 @@
 @model TokenSettingsModel
 @{
     ViewData["Title"] = "Configure Client Token Settings";
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.Tabs;
     ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
         new("Admin", "/Admin/Index"),

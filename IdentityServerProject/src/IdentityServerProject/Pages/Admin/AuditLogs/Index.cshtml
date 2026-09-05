@@ -3,6 +3,7 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Audit Log";
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.ResponsiveTable;
 }
 
 <page-header title="Audit Log" sub="Searchable, read-only history of administrative actions">
