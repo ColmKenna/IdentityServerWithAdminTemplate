@@ -281,11 +281,11 @@ body.collapsed .label {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: monospace;
+    font-family: var(--font-mono);
 }
 
 .side-user .name {
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-weight: 700;
     color: #fff;
     font-size: 1rem;
@@ -298,7 +298,7 @@ body.collapsed .label {
     right: 0;
     left: var(--sidebar-w);
     height: var(--header-h);
-    background: #fff;
+    background: var(--bg);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -410,7 +410,7 @@ body.collapsed .header {
     position: absolute;
     right: 0;
     top: calc(100% + 10px);
-    background: #fff;
+    background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 12px;
     box-shadow: var(--shadow);
@@ -637,7 +637,7 @@ body.collapsed .main {
     border: 1px solid var(--border);
     border-radius: 14px;
     overflow: hidden;
-    background: #fff;
+    background: var(--bg);
 }
 
 .panel-padded {
@@ -762,12 +762,16 @@ ck-responsive-col.actions-cell {
     border-radius: 50%;
 }
 
-.status-badge.enabled {
+/* The two positive states share one tint, so an edit to it cannot reach only half
+   of them. Both class names stay: they mean different things to the pages. */
+.status-badge.enabled,
+.status-badge.success {
     background: #e7f6ec;
     color: #1c7a3d;
 }
 
-.status-badge.enabled::before {
+.status-badge.enabled::before,
+.status-badge.success::before {
     background: #2ba84a;
 }
 
@@ -778,15 +782,6 @@ ck-responsive-col.actions-cell {
 
 .status-badge.disabled::before {
     background: #9aa1a9;
-}
-
-.status-badge.success {
-    background: #e7f6ec;
-    color: #1c7a3d;
-}
-
-.status-badge.success::before {
-    background: #2ba84a;
 }
 
 /* Part of the status-badge palette (paired with its own tint, alongside .enabled and
@@ -888,7 +883,7 @@ ck-responsive-col.actions-cell {
     padding: 30px 32px;
     margin-top: 0;
     margin-bottom: 28px;
-    background: #fff;
+    background: var(--bg);
 }
 
 .hero-header-row {
@@ -917,7 +912,7 @@ ck-responsive-col.actions-cell {
 .client-id-badge {
     background: #f1f5f9;
     color: #475569;
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: 0.95rem;
     padding: 4px 10px;
     border-radius: 6px;
@@ -979,7 +974,7 @@ ck-responsive-col.actions-cell {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    background: #fff;
+    background: var(--bg);
     padding: 24px 28px;
     margin-top: 0;
 }
@@ -1061,7 +1056,7 @@ ck-responsive-col.actions-cell {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     color: #334155;
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: 0.88rem;
     padding: 3px 8px;
     border-radius: 6px;
@@ -1090,7 +1085,7 @@ ck-responsive-col.actions-cell {
 
 .deactivate-card {
     border: 1px solid #fecaca;
-    background: #fff;
+    background: var(--bg);
     padding: 24px 28px;
     margin-top: 0;
 }
@@ -1141,7 +1136,7 @@ ck-responsive-col.actions-cell {
 }
 
 .btn-danger-outline {
-    background: #fff;
+    background: var(--bg);
     color: var(--danger-strong);
     border: 1px solid #fca5a5;
     border-radius: 10px;
@@ -1213,7 +1208,7 @@ ck-responsive-table {
     display: inline-flex;
     align-items: center;
     text-decoration: none;
-    background: #fff;
+    background: var(--bg);
     color: var(--ink);
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -1319,7 +1314,7 @@ ck-responsive-table {
 }
 
 .alert-success-row code {
-    background: #fff;
+    background: var(--bg);
     border: 1px solid #a7e3c1;
     border-radius: 8px;
     padding: 8px 12px;
@@ -1372,12 +1367,6 @@ ck-responsive-table {
     margin-top: 28px;
     padding-top: 24px;
     border-top: 1px solid var(--border);
-}
-
-.form-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
 }
 
 .form-group,
@@ -1435,7 +1424,7 @@ ck-responsive-table {
     font-size: .95rem;
     font-family: inherit;
     color: var(--ink);
-    background-color: #fff;
+    background-color: var(--bg);
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
@@ -1691,7 +1680,7 @@ ck-responsive-table {
 
 .danger-row-desc {
     display: block;
-    color: #6b7280;
+    color: var(--muted);
     font-size: .88rem;
     margin-top: 2px;
 }
@@ -1712,7 +1701,7 @@ ck-responsive-table {
 
 .claims-container {
     background: #f8fafc;
-    border: 1px solid #dde3e8;
+    border: 1px solid var(--line-soft);
     border-radius: 3px;
     padding: 12px;
     margin-bottom: 16px;
@@ -1786,7 +1775,7 @@ ck-responsive-table {
     border-radius: 6px;
     padding: 14px;
     cursor: pointer;
-    background: #fff;
+    background: var(--bg);
     text-align: left;
     font-family: inherit;
     color: inherit;
@@ -1901,7 +1890,7 @@ ck-responsive-table {
     padding: 22px 20px;
     border: 1px solid var(--border);
     border-radius: 14px;
-    background: #fff;
+    background: var(--bg);
     text-decoration: none;
     color: var(--ink);
     transition: border-color .18s, box-shadow .18s;
@@ -2036,10 +2025,6 @@ ck-responsive-table {
 }
 
 /* ============ Shared form, alert and button components ============ */
-.form-group {
-    margin-bottom: 20px;
-}
-
 .validation-summary {
     padding: 14px 18px;
     border-radius: 8px;
@@ -2462,7 +2447,7 @@ body.public-page .public-container {
     width: 100%;
     max-width: 440px;
     padding: 36px 32px;
-    background: #ffffff;
+    background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
