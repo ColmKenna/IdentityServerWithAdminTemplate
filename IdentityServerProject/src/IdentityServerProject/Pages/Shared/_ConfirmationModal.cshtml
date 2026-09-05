@@ -1,19 +1,38 @@
 @model IdentityServerProject.Pages.Shared.ConfirmationModalModel
+@{
+    var bodyId = Model.BodyId ?? $"{Model.DialogId}-desc";
+    var body = SafeMarkupBody.Render(Model.BodyHtml, Model.BodyArgs, HtmlEncoder);
+}
 
 <dialog id="@Model.DialogId" class="modal" aria-labelledby="@(Model.DialogId)-title">
     <form method="post" asp-page-handler="@Model.Handler" asp-route-name="@Model.RouteName">
-        @if (!string.IsNullOrEmpty(Model.HiddenInputName))
+        @foreach (var field in Model.HiddenFields)
         {
-            <input type="hidden" name="@Model.HiddenInputName" id="@Model.HiddenInputId" value="@Model.HiddenInputValue"/>
+            <input type="hidden" name="@field.Name" id="@field.Id" value="@field.Value"/>
         }
         <h2 class="modal-title" id="@(Model.DialogId)-title">@Model.Title</h2>
-        <p class="modal-body" id="@(Model.BodyId ?? $"{Model.DialogId}-desc")">@SafeMarkupBody.Render(Model.BodyHtml, Model.BodyArgs, HtmlEncoder)</p>
+
+        @* Written as two branches because Razor renders data-state="" here rather than
+           dropping the attribute when the value is null, and only the delete dialogs carry it. *@
+        @if (Model.BodyState is null)
+        {
+            <p class="modal-body" id="@bodyId">@body</p>
+        }
+        else
+        {
+            <p class="modal-body" id="@bodyId" data-state="@Model.BodyState">@body</p>
+        }
+
+        @if (Model.BlockedBodyHtml is not null)
+        {
+            <p class="modal-body modal-body-blocked" id="@Model.BlockedBodyId" hidden>@SafeMarkupBody.Render(Model.BlockedBodyHtml, Array.Empty<string>(), HtmlEncoder)</p>
+        }
 
         @if (!string.IsNullOrEmpty(Model.ConfirmWord))
         {
             <label for="@($"{Model.DialogId}-confirm-input")" class="visually-hidden">Type @Model.ConfirmWord to confirm</label>
             <input type="text" id="@($"{Model.DialogId}-confirm-input")" name="confirmation" class="form-control confirm-input" data-confirm-word="@Model.ConfirmWord"
-                   aria-describedby="@(Model.BodyId ?? $"{Model.DialogId}-desc")" autocomplete="off"/>
+                   aria-describedby="@bodyId" autocomplete="off"/>
             <div class="modal-actions">
                 <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
                 <button type="submit" class="@Model.SubmitClass" data-confirm-submit disabled>@Model.SubmitText</button>
