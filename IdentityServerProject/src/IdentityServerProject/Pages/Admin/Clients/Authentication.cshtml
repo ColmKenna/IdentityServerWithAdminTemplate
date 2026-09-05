@@ -40,8 +40,10 @@
                 </label>
             </div>
 
-            <fieldset class="fieldset-plain">
+            <fieldset class="fieldset-plain" aria-describedby="grant-types-requirement">
                 <legend class="form-label">Allowed Grant Types <span class="required">*</span></legend>
+                <p class="form-text" id="grant-types-requirement">Select at least one grant type. Any one of these
+                    satisfies the requirement.</p>
                 <div class="checkbox-options">
                     <label class="checkbox-label checkbox-label-compact">
                         <input type="checkbox" name="Input.GrantTypes" value="authorization_code"

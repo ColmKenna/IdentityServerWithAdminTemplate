@@ -223,15 +223,24 @@ public class ScopeCheckboxGridModel
 {
     public IEnumerable<string> Scopes { get; }
     public ICollection<string> Selected { get; }
+
+    /// <summary>
+    ///     Names the checkbox group for assistive technology. Every call site already shows a
+    ///     heading or tab label, so the legend is rendered visually hidden rather than repeated.
+    /// </summary>
+    public string Legend { get; }
+
     public string InputName { get; }
 
     public ScopeCheckboxGridModel(
         IEnumerable<string> scopes,
         ICollection<string> selected,
+        string legend,
         string inputName = "Input.AllowedScopes")
     {
         Scopes = scopes;
         Selected = selected;
+        Legend = legend;
         InputName = inputName;
     }
 }

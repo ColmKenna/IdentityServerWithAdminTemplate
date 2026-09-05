@@ -200,4 +200,16 @@ public class ApiScopesCreateIntegrationTests : IDisposable
         string pageText = doc.DocumentElement.TextContent;
         Assert.Contains("required", pageText, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public async Task Get_MarksTheScopeNameRequired()
+    {
+        HttpResponseMessage response = await _client.GetAsync("/Admin/ApiScopes/Create");
+        IDocument document = await GetDocumentAsync(response);
+
+        // The visible asterisk was the only signal; the model has carried [Required] all along.
+        var name = document.GetElementById("scope-name") as IHtmlInputElement;
+        Assert.NotNull(name);
+        Assert.True(name!.IsRequired);
+    }
 }

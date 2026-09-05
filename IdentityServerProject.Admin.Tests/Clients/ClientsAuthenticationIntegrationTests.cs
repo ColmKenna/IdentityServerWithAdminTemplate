@@ -393,4 +393,29 @@ public class ClientsAuthenticationIntegrationTests : IDisposable
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Get_DescribesTheGrantTypeGroupRequirement_WithoutRequiringEveryOption()
+    {
+        HttpClient httpClient = CreateClient(MockService());
+
+        HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/Authentication/test-client");
+        IDocument document = await GetDocumentAsync(response);
+
+        IElement? fieldset = document.QuerySelector("fieldset[aria-describedby='grant-types-requirement']");
+        Assert.NotNull(fieldset);
+
+        IElement? requirement = document.GetElementById("grant-types-requirement");
+        Assert.NotNull(requirement);
+        Assert.Contains("at least one", requirement!.TextContent, StringComparison.OrdinalIgnoreCase);
+
+        // The rule is "any one of these", so no single checkbox may carry required:
+        // that would demand every option instead.
+        IHtmlInputElement[] grantTypes = fieldset!.QuerySelectorAll("input[name='Input.GrantTypes']")
+            .Cast<IHtmlInputElement>()
+            .ToArray();
+
+        Assert.NotEmpty(grantTypes);
+        Assert.All(grantTypes, checkbox => Assert.False(checkbox.IsRequired));
+    }
 }

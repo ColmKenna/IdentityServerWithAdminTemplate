@@ -56,7 +56,7 @@ public class ValidationMessageAssociationTests : IDisposable
 
         foreach (IElement control in described)
         {
-            Assert.Contains(control.TagName, new[] { "INPUT", "TEXTAREA", "SELECT" });
+            Assert.Contains(control.TagName, new[] { "INPUT", "TEXTAREA", "SELECT", "FIELDSET" });
 
             foreach (string token in control.GetAttribute("aria-describedby")!
                          .Split(' ', StringSplitOptions.RemoveEmptyEntries))

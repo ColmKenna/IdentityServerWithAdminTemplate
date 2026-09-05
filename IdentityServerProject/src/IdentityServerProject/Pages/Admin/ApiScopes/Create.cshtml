@@ -20,7 +20,7 @@
 
         <div class="form-field">
             <label class="form-label" for="scope-name">Scope Name *</label>
-            <input class="form-control" id="scope-name" asp-for="Input.Name" aria-describedby="scope-name-error"/>
+            <input class="form-control" id="scope-name" asp-for="Input.Name" required aria-describedby="scope-name-error"/>
             <span asp-validation-for="Input.Name" id="scope-name-error" class="field-validation-error"></span>
             <small class="form-text">A unique identifier for this scope (e.g., 'api.read', 'api.write'). This cannot be
                 changed after creation.</small>

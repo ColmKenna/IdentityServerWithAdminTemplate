@@ -25,32 +25,35 @@
                 <p class="form-text" style="margin-bottom: 14px;">These claims are returned in the ID token. <code>openid</code>
                     is required for interactive sign-in and cannot be removed.</p>
 
-                <div class="scope-checkbox-grid">
-                    @foreach (var scope in Model.AvailableIdentityScopes)
-                    {
-                        var isOpenId = scope == "openid";
-                        <label class="scope-checkbox @(isOpenId ? "scope-checkbox-disabled" : null)">
-                            @if (isOpenId)
-                            {
-                                <input type="checkbox" checked disabled/>
-                                <input type="hidden" name="Input.AllowedScopes" value="openid"/>
-                            }
-                            else
-                            {
-                                <input type="checkbox" name="Input.AllowedScopes" value="@scope" class="scope-checkbox"
-                                       @(Model.Input.AllowedScopes.Contains(scope) ? "checked" : "")/>
-                            }
-                            <code>@scope</code>
-                            @if (isOpenId)
-                            {
-                                <span class="required" title="Required for interactive sign-in">*</span>
-                            }
-                        </label>
-                    }
-                </div>
+                <fieldset class="fieldset-plain">
+                    <legend class="visually-hidden">Identity resources</legend>
+                    <div class="scope-checkbox-grid">
+                        @foreach (var scope in Model.AvailableIdentityScopes)
+                        {
+                            var isOpenId = scope == "openid";
+                            <label class="scope-checkbox @(isOpenId ? "scope-checkbox-disabled" : null)">
+                                @if (isOpenId)
+                                {
+                                    <input type="checkbox" checked disabled/>
+                                    <input type="hidden" name="Input.AllowedScopes" value="openid"/>
+                                }
+                                else
+                                {
+                                    <input type="checkbox" name="Input.AllowedScopes" value="@scope" class="scope-checkbox"
+                                           @(Model.Input.AllowedScopes.Contains(scope) ? "checked" : "")/>
+                                }
+                                <code>@scope</code>
+                                @if (isOpenId)
+                                {
+                                    <span class="required" title="Required for interactive sign-in">*</span>
+                                }
+                            </label>
+                        }
+                    </div>
+                </fieldset>
             </ck-tab>
             <ck-tab label="API Scopes">
-                <partial name="_ScopeCheckboxGrid" model='new ScopeCheckboxGridModel(Model.AvailableApiScopes, Model.Input.AllowedScopes)' />
+                <partial name="_ScopeCheckboxGrid" model='new ScopeCheckboxGridModel(Model.AvailableApiScopes, Model.Input.AllowedScopes, "API scopes")' />
             </ck-tab>
         </ck-tabs>
     }
@@ -58,7 +61,7 @@
     {
         <div class="panel panel-padded">
             <h2 class="panel-title">API Scopes</h2>
-            <partial name="_ScopeCheckboxGrid" model='new ScopeCheckboxGridModel(Model.AvailableApiScopes, Model.Input.AllowedScopes)' />
+            <partial name="_ScopeCheckboxGrid" model='new ScopeCheckboxGridModel(Model.AvailableApiScopes, Model.Input.AllowedScopes, "API scopes")' />
         </div>
     }
 

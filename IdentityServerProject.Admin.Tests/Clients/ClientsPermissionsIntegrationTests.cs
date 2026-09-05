@@ -220,4 +220,55 @@ public class ClientsPermissionsIntegrationTests : IDisposable
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Get_InteractiveClient_NamesBothScopeGroups()
+    {
+        HttpClient httpClient = CreateClient(MockService(SampleInteractivePermissions()));
+
+        HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/Permissions/test-client");
+        IDocument document = await GetDocumentAsync(response);
+
+        // Both collections are grouped, so a screen reader announces which set a
+        // checkbox belongs to. The legends are hidden because the tab labels already
+        // show the same names.
+        string[] legends = document.QuerySelectorAll("fieldset.fieldset-plain > legend")
+            .Select(legend => legend.TextContent.Trim())
+            .ToArray();
+
+        Assert.Equal(new[] { "Identity resources", "API scopes" }, legends);
+        Assert.All(document.QuerySelectorAll("fieldset.fieldset-plain > legend"),
+            legend => Assert.Contains("visually-hidden", legend.ClassName!));
+    }
+
+    [Fact]
+    public async Task Get_InteractiveClient_KeepsSubmittedScopeNamesAndTheOpenIdHiddenValue()
+    {
+        HttpClient httpClient = CreateClient(MockService(SampleInteractivePermissions()));
+
+        HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/Permissions/test-client");
+        IDocument document = await GetDocumentAsync(response);
+
+        Assert.All(document.QuerySelectorAll("fieldset.fieldset-plain input[type=checkbox][name]"),
+            input => Assert.Equal("Input.AllowedScopes", input.GetAttribute("name")));
+
+        var hidden = document.QuerySelector("input[type=hidden][name='Input.AllowedScopes']") as IHtmlInputElement;
+        Assert.NotNull(hidden);
+        Assert.Equal("openid", hidden!.Value);
+    }
+
+    [Fact]
+    public async Task Get_MachineClient_NamesItsOnlyScopeGroup()
+    {
+        HttpClient httpClient = CreateClient(MockService(SampleM2MPermissions()));
+
+        HttpResponseMessage response = await httpClient.GetAsync("/Admin/Clients/Permissions/test-m2m-client");
+        IDocument document = await GetDocumentAsync(response);
+
+        string[] legends = document.QuerySelectorAll("fieldset.fieldset-plain > legend")
+            .Select(legend => legend.TextContent.Trim())
+            .ToArray();
+
+        Assert.Equal(new[] { "API scopes" }, legends);
+    }
 }

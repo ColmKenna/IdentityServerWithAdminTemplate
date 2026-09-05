@@ -55,7 +55,7 @@
 
         <div class="form-field">
             <label class="form-label" for="resource-name">Resource Name *</label>
-            <input class="form-control" id="resource-name" asp-for="Input.Name" aria-describedby="resource-name-error"/>
+            <input class="form-control" id="resource-name" asp-for="Input.Name" required aria-describedby="resource-name-error"/>
             <span asp-validation-for="Input.Name" id="resource-name-error" class="field-validation-error"></span>
             <small class="form-text">A unique identifier for this resource (e.g., 'profile', 'email',
                 'custom.resource').</small>
