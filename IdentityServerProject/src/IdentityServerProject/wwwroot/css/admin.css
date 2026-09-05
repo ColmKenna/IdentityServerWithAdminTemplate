@@ -148,6 +148,15 @@ body.collapsed .sidebar {
     gap: 14px;
     padding: 26px 18px 30px 18px;
     white-space: nowrap;
+    transition: padding .25s ease, gap .25s ease;
+}
+
+/* Collapsed, the expanded 18px inset leaves the 46px icon 7px right of centre in the
+   68px rail, out of line with the nav icons below it. 11px + 46px + 11px centres it. */
+body.collapsed .brand {
+    gap: 0;
+    padding-left: 11px;
+    padding-right: 11px;
 }
 
 .brand-icon {
@@ -570,6 +579,12 @@ body.collapsed .main {
         max-width: 190px;
     }
 
+    body.collapsed .brand {
+        gap: 14px;
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
     .page-title {
         font-size: 2rem;
     }
@@ -863,6 +878,7 @@ ck-responsive-col.actions-cell {
     .header,
     .main,
     .label,
+    .brand,
     .item-icon,
     .chev,
     .dropdown,
