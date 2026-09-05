@@ -31,6 +31,20 @@ public static class SafeMarkupBody
     }
 }
 
+public class AuthCardHeaderModel
+{
+    public string BrandSubtitle { get; }
+    public string Title { get; }
+    public string? Description { get; }
+
+    public AuthCardHeaderModel(string brandSubtitle, string title, string? description = null)
+    {
+        BrandSubtitle = brandSubtitle;
+        Title = title;
+        Description = description;
+    }
+}
+
 public class SecretRevealBannerModel
 {
     public string? SecretValue { get; }

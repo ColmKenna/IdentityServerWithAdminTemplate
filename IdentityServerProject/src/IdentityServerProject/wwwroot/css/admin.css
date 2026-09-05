@@ -2524,6 +2524,18 @@ body.public-page .public-container {
     color: var(--muted);
 }
 
+.auth-error {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.auth-error-icon {
+    flex-shrink: 0;
+}
+
 .auth-form {
     display: flex;
     flex-direction: column;
@@ -2561,6 +2573,22 @@ body.public-page .public-container {
     padding: 13px 20px;
     font-size: .98rem;
     margin-top: 6px;
+}
+
+.auth-card-actions {
+    margin-top: 24px;
+    text-align: center;
+}
+
+.access-denied-actions {
+    margin-top: 24px;
+}
+
+.access-denied-actions-inline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
 .auth-card-footer {

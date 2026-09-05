@@ -1,0 +1,16 @@
+@model AuthCardHeaderModel
+
+<div class="auth-card-header">
+    <div class="auth-brand">
+        <div class="brand-icon">id</div>
+        <div class="auth-brand-text">
+            <span class="auth-brand-name">IdentityServer</span>
+            <span class="auth-brand-sub">@Model.BrandSubtitle</span>
+        </div>
+    </div>
+    <h1 class="auth-title">@Model.Title</h1>
+    @if (!string.IsNullOrWhiteSpace(Model.Description))
+    {
+        <p class="auth-subtitle">@Model.Description</p>
+    }
+</div>
