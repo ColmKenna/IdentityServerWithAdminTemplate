@@ -6,29 +6,6 @@
     {
         new("Admin")
     };
-
-    @* Both groups use the same card shape so one loop can render them. Warning state and
-       badge are null for everything except Diagnostics today, but they are part of the
-       shape rather than a second one. *@
-    var cardGroups = new[]
-    {
-        (Label: "Configure", Cards: new[]
-        {
-            (Page: "/Admin/Clients/Index", Id: "dashboard-card-clients", Icon: "clients", Title: "Clients", Desc: "OAuth/OIDC client applications, redirect URIs, and credentials.", IsWarning: false, Badge: (int?)null),
-            (Page: "/Admin/Apis/Index", Id: "dashboard-card-apis", Icon: "apis", Title: "API Resources", Desc: "Protected API definitions, secrets, and user claims.", IsWarning: false, Badge: (int?)null),
-            (Page: "/Admin/ApiScopes/Index", Id: "dashboard-card-apiscopes", Icon: "apiscopes", Title: "API Scopes", Desc: "Granular token permissions, resource associations, and audiences.", IsWarning: false, Badge: (int?)null),
-            (Page: "/Admin/IdentityResources/Index", Id: "dashboard-card-identityresources", Icon: "identityresources", Title: "Identity Resources", Desc: "OpenID Connect scopes such as openid, profile, and email.", IsWarning: false, Badge: (int?)null),
-            (Page: "/Admin/Keys/Index", Id: "dashboard-card-keys", Icon: "keys", Title: "Signing Keys", Desc: "Active and historical cryptographic keys for token signing.", IsWarning: false, Badge: (int?)null)
-        }),
-        (Label: "Administer", Cards: new[]
-        {
-            (Page: "/Admin/Users/Index", Id: "dashboard-card-users", Icon: "users", Title: "Users", Desc: "Manage accounts, roles, claims, and credentials.", IsWarning: false, Badge: (int?)null),
-            (Page: "/Admin/Roles/Index", Id: "dashboard-card-roles", Icon: "roles", Title: "Roles", Desc: "Define and manage roles for access control.", IsWarning: false, Badge: (int?)null),
-            (Page: "/Admin/Grants/Index", Id: "dashboard-card-grants", Icon: "grants", Title: "Persisted Grants", Desc: "Active refresh tokens, authorization codes, and consent records.", IsWarning: false, Badge: (int?)null),
-            (Page: "/Admin/AuditLogs/Index", Id: "dashboard-card-auditlogs", Icon: "auditlogs", Title: "Audit Logs", Desc: "Security event trail, actor logins, and administrative mutations.", IsWarning: false, Badge: (int?)null),
-            (Page: "/Admin/Diagnostics/Index", Id: "dashboard-card-diagnostics", Icon: "diagnostics", Title: "Diagnostics", Desc: "Store connectivity, signing credentials, and claim validation.", IsWarning: Model.HasIssues, Badge: Model.HasIssues ? Model.Issues.Count : (int?)null)
-        })
-    };
 }
 
 <page-header title="Admin Dashboard" sub="IdentityServer management, configuration, and security operations.">
@@ -56,7 +33,7 @@
     </div>
 }
 
-@foreach (var cardGroup in cardGroups)
+@foreach (var cardGroup in Model.CardGroups)
 {
     <h2 class="dashboard-section-label">@cardGroup.Label</h2>
 
@@ -75,7 +52,7 @@
                             <span class="card-badge">@card.Badge.Value</span>
                         }
                     </span>
-                    <span class="dashboard-card-desc">@card.Desc</span>
+                    <span class="dashboard-card-desc">@card.Description</span>
                 </div>
                 <svg aria-hidden="true" class="dashboard-card-arrow" viewBox="0 0 24 24">
                     <polyline points="9 18 15 12 9 6"/>

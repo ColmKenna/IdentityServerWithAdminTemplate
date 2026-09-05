@@ -301,3 +301,54 @@ public sealed record Breadcrumb(
     string Text,
     string? Page = null,
     IDictionary<string, string>? RouteValues = null);
+
+/// <summary>
+///     One breadcrumb with its position in the trail already decided, so the layout only
+///     has to choose markup.
+/// </summary>
+public sealed record BreadcrumbTrailItem(
+    string Text,
+    string? Page,
+    IDictionary<string, string>? RouteValues,
+    bool IsLink,
+    bool NeedsSeparator);
+
+public static class BreadcrumbTrail
+{
+    /// <summary>
+    ///     Resolves a trail for rendering. Every crumb but the first is preceded by a
+    ///     separator, and the last crumb is the page being viewed, so it stays plain text
+    ///     even when it names a page.
+    /// </summary>
+    public static IReadOnlyList<BreadcrumbTrailItem> Resolve(IEnumerable<Breadcrumb> crumbs)
+    {
+        List<Breadcrumb> trail = crumbs.ToList();
+
+        return trail
+            .Select((crumb, index) => new BreadcrumbTrailItem(
+                crumb.Text,
+                crumb.Page,
+                crumb.RouteValues,
+                IsLink: crumb.Page is not null && index < trail.Count - 1,
+                NeedsSeparator: index > 0))
+            .ToList();
+    }
+}
+
+/// <summary>
+///     Which sidebar section the current request belongs to. Matched on the Razor Pages
+///     route rather than the title, because titles vary per sub-page, and on segment
+///     boundaries, so "/Admin/Apis" does not also light up on "/Admin/ApiScopes".
+/// </summary>
+public sealed class AdminNavigationState(string? currentPage)
+{
+    private readonly string _currentPage = currentPage ?? string.Empty;
+
+    public bool IsActiveSection(string sectionPrefix) =>
+        _currentPage.Length > 0 &&
+        (_currentPage.Equals(sectionPrefix, StringComparison.OrdinalIgnoreCase) ||
+         _currentPage.StartsWith(sectionPrefix + "/", StringComparison.OrdinalIgnoreCase));
+
+    public string ItemClass(string sectionPrefix) =>
+        IsActiveSection(sectionPrefix) ? "nav-item active" : "nav-item";
+}
