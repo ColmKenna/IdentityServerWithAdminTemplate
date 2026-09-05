@@ -1,8 +1,7 @@
 @page
+@model AccessDeniedModel
 @{
     ViewData["Title"] = "Access denied";
-    var returnUrl = Request.Query["ReturnUrl"].ToString();
-    var hasReturnUrl = !string.IsNullOrWhiteSpace(returnUrl);
 }
 
 <partial name="_AuthCardHeader" model='new AuthCardHeaderModel("ADMIN CONSOLE", "Access denied")'/>
@@ -18,20 +17,13 @@
         <form method="post" asp-page="/Account/Logout" class="inline-action-form">
             <button type="submit" class="btn-primary">Log out</button>
         </form>
-        @if (hasReturnUrl)
-        {
-            <a asp-page="/Account/Login" asp-route-returnUrl="@returnUrl" class="btn-secondary">Log in as different user</a>
-        }
-        else
-        {
-            <a asp-page="/Account/Login" asp-route-returnUrl="/Admin" class="btn-secondary">Log in as different user</a>
-        }
+        <a asp-page="/Account/Login" asp-route-returnUrl="@Model.LoginReturnUrl" class="btn-secondary">Log in as different user</a>
     </div>
 }
 else
 {
     <p>Your account does not have permission to access the administration console.</p>
     <div class="access-denied-actions">
-        <a asp-page="/Account/Login" asp-route-returnUrl="@(hasReturnUrl ? returnUrl : "/Admin")" class="btn-primary">Log in</a>
+        <a asp-page="/Account/Login" asp-route-returnUrl="@Model.LoginReturnUrl" class="btn-primary">Log in</a>
     </div>
 }

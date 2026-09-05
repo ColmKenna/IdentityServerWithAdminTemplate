@@ -9,8 +9,6 @@
         new("Users", "/Admin/Users/Index"),
         new(Model.Account.UserName)
     };
-
-    var unassignedRoles = Model.Account.AllRoles.Except(Model.Account.AssignedRoles).ToList();
 }
 
 <page-header title="@(string.IsNullOrWhiteSpace(Model.Account.FullName) ? Model.Account.UserName : Model.Account.FullName)">
@@ -99,7 +97,7 @@
             <form method="post" asp-page-handler="AddRole" asp-route-id="@Model.Id" class="role-assignment-form">
                 <select name="role" class="form-control form-control-grow" aria-label="Select a role to assign">
                     <option value="">-- Select a role --</option>
-                    @foreach (var role in unassignedRoles)
+                    @foreach (var role in Model.UnassignedRoles)
                     {
                         <option value="@role">@role</option>
                     }

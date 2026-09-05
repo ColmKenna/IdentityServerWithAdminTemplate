@@ -106,4 +106,50 @@ public class AdminAuthorizationIntegrationTests : IClassFixture<AdminWebFactory>
         ClaimsPrincipal principal = await principalFactory.CreateAsync(admin);
         Assert.True(principal.IsInRole(Config.SysAdminRole));
     }
+
+    [Theory]
+    [InlineData("non-admin")]
+    [InlineData("anonymous")]
+    public async Task AccessDeniedPage_WithoutAReturnUrl_SendsLoginToTheConsoleRoot(string identity)
+    {
+        HttpClient client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Auth", identity);
+
+        HttpResponseMessage response = await client.GetAsync("/Account/AccessDenied");
+        string content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("/Account/Login?returnUrl=%2FAdmin", content);
+    }
+
+    [Theory]
+    [InlineData("non-admin")]
+    [InlineData("anonymous")]
+    public async Task AccessDeniedPage_WithAReturnUrl_SendsLoginBackToTheRefusedPage(string identity)
+    {
+        HttpClient client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Auth", identity);
+
+        HttpResponseMessage response = await client.GetAsync(
+            "/Account/AccessDenied?ReturnUrl=%2FAdmin%2FClients");
+        string content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("/Account/Login?returnUrl=%2FAdmin%2FClients", content);
+    }
+
+    [Theory]
+    [InlineData("non-admin")]
+    [InlineData("anonymous")]
+    public async Task AccessDeniedPage_WithABlankReturnUrl_FallsBackToTheConsoleRoot(string identity)
+    {
+        HttpClient client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Auth", identity);
+
+        HttpResponseMessage response = await client.GetAsync("/Account/AccessDenied?ReturnUrl=%20");
+        string content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("/Account/Login?returnUrl=%2FAdmin", content);
+    }
 }
