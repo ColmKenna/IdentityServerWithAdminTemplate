@@ -5,10 +5,13 @@ using Duende.IdentityServer.Services;
 using IdentityServerProject.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Account;
 
+// Reachable before sign-in by definition; exempt from the fallback policy.
+[AllowAnonymous]
 public class LogoutModel(
     SignInManager<ApplicationUser> signInManager,
     IIdentityServerInteractionService interaction,

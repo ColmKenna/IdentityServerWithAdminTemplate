@@ -1,7 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityServerProject.Pages.Account;
 
+// Reachable before sign-in by definition; exempt from the fallback policy.
+[AllowAnonymous]
 public class AccessDeniedModel : PageModel
 {
     private const string ConsoleRoot = "/Admin";

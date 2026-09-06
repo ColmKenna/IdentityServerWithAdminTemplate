@@ -12,6 +12,7 @@ using IdentityServerProject.Services.Roles;
 using IdentityServerProject.Services.SecretReveals;
 using IdentityServerProject.Services.Users;
 using IdentityServerProject.Services.Validation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -148,6 +149,16 @@ builder.Services.AddSingleton(new OperationalStoreOptions());
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("SysAdminOnly", policy => policy.RequireRole(Config.SysAdminRole));
+
+    // Protection by omission. An endpoint that declares no authorisation is denied rather
+    // than served, so a page added outside the /Admin convention fails closed. Everything
+    // meant to be reachable anonymously says so: the [AllowAnonymous] pages under /Account
+    // and /Error, the root redirect below, and the health endpoints in ServiceDefaults.
+    // Duende's protocol endpoints are unaffected — UseIdentityServer runs before
+    // UseAuthorization and terminates those requests first.
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
 });
 
 builder.Services.AddRazorPages(options => { options.Conventions.AuthorizeFolder("/Admin", "SysAdminOnly"); });
@@ -248,7 +259,9 @@ app.UseAuthentication();
 app.UseIdentityServer();
 app.UseAuthorization();
 
-app.MapGet("/", () => Results.Redirect("/Admin")).ExcludeFromDescription();
+// Anonymous on purpose: challenging here would hand the login page returnUrl=/ when the
+// console is where the user is actually going. The challenge happens at /Admin instead.
+app.MapGet("/", () => Results.Redirect("/Admin")).ExcludeFromDescription().AllowAnonymous();
 
 app.MapRazorPages();
 app.MapDefaultEndpoints();
