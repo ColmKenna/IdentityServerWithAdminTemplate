@@ -124,18 +124,17 @@ else
 {
     string? certPath = builder.Configuration["IdentityServer:SigningCertificatePath"];
     string? certPassword = builder.Configuration["IdentityServer:SigningCertificatePassword"];
-    if (!string.IsNullOrWhiteSpace(certPath) && !string.IsNullOrWhiteSpace(certPassword))
-    {
-        string resolvedCertPath = Path.IsPathRooted(certPath)
-            ? certPath
-            : Path.Combine(builder.Environment.ContentRootPath, certPath);
-        X509Certificate2 cert =
-            X509CertificateLoader.LoadPkcs12FromFile(resolvedCertPath, certPassword,
-                X509KeyStorageFlags.EphemeralKeySet);
-        isBuilder.AddSigningCredential(cert);
-    }
-    else
-        isBuilder.AddDeveloperSigningCredential();
+    if (string.IsNullOrWhiteSpace(certPath) || string.IsNullOrWhiteSpace(certPassword))
+        throw new InvalidOperationException(
+            "IdentityServer:SigningCertificatePath and IdentityServer:SigningCertificatePassword are required outside Development.");
+
+    string resolvedCertPath = Path.IsPathRooted(certPath)
+        ? certPath
+        : Path.Combine(builder.Environment.ContentRootPath, certPath);
+    X509Certificate2 cert =
+        X509CertificateLoader.LoadPkcs12FromFile(resolvedCertPath, certPassword,
+            X509KeyStorageFlags.EphemeralKeySet);
+    isBuilder.AddSigningCredential(cert);
 }
 
 builder.Services.AddHealthChecks()
