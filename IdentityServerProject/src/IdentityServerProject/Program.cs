@@ -167,6 +167,12 @@ builder.Services.AddScoped<IDatabaseSchemaReadinessValidator, DatabaseSchemaRead
 
 WebApplication app = builder.Build();
 
+// Read before the readiness check so a missing credential fails on its own terms rather
+// than after a database round trip. This administrator is seeded in every environment, so
+// the values can never fall back to a literal: see RequiredConfigurationExtensions.
+string sysAdminEmail = app.Configuration.Required("Seed:SysAdminEmail");
+string sysAdminPassword = app.Configuration.Required("Seed:SysAdminPassword");
+
 await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
 {
     // Deployment applies reviewed migration bundles. The web process only verifies
@@ -174,9 +180,6 @@ await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
     await scope.ServiceProvider
         .GetRequiredService<IDatabaseSchemaReadinessValidator>()
         .EnsureReadyAsync();
-
-    string sysAdminEmail = app.Configuration["Seed:SysAdminEmail"] ?? "admin@sales.local";
-    string sysAdminPassword = app.Configuration["Seed:SysAdminPassword"] ?? "Password123!";
 
     await SeedData.SeedSysAdminAsync(
         scope.ServiceProvider.GetRequiredService<ApplicationDbContext>(),
@@ -198,16 +201,11 @@ await DevelopmentSeeder.SeedIfDevelopmentAsync(app.Environment, async () =>
     UserManager<ApplicationUser> userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     RoleManager<IdentityRole> roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-    string razorClientSecret = app.Configuration["Clients:RazorSecret"]
-                               ?? "DefaultRazorSecretForDevelopment";
-    string blazorClientSecret = app.Configuration["Clients:BlazorSecret"]
-                                ?? "DefaultBlazorSecretForDevelopment";
-    string sysAdminPassword = app.Configuration["Seed:SysAdminPassword"]
-                              ?? "Password123!";
-    string sysAdminEmail = app.Configuration["Seed:SysAdminEmail"]
-                           ?? "admin@sales.local";
-    string testUserPassword = app.Configuration["Seed:TestUserPassword"]
-                              ?? "Password123!";
+    // The administrator pair is already resolved above; only the development-only values
+    // are read here, so they are demanded when this seed runs rather than on every start.
+    string razorClientSecret = app.Configuration.Required("Clients:RazorSecret");
+    string blazorClientSecret = app.Configuration.Required("Clients:BlazorSecret");
+    string testUserPassword = app.Configuration.Required("Seed:TestUserPassword");
 
     var seedClients = new List<SeedClientSpec>
     {

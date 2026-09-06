@@ -20,7 +20,7 @@ The included **Sales** projects (`Sales.ApiService`, `Sales.WasmClient`, `Sales.
   - [1. Configure User Secrets](#1-configure-user-secrets)
   - [2. Run the Solution (.NET Aspire)](#2-run-the-solution-net-aspire)
   - [3. Default Ports & Endpoints](#3-default-ports--endpoints)
-  - [4. Default Seeded Credentials](#4-default-seeded-credentials)
+  - [4. Seeded Accounts](#4-seeded-accounts)
 - [Database Migrations](#database-migrations)
 - [Testing](#testing)
 - [Configuration Reference](#configuration-reference)
@@ -193,18 +193,23 @@ Aspire will output the URL for the **Aspire Dashboard**, from which you can moni
 | **Sales Api Service** | `https://localhost:5004` | Protected API & Swagger UI (`/swagger`) |
 | **Aspire Dashboard** | Dynamic (see console output) | Telemetry, logs, and distributed application management |
 
-### 4. Default Seeded Credentials
+### 4. Seeded Accounts
 
-When running in the Development environment, the database is automatically seeded with:
+None of these have a default. Every value below is required configuration, and the host
+refuses to start naming the missing key rather than falling back to a built-in credential.
 
-- **System Administrator**:
-  - **Username / Email**: `admin@sales.local`
-  - **Password**: Configured via `Parameters:seed-sysadmin-password` (or `Password123!` by default)
-  - **Role**: `SysAdmin` (has access to `/Admin`)
-- **Standard Test User**:
-  - **Username / Email**: `testuser@sales.local`
-  - **Password**: Configured via `Parameters:seed-test-user-password` (or `Password123!` by default)
-  - **Role**: *(None)*
+The **System Administrator** is seeded in *every* environment, because a deployment needs a
+first account that can reach `/Admin`:
+
+- **Username / Email**: `Seed:SysAdminEmail` — `admin@sales.local` in `appsettings.Development.json`
+- **Password**: `Seed:SysAdminPassword`, from `Parameters:seed-sysadmin-password`
+- **Role**: `SysAdmin` (has access to `/Admin`)
+
+The **Standard Test User** and the example clients are seeded in Development only:
+
+- **Username / Email**: `testuser@sales.local`
+- **Password**: `Seed:TestUserPassword`, from `Parameters:seed-test-user-password`
+- **Role**: *(None)*
 
 ---
 
