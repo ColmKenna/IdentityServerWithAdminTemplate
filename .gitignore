@@ -266,7 +266,6 @@ ClientBin/
 *.dbmdl
 *.dbproj.schemaview
 *.jfm
-*.pfx
 *.publishsettings
 orleans.codegen.cs
 
@@ -436,4 +435,14 @@ FodyWeavers.xsd
 
 # macOS
 .DS_Store
+
+# Key material. This solution is an identity provider: it loads signing and Data
+# Protection certificates from disk, and a key committed once stays compromised
+# after it is deleted. *.pfx moved here from the "Others" section above so that
+# every private-key extension is answered in one place.
+*.pfx
+*.p12
+*.pem
+*.key
+*.jwk
 
