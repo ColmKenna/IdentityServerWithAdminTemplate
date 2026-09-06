@@ -1,0 +1,270 @@
+/* =============================================================================
+   Shared stylesheet — plain CSS, no preprocessor and no build step.
+   Loaded first by both layouts, so source order here is the start of the cascade.
+
+   What belongs here: the design tokens, the reset and body, and any rule the
+   public/auth pages can match — they and the admin console both render buttons,
+   the brand mark, form controls and validation text. Everything else lives in
+   public.css or admin.css, each loaded after this file by its own layout.
+
+   A rule qualifies as shared when its selector names a class that appears in
+   public page markup, or when it selects by element alone. Add a class to a
+   public page and its rule has to move here, or that page loses the style.
+   ============================================================================= */
+
+:root {
+    --sidebar-w: 290px;
+    --sidebar-w-collapsed: 68px;
+    --header-h: 64px;
+    --bg: #ffffff;
+    --panel: #181a1c;
+    --panel-hover: #26282b;
+    --panel-active: #232629;
+    --accent: #2f6bff;
+    --text: #e8eaed;
+    --text-dim: #8b9096;
+    --border: #e6e8eb;
+    --shadow: 0 8px 28px rgba(10, 15, 25, .16);
+    --ink: #17191c;
+    --z-header: 40;
+    --z-sidebar: 50;
+    --z-dropdown: 80;
+    --z-tooltip: 100;
+
+    /* Canonical Design Token Aliases (US-CORE-002) */
+    --bg-surface: var(--bg);
+    --primary: var(--accent);
+    --sidebar-bg: var(--panel);
+    --danger: #c8433b;
+    --danger-soft: #fdf2f2;
+    /* Danger scale. These are the values the console already used, now named by role.
+       Whether it should collapse to one red is a design question, not a refactor. */
+    --danger-strong: #b91c1c;  /* destructive outline buttons, deactivate icons and headings */
+    --danger-solid: #c0392b;   /* filled danger buttons, destructive action links */
+    --danger-deep: #922b21;    /* danger text sitting on a tinted background */
+    --line-soft: #dde3e8;
+    --navy: #16324f;
+    --muted: #6b7280;
+    /* Inter and JetBrains Mono were named here but never loaded — no @font-face, no font
+       link, no font package — so both always fell through to the next entry. The stacks now
+       say what actually renders. Adding a webfont is a product decision, not a cleanup. */
+    --font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 15px;
+
+    /* ck-tabs web component theming (WI-07) — custom properties pierce the
+       shadow DOM by inheritance, so setting them here themes every <ck-tabs>
+       on the site without needing per-instance overrides. */
+    --tab-bg: var(--bg);
+    --tab-border: var(--border);
+    --tab-text: var(--text-dim);
+    --tab-hover-bg: #f5f6f8;
+    --primary-color: var(--accent);
+    --primary-hover: var(--bg);
+    --text-light: var(--ink);
+    --tab-content-bg: var(--bg);
+    --tab-content-text: var(--ink);
+    --focus-color: var(--accent);
+    --scrollbar-track: #f1f1f1;
+    --scrollbar-thumb: #c1c1c1;
+    --tab-font-family: var(--font-family);
+    --heading-font-family: var(--font-family);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    background: var(--bg);
+    color: var(--ink);
+}
+
+.brand-icon {
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: -.5px;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--ink);
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    padding: 14px 22px;
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+    background: #2a2e33;
+}
+
+.btn-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+
+.btn-primary .btn-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 0;
+    stroke-width: 2.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sidebar,
+    .header,
+    .main,
+    .label,
+    .brand,
+    .item-icon,
+    .chev,
+    .dropdown,
+    .tip,
+    .btn-primary,
+    .nav-item {
+        transition: none;
+    }
+}
+
+/* ============ Responsive Table Web Component Overrides ============ */
+/* Desktop styling for these tables lives in the shared ".responsive-table"
+   section above; the web component adds that class to the <table> it renders. */
+ck-responsive-table {
+    display: block;
+    width: 100%;
+}
+
+/* ============ Alerts ============ */
+.alert {
+    margin: 20px 0 0;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: .92rem;
+}
+
+.alert-error {
+    background: #fdecea;
+    color: var(--danger-deep);
+    border: 1px solid #f5b7b1;
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    background: var(--bg);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-weight: 600;
+    font-size: .92rem;
+    cursor: pointer;
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus-visible {
+    background: #f5f6f8;
+}
+
+.form-group,
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    font-size: .88rem;
+    color: var(--ink);
+    margin-bottom: 2px;
+}
+
+.form-control {
+    display: block;
+    width: 100%;
+    max-width: 550px;
+    box-sizing: border-box;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: .95rem;
+    font-family: inherit;
+    color: var(--ink);
+    background-color: var(--bg);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.form-control:disabled {
+    background-color: #f1f3f5;
+    border-color: var(--border);
+    color: var(--text-dim);
+    cursor: not-allowed;
+}
+
+.uri-input-row .form-control {
+    flex: 1;
+    max-width: none;
+}
+
+.field-validation-error {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.82rem;
+    color: var(--danger);
+}
+
+.text-danger {
+    color: var(--danger);
+}
+
+.list-filter > .form-control {
+    flex: 1;
+    max-width: 420px;
+}
+
+.filter-grid .form-control {
+    width: 100%;
+    max-width: none;
+}
+
+.inline-action-form {
+    display: inline-flex;
+    margin: 0;
+}

@@ -1,15 +1,21 @@
 @model IdentityServerProject.Pages.Shared.UriInputSectionModel
 
+@{
+    // One message covers the whole repeatable group, so every row points at it,
+    // including rows addUriRow appends later.
+    var errorId = $"{Model.ContainerId}-error";
+}
+
 <div class="form-group">
     <label class="form-label">@Model.Label</label>
-    <span class="text-danger field-validation-error" data-valmsg-for="@Model.InputName" data-valmsg-replace="true"></span>
+    <span class="text-danger field-validation-error" id="@errorId" data-valmsg-for="@Model.InputName" data-valmsg-replace="true"></span>
     <div id="@Model.ContainerId">
         @if (Model.Values.Count == 0)
         {
             <div class="uri-input-row">
                 <input type="url" name="@Model.InputName" class="form-control"
                        placeholder="@Model.Placeholder"
-                       aria-label="@Model.AriaLabel"/>
+                       aria-label="@Model.AriaLabel" aria-describedby="@errorId"/>
                 <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)" aria-label="Remove @Model.AriaLabel.ToLowerInvariant()">&times;</button>
             </div>
         }
@@ -20,7 +26,7 @@
                 <div class="uri-input-row">
                     <input type="url" name="@Model.InputName" class="form-control" value="@val"
                            placeholder="@Model.Placeholder"
-                           aria-label="@Model.AriaLabel"/>
+                           aria-label="@Model.AriaLabel" aria-describedby="@errorId"/>
                     <button type="button" class="btn-danger btn-sm" onclick="removeUriRow(this)" aria-label="Remove @Model.AriaLabel.ToLowerInvariant()">&times;</button>
                 </div>
             }

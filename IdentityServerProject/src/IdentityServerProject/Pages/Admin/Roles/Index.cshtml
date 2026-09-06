@@ -2,6 +2,7 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Roles";
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.ResponsiveTable;
     ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
         new("Admin", "/Admin/Index"),
@@ -58,13 +59,13 @@
                             <strong>@item.Name</strong>
                             @if (item.IsProtected)
                             {
-                                <span class="badge badge-reserved" style="margin-left: 8px;"
+                                <span class="badge badge-reserved badge-inline"
                                       title="This role is protected and cannot be deleted.">Protected</span>
                             }
                         </ck-responsive-col>
                         <ck-responsive-col class="actions-cell">
                             <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id"
-                                  style="display:inline;">
+                                  class="inline-form">
                                 <button type="submit" class="btn-sm btn-secondary text-danger"
                                         disabled="@item.IsProtected"
                                         onclick="return confirm('Are you sure you want to delete this role?');">Delete

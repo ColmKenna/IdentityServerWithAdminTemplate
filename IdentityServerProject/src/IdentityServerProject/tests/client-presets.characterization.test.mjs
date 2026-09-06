@@ -50,6 +50,27 @@ test('addUriRow appends a removable URI input using the supplied binding name an
     assert.match(rows[0].innerHTML, /removeUriRow\(this\)/);
 });
 
+test('addUriRow describes an added row with the group validation message', async () => {
+    const {containers, context} = await loadClientUriRowsScript();
+    const rows = [];
+    containers.set('redirect-uris-container', {appendChild: row => rows.push(row)});
+    containers.set('redirect-uris-container-error', {});
+
+    context.addUriRow('redirect-uris-container', 'Input.RedirectUris', 'https://example.test/signin');
+
+    assert.match(rows[0].innerHTML, /aria-describedby="redirect-uris-container-error"/);
+});
+
+test('addUriRow omits the description when the group has no message element', async () => {
+    const {containers, context} = await loadClientUriRowsScript();
+    const rows = [];
+    containers.set('redirect-uris-container', {appendChild: row => rows.push(row)});
+
+    context.addUriRow('redirect-uris-container', 'Input.RedirectUris', 'https://example.test/signin');
+
+    assert.doesNotMatch(rows[0].innerHTML, /aria-describedby/);
+});
+
 test('removeUriRow removes the closest URI row when one exists', async () => {
     const {context} = await loadClientUriRowsScript();
     const row = {

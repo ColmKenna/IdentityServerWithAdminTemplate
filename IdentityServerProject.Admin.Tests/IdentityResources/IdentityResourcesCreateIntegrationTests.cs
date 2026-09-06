@@ -239,4 +239,15 @@ public class IdentityResourcesCreateIntegrationTests : IDisposable
         Assert.Contains("address", pageText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("phone", pageText, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public async Task Get_MarksTheResourceNameRequired()
+    {
+        HttpResponseMessage response = await _client.GetAsync("/Admin/IdentityResources/Create");
+        IDocument document = await GetDocumentAsync(response);
+
+        var name = document.GetElementById("resource-name") as IHtmlInputElement;
+        Assert.NotNull(name);
+        Assert.True(name!.IsRequired);
+    }
 }

@@ -2,6 +2,7 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Persisted Grants";
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.ResponsiveTable;
 }
 
 <page-header title="Persisted Grants" sub="Active user sessions, refresh tokens, and consent grants stored by IdentityServer">
@@ -97,29 +98,24 @@
     <partial name="_PaginationFooter" model='Model.Grants.ToPagination("persisted grants", Model.GetRouteValues())' />
 </div>
 
-<dialog id="revoke-grant-modal" class="modal" aria-labelledby="revoke-grant-modal-title">
-    <form method="post" asp-page-handler="Revoke">
-        <input type="hidden" name="key" id="revoke-grant-modal-key-input" value=""/>
-        <input type="hidden" name="PageNumber" value="@Model.Grants.PageNumber"/>
-        <input type="hidden" name="SubjectId" value="@Model.SubjectId"/>
-        <input type="hidden" name="ClientId" value="@Model.ClientId"/>
-        <input type="hidden" name="TypeFilter" value="@Model.TypeFilter"/>
-
-        <h2 class="modal-title" id="revoke-grant-modal-title">Revoke persisted grant</h2>
-
-        <p class="modal-body" id="revoke-grant-modal-message">
-            Are you sure you want to revoke grant <strong id="revoke-grant-modal-key-text"></strong> for client
-            <strong id="revoke-grant-modal-client-text"></strong> (User: <code
-                id="revoke-grant-modal-subject-text"></code>)?
-            This session or token will be invalidated immediately.
-        </p>
-
-        <div class="modal-actions">
-            <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
-            <button type="submit" id="revoke-grant-modal-confirm" class="btn-danger">Revoke</button>
-        </div>
-    </form>
-</dialog>
+<partial name="_ConfirmationModal" model='new ConfirmationModalModel(
+    "revoke-grant-modal",
+    "Revoke persisted grant",
+    "Revoke",
+    "Are you sure you want to revoke grant <strong id=\"revoke-grant-modal-key-text\"></strong> for client <strong id=\"revoke-grant-modal-client-text\"></strong> (User: <code id=\"revoke-grant-modal-subject-text\"></code>)? This session or token will be invalidated immediately.",
+    submitText: "Revoke",
+    submitId: "revoke-grant-modal-confirm",
+    hiddenInputName: "key",
+    hiddenInputId: "revoke-grant-modal-key-input",
+    hiddenInputValue: "",
+    bodyId: "revoke-grant-modal-message",
+    hiddenFields: new[]
+    {
+        new ModalHiddenField("PageNumber", Value: Model.Grants.PageNumber.ToString()),
+        new ModalHiddenField("SubjectId", Value: Model.SubjectId),
+        new ModalHiddenField("ClientId", Value: Model.ClientId),
+        new ModalHiddenField("TypeFilter", Value: Model.TypeFilter)
+    })' />
 
 @section Scripts {
     <script src="~/js/grant-list.js" asp-append-version="true"></script>

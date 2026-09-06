@@ -15,6 +15,12 @@ public class DetailsModel(IUserDetailsService userDetailsService) : PageModel
 
     public UserDetailsModel Account { get; private set; } = default!;
 
+    /// <summary>
+    ///     The roles this user could still be given, in the order the service lists all
+    ///     roles. Empty until the account loads.
+    /// </summary>
+    public IReadOnlyList<string> UnassignedRoles { get; private set; } = [];
+
     [TempData] public string? StatusMessage { get; set; }
 
     [TempData] public string? ErrorMessage { get; set; }
@@ -46,6 +52,7 @@ public class DetailsModel(IUserDetailsService userDetailsService) : PageModel
             return NotFound();
 
         Account = user;
+        UnassignedRoles = user.AllRoles.Except(user.AssignedRoles).ToList();
         return Page();
     }
 

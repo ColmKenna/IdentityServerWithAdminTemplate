@@ -4,22 +4,12 @@
     ViewData["Title"] = "Sign In";
 }
 
-<div class="auth-card-header">
-    <div class="auth-brand">
-        <div class="brand-icon">id</div>
-        <div class="auth-brand-text">
-            <span class="auth-brand-name">IdentityServer</span>
-            <span class="auth-brand-sub">AUTHENTICATION</span>
-        </div>
-    </div>
-    <h1 class="auth-title">Welcome back</h1>
-    <p class="auth-subtitle">Sign in to your account to continue</p>
-</div>
+<partial name="_AuthCardHeader" model='new AuthCardHeaderModel("AUTHENTICATION", "Welcome back", "Sign in to your account to continue")'/>
 
 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
 {
-    <div class="alert alert-error" role="alert" style="margin-top: 0; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0;">
+    <div class="alert alert-error auth-error" role="alert">
+        <svg class="auth-error-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10"/>
             <line x1="12" y1="8" x2="12" y2="12"/>
             <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -36,9 +26,9 @@
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
             </svg>
-            <input asp-for="Input.Username" class="form-control input-has-icon" placeholder="Enter your username" autocomplete="username" autofocus/>
+            <input asp-for="Input.Username" class="form-control input-has-icon" placeholder="Enter your username" autocomplete="username" autofocus aria-describedby="username-error"/>
         </div>
-        <span asp-validation-for="Input.Username" class="field-validation-error"></span>
+        <span asp-validation-for="Input.Username" id="username-error" class="field-validation-error"></span>
     </div>
 
     <div class="form-field">
@@ -48,9 +38,9 @@
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
-            <input asp-for="Input.Password" type="password" class="form-control input-has-icon" placeholder="Enter your password" autocomplete="current-password"/>
+            <input asp-for="Input.Password" type="password" class="form-control input-has-icon" placeholder="Enter your password" autocomplete="current-password" aria-describedby="password-error"/>
         </div>
-        <span asp-validation-for="Input.Password" class="field-validation-error"></span>
+        <span asp-validation-for="Input.Password" id="password-error" class="field-validation-error"></span>
     </div>
 
     <button type="submit" class="btn-primary auth-submit-btn">

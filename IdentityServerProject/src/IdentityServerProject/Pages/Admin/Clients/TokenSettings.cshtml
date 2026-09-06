@@ -2,6 +2,7 @@
 @model TokenSettingsModel
 @{
     ViewData["Title"] = "Configure Client Token Settings";
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.Tabs;
     ViewData["Breadcrumbs"] = new List<Breadcrumb>
     {
         new("Admin", "/Admin/Index"),
@@ -22,16 +23,16 @@
         <ck-tab label="Token Lifetimes" active="@(Model.ActiveTabIndex == 0 ? "active" : null)">
             <div class="form-field">
                 <label asp-for="Input.AccessTokenLifetime" class="form-label">Access Token Lifetime (seconds)</label>
-                <input asp-for="Input.AccessTokenLifetime" type="number" min="60" max="86400" class="form-control"/>
-                <span asp-validation-for="Input.AccessTokenLifetime" class="text-danger field-validation-error"></span>
+                <input asp-for="Input.AccessTokenLifetime" type="number" min="60" max="86400" class="form-control" aria-describedby="access-token-lifetime-error"/>
+                <span asp-validation-for="Input.AccessTokenLifetime" id="access-token-lifetime-error" class="text-danger field-validation-error"></span>
                 <small class="form-text">Between 60 and 86400 seconds (1 minute to 24 hours).</small>
             </div>
 
             <div class="form-field">
                 <label asp-for="Input.IdentityTokenLifetime" class="form-label">Identity Token Lifetime
                     (seconds)</label>
-                <input asp-for="Input.IdentityTokenLifetime" type="number" min="60" max="3600" class="form-control"/>
-                <span asp-validation-for="Input.IdentityTokenLifetime"
+                <input asp-for="Input.IdentityTokenLifetime" type="number" min="60" max="3600" class="form-control" aria-describedby="identity-token-lifetime-error"/>
+                <span asp-validation-for="Input.IdentityTokenLifetime" id="identity-token-lifetime-error"
                       class="text-danger field-validation-error"></span>
                 <small class="form-text">Between 60 and 3600 seconds (1 minute to 1 hour).</small>
             </div>
@@ -76,8 +77,8 @@
                     <label asp-for="Input.AbsoluteRefreshTokenLifetime" class="form-label">Absolute Refresh Token
                         Lifetime (seconds)</label>
                     <input asp-for="Input.AbsoluteRefreshTokenLifetime" type="number" min="60" max="31536000"
-                           class="form-control"/>
-                    <span asp-validation-for="Input.AbsoluteRefreshTokenLifetime"
+                           class="form-control" aria-describedby="absolute-refresh-token-lifetime-error"/>
+                    <span asp-validation-for="Input.AbsoluteRefreshTokenLifetime" id="absolute-refresh-token-lifetime-error"
                           class="text-danger field-validation-error"></span>
                 </div>
 
@@ -85,8 +86,8 @@
                     <label asp-for="Input.SlidingRefreshTokenLifetime" class="form-label">Sliding Refresh Token Lifetime
                         (seconds)</label>
                     <input asp-for="Input.SlidingRefreshTokenLifetime" type="number" min="60" max="15552000"
-                           class="form-control"/>
-                    <span asp-validation-for="Input.SlidingRefreshTokenLifetime"
+                           class="form-control" aria-describedby="sliding-refresh-token-lifetime-error"/>
+                    <span asp-validation-for="Input.SlidingRefreshTokenLifetime" id="sliding-refresh-token-lifetime-error"
                           class="text-danger field-validation-error"></span>
                 </div>
             </div>

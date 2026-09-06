@@ -2,19 +2,13 @@
 @model LogoutModel
 @{
     ViewData["Title"] = Model.ShowLogoutPrompt ? "Logout" : "Logged out";
+    var authCardHeader = new AuthCardHeaderModel(
+        "AUTHENTICATION",
+        Model.ShowLogoutPrompt ? "Sign out" : "You have been signed out",
+        Model.ShowLogoutPrompt ? "Would you like to log out of your account?" : "You have successfully signed out of your account.");
 }
 
-<div class="auth-card-header">
-    <div class="auth-brand">
-        <div class="brand-icon">id</div>
-        <div class="auth-brand-text">
-            <span class="auth-brand-name">IdentityServer</span>
-            <span class="auth-brand-sub">AUTHENTICATION</span>
-        </div>
-    </div>
-    <h1 class="auth-title">@(Model.ShowLogoutPrompt ? "Sign out" : "You have been signed out")</h1>
-    <p class="auth-subtitle">@(Model.ShowLogoutPrompt ? "Would you like to log out of your account?" : "You have successfully signed out of your account.")</p>
-</div>
+<partial name="_AuthCardHeader" model="authCardHeader"/>
 
 @if (Model.ShowLogoutPrompt)
 {
@@ -25,8 +19,8 @@
 }
 else
 {
-    <div style="margin-top: 24px; text-align: center;">
-        <a asp-page="/Account/Login" class="btn-primary auth-submit-btn" style="text-decoration: none;">Sign in again</a>
+    <div class="auth-card-actions">
+        <a asp-page="/Account/Login" class="btn-primary auth-submit-btn">Sign in again</a>
     </div>
 }
 

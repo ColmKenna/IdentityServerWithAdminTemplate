@@ -6,7 +6,7 @@
         @foreach (var item in Model.Items)
         {
             <div class="scope-chip-container" data-claim-locked="@(item.IsLocked ? "true" : "false")">
-                <code class="scope-chip" style="@(item.IsLocked ? "opacity: 0.6;" : "")">@item.Text</code>
+                <code class="scope-chip">@item.Text</code>
                 @if (!item.IsLocked)
                 {
                     <form method="post" asp-page-handler="@Model.HandlerName"

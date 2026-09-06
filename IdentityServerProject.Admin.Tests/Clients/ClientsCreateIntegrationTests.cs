@@ -248,4 +248,22 @@ public class ClientsCreateIntegrationTests : IDisposable
             Assert.False(await db.Clients.AsNoTracking().AnyAsync(client => client.ClientId == clientId));
         });
     }
+
+    [Fact]
+    public async Task Get_NamesTheAllowedScopeGroup_AndKeepsItsSubmittedName()
+    {
+        HttpResponseMessage response = await _client.GetAsync("/Admin/Clients/Create");
+        IDocument document = await GetDocumentAsync(response);
+
+        IElement? grid = document.QuerySelector(".scope-checkbox-grid");
+        Assert.NotNull(grid);
+
+        IElement fieldset = grid!.ParentElement!;
+        Assert.Equal("FIELDSET", fieldset.TagName);
+        Assert.Contains("fieldset-plain", fieldset.ClassName!);
+        Assert.Equal("Allowed scopes", fieldset.QuerySelector("legend")!.TextContent.Trim());
+
+        Assert.All(grid.QuerySelectorAll("input[type=checkbox]"),
+            checkbox => Assert.Equal("Input.AllowedScopes", checkbox.GetAttribute("name")));
+    }
 }

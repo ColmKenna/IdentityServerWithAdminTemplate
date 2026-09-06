@@ -1,20 +1,10 @@
 @page
+@model AccessDeniedModel
 @{
     ViewData["Title"] = "Access denied";
-    var returnUrl = Request.Query["ReturnUrl"].ToString();
-    var hasReturnUrl = !string.IsNullOrWhiteSpace(returnUrl);
 }
 
-<div class="auth-card-header">
-    <div class="auth-brand">
-        <div class="brand-icon">id</div>
-        <div class="auth-brand-text">
-            <span class="auth-brand-name">IdentityServer</span>
-            <span class="auth-brand-sub">ADMIN CONSOLE</span>
-        </div>
-    </div>
-    <h1 class="auth-title">Access denied</h1>
-</div>
+<partial name="_AuthCardHeader" model='new AuthCardHeaderModel("ADMIN CONSOLE", "Access denied")'/>
 
 @if (User.Identity?.IsAuthenticated == true)
 {
@@ -23,24 +13,17 @@
         but your account does not have permission to access the administration console.
     </p>
 
-    <div class="access-denied-actions" style="margin-top: 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-        <form method="post" asp-page="/Account/Logout" class="inline-action-form" style="display: inline;">
+    <div class="access-denied-actions access-denied-actions-inline">
+        <form method="post" asp-page="/Account/Logout" class="inline-action-form">
             <button type="submit" class="btn-primary">Log out</button>
         </form>
-        @if (hasReturnUrl)
-        {
-            <a asp-page="/Account/Login" asp-route-returnUrl="@returnUrl" class="btn-secondary">Log in as different user</a>
-        }
-        else
-        {
-            <a asp-page="/Account/Login" asp-route-returnUrl="/Admin" class="btn-secondary">Log in as different user</a>
-        }
+        <a asp-page="/Account/Login" asp-route-returnUrl="@Model.LoginReturnUrl" class="btn-secondary">Log in as different user</a>
     </div>
 }
 else
 {
     <p>Your account does not have permission to access the administration console.</p>
-    <div class="access-denied-actions" style="margin-top: 24px;">
-        <a asp-page="/Account/Login" asp-route-returnUrl="@(hasReturnUrl ? returnUrl : "/Admin")" class="btn-primary">Log in</a>
+    <div class="access-denied-actions">
+        <a asp-page="/Account/Login" asp-route-returnUrl="@Model.LoginReturnUrl" class="btn-primary">Log in</a>
     </div>
 }

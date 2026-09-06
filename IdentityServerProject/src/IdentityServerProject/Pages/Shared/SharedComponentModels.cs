@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Html;
 
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+
 namespace IdentityServerProject.Pages.Shared;
 
 /// <summary>
@@ -15,6 +17,27 @@ namespace IdentityServerProject.Pages.Shared;
 ///     Interpolating a runtime value straight into the body string would bypass the encoder,
 ///     which is the mistake this shape exists to make hard.
 /// </remarks>
+/// <summary>
+///     Web component modules a page needs. The shared admin layout loads only what the page
+///     declares, so a page using neither component requests neither module.
+/// </summary>
+[Flags]
+public enum AdminComponent
+{
+    None = 0,
+    ResponsiveTable = 1,
+    Tabs = 2
+}
+
+public static class AdminComponents
+{
+    /// <summary>Pages declare their requirement as <c>ViewData["AdminComponents"]</c>.</summary>
+    public const string ViewDataKey = "AdminComponents";
+
+    public static AdminComponent Required(ViewDataDictionary viewData) =>
+        viewData[ViewDataKey] as AdminComponent? ?? AdminComponent.None;
+}
+
 public static class SafeMarkupBody
 {
     public static IHtmlContent Render(string markup, IReadOnlyList<string> args, HtmlEncoder encoder)
@@ -28,6 +51,20 @@ public static class SafeMarkupBody
 
         object[] encoded = args.Select(arg => (object)encoder.Encode(arg ?? string.Empty)).ToArray();
         return new HtmlString(string.Format(CultureInfo.InvariantCulture, markup, encoded));
+    }
+}
+
+public class AuthCardHeaderModel
+{
+    public string BrandSubtitle { get; }
+    public string Title { get; }
+    public string? Description { get; }
+
+    public AuthCardHeaderModel(string brandSubtitle, string title, string? description = null)
+    {
+        BrandSubtitle = brandSubtitle;
+        Title = title;
+        Description = description;
     }
 }
 
@@ -84,6 +121,12 @@ public class UriInputSectionModel
     }
 }
 
+/// <summary>
+///     One hidden field carried by a confirmation dialog's form. The id is optional and only
+///     needed when script fills the value before the dialog opens.
+/// </summary>
+public sealed record ModalHiddenField(string Name, string? Id = null, string? Value = null);
+
 public class ConfirmationModalModel
 {
     public string DialogId { get; }
@@ -94,15 +137,29 @@ public class ConfirmationModalModel
     public string SubmitClass { get; }
     public string? SubmitId { get; }
     public string? RouteName { get; }
-    public string? HiddenInputName { get; }
-    public string? HiddenInputId { get; }
-    public string? HiddenInputValue { get; }
+    /// <summary>
+    ///     Every hidden field the form posts, in render order: the single-field parameters
+    ///     first, then any extras. List pages use the extras to carry pagination and filter
+    ///     state through the round trip.
+    /// </summary>
+    public IReadOnlyList<ModalHiddenField> HiddenFields { get; }
     /// <summary>Literal markup. Use <c>{0}</c> placeholders for runtime values; see <see cref="BodyArgs" />.</summary>
     public string BodyHtml { get; }
 
     /// <summary>Runtime values substituted into <see cref="BodyHtml" />, HTML-encoded on render.</summary>
     public IReadOnlyList<string> BodyArgs { get; }
     public string? BodyId { get; }
+
+    /// <summary>Optional <c>data-state</c> on the body paragraph.</summary>
+    public string? BodyState { get; }
+
+    /// <summary>
+    ///     Literal markup for a second, initially hidden paragraph explaining why the action
+    ///     is blocked. Script swaps which of the two paragraphs is visible.
+    /// </summary>
+    public string? BlockedBodyHtml { get; }
+
+    public string? BlockedBodyId { get; }
 
     public ConfirmationModalModel(
         string dialogId,
@@ -118,7 +175,11 @@ public class ConfirmationModalModel
         string? hiddenInputId = null,
         string? hiddenInputValue = null,
         string? bodyId = null,
-        IReadOnlyList<string>? bodyArgs = null)
+        IReadOnlyList<string>? bodyArgs = null,
+        IReadOnlyList<ModalHiddenField>? hiddenFields = null,
+        string? bodyState = null,
+        string? blockedBodyHtml = null,
+        string? blockedBodyId = null)
     {
         DialogId = dialogId;
         Title = title;
@@ -129,11 +190,18 @@ public class ConfirmationModalModel
         SubmitClass = submitClass;
         SubmitId = submitId;
         RouteName = routeName;
-        HiddenInputName = hiddenInputName;
-        HiddenInputId = hiddenInputId;
-        HiddenInputValue = hiddenInputValue;
         BodyId = bodyId;
         BodyArgs = bodyArgs ?? Array.Empty<string>();
+        BodyState = bodyState;
+        BlockedBodyHtml = blockedBodyHtml;
+        BlockedBodyId = blockedBodyId;
+
+        List<ModalHiddenField> fields = [];
+        if (!string.IsNullOrEmpty(hiddenInputName))
+            fields.Add(new ModalHiddenField(hiddenInputName, hiddenInputId, hiddenInputValue));
+        if (hiddenFields is not null)
+            fields.AddRange(hiddenFields);
+        HiddenFields = fields;
     }
 }
 
@@ -223,15 +291,24 @@ public class ScopeCheckboxGridModel
 {
     public IEnumerable<string> Scopes { get; }
     public ICollection<string> Selected { get; }
+
+    /// <summary>
+    ///     Names the checkbox group for assistive technology. Every call site already shows a
+    ///     heading or tab label, so the legend is rendered visually hidden rather than repeated.
+    /// </summary>
+    public string Legend { get; }
+
     public string InputName { get; }
 
     public ScopeCheckboxGridModel(
         IEnumerable<string> scopes,
         ICollection<string> selected,
+        string legend,
         string inputName = "Input.AllowedScopes")
     {
         Scopes = scopes;
         Selected = selected;
+        Legend = legend;
         InputName = inputName;
     }
 }
@@ -278,3 +355,54 @@ public sealed record Breadcrumb(
     string Text,
     string? Page = null,
     IDictionary<string, string>? RouteValues = null);
+
+/// <summary>
+///     One breadcrumb with its position in the trail already decided, so the layout only
+///     has to choose markup.
+/// </summary>
+public sealed record BreadcrumbTrailItem(
+    string Text,
+    string? Page,
+    IDictionary<string, string>? RouteValues,
+    bool IsLink,
+    bool NeedsSeparator);
+
+public static class BreadcrumbTrail
+{
+    /// <summary>
+    ///     Resolves a trail for rendering. Every crumb but the first is preceded by a
+    ///     separator, and the last crumb is the page being viewed, so it stays plain text
+    ///     even when it names a page.
+    /// </summary>
+    public static IReadOnlyList<BreadcrumbTrailItem> Resolve(IEnumerable<Breadcrumb> crumbs)
+    {
+        List<Breadcrumb> trail = crumbs.ToList();
+
+        return trail
+            .Select((crumb, index) => new BreadcrumbTrailItem(
+                crumb.Text,
+                crumb.Page,
+                crumb.RouteValues,
+                IsLink: crumb.Page is not null && index < trail.Count - 1,
+                NeedsSeparator: index > 0))
+            .ToList();
+    }
+}
+
+/// <summary>
+///     Which sidebar section the current request belongs to. Matched on the Razor Pages
+///     route rather than the title, because titles vary per sub-page, and on segment
+///     boundaries, so "/Admin/Apis" does not also light up on "/Admin/ApiScopes".
+/// </summary>
+public sealed class AdminNavigationState(string? currentPage)
+{
+    private readonly string _currentPage = currentPage ?? string.Empty;
+
+    public bool IsActiveSection(string sectionPrefix) =>
+        _currentPage.Length > 0 &&
+        (_currentPage.Equals(sectionPrefix, StringComparison.OrdinalIgnoreCase) ||
+         _currentPage.StartsWith(sectionPrefix + "/", StringComparison.OrdinalIgnoreCase));
+
+    public string ItemClass(string sectionPrefix) =>
+        IsActiveSection(sectionPrefix) ? "nav-item active" : "nav-item";
+}

@@ -52,6 +52,89 @@ test('admin shell still toggles when localStorage is unavailable', async () => {
     assert.equal(dom.window.document.body.classList.contains('collapsed'), true);
 });
 
+const userMenuMarkup = `
+    <div class="user-menu" id="userMenu">
+        <button id="userBtn" aria-label="Account menu" aria-expanded="false" aria-controls="userMenuDropdown"></button>
+        <div class="dropdown" id="userMenuDropdown">
+            <button type="submit" class="logout">Sign Out</button>
+        </div>
+    </div>
+    <a href="/Admin/Users" id="outside">Users</a>
+`;
+
+async function openUserMenu() {
+    const script = await readProjectFile('wwwroot/js/admin.js');
+    const dom = createDom(userMenuMarkup);
+
+    await executeDomReadyScript(dom, script);
+
+    const {document} = dom.window;
+    document.getElementById('userBtn').click();
+
+    assert.equal(document.getElementById('userMenu').classList.contains('open'), true);
+    assert.equal(document.getElementById('userBtn').getAttribute('aria-expanded'), 'true');
+
+    return dom;
+}
+
+test('user menu toggle keeps aria-expanded in step with the open class', async () => {
+    const dom = await openUserMenu();
+    const {document} = dom.window;
+
+    document.getElementById('userBtn').click();
+
+    assert.equal(document.getElementById('userMenu').classList.contains('open'), false);
+    assert.equal(document.getElementById('userBtn').getAttribute('aria-expanded'), 'false');
+});
+
+test('clicking outside the user menu closes it and reports it closed', async () => {
+    const dom = await openUserMenu();
+    const {document} = dom.window;
+
+    document.getElementById('outside').click();
+
+    assert.equal(document.getElementById('userMenu').classList.contains('open'), false);
+    assert.equal(document.getElementById('userBtn').getAttribute('aria-expanded'), 'false');
+});
+
+test('clicking inside the open user menu leaves it open', async () => {
+    const dom = await openUserMenu();
+    const {document} = dom.window;
+
+    document.querySelector('#userMenuDropdown .logout').click();
+
+    assert.equal(document.getElementById('userMenu').classList.contains('open'), true);
+    assert.equal(document.getElementById('userBtn').getAttribute('aria-expanded'), 'true');
+});
+
+test('escape closes the user menu and returns focus to the toggle', async () => {
+    const dom = await openUserMenu();
+    const {document, KeyboardEvent} = dom.window;
+
+    document.querySelector('#userMenuDropdown .logout').focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+
+    assert.equal(document.getElementById('userMenu').classList.contains('open'), false);
+    assert.equal(document.getElementById('userBtn').getAttribute('aria-expanded'), 'false');
+    assert.equal(document.activeElement, document.getElementById('userBtn'));
+});
+
+test('escape with the user menu already closed leaves focus where it is', async () => {
+    const script = await readProjectFile('wwwroot/js/admin.js');
+    const dom = createDom(userMenuMarkup);
+
+    await executeDomReadyScript(dom, script);
+
+    const {document, KeyboardEvent} = dom.window;
+    const outside = document.getElementById('outside');
+    outside.focus();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+
+    assert.equal(document.getElementById('userBtn').getAttribute('aria-expanded'), 'false');
+    assert.equal(document.activeElement, outside);
+});
+
 test('admin shell populates scope deletion dialog and closes generic dialogs', async () => {
     const script = await readProjectFile('wwwroot/js/admin.js');
     const dom = createDom(`

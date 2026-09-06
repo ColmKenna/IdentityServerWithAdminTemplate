@@ -55,22 +55,22 @@
 
         <div class="form-field">
             <label class="form-label" for="resource-name">Resource Name *</label>
-            <input class="form-control" id="resource-name" asp-for="Input.Name"/>
-            <span asp-validation-for="Input.Name" class="field-validation-error"></span>
+            <input class="form-control" id="resource-name" asp-for="Input.Name" required aria-describedby="resource-name-error"/>
+            <span asp-validation-for="Input.Name" id="resource-name-error" class="field-validation-error"></span>
             <small class="form-text">A unique identifier for this resource (e.g., 'profile', 'email',
                 'custom.resource').</small>
         </div>
 
         <div class="form-field">
             <label class="form-label" for="resource-display-name">Display Name</label>
-            <input class="form-control" id="resource-display-name" asp-for="Input.DisplayName"/>
-            <span asp-validation-for="Input.DisplayName" class="field-validation-error"></span>
+            <input class="form-control" id="resource-display-name" asp-for="Input.DisplayName" aria-describedby="resource-display-name-error"/>
+            <span asp-validation-for="Input.DisplayName" id="resource-display-name-error" class="field-validation-error"></span>
         </div>
 
         <div class="form-field">
             <label class="form-label" for="resource-description">Description</label>
-            <textarea class="form-control" id="resource-description" rows="3" asp-for="Input.Description"></textarea>
-            <span asp-validation-for="Input.Description" class="field-validation-error"></span>
+            <textarea class="form-control" id="resource-description" rows="3" asp-for="Input.Description" aria-describedby="resource-description-error"></textarea>
+            <span asp-validation-for="Input.Description" id="resource-description-error" class="field-validation-error"></span>
         </div>
 
         <div class="form-group checkbox-grid">
@@ -101,7 +101,7 @@
             <div id="no-claims-message" class="page-sub">No claims selected. Choose a template or enter claims manually
                 below.
             </div>
-            <div id="claims-list" style="display: none;">
+            <div id="claims-list" class="claims-list">
                 <div class="claims-list-flex">
                     <!-- Claims will be inserted here by JavaScript -->
                 </div>

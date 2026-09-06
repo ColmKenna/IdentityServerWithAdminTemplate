@@ -2,6 +2,7 @@
 @model IndexModel
 @{
     ViewData["Title"] = "API Scopes";
+    ViewData[AdminComponents.ViewDataKey] = AdminComponent.ResponsiveTable;
 }
 
 <page-header title="API Scopes" sub="Access-control scopes clients can request from IdentityServer">
@@ -66,27 +67,22 @@
     <partial name="_PaginationFooter" model='Model.ApiScopes.ToPagination("scopes", Model.Filter)' />
 </div>
 
-<dialog id="delete-scope-modal" class="modal" aria-labelledby="delete-scope-modal-title">
-    <form method="post" asp-page-handler="Delete">
-        <input type="hidden" name="name" id="delete-scope-modal-name-input" value=""/>
-        <input type="hidden" name="PageNumber" value="@Model.ApiScopes.PageNumber"/>
-        <input type="hidden" name="Filter" value="@Model.Filter"/>
-
-        <h2 class="modal-title" id="delete-scope-modal-title">Delete API scope</h2>
-
-        <p class="modal-body" id="delete-scope-modal-message" data-state="confirm">
-            Are you sure you want to delete <strong id="delete-scope-modal-name-text"></strong>? This cannot be undone.
-        </p>
-
-        <p class="modal-body modal-body-blocked" id="delete-scope-modal-blocked-message" hidden>
-            <strong id="delete-scope-modal-blocked-name-text"></strong> is currently assigned to
-            <span id="delete-scope-modal-blocked-count"></span> client(s) and cannot be deleted until those
-            clients no longer reference it.
-        </p>
-
-        <div class="modal-actions">
-            <button type="button" class="btn-secondary" data-action="close-modal">Cancel</button>
-            <button type="submit" id="delete-scope-modal-confirm" class="btn-danger">Delete</button>
-        </div>
-    </form>
-</dialog>
+<partial name="_ConfirmationModal" model='new ConfirmationModalModel(
+    "delete-scope-modal",
+    "Delete API scope",
+    "Delete",
+    "Are you sure you want to delete <strong id=\"delete-scope-modal-name-text\"></strong>? This cannot be undone.",
+    submitText: "Delete",
+    submitId: "delete-scope-modal-confirm",
+    hiddenInputName: "name",
+    hiddenInputId: "delete-scope-modal-name-input",
+    hiddenInputValue: "",
+    bodyId: "delete-scope-modal-message",
+    bodyState: "confirm",
+    hiddenFields: new[]
+    {
+        new ModalHiddenField("PageNumber", Value: Model.ApiScopes.PageNumber.ToString()),
+        new ModalHiddenField("Filter", Value: Model.Filter)
+    },
+    blockedBodyHtml: "<strong id=\"delete-scope-modal-blocked-name-text\"></strong> is currently assigned to <span id=\"delete-scope-modal-blocked-count\"></span> client(s) and cannot be deleted until those clients no longer reference it.",
+    blockedBodyId: "delete-scope-modal-blocked-message")' />

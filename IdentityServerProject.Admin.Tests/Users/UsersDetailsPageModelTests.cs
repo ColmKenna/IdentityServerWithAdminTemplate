@@ -100,4 +100,46 @@ public class UsersDetailsPageModelTests
         service.Verify(s => s.DeleteUserAsync(It.IsAny<UserActionContext>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    [Fact]
+    public async Task OnGetAsync_PreparesUnassignedRoles_InAllRolesOrder()
+    {
+        var service = new Mock<IUserDetailsService>();
+        service.Setup(s => s.GetUserDetailsAsync(It.IsAny<UserActionContext>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserDetailsModel
+            {
+                Id = "user-1",
+                UserName = "jane",
+                AllRoles = new List<string> { "SysAdmin", "Support", "Auditor", "Billing" },
+                AssignedRoles = new List<string> { "Support", "Billing" }
+            });
+
+        DetailsModel model = CreateModel(service);
+        model.Id = "user-1";
+
+        await model.OnGetAsync(CancellationToken.None);
+
+        Assert.Equal(new[] { "SysAdmin", "Auditor" }, model.UnassignedRoles);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_WithEveryRoleAssigned_OffersNone()
+    {
+        var service = new Mock<IUserDetailsService>();
+        service.Setup(s => s.GetUserDetailsAsync(It.IsAny<UserActionContext>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserDetailsModel
+            {
+                Id = "user-1",
+                UserName = "jane",
+                AllRoles = new List<string> { "SysAdmin" },
+                AssignedRoles = new List<string> { "SysAdmin" }
+            });
+
+        DetailsModel model = CreateModel(service);
+        model.Id = "user-1";
+
+        await model.OnGetAsync(CancellationToken.None);
+
+        Assert.Empty(model.UnassignedRoles);
+    }
 }
