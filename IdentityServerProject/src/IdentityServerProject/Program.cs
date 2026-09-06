@@ -84,6 +84,28 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = "/Account/Login";
     options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/AccessDenied";
+
+    // Stated rather than inherited. HttpOnly and Lax are already the framework defaults;
+    // writing them down is the point, because a consumer reading this file should see the
+    // decisions rather than have to know what ASP.NET Core picks when nobody chooses.
+    options.Cookie.HttpOnly = true;
+
+    // SameSite is deliberately not set here. IdentityServer's ASP.NET Identity integration
+    // post-configures this cookie to SameSiteMode.None, after this callback runs, so that it
+    // survives the cross-site contexts the protocol needs — front-channel logout iframes and
+    // the check-session endpoint. Setting it here would be overwritten and would leave this
+    // file claiming a value the application does not use.
+    //
+    // That makes Secure non-negotiable rather than merely advisable: browsers reject
+    // SameSite=None unless the cookie is also Secure, and the previous default of
+    // SameAsRequest would have emitted exactly that combination over plain HTTP.
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+
+    // The framework defaults, made visible. A template cannot know a consumer's risk
+    // appetite; it can make sure they are looking at a knob rather than an absence.
+    // Revocation does not wait for these — SecurityStampValidator above runs every request.
+    options.ExpireTimeSpan = TimeSpan.FromDays(14);
+    options.SlidingExpiration = true;
 });
 
 var razorClientUri = AbsoluteHttpUri.Create(builder.Configuration["Clients:RazorClientUri"]
@@ -117,6 +139,16 @@ IIdentityServerBuilder isBuilder = builder.Services
             sql => sql
                 .MigrationsAssembly(typeof(Program).Assembly.FullName)
                 .EnableRetryOnFailure());
+
+        // Off by default, which means expired authorisation codes, refresh tokens and
+        // reference tokens accumulate in PersistedGrants forever. The symptom arrives
+        // months later as slow token operations, and the cause is a one-line opt-in.
+        options.EnableTokenCleanup = true;
+        options.TokenCleanupInterval = 3600; // seconds; stated rather than inherited
+
+        // RemoveConsumedTokens is deliberately left off: it discards refresh tokens once
+        // used, which also discards the evidence reuse detection relies on. That is a
+        // consumer's call, not a default worth propagating.
     });
 
 if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
@@ -141,10 +173,6 @@ else
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<ConfigurationDbContext>("ConfigurationDb")
     .AddDbContextCheck<PersistedGrantDbContext>("OperationalDb");
-
-// Required for dotnet ef CLI tools to instantiate DbContexts at design time
-builder.Services.AddSingleton(new ConfigurationStoreOptions());
-builder.Services.AddSingleton(new OperationalStoreOptions());
 
 builder.Services.AddAuthorization(options =>
 {
