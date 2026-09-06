@@ -59,6 +59,18 @@ public class AdminWebFactory : WebApplicationFactory<Program>
             foreach (ServiceDescriptor descriptor in healthCheckDescriptors) services.Remove(descriptor);
             services.Configure<HealthCheckServiceOptions>(options => { options.Registrations.Clear(); });
 
+            // Duende registers a background grant-cleanup service once EnableTokenCleanup is
+            // on. WebApplicationFactory disposes hosts it never started, and that service
+            // throws "Not started. Call Start first." from StopAsync in that case, failing
+            // whichever test happened to own the factory — intermittently, because it depends
+            // on whether that host was started first. Production wants the service running;
+            // this harness only needs the option to still read as enabled.
+            var tokenCleanupHosts = services
+                .Where(d => d.ServiceType == typeof(IHostedService)
+                            && d.ImplementationType?.Name == "TokenCleanupHost")
+                .ToList();
+            foreach (ServiceDescriptor descriptor in tokenCleanupHosts) services.Remove(descriptor);
+
 
             // Override IdentityServer DbContexts directly on the singletons
             ServiceDescriptor? configStoreOptions =
