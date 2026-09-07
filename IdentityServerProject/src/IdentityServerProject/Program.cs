@@ -209,10 +209,24 @@ if (args.Contains("--bootstrap-admin"))
     return;
 }
 
+await using (AsyncServiceScope migrationScope = app.Services.CreateAsyncScope())
+{
+    // Runs first and only in Development, so a fresh clone reaches a running host with a
+    // single `dotnet run --project AppHost` rather than a manual migration-bundle step. The
+    // readiness check right after this would otherwise fail closed on that same empty schema.
+    await DevelopmentSeeder.ApplyDevelopmentMigrationsAsync(
+        app.Environment,
+        migrationScope.ServiceProvider.GetRequiredService<ApplicationDbContext>(),
+        migrationScope.ServiceProvider.GetRequiredService<ConfigurationDbContext>(),
+        migrationScope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>());
+}
+
 await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
 {
     // Deployment applies reviewed migration bundles. The web process only verifies
-    // readiness and must do so before any environment-specific seed operation.
+    // readiness and must do so before any environment-specific seed operation. In
+    // Development the migrations just above make this a no-op; it still runs there so
+    // Development exercises the same gate Production relies on.
     await scope.ServiceProvider
         .GetRequiredService<IDatabaseSchemaReadinessValidator>()
         .EnsureReadyAsync();
