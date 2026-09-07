@@ -1,5 +1,5 @@
 {
   "appHost": {
-    "path": "Sales.AppHost/Sales.AppHost.csproj"
+    "path": "AppHost/AppHost.csproj"
   }
 }

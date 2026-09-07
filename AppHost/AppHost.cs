@@ -1,4 +1,4 @@
-// Secrets required before `dotnet run` will succeed. Run these from the Sales.AppHost directory:
+// Secrets required before `dotnet run` will succeed. Run these from the AppHost directory:
 //
 //   dotnet user-secrets set "Parameters:sql-password"            "<a strong SQL Server SA password>"
 //   dotnet user-secrets set "Parameters:razor-client-secret"     "<a random secret string>"
@@ -16,7 +16,7 @@ int? sqlPort = builder.Configuration.GetValue<int?>("SqlServer:Port");
 if (string.IsNullOrEmpty(builder.Configuration["Parameters:sql-password"]))
     throw new InvalidOperationException(
         "Missing required secret 'Parameters:sql-password'. Set it with: " +
-        "dotnet user-secrets set \"Parameters:sql-password\" \"<password>\" (run from Sales.AppHost).");
+        "dotnet user-secrets set \"Parameters:sql-password\" \"<password>\" (run from AppHost).");
 
 IResourceBuilder<ParameterResource> sqlPassword = builder.AddParameter("sql-password", true);
 IResourceBuilder<ParameterResource> razorClientSecret = builder.AddParameter("razor-client-secret", true);

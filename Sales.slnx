@@ -3,6 +3,6 @@
     <Project Path="IdentityServerProject.Admin.Services/IdentityServerProject.Admin.Services.csproj"/>
     <Project Path="IdentityServerProject.Admin.Tests/IdentityServerProject.Admin.Tests.csproj"/>
     <Project Path="IdentityServerProject/src/IdentityServerProject/IdentityServerProject.csproj"/>
-    <Project Path="Sales.AppHost/Sales.AppHost.csproj"/>
-    <Project Path="Sales.ServiceDefaults/Sales.ServiceDefaults.csproj"/>
+    <Project Path="AppHost/AppHost.csproj"/>
+    <Project Path="ServiceDefaults/ServiceDefaults.csproj"/>
 </Solution>

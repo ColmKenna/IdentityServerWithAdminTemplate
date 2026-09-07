@@ -14,7 +14,7 @@ public sealed record SeedClientSpec(string ClientId, string ClientName, Absolute
 
 public static class Config
 {
-    public const string ApiScopeName = "sales.api";
+    public const string ApiScopeName = "api";
 
     // Owned by the extracted admin-services library (ProtectedAdminRoles) so the host and the
     // library's self-demotion/last-administrator guards can never drift onto different role names.
@@ -35,13 +35,13 @@ public static class Config
     public static IEnumerable<ApiScope> ApiScopes =>
         new[]
         {
-            new ApiScope(ApiScopeName, "Sales API")
+            new ApiScope(ApiScopeName, "Default API Scope")
         };
 
     public static IEnumerable<ApiResource> ApiResources =>
         new[]
         {
-            new ApiResource("sales", "Sales API Resource")
+            new ApiResource("api-resource", "Default Protected Resource")
             {
                 Scopes = { ApiScopeName },
                 UserClaims = { "role" }

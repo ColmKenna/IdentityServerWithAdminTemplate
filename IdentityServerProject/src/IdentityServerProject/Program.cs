@@ -240,8 +240,8 @@ await DevelopmentSeeder.SeedIfDevelopmentAsync(app.Environment, async () =>
 
     var seedClients = new List<SeedClientSpec>
     {
-        new("razorclient", "Sales Razor Client", razorClientUri, razorClientSecret),
-        new("blazorclient", "Sales Blazor Client", blazorClientUri, blazorClientSecret)
+        new("razorclient", "Example Razor Client", razorClientUri, razorClientSecret),
+        new("blazorclient", "Example Blazor Client", blazorClientUri, blazorClientSecret)
     };
 
     await SeedData.SeedAsync(
