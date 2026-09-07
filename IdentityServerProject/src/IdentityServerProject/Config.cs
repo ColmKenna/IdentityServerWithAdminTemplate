@@ -12,6 +12,23 @@ namespace IdentityServerProject;
 /// </summary>
 public sealed record SeedClientSpec(string ClientId, string ClientName, AbsoluteHttpUri Uri, string Secret);
 
+/// <summary>
+///     Token lifetimes applied to the seeded example clients. Duende's own <see cref="Client" />
+///     defaults these exact values (3600/300/300) when a Client sets none of them, so this record
+///     changes nothing on its own — it exists so <c>IdentityServer:TokenLifetimes</c> in
+///     configuration is a real, exercised knob rather than a value nothing reads.
+/// </summary>
+public sealed record TokenLifetimes(
+    int AccessTokenLifetimeSeconds,
+    int IdentityTokenLifetimeSeconds,
+    int AuthorizationCodeLifetimeSeconds)
+{
+    public static TokenLifetimes Default { get; } = new(
+        AccessTokenLifetimeSeconds: 3600,
+        IdentityTokenLifetimeSeconds: 300,
+        AuthorizationCodeLifetimeSeconds: 300);
+}
+
 public static class Config
 {
     public const string ApiScopeName = "api";
@@ -48,7 +65,7 @@ public static class Config
             }
         };
 
-    public static IEnumerable<Client> Clients(IReadOnlyList<SeedClientSpec> clients) =>
+    public static IEnumerable<Client> Clients(IReadOnlyList<SeedClientSpec> clients, TokenLifetimes tokenLifetimes) =>
         clients.Select(spec => new Client
         {
             ClientId = spec.ClientId,
@@ -68,6 +85,9 @@ public static class Config
                 ApiScopeName
             },
             AllowOfflineAccess = true,
-            RequireConsent = false
+            RequireConsent = false,
+            AccessTokenLifetime = tokenLifetimes.AccessTokenLifetimeSeconds,
+            IdentityTokenLifetime = tokenLifetimes.IdentityTokenLifetimeSeconds,
+            AuthorizationCodeLifetime = tokenLifetimes.AuthorizationCodeLifetimeSeconds
         });
 }

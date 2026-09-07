@@ -38,7 +38,8 @@ public class SeededIdentityResourceProtectionTests
                 clients,
                 "admin@sales.local",
                 "Password123!",
-                "Password123!");
+                "Password123!",
+                TokenLifetimes.Default);
         });
     }
 

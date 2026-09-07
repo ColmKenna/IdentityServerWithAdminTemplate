@@ -244,6 +244,20 @@ await DevelopmentSeeder.SeedIfDevelopmentAsync(app.Environment, async () =>
         new("blazorclient", "Example Blazor Client", blazorClientUri, blazorClientSecret)
     };
 
+    // Duende's own Client defaults are these same three values, so leaving the section unset
+    // in configuration changes nothing observable — it exists as a documented, effective knob
+    // for a consumer who wants shorter-lived tokens, not as a mandatory setting.
+    var tokenLifetimes = new TokenLifetimes(
+        app.Configuration.GetValue(
+            "IdentityServer:TokenLifetimes:AccessTokenLifetimeSeconds",
+            TokenLifetimes.Default.AccessTokenLifetimeSeconds),
+        app.Configuration.GetValue(
+            "IdentityServer:TokenLifetimes:IdentityTokenLifetimeSeconds",
+            TokenLifetimes.Default.IdentityTokenLifetimeSeconds),
+        app.Configuration.GetValue(
+            "IdentityServer:TokenLifetimes:AuthorizationCodeLifetimeSeconds",
+            TokenLifetimes.Default.AuthorizationCodeLifetimeSeconds));
+
     await SeedData.SeedAsync(
         identityDb,
         configDb,
@@ -253,7 +267,8 @@ await DevelopmentSeeder.SeedIfDevelopmentAsync(app.Environment, async () =>
         seedClients,
         sysAdminEmail,
         sysAdminPassword,
-        testUserPassword);
+        testUserPassword,
+        tokenLifetimes);
 });
 
 if (!app.Environment.IsDevelopment())

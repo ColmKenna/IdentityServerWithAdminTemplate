@@ -25,11 +25,12 @@ public static class SeedData
         IReadOnlyList<SeedClientSpec> clients,
         string sysAdminEmail,
         string sysAdminPassword,
-        string testUserPassword)
+        string testUserPassword,
+        TokenLifetimes tokenLifetimes)
     {
         await SeedRolesAndUsersAsync(identityDb, userManager, roleManager, sysAdminEmail, sysAdminPassword,
             testUserPassword);
-        await SeedClientsAsync(configDb, clients);
+        await SeedClientsAsync(configDb, clients, tokenLifetimes);
         await SeedResourcesAsync(configDb);
     }
 
@@ -104,11 +105,12 @@ public static class SeedData
 
     private static async Task SeedClientsAsync(
         ConfigurationDbContext configDb,
-        IReadOnlyList<SeedClientSpec> clients)
+        IReadOnlyList<SeedClientSpec> clients,
+        TokenLifetimes tokenLifetimes)
     {
         List<string> existingClientIds = await configDb.Clients.Select(c => c.ClientId).ToListAsync();
 
-        foreach (Client client in Config.Clients(clients))
+        foreach (Client client in Config.Clients(clients, tokenLifetimes))
             if (!existingClientIds.Contains(client.ClientId))
                 configDb.Clients.Add(client.ToEntity());
 

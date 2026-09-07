@@ -446,3 +446,10 @@ FodyWeavers.xsd
 *.key
 *.jwk
 
+# Environment secret overrides. *.env (above) only matches a file ending in ".env",
+# so it misses ".env" itself and variants like ".env.local" or ".env.production" —
+# this covers every dotfile in the family. .env.example is the one meant to be
+# committed: it documents the required keys without their values.
+.env*
+!.env.example
+
