@@ -150,6 +150,21 @@ try {
     Assert-That -Condition (Test-Path -LiteralPath (Join-Path $migrationsDirectory 'Application')) `
         -Because 'migration history is preserved, not regenerated'
 
+    # The solution file is named for the original sample domain, not for the old prefix, so the
+    # general replace does not cover it. Renaming the file while leaving 'Sales.slnx' in the CI
+    # workflow and README gave every renamed instance a CI run that restored a solution that no
+    # longer existed.
+    $staleSolutionReferences = Get-ChildItem -LiteralPath $copyA -Recurse -File |
+        Where-Object { $_.Extension -in @('.yml', '.yaml', '.md', '.ps1', '.json', '.csproj') } |
+        Where-Object { $_.Name -ne 'rename-template.ps1' -and $_.Name -ne 'test-rename.ps1' } |
+        Where-Object { (Select-String -LiteralPath $_.FullName -Pattern 'Sales.slnx' -SimpleMatch -Quiet) }
+    Assert-That -Condition ($null -eq $staleSolutionReferences -or $staleSolutionReferences.Count -eq 0) `
+        -Because 'nothing still references the pre-rename solution filename'
+
+    Assert-That -Condition (Select-String -LiteralPath (Join-Path $copyA '.github/workflows/ci.yml') `
+            -Pattern "$PrefixA.slnx" -SimpleMatch -Quiet) `
+        -Because 'the CI workflow targets the renamed solution'
+
     $aspireCall = Select-String -LiteralPath (Join-Path $copyA 'AppHost/AppHost.cs') -Pattern 'AddProject<' -SimpleMatch
     Assert-That -Condition ($aspireCall.Line -match ([regex]::Escape(($PrefixA -replace '[^A-Za-z0-9_]', '_')))) `
         -Because 'the Aspire AddProject<T> class name is underscored, not dotted'

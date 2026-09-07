@@ -68,6 +68,11 @@ $DefaultHttpsPort = 5001
 
 # Directory names that never hold source worth rewriting. Matched per path segment at any depth,
 # so a nested bin/ or obj/ is skipped as readily as one at the root.
+#
+# Every Get-ChildItem below passes -Force. On Unix a leading dot marks a file hidden, and without
+# -Force PowerShell silently skips it — which meant .github/workflows/ci.yml was never rewritten
+# and every renamed instance inherited a CI run pointing at the pre-rename solution. -Force makes
+# .git itself enumerable too, so its entry in this list is load-bearing rather than decorative.
 $ExcludedSegments = @(
     '.git', '.vs', '.vscode', '.idea', 'bin', 'obj', 'node_modules',
     'artifacts', '.artifacts', 'TestResults', 'BenchmarkDotNet.Artifacts',
@@ -172,6 +177,14 @@ $AspireProjectClass = $NewPrefix -replace '[^A-Za-z0-9_]', '_'
 # Docker volume names allow [a-zA-Z0-9][a-zA-Z0-9_.-]*; lowercase-with-hyphens is always safe.
 $VolumeName = ($NewPrefix -replace '[^A-Za-z0-9]', '-').ToLowerInvariant() + '-sqlserver-data'
 
+# The solution file is named for the original sample domain, not for $OldPrefix, so the general
+# replace below never touches it. Its name is captured here because the file is renamed in step 5
+# but is referenced by name from the CI workflow, the README and the migration-bundle script —
+# rename the file without rewriting those references and every renamed instance gets a CI run
+# that restores a solution that no longer exists.
+$SolutionFile = Get-ChildItem -LiteralPath $Root -File -Force -Filter '*.slnx' | Select-Object -First 1
+$OldSolutionName = if ($null -ne $SolutionFile) { $SolutionFile.Name } else { $null }
+
 $mode = if ($Preview) { 'PREVIEW — no files will be written' } else { 'applying changes' }
 Write-Step "Renaming '$OldPrefix' to '$NewPrefix' in $Root ($mode)"
 
@@ -196,7 +209,7 @@ $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 $rewritten = 0
 
 Write-Step 'Rewriting file contents'
-foreach ($file in Get-ChildItem -LiteralPath $Root -Recurse -File) {
+foreach ($file in Get-ChildItem -LiteralPath $Root -Recurse -File -Force) {
     if (-not (Test-ShouldProcess -File $file)) { continue }
 
     $original = [System.IO.File]::ReadAllText($file.FullName)
@@ -206,6 +219,11 @@ foreach ($file in Get-ChildItem -LiteralPath $Root -Recurse -File) {
     $content = $content -replace "AddProject<\s*$([regex]::Escape($OldPrefix))\s*>", "AddProject<$AspireProjectClass>"
 
     $content = $content -replace [regex]::Escape($OldPrefix), $NewPrefix
+
+    # Every reference to the solution by filename, so they still resolve after step 5 renames it.
+    if ($null -ne $OldSolutionName) {
+        $content = $content -replace [regex]::Escape($OldSolutionName), "$NewPrefix.slnx"
+    }
 
     if ($content -ne $original) {
         $rewritten++
@@ -227,7 +245,7 @@ Write-Step 'Assigning per-instance identity'
 # Fresh user-secret stores. Without this, every instance generated from the template reads and
 # writes the same secrets on a developer machine.
 $secretsUpdated = 0
-foreach ($projectFile in Get-ChildItem -LiteralPath $Root -Recurse -File -Filter '*.csproj') {
+foreach ($projectFile in Get-ChildItem -LiteralPath $Root -Recurse -File -Force -Filter '*.csproj') {
     $relative = $projectFile.FullName.Substring($Root.Length).TrimStart([char]'/', [char]'\')
     $skip = $false
     foreach ($segment in $relative -split '[\\/]') {
@@ -291,7 +309,7 @@ Write-Step 'Renaming files and directories'
 
 function Get-Depth { param([string]$Path) ($Path -split '[\\/]').Count }
 
-$fileRenames = Get-ChildItem -LiteralPath $Root -Recurse -File |
+$fileRenames = Get-ChildItem -LiteralPath $Root -Recurse -File -Force |
     Where-Object {
         $_.Name -like "*$OldPrefix*" -and
         ($ExcludedSegments -notcontains ($_.FullName.Substring($Root.Length).TrimStart([char]'/', [char]'\') -split '[\\/]')[0])
@@ -312,7 +330,7 @@ foreach ($file in $fileRenames) {
     }
 }
 
-$directoryRenames = Get-ChildItem -LiteralPath $Root -Recurse -Directory |
+$directoryRenames = Get-ChildItem -LiteralPath $Root -Recurse -Directory -Force |
     Where-Object {
         $_.Name -like "*$OldPrefix*" -and
         ($ExcludedSegments -notcontains $_.Name)
@@ -330,7 +348,7 @@ foreach ($directory in $directoryRenames) {
 }
 
 # The solution file carries the old sample domain's name rather than the project prefix.
-$solution = Get-ChildItem -LiteralPath $Root -File -Filter '*.slnx' | Select-Object -First 1
+$solution = Get-ChildItem -LiteralPath $Root -File -Force -Filter '*.slnx' | Select-Object -First 1
 if ($null -ne $solution -and $solution.BaseName -ne $NewPrefix) {
     Write-Change "$($solution.Name) -> $NewPrefix.slnx"
     if (-not $Preview) {

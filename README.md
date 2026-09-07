@@ -66,6 +66,13 @@ standard OIDC and OAuth 2.0, and are registered as clients through the Admin Con
 - **IdentityServerProject.Admin.Services**: A decoupled domain services library containing the business logic, validation, audit generation, and management operations for the admin console. It has no reference to the host's `DbContext` or user type; the host supplies adapters for the persistence ports it defines.
 - **AppHost / ServiceDefaults**: .NET Aspire orchestration and shared service defaults (OpenTelemetry, health checks, resilience).
 
+> [!NOTE]
+> **SQL Server is a deliberate, load-bearing choice, not a default you can flip.** All three
+> `DbContext` registrations use `UseSqlServer`, the committed migrations are SQL Server-specific,
+> and the AppHost provisions a SQL Server container. Moving to PostgreSQL or another provider means
+> changing those registrations *and* regenerating all three migration histories — the one
+> substitution this template does not make cheap. Decide before you build on it.
+
 ---
 
 ## Key Features
@@ -209,8 +216,9 @@ dotnet run --project AppHost
 
 Aspire will output the URL for the **Aspire Dashboard**, from which you can monitor logs, traces, metrics, and inspect running endpoints.
 
-On a first run the `identityserver` resource will fail its schema-readiness check until the
-migration bundles have been applied. See [Database Migrations](#database-migrations).
+That is the whole first run. In Development the host applies all pending migrations itself before
+serving, so a fresh clone needs no migration-bundle step and no manual port discovery — see
+[Database Migrations](#database-migrations) for the deployment path used outside Development.
 
 ### 3. Default Ports & Endpoints
 
@@ -282,10 +290,16 @@ Each `DbContext` has dedicated migrations under `IdentityServerProject/src/Ident
 
 ### First Run with .NET Aspire
 
-The application never creates or migrates database schemas at startup. On a first run, start
-AppHost so that it starts its SQL Server container, then apply all three migration bundles before
-restarting the failed `identityserver` resource. A schema-readiness error from IdentityServer while
-the container starts is expected until this is complete.
+**In Development, nothing here is required.** The host applies pending migrations for all three
+contexts itself on startup, so a fresh clone reaches a running application with a single
+`dotnet run --project AppHost`. Re-running is a no-op once the schema is current.
+
+**Outside Development the host never creates or migrates schemas.** It verifies migration state and
+refuses to start when anything is pending, naming the bundle to run. Schema changes stay a
+deployment step there, applied through the reviewed bundles below.
+
+The rest of this section is therefore for **Staging, Production, and any environment where you want
+to rehearse the deployment path** rather than for ordinary local development.
 
 From the repository root, build the bundles:
 
