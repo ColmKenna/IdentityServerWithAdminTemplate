@@ -25,6 +25,8 @@ public class LogoutModel(
 
     public string? PostLogoutRedirectUri { get; set; }
 
+    public string? SignOutIFrameUrl { get; set; }
+
     public bool ShowLogoutPrompt { get; set; } = true;
 
     public async Task<IActionResult> OnGetAsync(string? logoutId)
@@ -63,10 +65,20 @@ public class LogoutModel(
             LogoutRequest? logoutContext =
                 await _interaction.GetLogoutContextAsync(LogoutId, HttpContext.RequestAborted);
             PostLogoutRedirectUri = logoutContext?.PostLogoutRedirectUri;
+            SignOutIFrameUrl = logoutContext?.SignOutIFrameUrl;
+        }
+
+        // If client applications have front-channel logout URLs registered, we must render
+        // the page so the browser loads the notification iframe before leaving.
+        if (!string.IsNullOrEmpty(SignOutIFrameUrl))
+        {
+            ShowLogoutPrompt = false;
+            return Page();
         }
 
         if (PostLogoutRedirectUri is not null) return Redirect(PostLogoutRedirectUri);
 
-        return RedirectToPage("/Account/Logout");
+        ShowLogoutPrompt = false;
+        return Page();
     }
 }

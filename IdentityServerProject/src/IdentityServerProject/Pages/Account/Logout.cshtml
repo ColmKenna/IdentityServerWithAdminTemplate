@@ -19,8 +19,20 @@
 }
 else
 {
+    @if (!string.IsNullOrEmpty(Model.SignOutIFrameUrl))
+    {
+        <iframe class="signout-iframe" src="@Model.SignOutIFrameUrl" width="0" height="0" style="display:none;" aria-hidden="true"></iframe>
+    }
+
     <div class="auth-card-actions">
-        <a asp-page="/Account/Login" class="btn-primary auth-submit-btn">Sign in again</a>
+        @if (!string.IsNullOrEmpty(Model.PostLogoutRedirectUri))
+        {
+            <a href="@Model.PostLogoutRedirectUri" class="btn-primary auth-submit-btn">Return to application</a>
+        }
+        else
+        {
+            <a asp-page="/Account/Login" class="btn-primary auth-submit-btn">Sign in again</a>
+        }
     </div>
 }
 
