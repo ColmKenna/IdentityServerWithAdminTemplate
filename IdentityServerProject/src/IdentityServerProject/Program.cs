@@ -44,10 +44,9 @@ if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("
         : Path.Combine(builder.Environment.ContentRootPath, certificatePath);
     try
     {
-        X509Certificate2 certificate = X509CertificateLoader.LoadPkcs12FromFile(
+        X509Certificate2 certificate = Pkcs12CertificateLoader.LoadFromFile(
             resolvedCertificatePath,
-            certificatePassword,
-            X509KeyStorageFlags.EphemeralKeySet);
+            certificatePassword);
         dataProtection.ProtectKeysWithCertificate(certificate);
     }
     catch (Exception ex) when (ex is CryptographicException or IOException or UnauthorizedAccessException)
@@ -164,9 +163,7 @@ else
     string resolvedCertPath = Path.IsPathRooted(certPath)
         ? certPath
         : Path.Combine(builder.Environment.ContentRootPath, certPath);
-    X509Certificate2 cert =
-        X509CertificateLoader.LoadPkcs12FromFile(resolvedCertPath, certPassword,
-            X509KeyStorageFlags.EphemeralKeySet);
+    X509Certificate2 cert = Pkcs12CertificateLoader.LoadFromFile(resolvedCertPath, certPassword);
     isBuilder.AddSigningCredential(cert);
 }
 
