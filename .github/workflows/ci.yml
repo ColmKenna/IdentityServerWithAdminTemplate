@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, template-prepare ]
+  pull_request:
+    branches: [ main, template-prepare ]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Sales.slnx
+
+      - name: Build solution
+        run: dotnet build Sales.slnx --no-restore
+
+      # SQL Server-backed tests (migration adoption, concurrency, secret-reveal instance
+      # handoff) run for real here, not skipped — GitHub-hosted ubuntu runners ship Docker
+      # already running, which Testcontainers needs. A silent skip would mean CI stops
+      # proving the thing most likely to break: real schema migrations against real SQL Server.
+      - name: Run test suite
+        run: dotnet test Sales.slnx --no-build --verbosity normal
+
+  rename-smoke-test:
+    name: Rename Script Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # ubuntu-latest ships PowerShell (pwsh) already; no install step needed.
+      #
+      # -SkipTests: the harness renames to two different prefixes and builds both,
+      # proving the rename produces a compiling solution under a new namespace without
+      # doubling this job's runtime by re-running the full suite (already covered, once,
+      # by build-and-test above) inside a renamed copy on every push.
+      - name: Verify clone-and-rename script
+        run: pwsh -File scripts/tests/test-rename.ps1 -SkipTests
