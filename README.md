@@ -2,7 +2,7 @@
 
 A modern, production-ready **Duende IdentityServer** and **ASP.NET Core Identity** starter template for .NET 10, featuring a comprehensive, built-in **Admin Console UI** (`/Admin`), decoupled service architecture, and enterprise security defaults.
 
-The included **Sales** projects (`Sales.ApiService`, `Sales.WasmClient`, `Sales.Domain`, `Sales.Application`, `Sales.Infrastructure`) are lightweight example / shell applications designed to demonstrate end-to-end OAuth 2.0 and OpenID Connect integration across APIs and clients using **.NET Aspire**.
+The template ships only the identity host and its admin console. Downstream sample applications are deliberately not included, so what you clone is the part you keep.
 
 ---
 
@@ -12,7 +12,6 @@ The included **Sales** projects (`Sales.ApiService`, `Sales.WasmClient`, `Sales.
 - [Key Features](#key-features)
   - [IdentityServer Host & Security](#identityserver-host--security)
   - [Admin Console UI](#admin-console-ui)
-  - [Example Shell Applications (Sales)](#example-shell-applications-sales)
 - [Project Structure](#project-structure)
 - [Database Contexts](#database-contexts)
 - [Prerequisites](#prerequisites)
@@ -20,10 +19,13 @@ The included **Sales** projects (`Sales.ApiService`, `Sales.WasmClient`, `Sales.
   - [1. Configure User Secrets](#1-configure-user-secrets)
   - [2. Run the Solution (.NET Aspire)](#2-run-the-solution-net-aspire)
   - [3. Default Ports & Endpoints](#3-default-ports--endpoints)
-  - [4. Seeded Accounts](#4-seeded-accounts)
+  - [4. Development Seed Data](#4-development-seed-data)
+- [Creating the First Administrator](#creating-the-first-administrator)
 - [Database Migrations](#database-migrations)
 - [Testing](#testing)
 - [Configuration Reference](#configuration-reference)
+- [Production Checklist](#production-checklist)
+- [License](#license)
 
 ---
 
@@ -32,34 +34,33 @@ The included **Sales** projects (`Sales.ApiService`, `Sales.WasmClient`, `Sales.
 This solution provides a foundation for central authentication and authorization services:
 
 ```text
-                               +----------------------------------------+
-                               |              .NET Aspire               |
-                               |             (Sales.AppHost)            |
-                               +-------------------+--------------------+
-                                                   |
-                   +-------------------------------+-------------------------------+
-                   |                               |                               |
-                   v                               v                               v
-       +-----------------------+       +-----------------------+       +-----------------------+
-       |     Sales.WasmClient  |       |   IdentityServerHost  |       |    Sales.ApiService   |
-       |  (Blazor WASM OIDC)   |       |   & Admin Console UI  |       |  (Protected API / JWT)|
-       +-----------+-----------+       +-----------+-----------+       +-----------+-----------+
-                   |                               |                               |
-                   |      OIDC Token Flow          |       Validate Bearer JWT     |
-                   +------------------------------>|<------------------------------+
-                   |                               |
-                   |       API Requests + Bearer   |
-                   +-------------------------------------------------------------->|
-                                                   |
-                                 +-----------------+-----------------+
-                                 |                 |                 |
-                                 v                 v                 v
-                          [IdentityDb]    [IdentityConfigDb] [IdentityOperationalDb]
+                      +----------------------------------------+
+                      |              .NET Aspire               |
+                      |                (AppHost)               |
+                      +-------------------+--------------------+
+                                          |
+                                          v
+                          +---------------------------------+
+                          |       IdentityServerProject     |
+                          |   Duende IdentityServer 8       |
+                          |   + ASP.NET Core Identity       |
+                          |   + /Admin Console UI           |
+                          +----------------+----------------+
+                                           |
+                     +---------------------+---------------------+
+                     |                     |                     |
+                     v                     v                     v
+              [IdentityDb]        [IdentityConfigDb]  [IdentityOperationalDb]
+               users, roles          clients, scopes    grants, tokens, keys
+               audit, DP keys        API resources      consents, sessions
 ```
 
+Your own applications sit outside this template. They authenticate against the host over
+standard OIDC and OAuth 2.0, and are registered as clients through the Admin Console.
+
 - **IdentityServerProject**: The primary authentication host running Duende IdentityServer with ASP.NET Core Identity. Houses the Razor Pages UI for account workflows (Login, Logout, Access Denied) and the `/Admin` management console.
-- **IdentityServerProject.Admin.Services**: A decoupled domain services library containing the business logic, validation, audit generation, and management operations for the admin console.
-- **Sales Projects**: Minimal reference implementations illustrating how downstream services consume tokens and enforce security policies.
+- **IdentityServerProject.Admin.Services**: A decoupled domain services library containing the business logic, validation, audit generation, and management operations for the admin console. It has no reference to the host's `DbContext` or user type; the host supplies adapters for the persistence ports it defines.
+- **AppHost / ServiceDefaults**: .NET Aspire orchestration and shared service defaults (OpenTelemetry, health checks, resilience).
 
 ---
 
@@ -71,7 +72,12 @@ This solution provides a foundation for central authentication and authorization
 - **ASP.NET Core Identity Integration**: User account store with password hashing, account lockout, role management, and claim handling.
 - **Enterprise Security Defaults**:
   - **Immediate Session Invalidation**: `SecurityStampValidatorOptions.ValidationInterval = TimeSpan.Zero` ensures credentials and tokens revoked in the admin console take effect on the next request.
-  - **ASP.NET Core Data Protection**: Keys persisted to EF Core (`ApplicationDbContext`) with certificate encryption support in production.
+  - **Deny-by-Default Authorization**: A global fallback policy requires an authenticated user, so a page added outside the `/Admin` convention fails closed rather than being served anonymously. Anonymous routes state so explicitly.
+  - **Signing Certificate Enforcement**: Outside Development the host refuses to start unless `IdentityServer:SigningCertificatePath` and its password are configured. There is no silent fallback to a developer signing key.
+  - **ASP.NET Core Data Protection**: Keys persisted to EF Core (`ApplicationDbContext`), and encrypted at rest with a certificate that is likewise mandatory outside Development.
+  - **No Administrator Resurrection**: Ordinary startup performs no administrator seeding, so an account deleted or demoted through the console stays that way across restarts. See [Creating the First Administrator](#creating-the-first-administrator).
+  - **Complete Front-Channel Logout**: The post-logout page renders IdentityServer's `SignOutIFrameUrl`, so registered clients clear their own sessions before the user follows the validated return link.
+  - **Operational Token Cleanup**: Expired authorization codes, refresh tokens, and reference tokens are purged on an interval rather than accumulating in `PersistedGrants` indefinitely.
   - **Defensive HTTP Headers**: Enforces `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, and `Referrer-Policy: strict-origin-when-cross-origin`.
   - **Production Startup Checks**: `IDatabaseSchemaReadinessValidator` validates that all migrations are in place prior to launching or seeding.
   - **Protected Administrator Guards**: Built-in protection prevents accidental deletion or demotion of the last active system administrator.
@@ -93,15 +99,6 @@ The `/Admin` section is restricted to users in the `SysAdmin` role and provides 
 | **Diagnostics** | Live status checks covering database connectivity, store health, signing credentials, and configuration warnings. |
 | **Signing Keys** | View active and retired cryptographic signing keys. |
 
-### Example Shell Applications (Sales)
-
-The `Sales.*` projects demonstrate how to integrate client applications and APIs with IdentityServer:
-
-- **`Sales.ApiService`**: Minimal API protected by JWT Bearer authentication requiring the `sales.api` scope and `SysAdmin` role for privileged endpoints. Includes Swagger UI configured for OAuth 2.0 Authorization Code Flow with PKCE.
-- **`Sales.WasmClient`**: Blazor WebAssembly frontend demonstrating OIDC client login, authentication state management, and authenticated HTTP requests.
-- **`Sales.Domain` / `Sales.Application` / `Sales.Infrastructure`**: Clean architecture skeleton structure demonstrating layer boundaries.
-- **`Sales.AppHost`**: .NET Aspire orchestration tying together SQL Server, IdentityServer, API, and client services.
-
 ---
 
 ## Project Structure
@@ -112,19 +109,10 @@ The `Sales.*` projects demonstrate how to integrate client applications and APIs
 │   └── src/IdentityServerProject/       # Duende IdentityServer host & /Admin Razor Pages UI
 ├── IdentityServerProject.Admin.Services # Domain services, validation & audit logic for Admin UI
 ├── IdentityServerProject.Admin.Tests    # Unit, integration, characterization & audit coverage tests
-├── Sales.ApiService/                    # Example backend API protected by JWT Bearer tokens
-├── Sales.AppHost/                       # .NET Aspire AppHost orchestrator
-├── Sales.Application/                   # Example application layer
-├── Sales.ArchitectureTests/             # Architecture constraint tests
-├── Sales.Domain/                        # Example domain layer
-├── Sales.Infrastructure/                # Example infrastructure layer
-├── Sales.IntegrationTests/              # Integration test suite for example services
-├── Sales.RazorClient/                   # Example Razor client shell
-├── Sales.ServiceDefaults/               # Aspire service defaults (OTel, health checks, resilience)
-├── Sales.UnitTests/                     # Unit tests for example services
-├── Sales.WasmClient/                    # Example Blazor WebAssembly client application
-├── Sales.Web/                           # Example web shell
+├── AppHost/                             # .NET Aspire AppHost orchestrator
+├── ServiceDefaults/                     # Aspire service defaults (OTel, health checks, resilience)
 ├── scripts/                             # Utility scripts (e.g. migration bundle generation)
+├── aspire.config.json                   # Aspire tooling entry point (names the AppHost project)
 ├── Directory.Packages.props             # Central Package Management (CPM)
 ├── global.json                          # .NET SDK configuration
 └── Sales.slnx                           # Solution definition
@@ -146,15 +134,13 @@ The solution separates operational, configuration, and identity data across thre
 3. **`PersistedGrantDbContext`** (Database: `IdentityOperationalDb`):
    - Duende IdentityServer operational store (Authorization codes, refresh tokens, reference tokens, user consent, signing keys).
 
-*(Note: The example API uses its own `SalesDbContext` pointing to `SalesDb`.)*
-
 ---
 
 ## Prerequisites
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- [Docker Desktop](https://www.docker.com/) or a compatible container runtime (for .NET Aspire SQL Server containers)
-- Node.js (v18+) *optional, only needed for running front-end component tests in IdentityServerProject*
+- [.NET 10 SDK](https://dotnet.microsoft.com/download) (feature band `10.0.100` or later, per `global.json`)
+- [Docker Desktop](https://www.docker.com/) or a compatible container runtime — required both for the .NET Aspire SQL Server container and for the SQL Server integration tests
+- Node.js (v18+) *optional, only needed for the front-end component tests in `IdentityServerProject`*
 
 ---
 
@@ -162,10 +148,10 @@ The solution separates operational, configuration, and identity data across thre
 
 ### 1. Configure User Secrets
 
-Before launching via Aspire, configure the required development secrets for `Sales.AppHost`:
+Before launching via Aspire, configure the required development secrets for `AppHost`:
 
 ```pwsh
-cd Sales.AppHost
+cd AppHost
 
 dotnet user-secrets set "Parameters:sql-password"            "YourStrong@SA!Password"
 dotnet user-secrets set "Parameters:razor-client-secret"     "dev-secret-for-razor-client"
@@ -174,42 +160,80 @@ dotnet user-secrets set "Parameters:seed-sysadmin-password"  "SysAdminPass123!"
 dotnet user-secrets set "Parameters:seed-test-user-password" "TestUserPass123!"
 ```
 
+None of these have a built-in default. AppHost fails fast naming the missing key rather than
+falling back to a committed credential.
+
 ### 2. Run the Solution (.NET Aspire)
 
 Run the AppHost project to spin up SQL Server and all dependencies:
 
 ```pwsh
-dotnet run --project Sales.AppHost
+dotnet run --project AppHost
 ```
 
 Aspire will output the URL for the **Aspire Dashboard**, from which you can monitor logs, traces, metrics, and inspect running endpoints.
+
+On a first run the `identityserver` resource will fail its schema-readiness check until the
+migration bundles have been applied. See [Database Migrations](#database-migrations).
 
 ### 3. Default Ports & Endpoints
 
 | Service | Port / URL | Description |
 |---|---|---|
 | **IdentityServer Host** | `https://localhost:5001` | OIDC discovery endpoint (`/.well-known/openid-configuration`) & Admin Console (`/Admin`) |
-| **Sales Wasm Client** | `https://localhost:5002` | Blazor WASM client app |
-| **Sales Api Service** | `https://localhost:5004` | Protected API & Swagger UI (`/swagger`) |
 | **Aspire Dashboard** | Dynamic (see console output) | Telemetry, logs, and distributed application management |
 
-### 4. Seeded Accounts
+### 4. Development Seed Data
 
-None of these have a default. Every value below is required configuration, and the host
-refuses to start naming the missing key rather than falling back to a built-in credential.
+In **Development only**, the host seeds a small amount of example data so the console is usable
+immediately. No seeding of any kind occurs in other environments.
 
-The **System Administrator** is seeded in *every* environment, because a deployment needs a
-first account that can reach `/Admin`:
+Two example client registrations are created, `razorclient` and `blazorclient`, pointing at
+`https://localhost:5001` and `https://localhost:5002`. These are placeholders illustrating the
+shape of a client record — no application listens on those URLs in this template. Edit or delete
+them from **Admin → Clients**.
 
-- **Username / Email**: `Seed:SysAdminEmail` — `admin@sales.local` in `appsettings.Development.json`
-- **Password**: `Seed:SysAdminPassword`, from `Parameters:seed-sysadmin-password`
-- **Role**: `SysAdmin` (has access to `/Admin`)
+A development administrator and a standard test user are also seeded:
 
-The **Standard Test User** and the example clients are seeded in Development only:
+| Account | Email | Password source | Role |
+|---|---|---|---|
+| System Administrator | `Seed:SysAdminEmail` (`admin@sales.local` in `appsettings.Development.json`) | `Seed:SysAdminPassword`, from `Parameters:seed-sysadmin-password` | `SysAdmin` |
+| Standard Test User | `testuser@sales.local` | `Seed:TestUserPassword`, from `Parameters:seed-test-user-password` | *(none)* |
 
-- **Username / Email**: `testuser@sales.local`
-- **Password**: `Seed:TestUserPassword`, from `Parameters:seed-test-user-password`
-- **Role**: *(None)*
+---
+
+## Creating the First Administrator
+
+Outside Development, **no administrator is created at startup**. This is deliberate: seeding an
+administrator on every boot means an account you delete or demote through the console reappears
+the next time the process restarts, silently undoing a revocation.
+
+Instead, provision the first administrator with an explicit one-time command. It connects
+directly to `IdentityDb`, so the schema must already exist (migration bundles applied) and the
+connection string must be supplied — outside Aspire nothing injects it for you:
+
+```pwsh
+dotnet user-secrets set "AdminBootstrap:Email"    "admin@your-company.example"
+dotnet user-secrets set "AdminBootstrap:Password" "<a strong password>"
+
+$env:ConnectionStrings__IdentityDb = "Server=...;Database=IdentityDb;User ID=...;Password=...;TrustServerCertificate=True"
+dotnet run --project IdentityServerProject/src/IdentityServerProject -- --bootstrap-admin
+```
+
+Credentials come from configuration — user secrets, environment variables, or your platform's
+secret store. Without a reachable `IdentityDb` the command fails with
+`ConnectionString is missing ... 'ConnectionStrings:IdentityDb'` before it does any work.
+
+The command:
+
+- creates the `SysAdmin` role if it does not yet exist;
+- creates the user and assigns the role;
+- **refuses to modify an account that already exists** — it logs a warning and exits without
+  touching passwords or role assignments, so it can never be used to re-elevate a demoted user;
+- exits the process when finished rather than continuing into normal web startup.
+
+It falls back to `Seed:SysAdminEmail` / `Seed:SysAdminPassword` when the `AdminBootstrap:*` keys
+are not set.
 
 ---
 
@@ -243,7 +267,7 @@ $sqlContainer = docker ps --filter "name=sqlserver" --format "{{.Names}}" | Sele
 if (-not $sqlContainer) { throw "No running AppHost SQL Server container was found." }
 
 $sqlPort = (docker port $sqlContainer 1433/tcp | Select-Object -First 1) -replace '^.*:', ''
-$secretLine = dotnet user-secrets list --project Sales.AppHost/Sales.AppHost.csproj |
+$secretLine = dotnet user-secrets list --project AppHost/AppHost.csproj |
     Where-Object { $_ -match '^Parameters:sql-password\s*=\s*(.+)$' } |
     Select-Object -First 1
 if (-not $secretLine) { throw "The AppHost SQL password is not configured." }
@@ -281,14 +305,25 @@ Use the provided PowerShell script to build self-contained EF Core migration exe
 
 ## Testing
 
-Run the full automated test suite across the solution:
+```pwsh
+# Whole solution
+dotnet test Sales.slnx
+
+# The admin services, page models, and integration suites
+dotnet test IdentityServerProject.Admin.Tests/IdentityServerProject.Admin.Tests.csproj
+```
+
+**Docker must be running.** A portion of the suite provisions real SQL Server containers via
+Testcontainers to cover migration adoption, concurrency, and cross-instance behaviour that an
+in-memory provider cannot represent. Without a container runtime those tests fail to connect
+rather than skipping.
+
+Front-end component tests for the admin console pages are run separately with Node:
 
 ```pwsh
-# Run all unit and integration tests
-dotnet test
-
-# Run tests for the Admin Services and Page Models specifically
-dotnet test IdentityServerProject.Admin.Tests/IdentityServerProject.Admin.Tests.csproj
+cd IdentityServerProject/src/IdentityServerProject
+npm install
+npm run test:admin-ui
 ```
 
 ---
@@ -313,6 +348,10 @@ Key configuration sections in `IdentityServerProject`:
     "SysAdminPassword": "<password>",
     "TestUserPassword": "<password>"
   },
+  "AdminBootstrap": {
+    "Email": "<administrator email>",
+    "Password": "<password>"
+  },
   "DataProtection": {
     "CertificatePath": "path/to/cert.pfx",
     "CertificatePassword": "<cert-password>"
@@ -324,8 +363,28 @@ Key configuration sections in `IdentityServerProject`:
 }
 ```
 
+The `Clients` and `Seed` sections are consumed only by the Development seeder. `AdminBootstrap`
+is read only by `--bootstrap-admin`. The two certificate sections are required in every
+environment except Development and Testing.
+
+---
+
+## Production Checklist
+
+- [ ] `IdentityServer:SigningCertificatePath` and password configured — the host will not start without them.
+- [ ] `DataProtection:CertificatePath` and password configured, so the key ring is encrypted at rest.
+- [ ] All three migration bundles applied to their databases.
+- [ ] First administrator created with `--bootstrap-admin`, and the bootstrap credentials removed from configuration afterwards.
+- [ ] Real client registrations created through **Admin → Clients**, and the `razorclient` / `blazorclient` development placeholders deleted.
+- [ ] A Duende IdentityServer license configured if you exceed the free tier — see below.
+
 ---
 
 ## License
 
-This project is licensed under the terms specified in the repository. Please review Duende IdentityServer licensing terms for production commercial deployments.
+This project is licensed under the terms specified in the repository.
+
+**Duende IdentityServer is a commercial product.** It is free for development and testing, and for
+qualifying companies and open-source projects, but production use otherwise requires a paid
+license. Review the [Duende licensing terms](https://duendesoftware.com/products/identityserver)
+before deploying.
