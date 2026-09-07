@@ -3,14 +3,6 @@
     <Project Path="IdentityServerProject.Admin.Services/IdentityServerProject.Admin.Services.csproj"/>
     <Project Path="IdentityServerProject.Admin.Tests/IdentityServerProject.Admin.Tests.csproj"/>
     <Project Path="IdentityServerProject/src/IdentityServerProject/IdentityServerProject.csproj"/>
-    <Project Path="Sales.ApiService/Sales.ApiService.csproj"/>
     <Project Path="Sales.AppHost/Sales.AppHost.csproj"/>
-    <Project Path="Sales.Domain/Sales.Domain.csproj"/>
-    <Project Path="Sales.Application/Sales.Application.csproj"/>
-    <Project Path="Sales.Infrastructure/Sales.Infrastructure.csproj"/>
-    <Project Path="Sales.WasmClient/Sales.WasmClient.csproj"/>
     <Project Path="Sales.ServiceDefaults/Sales.ServiceDefaults.csproj"/>
-    <Project Path="Sales.UnitTests/Sales.UnitTests.csproj"/>
-    <Project Path="Sales.IntegrationTests/Sales.IntegrationTests.csproj"/>
-    <Project Path="Sales.ArchitectureTests/Sales.ArchitectureTests.csproj"/>
 </Solution>

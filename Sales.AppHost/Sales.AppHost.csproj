@@ -13,8 +13,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Sales.ApiService\Sales.ApiService.csproj"/>
-        <ProjectReference Include="..\Sales.WasmClient\Sales.WasmClient.csproj"/>
         <ProjectReference Include="..\IdentityServerProject\src\IdentityServerProject\IdentityServerProject.csproj"/>
     </ItemGroup>
 

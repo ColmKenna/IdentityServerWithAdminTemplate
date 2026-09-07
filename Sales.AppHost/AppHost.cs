@@ -30,11 +30,6 @@ IResourceBuilder<SqlServerServerResource> sqlServer = builder.AddSqlServer("sqls
 IResourceBuilder<SqlServerDatabaseResource> identityDb = sqlServer.AddDatabase("IdentityDb");
 IResourceBuilder<SqlServerDatabaseResource> identityConfigDb = sqlServer.AddDatabase("IdentityConfigDb");
 IResourceBuilder<SqlServerDatabaseResource> identityOperationalDb = sqlServer.AddDatabase("IdentityOperationalDb");
-IResourceBuilder<SqlServerDatabaseResource> salesDb = sqlServer.AddDatabase("SalesDb");
-
-IResourceBuilder<ProjectResource> wasmClient = builder.AddProject<Sales_WasmClient>("wasmclient")
-    .WithExternalHttpEndpoints()
-    .WithHttpsEndpoint(5002, name: "https");
 
 IResourceBuilder<ProjectResource> identityServer = builder.AddProject<IdentityServerProject>("identityserver")
     .WithReference(identityDb)
@@ -43,25 +38,10 @@ IResourceBuilder<ProjectResource> identityServer = builder.AddProject<IdentitySe
     .WaitFor(sqlServer)
     .WithHttpsEndpoint(5001, name: "https")
     .WithEnvironment("Clients__RazorClientUri", "https://localhost:5001")
-    .WithEnvironment("Clients__BlazorClientUri", wasmClient.GetEndpoint("https"))
+    .WithEnvironment("Clients__BlazorClientUri", "https://localhost:5002")
     .WithEnvironment("Clients__RazorSecret", razorClientSecret)
     .WithEnvironment("Clients__BlazorSecret", blazorClientSecret)
     .WithEnvironment("Seed__SysAdminPassword", sysAdminPassword)
     .WithEnvironment("Seed__TestUserPassword", testUserPassword);
-
-IResourceBuilder<ProjectResource> apiService = builder.AddProject<Sales_ApiService>("apiservice")
-    .WithReference(salesDb)
-    .WithReference(identityServer)
-    .WaitFor(sqlServer)
-    .WaitFor(identityServer)
-    .WithHttpsEndpoint(5004, name: "https")
-    .WithHttpHealthCheck("/health");
-
-wasmClient
-    .WithReference(identityServer)
-    .WithReference(apiService)
-    .WaitFor(identityServer)
-    .WaitFor(apiService)
-    .WithEnvironment("IdentityServer__ClientSecret", blazorClientSecret);
 
 builder.Build().Run();
