@@ -206,11 +206,11 @@ builder.Services.AddScoped<IDatabaseSchemaReadinessValidator, DatabaseSchemaRead
 
 WebApplication app = builder.Build();
 
-// Read before the readiness check so a missing credential fails on its own terms rather
-// than after a database round trip. This administrator is seeded in every environment, so
-// the values can never fall back to a literal: see RequiredConfigurationExtensions.
-string sysAdminEmail = app.Configuration.Required("Seed:SysAdminEmail");
-string sysAdminPassword = app.Configuration.Required("Seed:SysAdminPassword");
+if (args.Contains("--bootstrap-admin"))
+{
+    await AdminBootstrapper.BootstrapSysAdminAsync(app.Services, app.Configuration);
+    return;
+}
 
 await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
 {
@@ -219,13 +219,6 @@ await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
     await scope.ServiceProvider
         .GetRequiredService<IDatabaseSchemaReadinessValidator>()
         .EnsureReadyAsync();
-
-    await SeedData.SeedSysAdminAsync(
-        scope.ServiceProvider.GetRequiredService<ApplicationDbContext>(),
-        scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>(),
-        scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>(),
-        sysAdminEmail,
-        sysAdminPassword);
 }
 
 await DevelopmentSeeder.SeedIfDevelopmentAsync(app.Environment, async () =>
@@ -240,8 +233,10 @@ await DevelopmentSeeder.SeedIfDevelopmentAsync(app.Environment, async () =>
     UserManager<ApplicationUser> userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     RoleManager<IdentityRole> roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-    // The administrator pair is already resolved above; only the development-only values
-    // are read here, so they are demanded when this seed runs rather than on every start.
+    // All seed credentials are development-only values now that runtime admin bootstrapping
+    // is decoupled into --bootstrap-admin. They are demanded when this seed runs, not on every start.
+    string sysAdminEmail = app.Configuration.Required("Seed:SysAdminEmail");
+    string sysAdminPassword = app.Configuration.Required("Seed:SysAdminPassword");
     string razorClientSecret = app.Configuration.Required("Clients:RazorSecret");
     string blazorClientSecret = app.Configuration.Required("Clients:BlazorSecret");
     string testUserPassword = app.Configuration.Required("Seed:TestUserPassword");

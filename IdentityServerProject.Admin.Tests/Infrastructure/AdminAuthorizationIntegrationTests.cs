@@ -91,17 +91,32 @@ public class AdminAuthorizationIntegrationTests : IClassFixture<AdminWebFactory>
     }
 
     [Fact]
-    public async Task SeededSysAdmin_HasTheRoleClaimUsedByCookieSignIn()
+    public async Task SysAdmin_HasTheRoleClaimUsedByCookieSignIn()
     {
         using IServiceScope scope = _factory.Services.CreateScope();
         UserManager<ApplicationUser> userManager =
             scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        RoleManager<IdentityRole> roleManager =
+            scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         IUserClaimsPrincipalFactory<ApplicationUser> principalFactory =
             scope.ServiceProvider.GetRequiredService<IUserClaimsPrincipalFactory<ApplicationUser>>();
-        ApplicationUser? admin = await userManager.FindByNameAsync("admin@sales.local");
 
-        Assert.NotNull(admin);
-        Assert.True(await userManager.IsInRoleAsync(admin!, Config.SysAdminRole));
+        // Create role and user explicitly — the host no longer seeds admins on startup.
+        if (!await roleManager.RoleExistsAsync(Config.SysAdminRole))
+            await roleManager.CreateAsync(new IdentityRole(Config.SysAdminRole));
+
+        string adminEmail = "role-claim-test-admin@sales.local";
+        var admin = new ApplicationUser
+        {
+            UserName = adminEmail,
+            Email = adminEmail,
+            EmailConfirmed = true,
+            FullName = "Role Claim Test Admin"
+        };
+        await userManager.CreateAsync(admin, "Password123!");
+        await userManager.AddToRoleAsync(admin, Config.SysAdminRole);
+
+        Assert.True(await userManager.IsInRoleAsync(admin, Config.SysAdminRole));
 
         ClaimsPrincipal principal = await principalFactory.CreateAsync(admin);
         Assert.True(principal.IsInRole(Config.SysAdminRole));

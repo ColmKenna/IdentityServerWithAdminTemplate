@@ -6,6 +6,7 @@ using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using IdentityServerProject.Data;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.SqlClient;
@@ -92,6 +93,17 @@ public sealed class Task02SqlServerFactory : WebApplicationFactory<Program>, IAs
             services.RemoveAll<IBackChannelLogoutService>();
             services.AddSingleton<IBackChannelLogoutService>(BackChannelLogout);
         });
+    }
+
+    protected override Microsoft.Extensions.Hosting.IHost CreateHost(Microsoft.Extensions.Hosting.IHostBuilder builder)
+    {
+        Microsoft.Extensions.Hosting.IHost host = base.CreateHost(builder);
+        using IServiceScope scope = host.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var identityDb = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        SeedData.SeedSysAdminAsync(identityDb, userManager, roleManager, "admin@sales.local", "Password123!").GetAwaiter().GetResult();
+        return host;
     }
 
     public HttpClient CreateHttpsClient(bool allowAutoRedirect = false) => CreateClient(

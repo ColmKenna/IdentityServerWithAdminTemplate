@@ -96,10 +96,10 @@ public static class SeedData
             {
                 new Claim("name", fullName)
             });
-        }
 
-        if (role is not null && !await userManager.IsInRoleAsync(user, role))
-            await userManager.AddToRoleAsync(user, role);
+            if (role is not null)
+                await userManager.AddToRoleAsync(user, role);
+        }
     }
 
     private static async Task SeedClientsAsync(
