@@ -1,5 +1,8 @@
 # Duende IdentityServer with Admin Console Template
 
+[![CI](https://github.com/ColmKenna/IdentityServerWithAdminTemplate/actions/workflows/ci.yml/badge.svg)](https://github.com/ColmKenna/IdentityServerWithAdminTemplate/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A modern, production-ready **Duende IdentityServer** and **ASP.NET Core Identity** starter template for .NET 10, featuring a comprehensive, built-in **Admin Console UI** (`/Admin`), decoupled service architecture, and enterprise security defaults.
 
 The template ships only the identity host and its admin console. Downstream sample applications are deliberately not included, so what you clone is the part you keep.
@@ -15,6 +18,7 @@ The template ships only the identity host and its admin console. Downstream samp
 - [Project Structure](#project-structure)
 - [Database Contexts](#database-contexts)
 - [Prerequisites](#prerequisites)
+- [Creating a New Instance from This Template](#creating-a-new-instance-from-this-template)
 - [Getting Started](#getting-started)
   - [1. Configure User Secrets](#1-configure-user-secrets)
   - [2. Run the Solution (.NET Aspire)](#2-run-the-solution-net-aspire)
@@ -140,7 +144,39 @@ The solution separates operational, configuration, and identity data across thre
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download) (feature band `10.0.100` or later, per `global.json`)
 - [Docker Desktop](https://www.docker.com/) or a compatible container runtime — required both for the .NET Aspire SQL Server container and for the SQL Server integration tests
+- [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell) (`pwsh`) — required to run `scripts/rename-template.ps1` and `scripts/Create-MigrationBundles.ps1`. Pre-installed on GitHub Actions' `ubuntu-latest` runners; install locally with `dotnet tool install --global PowerShell` if `pwsh` is not already on your `PATH`.
 - Node.js (v18+) *optional, only needed for the front-end component tests in `IdentityServerProject`*
+
+---
+
+## Creating a New Instance from This Template
+
+This repository is a **GitHub template**: use *Use this template* on GitHub, or clone it directly, then
+re-brand the clone before writing any application code of your own.
+
+```pwsh
+git clone <your-new-repo-url> MyCompany.Identity
+cd MyCompany.Identity
+
+# Preview first — reports every change, writes nothing:
+pwsh -File ./scripts/rename-template.ps1 -NewPrefix "MyCompany.Identity" -Preview
+
+# Then apply it:
+pwsh -File ./scripts/rename-template.ps1 -NewPrefix "MyCompany.Identity"
+```
+
+The script renames every project, namespace, folder, and the solution file from
+`IdentityServerProject` to your prefix, and gives the new instance its own identity — a fresh
+`UserSecretsId` in every project and its own named SQL Server data volume — so it can run
+side by side with another instance generated from the same template without sharing secrets or
+data. EF Core migration history is preserved rather than regenerated. See the script's own
+`Get-Help ./scripts/rename-template.ps1 -Full` for the complete parameter reference, including
+`-HttpsPort` for running two instances concurrently.
+
+After renaming: review the diff, then follow [Getting Started](#getting-started) below, substituting
+your new prefix everywhere this README says `IdentityServerProject` — including the project paths
+and the `.slnx` filename. `AppHost` and `ServiceDefaults` keep their names; they carry no
+project-specific identity, so the rename script leaves them alone.
 
 ---
 
@@ -382,9 +418,11 @@ environment except Development and Testing.
 
 ## License
 
-This project is licensed under the terms specified in the repository.
+This template's own code is licensed under the [MIT License](LICENSE).
 
-**Duende IdentityServer is a commercial product.** It is free for development and testing, and for
-qualifying companies and open-source projects, but production use otherwise requires a paid
-license. Review the [Duende licensing terms](https://duendesoftware.com/products/identityserver)
-before deploying.
+> [!IMPORTANT]
+> **Duende IdentityServer is a commercial product**, separately licensed by Duende Software and not
+> covered by this repository's MIT license. It is free for development and testing, and for
+> qualifying companies and open-source projects, but production use otherwise requires a paid
+> license. Review the [Duende licensing terms](https://duendesoftware.com/products/identityserver)
+> before deploying, and configure a license key per Duende's instructions once you have one.
