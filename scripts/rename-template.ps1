@@ -10,6 +10,10 @@
     side by side: fresh UserSecretsId values, its own Data Protection application name, and its
     own SQL Server data volume.
 
+    The mobile app's application id, which is also its sign-in redirect scheme, is rewritten from
+    com.example.identityserverproject to -AppId (or a lowercase com.example.<prefix> when omitted), in
+    the app, its manifests and the IdentityServer client registration together.
+
     EF Core migration history is preserved. Migrations, their .Designer.cs files, and the model
     snapshots are rewritten in place rather than regenerated, so existing schema upgrades stay
     reproducible and the reviewed migration bundles keep working.
@@ -29,8 +33,14 @@
     to rehearse the rename somewhere disposable.
 
 .PARAMETER HttpsPort
-    Optional. Rewrites the AppHost HTTPS endpoint (default 5001) and the matching documentation.
-    Give two generated instances different ports if you intend to run both at once.
+    Optional. Rewrites the AppHost HTTPS endpoint (default 5001), the mobile app's default identity
+    server address, and the matching documentation. Give two generated instances different ports if
+    you intend to run both at once.
+
+.PARAMETER AppId
+    Optional. The mobile app's reverse-domain application id, for example 'com.contoso.identity'.
+    Lowercase letters and digits, at least two dot-separated segments, each starting with a letter.
+    Defaults to com.example.<prefix with everything but letters and digits removed, lowercased>.
 
 .PARAMETER Preview
     Report every change that would be made and write nothing.
@@ -55,6 +65,8 @@ param(
 
     [int]$HttpsPort = 0,
 
+    [string]$AppId,
+
     [switch]$Preview,
 
     [switch]$Force
@@ -65,6 +77,11 @@ $ErrorActionPreference = 'Stop'
 
 $OldPrefix = 'IdentityServerProject'
 $DefaultHttpsPort = 5001
+
+# The mobile app's application id and sign-in redirect scheme. Lowercase on purpose (Android matches
+# schemes case-sensitively and browsers lowercase them), which is why the case-insensitive general
+# replace below must not be the thing that rewrites it.
+$OldAppId = 'com.example.identityserverproject'
 
 # Directory names that never hold source worth rewriting. Matched per path segment at any depth,
 # so a nested bin/ or obj/ is skipped as readily as one at the root.
@@ -82,7 +99,8 @@ $ExcludedSegments = @(
 $TextExtensions = @(
     '.cs', '.cshtml', '.razor', '.csproj', '.slnx', '.sln', '.props', '.targets',
     '.json', '.md', '.yml', '.yaml', '.ps1', '.sh', '.js', '.mjs', '.css', '.scss',
-    '.html', '.xml', '.config', '.txt', '.sql', '.http', '.editorconfig'
+    '.html', '.xml', '.config', '.txt', '.sql', '.http', '.editorconfig',
+    '.xaml', '.plist'
 )
 
 # Files that must not be rewritten even though their extension says otherwise. This script holds
@@ -139,6 +157,20 @@ if ($HttpsPort -ne 0 -and ($HttpsPort -lt 1024 -or $HttpsPort -gt 65535)) {
     Fail "-HttpsPort must be between 1024 and 65535."
 }
 
+# A valid Android application id and a valid URI scheme at once: no underscores (a scheme cannot
+# hold one) and no uppercase (see $OldAppId above).
+if ([string]::IsNullOrWhiteSpace($AppId)) {
+    $appIdName = ($NewPrefix -replace '[^A-Za-z0-9]', '').ToLowerInvariant()
+    if ($appIdName -notmatch '^[a-z]') { $appIdName = "app$appIdName" }
+    $AppId = "com.example.$appIdName"
+} elseif ($AppId -cnotmatch '^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$') {
+    Fail "'$AppId' is not a valid application id. Use lowercase dot-separated segments, e.g. 'com.contoso.identity'."
+}
+
+if ($AppId -like "*$OldPrefix*") {
+    Fail "-AppId must not contain '$OldPrefix' — the rewrite would be ambiguous."
+}
+
 # --------------------------------------------------------------------------------------------
 # 2. Locate and sanity-check the repository.
 # --------------------------------------------------------------------------------------------
@@ -182,7 +214,12 @@ $VolumeName = ($NewPrefix -replace '[^A-Za-z0-9]', '-').ToLowerInvariant() + '-s
 # but is referenced by name from the CI workflow, the README and the migration-bundle script —
 # rename the file without rewriting those references and every renamed instance gets a CI run
 # that restores a solution that no longer exists.
-$SolutionFile = Get-ChildItem -LiteralPath $Root -File -Force -Filter '*.slnx' | Select-Object -First 1
+#
+# Solutions named for $OldPrefix (the mobile app's) are left to the general rename, so the main one
+# is the solution that is not: picking the first *.slnx would pick whichever sorts first.
+$SolutionFile = Get-ChildItem -LiteralPath $Root -File -Force -Filter '*.slnx' |
+    Where-Object { $_.Name -notlike "*$OldPrefix*" } |
+    Select-Object -First 1
 $OldSolutionName = if ($null -ne $SolutionFile) { $SolutionFile.Name } else { $null }
 
 $mode = if ($Preview) { 'PREVIEW — no files will be written' } else { 'applying changes' }
@@ -217,6 +254,9 @@ foreach ($file in Get-ChildItem -LiteralPath $Root -Recurse -File -Force) {
 
     # Ordered before the general replace so the underscored form survives it intact.
     $content = $content -replace "AddProject<\s*$([regex]::Escape($OldPrefix))\s*>", "AddProject<$AspireProjectClass>"
+
+    # Also before it: the general replace ignores case and would leave com.example.<NewPrefix>, mixed case.
+    $content = $content -creplace [regex]::Escape($OldAppId), $AppId
 
     $content = $content -replace [regex]::Escape($OldPrefix), $NewPrefix
 
@@ -266,6 +306,9 @@ foreach ($projectFile in Get-ChildItem -LiteralPath $Root -Recurse -File -Force 
 }
 if ($secretsUpdated -eq 0) { Write-Change 'no UserSecretsId entries found' }
 
+# Rewritten with the file contents in step 3; reported here because it is the app's identity.
+Write-Change "mobile app id and sign-in scheme -> $AppId"
+
 # A named data volume, so two generated instances do not share one SQL Server data directory.
 # Left unnamed, Aspire derives the name from the AppHost project — which this script does not
 # rename, so both instances would land on the same volume and the same databases.
@@ -296,6 +339,26 @@ if ($HttpsPort -ne 0) {
         if ($updated -ne $content) {
             Write-Change "README.md -> https://localhost:$HttpsPort"
             if (-not $Preview) { [System.IO.File]::WriteAllText($readme, $updated, $utf8NoBom) }
+        }
+    }
+
+    # The mobile app defaults to the identity server's address, and its guide tells you to forward that
+    # port to the emulator. Files are not renamed until step 5, so these paths still carry the old prefix.
+    $mobileFiles = @(
+        "$OldPrefix.Mobile.Core/MobileClientOptions.cs",
+        "$OldPrefix.Mobile/appsettings.json",
+        "$OldPrefix.Mobile/Services/DevelopmentCertificate.cs",
+        'docs/mobile/README.md'
+    )
+    foreach ($relative in $mobileFiles) {
+        $path = Join-Path $Root $relative
+        if (-not (Test-Path -LiteralPath $path)) { continue }
+
+        $content = [System.IO.File]::ReadAllText($path)
+        $updated = $content -replace "(localhost|tcp):$DefaultHttpsPort\b", ('$1:' + $HttpsPort)
+        if ($updated -ne $content) {
+            Write-Change "$relative -> port $HttpsPort"
+            if (-not $Preview) { [System.IO.File]::WriteAllText($path, $updated, $utf8NoBom) }
         }
     }
 }
@@ -347,12 +410,12 @@ foreach ($directory in $directoryRenames) {
     }
 }
 
-# The solution file carries the old sample domain's name rather than the project prefix.
-$solution = Get-ChildItem -LiteralPath $Root -File -Force -Filter '*.slnx' | Select-Object -First 1
-if ($null -ne $solution -and $solution.BaseName -ne $NewPrefix) {
-    Write-Change "$($solution.Name) -> $NewPrefix.slnx"
+# The solution file carries the old sample domain's name rather than the project prefix. Renamed by
+# the name captured in step 2: re-listing *.slnx here would also see the just-renamed mobile solution.
+if ($null -ne $OldSolutionName -and $OldSolutionName -ne "$NewPrefix.slnx") {
+    Write-Change "$OldSolutionName -> $NewPrefix.slnx"
     if (-not $Preview) {
-        Rename-Item -LiteralPath $solution.FullName -NewName "$NewPrefix.slnx"
+        Rename-Item -LiteralPath (Join-Path $Root $OldSolutionName) -NewName "$NewPrefix.slnx"
     }
 }
 

@@ -4,7 +4,7 @@
     Verifies scripts/rename-template.ps1 against a throwaway copy of this repository.
 
 .DESCRIPTION
-    Exercises the four properties the rename has to hold:
+    Exercises the properties the rename has to hold:
 
       1. Copies renamed to two different prefixes build, and the first one passes the full test
          suite. That suite includes the SQL Server migration tests, so it also demonstrates the
@@ -12,6 +12,8 @@
       2. Invalid prefixes fail before anything is written.
       3. -Preview writes nothing.
       4. Re-running against an already-renamed copy fails with a clear message.
+      5. The mobile app comes through intact: its own solution, its XAML class names, and an
+         application id / sign-in scheme that stays lowercase, or takes -AppId when given.
 
     Every case runs against a copy built from 'git archive HEAD', never against the working tree.
 
@@ -114,6 +116,10 @@ try {
         $exit = Invoke-Rename -Root $copy -ScriptArguments @('-NewPrefix', $bad, '-Force')
         Assert-That -Condition ($exit -ne 0) -Because "'$bad' is rejected"
     }
+    foreach ($badAppId in @('Com.Contoso.Identity', 'contoso', 'com.contoso_identity', 'com.9contoso')) {
+        $exit = Invoke-Rename -Root $copy -ScriptArguments @('-NewPrefix', $PrefixA, '-AppId', $badAppId, '-Force')
+        Assert-That -Condition ($exit -ne 0) -Because "app id '$badAppId' is rejected"
+    }
     Assert-That -Condition (Test-HostProjectPresent -Root $copy -Prefix $OldPrefix) `
         -Because 'the copy is untouched after every rejection'
 
@@ -140,7 +146,7 @@ try {
         -Because 'the test project is renamed'
 
     $residual = Get-ChildItem -LiteralPath $copyA -Recurse -File |
-        Where-Object { $_.Extension -in @('.cs', '.csproj', '.slnx', '.cshtml', '.json') } |
+        Where-Object { $_.Extension -in @('.cs', '.csproj', '.slnx', '.cshtml', '.json', '.razor', '.xaml', '.plist', '.html', '.xml') } |
         Where-Object { $_.Name -ne 'rename-template.ps1' } |
         Where-Object { (Select-String -LiteralPath $_.FullName -Pattern $OldPrefix -SimpleMatch -Quiet) }
     Assert-That -Condition ($null -eq $residual -or $residual.Count -eq 0) `
@@ -149,6 +155,28 @@ try {
     $migrationsDirectory = Join-Path $copyA "$PrefixA/src/$PrefixA/Migrations"
     Assert-That -Condition (Test-Path -LiteralPath (Join-Path $migrationsDirectory 'Application')) `
         -Because 'migration history is preserved, not regenerated'
+
+    # The mobile app has a solution of its own, which used to sort ahead of the main one and be
+    # renamed in its place.
+    $mobileSolution = Join-Path $copyA "$PrefixA.Mobile.slnx"
+    Assert-That -Condition (Test-Path -LiteralPath $mobileSolution) -Because 'the mobile solution is renamed alongside the main one'
+    Assert-That -Condition (Select-String -LiteralPath $mobileSolution -Pattern "$PrefixA.Mobile/$PrefixA.Mobile.csproj" -SimpleMatch -Quiet) `
+        -Because 'the mobile solution points at the renamed app project'
+    Assert-That -Condition (Select-String -LiteralPath (Join-Path $copyA "$PrefixA.slnx") -Pattern "$PrefixA.Mobile.Core.Tests" -SimpleMatch -Quiet) `
+        -Because 'the main solution still holds the mobile library and its tests'
+
+    $mainPage = Join-Path $copyA "$PrefixA.Mobile/MainPage.xaml"
+    Assert-That -Condition (Select-String -LiteralPath $mainPage -Pattern "x:Class=`"$PrefixA.Mobile.MainPage`"" -SimpleMatch -Quiet) `
+        -Because 'XAML class names are rewritten, so the app still compiles'
+
+    # Android matches the redirect scheme case-sensitively, so a mixed-case com.example.Contoso.Identity
+    # would leave sign-in unable to return to the app.
+    $expectedAppId = 'com.example.' + ($PrefixA -replace '[^A-Za-z0-9]', '').ToLowerInvariant()
+    foreach ($relative in @("$PrefixA.Mobile.Core/MobileClientOptions.cs", "$PrefixA/src/$PrefixA/Config.cs",
+                            "$PrefixA.Mobile/$PrefixA.Mobile.csproj", "$PrefixA.Mobile/Platforms/iOS/Info.plist")) {
+        Assert-That -Condition (Select-String -LiteralPath (Join-Path $copyA $relative) -Pattern $expectedAppId -SimpleMatch -CaseSensitive -Quiet) `
+            -Because "$relative uses the lowercase app id '$expectedAppId'"
+    }
 
     # The solution file is named for the original sample domain, not for the old prefix, so the
     # general replace does not cover it. Renaming the file while leaving 'Sales.slnx' in the CI
@@ -198,8 +226,15 @@ try {
     $copyB = New-TemplateCopy -Name 'prefix-b'
     $copies += $copyB
 
-    $exit = Invoke-Rename -Root $copyB -ScriptArguments @('-NewPrefix', $PrefixB, '-Force')
+    $exit = Invoke-Rename -Root $copyB -ScriptArguments @('-NewPrefix', $PrefixB, '-AppId', 'com.acme.auth', '-HttpsPort', '5101', '-Force')
     Assert-That -Condition ($exit -eq 0) -Because 'rename succeeds'
+
+    Assert-That -Condition (Select-String -LiteralPath (Join-Path $copyB "$PrefixB/src/$PrefixB/Config.cs") `
+            -Pattern 'com.acme.auth://callback' -SimpleMatch -CaseSensitive -Quiet) `
+        -Because 'an explicit -AppId becomes the redirect scheme the client is registered with'
+    Assert-That -Condition (Select-String -LiteralPath (Join-Path $copyB "$PrefixB.Mobile/appsettings.json") `
+            -Pattern 'https://localhost:5101' -SimpleMatch -Quiet) `
+        -Because '-HttpsPort reaches the mobile app''s identity server address'
 
     Write-Host "  building $PrefixB.slnx ..."
     Push-Location $copyB
