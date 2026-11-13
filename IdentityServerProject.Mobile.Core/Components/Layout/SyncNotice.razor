@@ -1,0 +1,40 @@
+@implements IDisposable
+@inject SyncCoordinator Coordinator
+
+@* Only speaks up when there is something the user should know. A healthy sync stays silent. *@
+@if (Message is { } message)
+{
+    <div class="notice notice-@Tone" role="status">
+        <span>@message</span>
+        @if (Status.State == SyncState.AuthRequired)
+        {
+            <a href="settings">Sign in again</a>
+        }
+    </div>
+}
+
+@code {
+    private SyncStatusSnapshot Status => Coordinator.Status;
+
+    private string Tone => Status.State is SyncState.AuthRequired or SyncState.Failed ? "warn" : "info";
+
+    private string? Message => Status.State switch
+    {
+        SyncState.Offline => Status.PendingCount > 0
+            ? $"You're offline. {Status.PendingCount} change(s) are saved on this device and will sync when you're back online."
+            : "You're offline. Everything still works; changes are saved on this device.",
+        SyncState.AuthRequired => "Your sign-in has expired. You can keep working; sign in again to sync your changes.",
+        SyncState.Failed => Status.Message,
+        _ when Status.RejectedCount > 0 =>
+            $"{Status.RejectedCount} change(s) were refused by the server and have not been synced.",
+        _ when Status.ConflictsInLastRun > 0 =>
+            $"{Status.ConflictsInLastRun} of your changes were replaced by newer versions from the server.",
+        _ => null
+    };
+
+    protected override void OnInitialized() => Coordinator.StatusChanged += OnStatusChanged;
+
+    private void OnStatusChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Coordinator.StatusChanged -= OnStatusChanged;
+}

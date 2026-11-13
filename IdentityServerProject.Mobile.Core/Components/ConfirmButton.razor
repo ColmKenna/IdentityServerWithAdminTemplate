@@ -1,0 +1,29 @@
+<div class="confirm">
+    @if (!asking)
+    {
+        <button type="button" class="btn btn-danger-outline" @onclick="() => asking = true">@Label</button>
+    }
+    else
+    {
+        <p class="confirm-message" role="alert">@Message</p>
+        <div class="confirm-actions">
+            <button type="button" class="btn btn-ghost" @onclick="() => asking = false">Keep it</button>
+            <button type="button" class="btn btn-danger" @onclick="ConfirmAsync">@ConfirmLabel</button>
+        </div>
+    }
+</div>
+
+@code {
+    private bool asking;
+
+    [Parameter, EditorRequired] public string Label { get; set; } = "Delete";
+    [Parameter, EditorRequired] public string Message { get; set; } = "Are you sure?";
+    [Parameter] public string ConfirmLabel { get; set; } = "Yes, delete";
+    [Parameter] public EventCallback Confirmed { get; set; }
+
+    private async Task ConfirmAsync()
+    {
+        asking = false;
+        await Confirmed.InvokeAsync();
+    }
+}

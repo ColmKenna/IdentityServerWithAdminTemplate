@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <!--
+        The phone/tablet shell for IdentityServerProject.Mobile.Core. All behaviour lives in IdentityServerProject.Mobile.Core; this project holds only what
+        needs the MAUI/platform SDKs: the BlazorWebView host, secure storage, the system browser, connectivity,
+        and the Android/iOS manifests.
+
+        Android builds anywhere the Android workload is installed (it needs JDK 21: pass
+        -p:JavaSdkDirectory=<path> or set JAVA_HOME). iOS builds only on macOS, or from Windows paired to a Mac
+        with -p:IncludeIos=true. It is not in Sales.slnx, so a machine without the mobile workloads can still build
+        and test the rest of the repository; open IdentityServerProject.Mobile.slnx to work on the app.
+    -->
+    <PropertyGroup>
+        <TargetFrameworks>net10.0-android</TargetFrameworks>
+        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx')) Or '$(IncludeIos)' == 'true'">$(TargetFrameworks);net10.0-ios</TargetFrameworks>
+
+        <OutputType>Exe</OutputType>
+        <RootNamespace>IdentityServerProject.Mobile</RootNamespace>
+        <UseMaui>true</UseMaui>
+        <SingleProject>true</SingleProject>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <EnableDefaultCssItems>false</EnableDefaultCssItems>
+        <MauiXamlInflator>SourceGen</MauiXamlInflator>
+
+        <ApplicationTitle>IdentityServerProject</ApplicationTitle>
+
+        <!-- Matches ClientDefaults.RedirectScheme: the sign-in redirect comes back to this app by its id. -->
+        <ApplicationId>com.example.identityserverproject</ApplicationId>
+
+        <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+        <ApplicationVersion>1</ApplicationVersion>
+
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+        <!-- SecureStorage (the Keychain) needs a keychain access group; see Platforms/iOS/Entitlements.plist. -->
+        <CodesignEntitlements>Platforms/iOS/Entitlements.plist</CodesignEntitlements>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#2F6BFF"/>
+        <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#2F6BFF" BaseSize="128,128"/>
+
+        <!-- Read at start-up for the identity server address; see appsettings.json. -->
+        <EmbeddedResource Include="appsettings.json" LogicalName="appsettings.json"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- The MAUI packs version themselves with the installed workload, so they take its version rather than a pinned one. -->
+        <PackageReference Include="Microsoft.Maui.Controls" VersionOverride="$(MauiVersion)"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" VersionOverride="$(MauiVersion)"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IdentityServerProject.Mobile.Core\IdentityServerProject.Mobile.Core.csproj"/>
+    </ItemGroup>
+
+</Project>

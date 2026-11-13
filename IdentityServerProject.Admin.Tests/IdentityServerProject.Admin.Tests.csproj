@@ -31,6 +31,9 @@
     <ItemGroup>
         <ProjectReference Include="..\IdentityServerProject\src\IdentityServerProject\IdentityServerProject.csproj"/>
         <ProjectReference Include="..\IdentityServerProject.Admin.Services\IdentityServerProject.Admin.Services.csproj"/>
+
+        <!-- Only for ClientDefaults: MobileClientTests compares what the app sends with what Config registers. -->
+        <ProjectReference Include="..\IdentityServerProject.Mobile.Core\IdentityServerProject.Mobile.Core.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

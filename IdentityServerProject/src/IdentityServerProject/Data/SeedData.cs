@@ -110,7 +110,8 @@ public static class SeedData
     {
         List<string> existingClientIds = await configDb.Clients.Select(c => c.ClientId).ToListAsync();
 
-        foreach (Client client in Config.Clients(clients, tokenLifetimes))
+        // The mobile app is a public client, so unlike the examples above it needs no secret supplied.
+        foreach (Client client in Config.Clients(clients, tokenLifetimes).Append(Config.MobileClient(tokenLifetimes)))
             if (!existingClientIds.Contains(client.ClientId))
                 configDb.Clients.Add(client.ToEntity());
 

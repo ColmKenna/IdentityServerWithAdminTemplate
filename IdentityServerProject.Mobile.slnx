@@ -1,0 +1,5 @@
+<Solution>
+    <Project Path="IdentityServerProject.Mobile.Core/IdentityServerProject.Mobile.Core.csproj"/>
+    <Project Path="IdentityServerProject.Mobile.Core.Tests/IdentityServerProject.Mobile.Core.Tests.csproj"/>
+    <Project Path="IdentityServerProject.Mobile/IdentityServerProject.Mobile.csproj"/>
+</Solution>

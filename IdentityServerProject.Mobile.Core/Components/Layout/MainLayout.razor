@@ -1,0 +1,39 @@
+@inherits LayoutComponentBase
+
+<div class="app-shell">
+    <header class="app-bar">
+        <a class="app-brand" href="/">
+            <span class="app-brand-mark" aria-hidden="true">◆</span>
+            <span>IdentityServerProject</span>
+        </a>
+        <AuthorizeView>
+            <Authorized>
+                <SyncBadge/>
+            </Authorized>
+        </AuthorizeView>
+    </header>
+
+    <AuthorizeView>
+        <Authorized>
+            <SyncNotice/>
+        </Authorized>
+    </AuthorizeView>
+
+    <main class="app-content">
+        <ErrorBoundary>
+            <ChildContent>@Body</ChildContent>
+            <ErrorContent Context="exception">
+                <EmptyState Icon="!" Title="Something went wrong"
+                            Message="This screen hit an unexpected problem. Your saved data is not affected.">
+                    <a class="btn btn-primary" href="/">Back to home</a>
+                </EmptyState>
+            </ErrorContent>
+        </ErrorBoundary>
+    </main>
+
+    <AuthorizeView>
+        <Authorized>
+            <BottomNav/>
+        </Authorized>
+    </AuthorizeView>
+</div>

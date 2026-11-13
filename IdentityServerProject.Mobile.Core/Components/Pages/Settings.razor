@@ -1,0 +1,120 @@
+@page "/settings"
+@attribute [Authorize]
+@implements IDisposable
+@inject ISessionService Session
+@inject SyncCoordinator Coordinator
+@inject IOptions<MobileClientOptions> Options
+@inject NavigationManager Navigation
+
+<PageTitle>Settings</PageTitle>
+
+<section class="page-head">
+    <span class="eyebrow">Account</span>
+    <h1>Settings</h1>
+</section>
+
+<section class="panel">
+    <div class="account">
+        <span class="avatar" aria-hidden="true">@Format.Initial(Session.User?.Name)</span>
+        <div>
+            <strong>@Session.User?.Name</strong>
+            @if (Session.User?.Email is { } email)
+            {
+                <small>@email</small>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-head"><h2>Sync</h2></div>
+
+    <dl class="facts">
+        <dt>Status</dt>
+        <dd>@StatusText</dd>
+        <dt>Waiting to send</dt>
+        <dd>@Status.PendingCount</dd>
+        @if (Status.RejectedCount > 0)
+        {
+            <dt>Refused by server</dt>
+            <dd>@Status.RejectedCount</dd>
+        }
+        <dt>Last synced</dt>
+        <dd>@(Status.LastSyncedAt is { } at ? at.ToLocalTime().ToString("d MMM yyyy HH:mm") : "Never")</dd>
+    </dl>
+
+    @if (Options.Value.SyncEnabled)
+    {
+        <button type="button" class="btn btn-secondary" disabled="@(Status.State == SyncState.Syncing)" @onclick="SyncNowAsync">Sync now</button>
+    }
+
+    @if (Session.State == SessionState.ReauthRequired)
+    {
+        <button type="button" class="btn btn-primary" disabled="@busy" @onclick="SignInAgainAsync">Sign in again</button>
+    }
+</section>
+
+<section class="panel">
+    <div class="panel-head"><h2>Sign out</h2></div>
+    <p class="muted">
+        Signing out removes your account and all of its data from this phone.
+        @if (Status.PendingCount + Status.RejectedCount > 0)
+        {
+            <strong class="text-danger">@(Status.PendingCount + Status.RejectedCount) change(s) haven't reached the server and will be lost.</strong>
+        }
+    </p>
+    <ConfirmButton Label="Sign out"
+                   Message="@SignOutWarning"
+                   ConfirmLabel="Yes, sign out"
+                   Confirmed="SignOutAsync"/>
+</section>
+
+@code {
+    private bool busy;
+
+    private SyncStatusSnapshot Status => Coordinator.Status;
+
+    private string StatusText => Status.State switch
+    {
+        SyncState.Disabled => "On this device only",
+        SyncState.SignedOut => "Signed out",
+        SyncState.Offline => "Offline",
+        SyncState.Idle => "Up to date",
+        SyncState.Syncing => "Syncing…",
+        SyncState.AuthRequired => "Sign in again to sync",
+        SyncState.Failed => Status.Message ?? "Last attempt failed",
+        _ => string.Empty
+    };
+
+    // The paragraph above already says what is lost; this only has to ask.
+    private string SignOutWarning => Status.PendingCount + Status.RejectedCount > 0
+        ? "Sign out and delete the unsynced changes too?"
+        : "Sign out of this phone?";
+
+    protected override void OnInitialized() => Coordinator.StatusChanged += OnStatusChanged;
+
+    private void OnStatusChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Coordinator.StatusChanged -= OnStatusChanged;
+
+    private Task SyncNowAsync() => Coordinator.SyncNowAsync();
+
+    private async Task SignInAgainAsync()
+    {
+        busy = true;
+        try
+        {
+            await Session.SignInAsync();
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task SignOutAsync()
+    {
+        await Session.SignOutAsync();
+        Navigation.NavigateTo("/signin", replace: true);
+    }
+}

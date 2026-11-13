@@ -1,0 +1,61 @@
+@page "/"
+@attribute [Authorize]
+@inherits LiveDataComponent
+@inject INoteService NoteService
+@inject ISessionService Session
+@inject TimeProvider Time
+
+<PageTitle>Home</PageTitle>
+
+<section class="page-head">
+    <span class="eyebrow">Home</span>
+    <h1>Good to see you, @Format.FirstName(Session.User?.Name)</h1>
+</section>
+
+@if (notes is null)
+{
+    <p class="muted" role="status">Loading…</p>
+}
+else
+{
+    <section class="metrics" aria-label="Summary">
+        <article class="metric"><div class="metric-label">Notes</div><div class="metric-value">@notes.Count</div></article>
+        <article class="metric"><div class="metric-label">Not synced yet</div><div class="metric-value">@notes.Count(n => n.SyncStatus == SyncStatus.Pending)</div></article>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head"><h2>Recently edited</h2><a href="notes">All notes</a></div>
+        @if (notes.Count == 0)
+        {
+            <p class="muted panel-empty">Nothing here yet. Notes you add are kept on this phone, with or without a connection.</p>
+        }
+        else
+        {
+            <ul class="rows">
+                @foreach (Note note in notes.Take(RecentCount))
+                {
+                    <li>
+                        <a class="row" href="notes/@note.Id">
+                            <span class="row-main">
+                                <strong>@note.Title</strong>
+                                <small>@Format.Edited(note.UpdatedAt, Time)</small>
+                            </span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+    <section class="quick-add" aria-label="Quick add">
+        <a class="btn btn-primary" href="notes/new">＋ Note</a>
+    </section>
+}
+
+@code {
+    private const int RecentCount = 5;
+
+    private IReadOnlyList<Note>? notes;
+
+    protected override async Task LoadAsync() => notes = await NoteService.SearchAsync(null);
+}

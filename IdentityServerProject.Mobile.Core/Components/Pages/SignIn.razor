@@ -1,0 +1,61 @@
+@page "/signin"
+@attribute [AllowAnonymous]
+@inject ISessionService Session
+@inject NavigationManager Navigation
+
+<PageTitle>Sign in</PageTitle>
+
+<section class="signin">
+    <span class="signin-mark" aria-hidden="true">◆</span>
+    <h1>IdentityServerProject</h1>
+    <p class="muted">Your notes, on this phone. Works without a connection once you're signed in.</p>
+
+    @if (error is not null)
+    {
+        <p class="form-error" role="alert">@error</p>
+    }
+
+    <button type="button" class="btn btn-primary btn-block" disabled="@busy" @onclick="SignInAsync">
+        @(busy ? "Waiting for sign-in…" : "Sign in")
+    </button>
+
+    <p class="muted fine-print">Signing in opens your browser and needs an internet connection. You only need one the first time, and again if your sign-in expires.</p>
+</section>
+
+@code {
+    private bool busy;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Session.InitializeAsync();
+        if (Session.User is not null) Navigation.NavigateTo("/", replace: true);
+    }
+
+    private async Task SignInAsync()
+    {
+        busy = true;
+        error = null;
+
+        try
+        {
+            AuthResult result = await Session.SignInAsync();
+            if (result.Succeeded)
+            {
+                Navigation.NavigateTo("/", replace: true);
+                return;
+            }
+
+            error = result.Failure switch
+            {
+                AuthFailure.Cancelled => null,
+                AuthFailure.Unreachable => "Couldn't reach the sign-in server. Check your connection and try again.",
+                _ => result.Message ?? "Sign-in didn't complete. Please try again."
+            };
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

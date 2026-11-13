@@ -37,6 +37,12 @@ public static class Config
     // library's self-demotion/last-administrator guards can never drift onto different role names.
     public const string SysAdminRole = ProtectedAdminRoles.SysAdmin;
 
+    // The mobile app (IdentityServerProject.Mobile). These must match the app's ClientDefaults — the app sends this
+    // client id and these redirect URIs — and MobileClientTests in IdentityServerProject.Admin.Tests fails if they drift apart.
+    public const string MobileClientId = "mobile-app";
+    public const string MobileRedirectUri = "com.example.identityserverproject://callback";
+    public const string MobilePostLogoutRedirectUri = "com.example.identityserverproject://signout-callback";
+
     public static IEnumerable<IdentityResource> IdentityResources =>
         new[]
         {
@@ -90,4 +96,49 @@ public static class Config
             IdentityTokenLifetime = tokenLifetimes.IdentityTokenLifetimeSeconds,
             AuthorizationCodeLifetime = tokenLifetimes.AuthorizationCodeLifetimeSeconds
         });
+
+    /// <summary>
+    ///     The mobile app as an OAuth public client (RFC 8252): authorization code with PKCE through the system
+    ///     browser, no client secret because a secret shipped inside an app is not a secret. The refresh token
+    ///     is what lets a phone that has been offline for days sync again without asking for a password.
+    /// </summary>
+    public static Client MobileClient(TokenLifetimes tokenLifetimes) =>
+        new()
+        {
+            ClientId = MobileClientId,
+            ClientName = "IdentityServerProject (mobile)",
+            AllowedGrantTypes = GrantTypes.Code,
+            RequirePkce = true,
+            RequireClientSecret = false,
+            RedirectUris = { MobileRedirectUri },
+            PostLogoutRedirectUris = { MobilePostLogoutRedirectUri },
+
+            // No FrontChannelLogoutUri: an app cannot host the iframe front-channel logout loads.
+            AllowedScopes =
+            {
+                IdentityServerConstants.StandardScopes.OpenId,
+                IdentityServerConstants.StandardScopes.Profile,
+                "email",
+                "roles",
+                ApiScopeName
+            },
+            AllowOfflineAccess = true,
+            RequireConsent = false,
+
+            // Rotated on every use, so a copied refresh token stops working as soon as the real device refreshes.
+            RefreshTokenUsage = TokenUsage.OneTimeOnly,
+
+            // A phone can be out of coverage for days. Sliding keeps an active device signed in; the absolute
+            // cap still forces a fresh sign-in a few months on.
+            RefreshTokenExpiration = TokenExpiration.Sliding,
+            SlidingRefreshTokenLifetime = (int)TimeSpan.FromDays(30).TotalSeconds,
+            AbsoluteRefreshTokenLifetime = (int)TimeSpan.FromDays(90).TotalSeconds,
+
+            // Role changes made in /Admin reach the phone at its next refresh instead of at its next sign-in.
+            UpdateAccessTokenClaimsOnRefresh = true,
+
+            AccessTokenLifetime = tokenLifetimes.AccessTokenLifetimeSeconds,
+            IdentityTokenLifetime = tokenLifetimes.IdentityTokenLifetimeSeconds,
+            AuthorizationCodeLifetime = tokenLifetimes.AuthorizationCodeLifetimeSeconds
+        };
 }

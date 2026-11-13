@@ -2,6 +2,8 @@
     <Folder Name="/src/"/>
     <Project Path="IdentityServerProject.Admin.Services/IdentityServerProject.Admin.Services.csproj"/>
     <Project Path="IdentityServerProject.Admin.Tests/IdentityServerProject.Admin.Tests.csproj"/>
+    <Project Path="IdentityServerProject.Mobile.Core/IdentityServerProject.Mobile.Core.csproj"/>
+    <Project Path="IdentityServerProject.Mobile.Core.Tests/IdentityServerProject.Mobile.Core.Tests.csproj"/>
     <Project Path="IdentityServerProject/src/IdentityServerProject/IdentityServerProject.csproj"/>
     <Project Path="AppHost/AppHost.csproj"/>
     <Project Path="ServiceDefaults/ServiceDefaults.csproj"/>

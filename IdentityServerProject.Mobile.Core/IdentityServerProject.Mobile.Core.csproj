@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <!--
+        Everything the mobile app does that is not a platform call lives here: UI, local database,
+        sync, and sign-in. It is deliberately a plain net10.0 library so it builds and is tested
+        without the MAUI workloads; IdentityServerProject.Mobile supplies the platform pieces (secure storage,
+        system browser, connectivity, file location) behind the interfaces defined in this project.
+    -->
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>IdentityServerProject.Mobile.Core</RootNamespace>
+
+        <!-- Lets `dotnet ef` use this library as its own startup project (see MobileDbContextFactory). -->
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Duende.IdentityModel.OidcClient"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.Authorization"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.Web"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Http"/>
+
+        <!--
+            EF Core 10 resolves SQLitePCLRaw to 2.1.11 by default, whose bundled SQLite carries advisory GHSA-2m69-gcr7-jv3q.
+            IdentityServerProject.Admin.Tests pins 3.0.0 for the same reason; this library ships the native build to phones, so it matters more here.
+        -->
+        <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IdentityServerProject.Mobile.Core.Tests"/>
+    </ItemGroup>
+
+</Project>

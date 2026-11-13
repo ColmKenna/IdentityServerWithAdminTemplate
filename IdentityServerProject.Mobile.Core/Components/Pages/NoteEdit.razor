@@ -1,0 +1,99 @@
+@page "/notes/new"
+@page "/notes/{Id:guid}"
+@attribute [Authorize]
+@inject INoteService NoteService
+@inject NavigationManager Navigation
+@inject TimeProvider Time
+
+<PageTitle>@(IsNew ? "New note" : "Note")</PageTitle>
+
+<a class="back" href="notes">‹ Notes</a>
+
+<section class="page-head">
+    <h1>@(IsNew ? "New note" : model?.Title)</h1>
+</section>
+
+@if (model is null)
+{
+    <p class="muted" role="status">@(missing ? "This note no longer exists." : "Loading…")</p>
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="SaveAsync" class="form">
+        <DataAnnotationsValidator/>
+
+        <label>Title
+            <InputText @bind-Value="model.Title" autocomplete="off"/>
+            <ValidationMessage For="() => model.Title"/>
+        </label>
+        <label>Note
+            <InputTextArea @bind-Value="model.Body" rows="8"/>
+            <ValidationMessage For="() => model.Body"/>
+        </label>
+
+        @if (error is not null)
+        {
+            <p class="form-error" role="alert">@error</p>
+        }
+
+        <button type="submit" class="btn btn-primary btn-block" disabled="@saving">Save</button>
+    </EditForm>
+
+    @if (!IsNew)
+    {
+        <p class="muted fine-print">@Format.Edited(model.UpdatedAt, Time)@(model.SyncStatus == SyncStatus.Pending ? " · not synced yet" : "")</p>
+
+        <ConfirmButton Label="Delete note"
+                       Message="Delete this note?"
+                       Confirmed="DeleteAsync"/>
+    }
+}
+
+@code {
+    private Note? model;
+    private string? error;
+    private bool saving;
+    private bool missing;
+
+    [Parameter] public Guid? Id { get; set; }
+
+    private bool IsNew => Id is null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsNew)
+        {
+            model = new Note();
+            return;
+        }
+
+        model = await NoteService.GetAsync(Id!.Value);
+        missing = model is null;
+    }
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        error = null;
+
+        try
+        {
+            await NoteService.SaveAsync(model!);
+            Navigation.NavigateTo("notes");
+        }
+        catch (ValidationException ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        await NoteService.DeleteAsync(Id!.Value);
+        Navigation.NavigateTo("notes");
+    }
+}

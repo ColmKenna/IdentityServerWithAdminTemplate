@@ -1,0 +1,40 @@
+@implements IDisposable
+@inject SyncCoordinator Coordinator
+
+@* A glanceable dot in the title bar. The full explanation, when there is one, is SyncNotice. *@
+<span class="sync-badge sync-@Class" role="status" title="@Description">
+    <i aria-hidden="true"></i>@Label
+</span>
+
+@code {
+    private SyncStatusSnapshot Status => Coordinator.Status;
+
+    private string Class => Status.State switch
+    {
+        SyncState.Idle => "ok",
+        SyncState.Syncing => "busy",
+        SyncState.Offline => "offline",
+        SyncState.AuthRequired or SyncState.Failed => "warn",
+        _ => "local"
+    };
+
+    private string Label => Status.State switch
+    {
+        SyncState.Idle => "Synced",
+        SyncState.Syncing => "Syncing",
+        SyncState.Offline => "Offline",
+        SyncState.AuthRequired => "Sign in",
+        SyncState.Failed => "Retrying",
+        _ => "On device"
+    };
+
+    private string Description => Status.PendingCount > 0
+        ? $"{Status.PendingCount} change(s) waiting to sync"
+        : "Everything on this device is up to date";
+
+    protected override void OnInitialized() => Coordinator.StatusChanged += OnStatusChanged;
+
+    private void OnStatusChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Coordinator.StatusChanged -= OnStatusChanged;
+}

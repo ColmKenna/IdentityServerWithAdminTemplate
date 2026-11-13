@@ -1,0 +1,69 @@
+@page "/notes"
+@attribute [Authorize]
+@inherits LiveDataComponent
+@inject INoteService NoteService
+
+<PageTitle>Notes</PageTitle>
+
+<section class="page-head">
+    <span class="eyebrow">On this phone</span>
+    <h1>Notes</h1>
+</section>
+
+<input class="search" type="search" placeholder="Search notes" aria-label="Search notes"
+       @bind="term" @bind:event="oninput" @bind:after="LoadAsync"/>
+
+@if (notes is null)
+{
+    <p class="muted" role="status">Loading…</p>
+}
+else if (notes.Count == 0)
+{
+    @if (string.IsNullOrWhiteSpace(term))
+    {
+        <EmptyState Icon="✎" Title="No notes yet"
+                    Message="Notes are saved on this phone, so you can write them anywhere, with or without a connection.">
+            <a class="btn btn-primary" href="notes/new">Add a note</a>
+        </EmptyState>
+    }
+    else
+    {
+        <EmptyState Icon="✎" Title="No matches" Message="@($"Nothing matches “{term}”.")"/>
+    }
+}
+else
+{
+    <ul class="rows">
+        @foreach (Note note in notes)
+        {
+            <li>
+                <a class="row" href="notes/@note.Id">
+                    <span class="row-main">
+                        <strong>@note.Title</strong>
+                        <small>@Format.Excerpt(note.Body)</small>
+                    </span>
+                    @if (note.SyncStatus == SyncStatus.Pending)
+                    {
+                        <span class="pending-dot" title="Not synced yet" aria-label="Not synced yet"></span>
+                    }
+                </a>
+            </li>
+        }
+    </ul>
+}
+
+<a class="fab" href="notes/new" aria-label="Add note">＋</a>
+
+@code {
+    private IReadOnlyList<Note>? notes;
+    private string? term;
+    private int loadCount;
+
+    protected override async Task LoadAsync()
+    {
+        // Typing fires a load per keystroke; only the newest one may publish its result.
+        int thisLoad = ++loadCount;
+        IReadOnlyList<Note> found = await NoteService.SearchAsync(term);
+        if (thisLoad == loadCount) notes = found;
+    }
+}

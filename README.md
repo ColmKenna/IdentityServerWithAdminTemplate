@@ -5,7 +5,7 @@
 
 A modern, production-ready **Duende IdentityServer** and **ASP.NET Core Identity** starter template for .NET 10, featuring a comprehensive, built-in **Admin Console UI** (`/Admin`), decoupled service architecture, and enterprise security defaults.
 
-The template ships only the identity host and its admin console. Downstream sample applications are deliberately not included, so what you clone is the part you keep.
+The template ships the identity host, its admin console, and an offline-first [mobile app](#mobile-app) starter that signs in against it. Other downstream sample applications are deliberately not included, so what you clone is the part you keep.
 
 ---
 
@@ -26,6 +26,7 @@ The template ships only the identity host and its admin console. Downstream samp
   - [4. Development Seed Data](#4-development-seed-data)
 - [Creating the First Administrator](#creating-the-first-administrator)
 - [Database Migrations](#database-migrations)
+- [Mobile App](#mobile-app)
 - [Testing](#testing)
 - [Configuration Reference](#configuration-reference)
 - [Production Checklist](#production-checklist)
@@ -65,6 +66,7 @@ standard OIDC and OAuth 2.0, and are registered as clients through the Admin Con
 - **IdentityServerProject**: The primary authentication host running Duende IdentityServer with ASP.NET Core Identity. Houses the Razor Pages UI for account workflows (Login, Logout, Access Denied) and the `/Admin` management console.
 - **IdentityServerProject.Admin.Services**: A decoupled domain services library containing the business logic, validation, audit generation, and management operations for the admin console. It has no reference to the host's `DbContext` or user type; the host supplies adapters for the persistence ports it defines.
 - **AppHost / ServiceDefaults**: .NET Aspire orchestration and shared service defaults (OpenTelemetry, health checks, resilience).
+- **IdentityServerProject.Mobile / .Mobile.Core**: An offline-first .NET MAUI Blazor Hybrid app for Android and iOS, registered with the host as a public client. See [Mobile App](#mobile-app).
 
 > [!NOTE]
 > **SQL Server is a deliberate, load-bearing choice, not a default you can flip.** All three
@@ -120,13 +122,18 @@ The `/Admin` section is restricted to users in the `SysAdmin` role and provides 
 │   └── src/IdentityServerProject/       # Duende IdentityServer host & /Admin Razor Pages UI
 ├── IdentityServerProject.Admin.Services # Domain services, validation & audit logic for Admin UI
 ├── IdentityServerProject.Admin.Tests    # Unit, integration, characterization & audit coverage tests
+├── IdentityServerProject.Mobile.Core    # Mobile app: Blazor UI, SQLite store, sign-in, sync (plain net10.0)
+├── IdentityServerProject.Mobile.Core.Tests # Mobile app tests (xUnit + bUnit)
+├── IdentityServerProject.Mobile         # MAUI shell for Android and iOS
 ├── AppHost/                             # .NET Aspire AppHost orchestrator
 ├── ServiceDefaults/                     # Aspire service defaults (OTel, health checks, resilience)
+├── docs/mobile/                         # Mobile app guide
 ├── scripts/                             # Utility scripts (e.g. migration bundle generation)
 ├── aspire.config.json                   # Aspire tooling entry point (names the AppHost project)
 ├── Directory.Packages.props             # Central Package Management (CPM)
 ├── global.json                          # .NET SDK configuration
-└── Sales.slnx                           # Solution definition
+├── Sales.slnx                           # Solution definition (everything except the MAUI shell)
+└── IdentityServerProject.Mobile.slnx    # Mobile solution (needs the MAUI workloads)
 ```
 
 ---
@@ -178,7 +185,8 @@ The script renames every project, namespace, folder, and the solution file from
 side by side with another instance generated from the same template without sharing secrets or
 data. EF Core migration history is preserved rather than regenerated. See the script's own
 `Get-Help ./scripts/rename-template.ps1 -Full` for the complete parameter reference, including
-`-HttpsPort` for running two instances concurrently.
+`-HttpsPort` for running two instances concurrently and `-AppId` for the mobile app's
+reverse-domain application id (which is also its sign-in redirect scheme).
 
 After renaming: review the diff, then follow [Getting Started](#getting-started) below, substituting
 your new prefix everywhere this README says `IdentityServerProject` — including the project paths
@@ -235,7 +243,8 @@ immediately. No seeding of any kind occurs in other environments.
 Two example client registrations are created, `razorclient` and `blazorclient`, pointing at
 `https://localhost:5001` and `https://localhost:5002`. These are placeholders illustrating the
 shape of a client record — no application listens on those URLs in this template. Edit or delete
-them from **Admin → Clients**.
+them from **Admin → Clients**. The [mobile app](#mobile-app)'s public client, `mobile-app`, is seeded
+alongside them; it needs no secret.
 
 A development administrator and a standard test user are also seeded:
 
@@ -353,6 +362,24 @@ Use the provided PowerShell script to build self-contained EF Core migration exe
 
 ---
 
+## Mobile App
+
+`IdentityServerProject.Mobile` is an offline-first .NET MAUI Blazor Hybrid app for Android and iOS. It signs in
+against this host with authorization code + PKCE through the system browser, keeps its data in SQLite on the
+phone, and queues every edit for sync. It ships with one sample record type, `Note`, to replace with your own.
+
+- **No secret, no BFF.** It is a public client (`mobile-app`), with rotating refresh tokens that last 30 days of
+  use and at most 90, so a phone can stay offline for days and still sync afterwards.
+- **Sync is off by default.** The template has no API for the records; the app speaks a documented push/pull
+  contract that your API implements, then you switch sync on.
+- **Builds without the workloads.** Everything but the thin MAUI shell is a plain `net10.0` library that is in
+  `Sales.slnx` and runs in CI. The shell is in `IdentityServerProject.Mobile.slnx` and needs the Android workload and JDK 21.
+
+Running it on an emulator, registering the client in production, the sync contract, and the checklist for adding
+your own entities are in [docs/mobile/README.md](docs/mobile/README.md).
+
+---
+
 ## Testing
 
 ```pwsh
@@ -361,6 +388,9 @@ dotnet test Sales.slnx
 
 # The admin services, page models, and integration suites
 dotnet test IdentityServerProject.Admin.Tests/IdentityServerProject.Admin.Tests.csproj
+
+# The mobile app's library: services, sync, sign-in and pages (no Docker or MAUI workload needed)
+dotnet test IdentityServerProject.Mobile.Core.Tests/IdentityServerProject.Mobile.Core.Tests.csproj
 ```
 
 **Docker must be running.** A portion of the suite provisions real SQL Server containers via
@@ -426,6 +456,7 @@ environment except Development and Testing.
 - [ ] All three migration bundles applied to their databases.
 - [ ] First administrator created with `--bootstrap-admin`, and the bootstrap credentials removed from configuration afterwards.
 - [ ] Real client registrations created through **Admin → Clients**, and the `razorclient` / `blazorclient` development placeholders deleted.
+- [ ] If you ship the mobile app: its `mobile-app` public client created (see [docs/mobile/README.md](docs/mobile/README.md#registering-the-client)), under an application id from a domain you own rather than `com.example`.
 - [ ] A Duende IdentityServer license configured if you exceed the free tier — see below.
 
 ---

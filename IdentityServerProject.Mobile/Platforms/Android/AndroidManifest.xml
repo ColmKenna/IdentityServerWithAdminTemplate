@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+        allowBackup is off on purpose. SecureStorage keeps its encryption key in the device Keystore, which is
+        never backed up; restoring the encrypted preferences onto a new phone would leave data nothing can decrypt.
+        The local database is also kept off Google/device-transfer backups.
+    -->
+    <application android:allowBackup="false"
+                 android:icon="@mipmap/appicon"
+                 android:roundIcon="@mipmap/appicon_round"
+                 android:supportsRtl="true"
+                 android:usesCleartextTraffic="false"></application>
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Android 11+ hides other apps unless declared. WebAuthenticator needs to see a Custom Tabs browser. -->
+    <queries>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+    </queries>
+</manifest>
